@@ -78,6 +78,33 @@ class TimestepEmbedSequential(nn.Sequential, TimestepBlock):
         return x
 
 
+class TimestepBlockCond(nn.Module):
+    """
+    Any module where forward() takes timestep embeddings as a second argument.
+    """
+
+    @abstractmethod
+    def forward(self, x, emb, cond):
+        """
+        Apply the module to `x` given `emb` timestep embeddings.
+        """
+
+
+class TimestepEmbedSequentialCond(nn.Sequential, TimestepBlockCond):
+    """
+    A sequential module that passes timestep embeddings to the children that
+    support it as an extra input.
+    """
+
+    def forward(self, x, emb, cond):
+        for layer in self:
+            if isinstance(layer, TimestepBlockCond):
+                x = layer(x, emb, cond)
+            else:
+                x = layer(x)
+        return x
+
+
 class Upsample(nn.Module):
     """
     An upsampling layer with an optional convolution.
@@ -221,7 +248,7 @@ class ResBlock(TimestepBlock):
         else:
             self.skip_connection = conv_nd(dims, channels, self.out_channels, 1)
 
-    def forward(self, x, emb):
+    def forward(self, x, emb, cond=None):
         """
         Apply the block to a Tensor, conditioned on a timestep embedding.
 
@@ -229,9 +256,15 @@ class ResBlock(TimestepBlock):
         :param emb: an [N x emb_channels] Tensor of timestep embeddings.
         :return: an [N x C x ...] Tensor of outputs.
         """
-        return checkpoint(
-            self._forward, (x, emb), self.parameters(), self.use_checkpoint
-        )
+        if cond is None:
+            return checkpoint(
+                self._forward, (x, emb), self.parameters(), self.use_checkpoint
+            )
+        elif cond is not None:
+            return checkpoint(
+                self._forward_cond, (x, emb, cond), self.parameters(), self.use_checkpoint
+            )
+        else: raise NotImplementedError
 
     def _forward(self, x, emb):
         if self.updown:
@@ -445,6 +478,7 @@ class UNetModel(nn.Module):
         use_scale_shift_norm=False,
         resblock_updown=False,
         use_new_attention_order=False,
+        z_cond=False
     ):
         super().__init__()
 
@@ -474,12 +508,15 @@ class UNetModel(nn.Module):
             linear(time_embed_dim, time_embed_dim),
         )
 
+        resblock = ResBlock if not z_cond else ResBlockCondition
+        time_emb_seq = TimestepEmbedSequential if not z_cond else TimestepEmbedSequentialCond 
+        # n_group = 32 if model_channels % 4 == 0 else 3
         if self.num_classes is not None:
             self.label_emb = nn.Embedding(num_classes, time_embed_dim)
 
         ch = input_ch = int(channel_mult[0] * model_channels)
         self.input_blocks = nn.ModuleList(
-            [TimestepEmbedSequential(conv_nd(dims, in_channels, ch, 3, padding=1))]
+            [time_emb_seq(conv_nd(dims, in_channels, ch, 3, padding=1))]
         )
         self._feature_size = ch
         input_block_chans = [ch]
@@ -487,7 +524,7 @@ class UNetModel(nn.Module):
         for level, mult in enumerate(channel_mult):
             for _ in range(num_res_blocks):
                 layers = [
-                    ResBlock(
+                    resblock(
                         ch,
                         time_embed_dim,
                         dropout,
@@ -508,14 +545,14 @@ class UNetModel(nn.Module):
                             use_new_attention_order=use_new_attention_order,
                         )
                     )
-                self.input_blocks.append(TimestepEmbedSequential(*layers))
+                self.input_blocks.append(time_emb_seq(*layers))
                 self._feature_size += ch
                 input_block_chans.append(ch)
             if level != len(channel_mult) - 1:
                 out_ch = ch
                 self.input_blocks.append(
-                    TimestepEmbedSequential(
-                        ResBlock(
+                    time_emb_seq(
+                        resblock(
                             ch,
                             time_embed_dim,
                             dropout,
@@ -536,8 +573,8 @@ class UNetModel(nn.Module):
                 ds *= 2
                 self._feature_size += ch
 
-        self.middle_block = TimestepEmbedSequential(
-            ResBlock(
+        self.middle_block = time_emb_seq(
+            resblock(
                 ch,
                 time_embed_dim,
                 dropout,
@@ -552,7 +589,7 @@ class UNetModel(nn.Module):
                 num_head_channels=num_head_channels,
                 use_new_attention_order=use_new_attention_order,
             ),
-            ResBlock(
+            resblock(
                 ch,
                 time_embed_dim,
                 dropout,
@@ -568,7 +605,7 @@ class UNetModel(nn.Module):
             for i in range(num_res_blocks + 1):
                 ich = input_block_chans.pop()
                 layers = [
-                    ResBlock(
+                    resblock(
                         ch + ich,
                         time_embed_dim,
                         dropout,
@@ -592,7 +629,7 @@ class UNetModel(nn.Module):
                 if level and i == num_res_blocks:
                     out_ch = ch
                     layers.append(
-                        ResBlock(
+                        resblock(
                             ch,
                             time_embed_dim,
                             dropout,
@@ -606,7 +643,7 @@ class UNetModel(nn.Module):
                         else Upsample(ch, conv_resample, dims=dims, out_channels=out_ch)
                     )
                     ds //= 2
-                self.output_blocks.append(TimestepEmbedSequential(*layers))
+                self.output_blocks.append(time_emb_seq(*layers))
                 self._feature_size += ch
 
         self.out = nn.Sequential(
@@ -631,7 +668,7 @@ class UNetModel(nn.Module):
         self.middle_block.apply(convert_module_to_f32)
         self.output_blocks.apply(convert_module_to_f32)
 
-    def forward(self, x, timesteps, y=None):
+    def forward(self, x, timesteps, y=None, **kwargs):
         """
         Apply the model to an input batch.
 
@@ -652,15 +689,31 @@ class UNetModel(nn.Module):
             emb = emb + self.label_emb(y)
 
         h = x.type(self.dtype)
-        for module in self.input_blocks:
-            h = module(h, emb)
-            hs.append(h)
-        h = self.middle_block(h, emb)
-        for module in self.output_blocks:
-            h = th.cat([h, hs.pop()], dim=1)
-            h = module(h, emb)
-        h = h.type(x.dtype)
-        return self.out(h)
+
+        if 'precomp_z' not in kwargs.keys():
+            for module in self.input_blocks:
+                h = module(h, emb)
+                hs.append(h)
+            h = self.middle_block(h, emb)
+            for module in self.output_blocks:
+                h = th.cat([h, hs.pop()], dim=1)
+                h = module(h, emb)
+            h = h.type(x.dtype)
+            return self.out(h)
+        elif 'precomp_z' in kwargs.keys():
+            z_cond = kwargs['precomp_z']
+            for module in self.input_blocks:
+                h = module(h, emb, cond=z_cond)
+                hs.append(h)
+            h = self.middle_block(h, emb, cond=z_cond)
+            for module in self.output_blocks:
+                h = th.cat([h, hs.pop()], dim=1)
+                h = module(h, emb, cond=z_cond)
+            h = h.type(x.dtype)
+            return self.out(h)
+
+
+
 
 
 class SuperResModel(UNetModel):
@@ -892,3 +945,137 @@ class EncoderUNetModel(nn.Module):
         else:
             h = h.type(x.dtype)
             return self.out(h)
+
+
+class ResBlockCondition(TimestepBlockCond):
+    """
+    A residual block that can optionally change the number of channels.
+
+    :param channels: the number of input channels.
+    :param emb_channels: the number of timestep embedding channels.
+    :param dropout: the rate of dropout.
+    :param out_channels: if specified, the number of out channels.
+    :param use_conv: if True and out_channels is specified, use a spatial
+        convolution instead of a smaller 1x1 convolution to change the
+        channels in the skip connection.
+    :param dims: determines if the signal is 1D, 2D, or 3D.
+    :param use_checkpoint: if True, use gradient checkpointing on this module.
+    :param up: if True, use this block for upsampling.
+    :param down: if True, use this block for downsampling.
+    """
+
+    def __init__(
+        self,
+        channels,
+        emb_channels,
+        dropout,
+        out_channels=None,
+        use_conv=False,
+        use_scale_shift_norm=False,
+        dims=2,
+        use_checkpoint=False,
+        up=False,
+        down=False,
+    ):
+        super().__init__()
+        self.channels = channels
+        self.emb_channels = emb_channels
+        self.dropout = dropout
+        self.out_channels = out_channels or channels
+        self.use_conv = use_conv
+        self.use_checkpoint = use_checkpoint
+        self.use_scale_shift_norm = use_scale_shift_norm
+
+        self.in_layers = nn.Sequential(
+            normalization(channels),
+            nn.SiLU(),
+            conv_nd(dims, channels, self.out_channels, 3, padding=1),
+        )
+
+        self.cond_proj_layers = nn.Sequential(
+            nn.Linear(27, 256),
+            nn.Linear(256, 256),
+            nn.Linear(256, self.out_channels),
+        )
+
+        self.updown = up or down
+
+        if up:
+            self.h_upd = Upsample(channels, False, dims)
+            self.x_upd = Upsample(channels, False, dims)
+        elif down:
+            self.h_upd = Downsample(channels, False, dims)
+            self.x_upd = Downsample(channels, False, dims)
+        else:
+            self.h_upd = self.x_upd = nn.Identity()
+
+        self.emb_layers = nn.Sequential(
+            nn.SiLU(),
+            linear(
+                emb_channels,
+                2 * self.out_channels if use_scale_shift_norm else self.out_channels,
+            ),
+        )
+        self.out_layers = nn.Sequential(
+            normalization(self.out_channels),
+            nn.SiLU(),
+            nn.Dropout(p=dropout),
+            zero_module(
+                conv_nd(dims, self.out_channels, self.out_channels, 3, padding=1)
+            ),
+        )
+
+        if self.out_channels == channels:
+            self.skip_connection = nn.Identity()
+        elif use_conv:
+            self.skip_connection = conv_nd(
+                dims, channels, self.out_channels, 3, padding=1
+            )
+        else:
+            self.skip_connection = conv_nd(dims, channels, self.out_channels, 1)
+
+    def forward(self, x, emb, cond):
+        """
+        Apply the block to a Tensor, conditioned on a timestep embedding.
+
+        :param x: an [N x C x ...] Tensor of features.
+        :param emb: an [N x emb_channels] Tensor of timestep embeddings.
+        :return: an [N x C x ...] Tensor of outputs.
+        """
+        return checkpoint(
+            self._forward_cond, (x, emb, cond), self.parameters(), self.use_checkpoint
+        )
+
+    def _forward_cond(self, x, emb, cond):
+            # print("COND : ", cond)
+            # print("[#] X (input) : ", x.shape)
+            # print("[#] Time-Embeddning ", emb.shape)
+            if self.updown:
+                in_rest, in_conv = self.in_layers[:-1], self.in_layers[-1]
+                h = in_rest(x)
+                h = self.h_upd(h)
+                x = self.x_upd(x)
+                h = in_conv(h)
+            else:
+                h = self.in_layers(x)
+            emb_out = self.emb_layers(emb).type(h.dtype)
+            # print("[#] h : ", h.shape)
+            # print("[#] emb_out : ", emb_out.shape)
+            # print("[#] cond : ", cond.shape)
+            cond = self.cond_proj_layers(cond.type(h.dtype))
+            # print("[#] proj_cond : ", cond.shape)
+
+            while len(emb_out.shape) < len(h.shape):
+                emb_out = emb_out[..., None]
+            if self.use_scale_shift_norm:
+                # print("[#] USE SCALE SHIFT NORM")
+                out_norm, out_rest = self.out_layers[0], self.out_layers[1:]
+                scale, shift = th.chunk(emb_out, 2, dim=1)
+                h = (out_norm(h) * (1 + scale) + shift) * cond.view(cond.shape[0], cond.shape[1], 1, 1).type(h.dtype)
+                h = out_rest(h)
+                # print("[#] OUT SCALE FROM SHIFT NORM : ", h.shape)
+                # print("##")
+            else:
+                h = h + emb_out
+                h = self.out_layers(h)
+            return self.skip_connection(x) + h

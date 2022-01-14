@@ -2,7 +2,7 @@
 Train a super-resolution model.
 """
 
-import argparse
+import argparse, datetime
 
 import torch.nn.functional as F
 
@@ -22,7 +22,7 @@ def main():
     args = create_argparser().parse_args()
 
     dist_util.setup_dist()
-    logger.configure()
+    logger.configure(dir=args.log_dir)
 
     logger.log("creating model...")
     model, diffusion = sr_create_model_and_diffusion(
@@ -66,6 +66,7 @@ def load_superres_data(data_dir, batch_size, large_size, small_size, class_cond=
         batch_size=batch_size,
         image_size=large_size,
         class_cond=class_cond,
+        deterministic=True,
     )
     for large_batch, model_kwargs in data:
         model_kwargs["low_res"] = F.interpolate(large_batch, small_size, mode="area")
@@ -87,6 +88,7 @@ def create_argparser():
         resume_checkpoint="",
         use_fp16=False,
         fp16_scale_growth=1e-3,
+        log_dir="./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_super_res"))
     )
     defaults.update(sr_model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()

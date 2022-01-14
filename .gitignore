@@ -1,3 +1,15 @@
 .DS_Store
 __pycache__/
 classify_image_graph_def.pb
+models/try_deca/ema_0.9999_000000.pt
+models/try_deca/log.txt
+models/try_deca/model000000.pt
+models/try_deca/opt000000.pt
+models/try_deca/progress.csv
+models/try_tensorboard/log.txt
+models/try_tensorboard/progress.csv
+models/try_tensorboards/ema_0.9999_000000.pt
+models/try_tensorboards/log.txt
+models/try_tensorboards/model000000.pt
+models/try_tensorboards/opt000000.pt
+models/try_tensorboards/progress.csv

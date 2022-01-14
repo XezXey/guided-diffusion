@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
+from numpy.lib.function_base import diff
 import torch as th
 import torch.distributed as dist
 
@@ -55,6 +56,13 @@ class ScheduleSampler(ABC):
         indices = th.from_numpy(indices_np).long().to(device)
         weights_np = 1 / (len(p) * p[indices_np])
         weights = th.from_numpy(weights_np).float().to(device)
+        # print(batch_size)
+        # print(w)
+        # print(p)
+        # print(indices_np)
+        # print(indices)
+        # print(weights_np)
+        # print(weights)
         return indices, weights
 
 

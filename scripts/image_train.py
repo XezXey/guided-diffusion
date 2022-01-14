@@ -2,7 +2,7 @@
 Train a diffusion model on images.
 """
 
-import argparse
+import argparse, datetime
 
 from guided_diffusion import dist_util, logger
 from guided_diffusion.image_datasets import load_data
@@ -12,15 +12,17 @@ from guided_diffusion.script_util import (
     create_model_and_diffusion,
     args_to_dict,
     add_dict_to_argparser,
+    seed_all,
 )
 from guided_diffusion.train_util import TrainLoop
 
 
 def main():
     args = create_argparser().parse_args()
+    seed_all(33)
 
     dist_util.setup_dist()
-    logger.configure()
+    logger.configure(dir=args.log_dir)
 
     logger.log("creating model and diffusion...")
     model, diffusion = create_model_and_diffusion(
@@ -35,6 +37,11 @@ def main():
         batch_size=args.batch_size,
         image_size=args.image_size,
         class_cond=args.class_cond,
+        deterministic=True, # For paired training
+        flip=args.flip,
+        out_c=args.out_c,
+        z_cond=args.z_cond,
+        precomp_z=args.precomp_z
     )
 
     logger.log("training...")
@@ -68,10 +75,15 @@ def create_argparser():
         microbatch=-1,  # -1 disables microbatches
         ema_rate="0.9999",  # comma-separated list of EMA values
         log_interval=10,
-        save_interval=10000,
+        save_interval=100000,
         resume_checkpoint="",
         use_fp16=False,
         fp16_scale_growth=1e-3,
+        log_dir="./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_image")),
+        flip=False,
+        out_c='rgb',
+        z_cond=False,
+        precomp_z="",
     )
     defaults.update(model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()

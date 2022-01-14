@@ -159,15 +159,17 @@ class TensorBoardOutputFormat(KVWriter):
         prefix = "events"
         path = osp.join(osp.abspath(dir), prefix)
         import tensorflow as tf
-        from tensorflow.python import pywrap_tensorflow
+        # from tensorflow.python import _pywrap_events_writer
+        from tensorflow.python import pywrap_tensorflow, _pywrap_events_writer
+    
         from tensorflow.core.util import event_pb2
         from tensorflow.python.util import compat
 
         self.tf = tf
         self.event_pb2 = event_pb2
         self.pywrap_tensorflow = pywrap_tensorflow
-        self.writer = pywrap_tensorflow.EventsWriter(compat.as_bytes(path))
-
+        self.writer = _pywrap_events_writer.EventsWriter(compat.as_bytes(path))
+    
     def writekvs(self, kvs):
         def summary_val(k, v):
             kwargs = {"tag": k, "simple_value": float(v)}
@@ -186,7 +188,6 @@ class TensorBoardOutputFormat(KVWriter):
         if self.writer:
             self.writer.Close()
             self.writer = None
-
 
 def make_output_format(format, ev_dir, log_suffix=""):
     os.makedirs(ev_dir, exist_ok=True)

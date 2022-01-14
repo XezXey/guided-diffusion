@@ -2,11 +2,16 @@ import math
 import random
 
 from PIL import Image
+from matplotlib import image
+from numpy.core.numeric import full_like
+import pandas as pd
 import blobfile as bf
 from mpi4py import MPI
 import numpy as np
+import os
 from torch.utils.data import DataLoader, Dataset
-
+from .recolor_util import recolor as recolor
+import matplotlib.pyplot as plt
 
 def load_data(
     *,
@@ -15,8 +20,12 @@ def load_data(
     image_size,
     class_cond=False,
     deterministic=False,
+    flip=False,
     random_crop=False,
-    random_flip=True,
+    random_flip=False,
+    out_c='rgb',
+    z_cond=False,
+    precomp_z="",
 ):
     """
     For a dataset, create a generator over (images, kwargs) pairs.
@@ -46,7 +55,13 @@ def load_data(
         class_names = [bf.basename(path).split("_")[0] for path in all_files]
         sorted_classes = {x: i for i, x in enumerate(sorted(set(class_names)))}
         classes = [sorted_classes[x] for x in class_names]
-    dataset = ImageDataset(
+    
+    if z_cond and precomp_z != "":
+        precomp_z = pd.read_csv(precomp_z, header=None, sep=" ", index_col=False, names=["img_name"] + list(range(27)), lineterminator='\n')
+        precomp_z = precomp_z.set_index('img_name').T.to_dict('list')
+    else: precomp_z = None
+
+    img_dataset = ImageDataset(
         image_size,
         all_files,
         classes=classes,
@@ -54,14 +69,18 @@ def load_data(
         num_shards=MPI.COMM_WORLD.Get_size(),
         random_crop=random_crop,
         random_flip=random_flip,
+        flip=flip,
+        out_c=out_c, 
+        precomp_z=precomp_z
     )
+
     if deterministic:
         loader = DataLoader(
-            dataset, batch_size=batch_size, shuffle=False, num_workers=1, drop_last=True
+            img_dataset, batch_size=batch_size, shuffle=False, num_workers=1, drop_last=True
         )
     else:
         loader = DataLoader(
-            dataset, batch_size=batch_size, shuffle=True, num_workers=1, drop_last=True
+            img_dataset, batch_size=batch_size, shuffle=True, num_workers=1, drop_last=True
         )
     while True:
         yield from loader
@@ -88,14 +107,20 @@ class ImageDataset(Dataset):
         shard=0,
         num_shards=1,
         random_crop=False,
-        random_flip=True,
+        random_flip=False,
+        flip=False,
+        out_c='rgb',
+        precomp_z=None,
     ):
         super().__init__()
         self.resolution = resolution
         self.local_images = image_paths[shard:][::num_shards]
         self.local_classes = None if classes is None else classes[shard:][::num_shards]
+        self.precomp_z = precomp_z
         self.random_crop = random_crop
         self.random_flip = random_flip
+        self.flip = flip
+        self.out_c = out_c
 
     def __len__(self):
         return len(self.local_images)
@@ -107,6 +132,21 @@ class ImageDataset(Dataset):
             pil_image.load()
         pil_image = pil_image.convert("RGB")
 
+        arr = self.augmentation(pil_image=pil_image)
+        arr = self.recolor(img=arr, out_c=self.out_c)
+
+        out_dict = {}
+        if self.local_classes is not None:
+            out_dict["y"] = np.array(self.local_classes[idx], dtype=np.int64)
+
+        if self.precomp_z is not None:
+            img_name = path.split('/')[-1]
+            out_dict["precomp_z"] = np.array(self.precomp_z[img_name])
+
+        return np.transpose(arr, [2, 0, 1]), out_dict
+
+    def augmentation(self, pil_image):
+        # Resize image by cropping to match the resolution
         if self.random_crop:
             arr = random_crop_arr(pil_image, self.resolution)
         else:
@@ -115,12 +155,39 @@ class ImageDataset(Dataset):
         if self.random_flip and random.random() < 0.5:
             arr = arr[:, ::-1]
 
-        arr = arr.astype(np.float32) / 127.5 - 1
+        if self.flip:
+            arr = arr[:, ::-1]
+        
+        return arr
+    
+    def recolor(self, img, out_c):
+        if out_c == 'sepia':
+            img_ = recolor.rgb_to_sepia(img)
+            img_ = img_.astype(np.float32) / 127.5 - 1
+        elif out_c == 'hsv':
+            img_ = recolor.rgb_to_hsv(img)
+            img_h_norm = img_[..., [0]].astype(np.float32) / 90.0 - 1
+            img_s_norm = img_[..., [1]].astype(np.float32) / 127.5 - 1
+            img_v_norm = img_[..., [2]].astype(np.float32) / 127.5 - 1
+            img_ = np.concatenate((img_h_norm, img_s_norm, img_v_norm), axis=2)
+        elif out_c == 'hls':
+            img_ = recolor.rgb_to_hls(img)
+            img_h_norm = img_[..., [0]].astype(np.float32) / 90.0 - 1
+            img_l_norm = img_[..., [1]].astype(np.float32) / 127.5 - 1
+            img_s_norm = img_[..., [2]].astype(np.float32) / 127.5 - 1
+            img_ = np.concatenate((img_h_norm, img_l_norm, img_s_norm), axis=2)
+        elif out_c == 'ycrcb':
+            img_ = recolor.rgb_to_ycrcb(img)
+            img_ = img_.astype(np.float32) / 127.5 - 1
+        elif out_c == 'luv':
+            img_ = recolor.rgb_to_luv(img)
+            img_ = img_.astype(np.float32) / 127.5 - 1
+        elif out_c in ['rgb', 'rbg', 'brg', 'bgr', 'grb', 'gbr']:
+            img_ = recolor.rgb_sw_chn(img, ch=out_c)
+            img_ = img_.astype(np.float32) / 127.5 - 1
+        else: raise NotImplementedError
 
-        out_dict = {}
-        if self.local_classes is not None:
-            out_dict["y"] = np.array(self.local_classes[idx], dtype=np.int64)
-        return np.transpose(arr, [2, 0, 1]), out_dict
+        return img_
 
 
 def center_crop_arr(pil_image, image_size):

@@ -90,14 +90,15 @@ def mean_flat(tensor):
     return tensor.mean(dim=list(range(1, len(tensor.shape))))
 
 
-def normalization(channels):
+def normalization(channels, n_group=32):
     """
     Make a standard normalization layer.
 
     :param channels: number of input channels.
     :return: an nn.Module for normalization.
     """
-    return GroupNorm32(32, channels)
+    n_group = 3
+    return GroupNorm32(n_group, channels)
 
 
 def timestep_embedding(timesteps, dim, max_period=10000):

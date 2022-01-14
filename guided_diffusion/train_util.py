@@ -12,6 +12,7 @@ from . import dist_util, logger
 from .fp16_util import MixedPrecisionTrainer
 from .nn import update_ema
 from .resample import LossAwareSampler, UniformSampler
+from .script_util import seed_all
 
 # For ImageNet experiments, this was a good default value.
 # We found that the lg_loss_scale quickly climbed to
@@ -155,7 +156,20 @@ class TrainLoop:
             not self.lr_anneal_steps
             or self.step + self.resume_step < self.lr_anneal_steps
         ):
+            seed_all(seed=self.step)    # Seeding for paired training
             batch, cond = next(self.data)
+            # print(batch.shape, cond)
+            # print(cond)
+            # import matplotlib.pyplot as plt
+            # import numpy as np
+            # plt.imshow(((np.transpose(batch[0].cpu().numpy(), [1, 2, 0]) + 1)*127.5).astype(np.int))
+            # plt.show()
+            # plt.imshow(((np.transpose(batch[1].cpu().numpy(), [1, 2, 0]) + 1)*127.5).astype(np.int))
+            # plt.show()
+            # plt.imshow(((np.transpose(batch[2].cpu().numpy(), [1, 2, 0]) + 1)*127.5).astype(np.int))
+            # plt.show()
+            # exit()
+
             self.run_step(batch, cond)
             if self.step % self.log_interval == 0:
                 logger.dumpkvs()
@@ -179,6 +193,8 @@ class TrainLoop:
 
     def forward_backward(self, batch, cond):
         self.mp_trainer.zero_grad()
+        # print(self.ddp_model)
+
         for i in range(0, batch.shape[0], self.microbatch):
             micro = batch[i : i + self.microbatch].to(dist_util.dev())
             micro_cond = {
@@ -253,7 +269,6 @@ class TrainLoop:
                 th.save(self.opt.state_dict(), f)
 
         dist.barrier()
-
 
 def parse_resume_step_from_filename(filename):
     """

@@ -60,6 +60,7 @@ def model_and_diffusion_defaults():
         resblock_updown=False,
         use_fp16=False,
         use_new_attention_order=False,
+        z_cond=False,
     )
     res.update(diffusion_defaults())
     return res
@@ -95,6 +96,7 @@ def create_model_and_diffusion(
     resblock_updown,
     use_fp16,
     use_new_attention_order,
+    z_cond,
 ):
     model = create_model(
         image_size,
@@ -113,6 +115,7 @@ def create_model_and_diffusion(
         resblock_updown=resblock_updown,
         use_fp16=use_fp16,
         use_new_attention_order=use_new_attention_order,
+        z_cond=z_cond,
     )
     diffusion = create_gaussian_diffusion(
         steps=diffusion_steps,
@@ -144,6 +147,7 @@ def create_model(
     resblock_updown=False,
     use_fp16=False,
     use_new_attention_order=False,
+    z_cond=False,
 ):
     if channel_mult == "":
         if image_size == 512:
@@ -181,6 +185,7 @@ def create_model(
         use_scale_shift_norm=use_scale_shift_norm,
         resblock_updown=resblock_updown,
         use_new_attention_order=use_new_attention_order,
+        z_cond=z_cond,
     )
 
 
@@ -268,7 +273,7 @@ def create_classifier(
 
 def sr_model_and_diffusion_defaults():
     res = model_and_diffusion_defaults()
-    res["large_size"] = 256
+    res["large_size"] = 128
     res["small_size"] = 64
     arg_names = inspect.getfullargspec(sr_create_model_and_diffusion)[0]
     for k in res.copy().keys():
@@ -354,6 +359,8 @@ def sr_create_model(
         channel_mult = (1, 1, 2, 2, 4, 4)
     elif large_size == 256:
         channel_mult = (1, 1, 2, 2, 4, 4)
+    elif large_size == 128:
+        channel_mult = (1, 1, 2, 3, 4)
     elif large_size == 64:
         channel_mult = (1, 2, 3, 4)
     else:
@@ -450,3 +457,24 @@ def str2bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError("boolean value expected")
+
+def seed_all(seed: int):
+
+    """
+    Seeding everything for paired indendent training
+
+    :param seed: seed number for a number generator.
+    """
+
+    import os
+    import numpy as np
+    import torch as th
+    import random
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    th.manual_seed(seed)
+    th.cuda.manual_seed(seed)
+    th.cuda.manual_seed_all(seed)
+    th.backends.cudnn.deterministic = True
+    th.backends.cudnn.benchmark = False

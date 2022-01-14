@@ -448,7 +448,7 @@ class GaussianDiffusion:
         cond_fn=None,
         model_kwargs=None,
         device=None,
-        progress=False,
+        progress=True,
     ):
         """
         Generate samples from the model.
@@ -632,7 +632,7 @@ class GaussianDiffusion:
         cond_fn=None,
         model_kwargs=None,
         device=None,
-        progress=False,
+        progress=True,
         eta=0.0,
     ):
         """
@@ -758,6 +758,7 @@ class GaussianDiffusion:
             model_kwargs = {}
         if noise is None:
             noise = th.randn_like(x_start)
+
         x_t = self.q_sample(x_start, t, noise=noise)
 
         terms = {}
@@ -774,6 +775,7 @@ class GaussianDiffusion:
             if self.loss_type == LossType.RESCALED_KL:
                 terms["loss"] *= self.num_timesteps
         elif self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
+            model_kwargs.update()
             model_output = model(x_t, self._scale_timesteps(t), **model_kwargs)
 
             if self.model_var_type in [
@@ -806,6 +808,11 @@ class GaussianDiffusion:
                 ModelMeanType.EPSILON: noise,
             }[self.model_mean_type]
             assert model_output.shape == target.shape == x_start.shape
+            # Test
+            # print(target.shape, model_output.shape)
+            # x = th.cat((target, model_output), dim=2)
+            # plt.imshow(np.transpose(x.detach().cpu().numpy()[0], [1, 2, 0]))
+            # plt.show()
             terms["mse"] = mean_flat((target - model_output) ** 2)
             if "vb" in terms:
                 terms["loss"] = terms["mse"] + terms["vb"]
