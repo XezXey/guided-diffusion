@@ -196,8 +196,10 @@ class GaussianDiffusion:
         :param noise: if specified, the split-out normal noise.
         :return: A noisy version of x_start.
         """
+
         if noise is None:
-            noise = th.randn_like(x_start)
+            noise = th.randn_like(x_start).type_as(x_start)
+        else: noise=noise.type_as(x_start)
         assert noise.shape == x_start.shape
         return (
             _extract_into_tensor(self.sqrt_alphas_cumprod, t, x_start.shape) * x_start
@@ -761,6 +763,7 @@ class GaussianDiffusion:
 
         x_t = self.q_sample(x_start, t, noise=noise)
 
+        # print(x_t.device, t.device, noise.device, self._scale_timesteps(t).device)
         terms = {}
 
         if self.loss_type == LossType.KL or self.loss_type == LossType.RESCALED_KL:
@@ -776,7 +779,7 @@ class GaussianDiffusion:
                 terms["loss"] *= self.num_timesteps
         elif self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
             model_kwargs.update()
-            model_output = model(x_t, self._scale_timesteps(t), **model_kwargs)
+            model_output = model(x_t.type(th.cuda.FloatTensor), self._scale_timesteps(t).type(th.cuda.LongTensor), **model_kwargs)
 
             if self.model_var_type in [
                 ModelVarType.LEARNED,
@@ -813,7 +816,7 @@ class GaussianDiffusion:
             # x = th.cat((target, model_output), dim=2)
             # plt.imshow(np.transpose(x.detach().cpu().numpy()[0], [1, 2, 0]))
             # plt.show()
-            terms["mse"] = mean_flat((target - model_output) ** 2)
+            terms["mse"] = mean_flat((target.type_as(model_output) - model_output) ** 2)
             if "vb" in terms:
                 terms["loss"] = terms["mse"] + terms["vb"]
             else:
@@ -909,7 +912,7 @@ def _extract_into_tensor(arr, timesteps, broadcast_shape):
                             dimension equal to the length of timesteps.
     :return: a tensor of shape [batch_size, 1, ...] where the shape has K dims.
     """
-    res = th.from_numpy(arr).to(device=timesteps.device)[timesteps].float()
+    res = th.from_numpy(arr)[timesteps]
     while len(res.shape) < len(broadcast_shape):
         res = res[..., None]
     return res.expand(broadcast_shape)
