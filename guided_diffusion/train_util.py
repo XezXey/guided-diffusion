@@ -7,6 +7,8 @@ import torch as th
 import torch.distributed as dist
 from torch.nn.parallel.distributed import DistributedDataParallel as DDP
 from torch.optim import AdamW
+from pytorch_lightning.core.lightning import LightningModule
+import pytorch_lightning as pl
 
 from . import dist_util, logger
 from .fp16_util import MixedPrecisionTrainer
@@ -19,8 +21,7 @@ from .script_util import seed_all
 # 20-21 within the first ~1K steps of training.
 INITIAL_LOG_LOSS_SCALE = 20.0
 
-
-class TrainLoop:
+class TrainLoop(LightningModule):
     def __init__(
         self,
         *,
@@ -40,6 +41,8 @@ class TrainLoop:
         weight_decay=0.0,
         lr_anneal_steps=0,
     ):
+
+        super(TrainLoop, self).__init__()
         self.model = model
         self.diffusion = diffusion
         self.data = data
@@ -57,16 +60,16 @@ class TrainLoop:
         self.use_fp16 = use_fp16
         self.fp16_scale_growth = fp16_scale_growth
         self.schedule_sampler = schedule_sampler or UniformSampler(diffusion)
+        self.global_batch = 2 * batch_size
         self.weight_decay = weight_decay
         self.lr_anneal_steps = lr_anneal_steps
 
         self.step = 0
         self.resume_step = 0
-        self.global_batch = self.batch_size * dist.get_world_size()
 
         self.sync_cuda = th.cuda.is_available()
 
-        self._load_and_sync_parameters()
+        # self._load_and_sync_parameters()
         self.mp_trainer = MixedPrecisionTrainer(
             model=self.model,
             use_fp16=self.use_fp16,
@@ -76,6 +79,9 @@ class TrainLoop:
         self.opt = AdamW(
             self.mp_trainer.master_params, lr=self.lr, weight_decay=self.weight_decay
         )
+
+        self.pl_trainer = pl.Trainer(gpus=2, strategy='ddp')
+
         if self.resume_step:
             self._load_optimizer_state()
             # Model was resumed, either due to a restart or a checkpoint
@@ -89,24 +95,7 @@ class TrainLoop:
                 for _ in range(len(self.ema_rate))
             ]
 
-        if th.cuda.is_available():
-            self.use_ddp = True
-            self.ddp_model = DDP(
-                self.model,
-                device_ids=[dist_util.dev()],
-                output_device=dist_util.dev(),
-                broadcast_buffers=False,
-                bucket_cap_mb=128,
-                find_unused_parameters=False,
-            )
-        else:
-            if dist.get_world_size() > 1:
-                logger.warn(
-                    "Distributed training requires CUDA. "
-                    "Gradients will not be synchronized properly!"
-                )
-            self.use_ddp = False
-            self.ddp_model = self.model
+        self.ddp_model = self.model
 
     def _load_and_sync_parameters(self):
         resume_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
@@ -151,24 +140,16 @@ class TrainLoop:
             )
             self.opt.load_state_dict(state_dict)
 
-    def run_loop(self):
+    def run(self):
+        self.pl_trainer.fit(self, self.data)
+
+    # def run_loop(self):
+    def training_step(self, batch):
         while (
             not self.lr_anneal_steps
             or self.step + self.resume_step < self.lr_anneal_steps
         ):
-            seed_all(seed=self.step)    # Seeding for paired training
             batch, cond = next(self.data)
-            # print(batch.shape, cond)
-            # print(cond)
-            # import matplotlib.pyplot as plt
-            # import numpy as np
-            # plt.imshow(((np.transpose(batch[0].cpu().numpy(), [1, 2, 0]) + 1)*127.5).astype(np.int))
-            # plt.show()
-            # plt.imshow(((np.transpose(batch[1].cpu().numpy(), [1, 2, 0]) + 1)*127.5).astype(np.int))
-            # plt.show()
-            # plt.imshow(((np.transpose(batch[2].cpu().numpy(), [1, 2, 0]) + 1)*127.5).astype(np.int))
-            # plt.show()
-            # exit()
 
             self.run_step(batch, cond)
             if self.step % self.log_interval == 0:
@@ -183,6 +164,9 @@ class TrainLoop:
         if (self.step - 1) % self.save_interval != 0:
             self.save()
 
+    def forward(self):
+        self.run_loop()
+
     def run_step(self, batch, cond):
         self.forward_backward(batch, cond)
         took_step = self.mp_trainer.optimize(self.opt)
@@ -193,12 +177,11 @@ class TrainLoop:
 
     def forward_backward(self, batch, cond):
         self.mp_trainer.zero_grad()
-        # print(self.ddp_model)
 
         for i in range(0, batch.shape[0], self.microbatch):
-            micro = batch[i : i + self.microbatch].to(dist_util.dev())
+            micro = batch[i : i + self.microbatch]
             micro_cond = {
-                k: v[i : i + self.microbatch].to(dist_util.dev())
+                k: v[i : i + self.microbatch]
                 for k, v in cond.items()
             }
             last_batch = (i + self.microbatch) >= batch.shape[0]
@@ -270,6 +253,9 @@ class TrainLoop:
 
         dist.barrier()
 
+    def configure_optimizers(self):
+        return self.opt
+
 def parse_resume_step_from_filename(filename):
     """
     Parse filenames of the form path/to/modelNNNNNN.pt, where NNNNNN is the
@@ -314,3 +300,4 @@ def log_loss_dict(diffusion, ts, losses):
         for sub_t, sub_loss in zip(ts.cpu().numpy(), values.detach().cpu().numpy()):
             quartile = int(4 * sub_t / diffusion.num_timesteps)
             logger.logkv_mean(f"{key}_q{quartile}", sub_loss)
+

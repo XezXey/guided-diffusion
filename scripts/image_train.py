@@ -3,8 +3,9 @@ Train a diffusion model on images.
 """
 
 import argparse, datetime
+import pytorch_lightning as pl
 
-from guided_diffusion import dist_util, logger
+from guided_diffusion import logger
 from guided_diffusion.image_datasets import load_data
 from guided_diffusion.resample import create_named_schedule_sampler
 from guided_diffusion.script_util import (
@@ -16,19 +17,17 @@ from guided_diffusion.script_util import (
 )
 from guided_diffusion.train_util import TrainLoop
 
-
 def main():
     args = create_argparser().parse_args()
-    seed_all(33)
+    seed_all(33)    # Seeding the model - Independent training
 
-    dist_util.setup_dist()
     logger.configure(dir=args.log_dir)
 
     logger.log("creating model and diffusion...")
     model, diffusion = create_model_and_diffusion(
         **args_to_dict(args, model_and_diffusion_defaults().keys())
     )
-    model.to(dist_util.dev())
+
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
 
     logger.log("creating data loader...")
@@ -61,7 +60,7 @@ def main():
         schedule_sampler=schedule_sampler,
         weight_decay=args.weight_decay,
         lr_anneal_steps=args.lr_anneal_steps,
-    ).run_loop()
+    ).run()
 
 
 def create_argparser():
@@ -89,7 +88,6 @@ def create_argparser():
     parser = argparse.ArgumentParser()
     add_dict_to_argparser(parser, defaults)
     return parser
-
 
 if __name__ == "__main__":
     main()
