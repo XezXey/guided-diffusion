@@ -13,3 +13,13 @@ models/try_tensorboards/log.txt
 models/try_tensorboards/model000000.pt
 models/try_tensorboards/opt000000.pt
 models/try_tensorboards/progress.csv
+lightning_logs
+lightning_logs/
+lightning_logs/version_113/hparams.yaml
+lightning_logs/version_113/checkpoints/epoch=17-step=323.ckpt
+lightning_logs/version_81/hparams.yaml
+lightning_logs/version_83/hparams.yaml
+lightning_logs/version_84/hparams.yaml
+lightning_logs/version_85/hparams.yaml
+lightning_logs/version_86/hparams.yaml
+lightning_logs/version_98/hparams.yaml

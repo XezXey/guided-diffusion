@@ -11,7 +11,7 @@ from pytorch_lightning.core.lightning import LightningModule
 import pytorch_lightning as pl
 
 from . import dist_util, logger
-from .fp16_util import MixedPrecisionTrainer
+from .trainer_util import DPMTrainer
 from .nn import update_ema
 from .resample import LossAwareSampler, UniformSampler
 from .script_util import seed_all
@@ -29,14 +29,11 @@ class TrainLoop(LightningModule):
         diffusion,
         data,
         batch_size,
-        microbatch,
         lr,
         ema_rate,
         log_interval,
         save_interval,
         resume_checkpoint,
-        use_fp16=False,
-        fp16_scale_growth=1e-3,
         schedule_sampler=None,
         weight_decay=0.0,
         lr_anneal_steps=0,
@@ -47,7 +44,6 @@ class TrainLoop(LightningModule):
         self.diffusion = diffusion
         self.data = data
         self.batch_size = batch_size
-        self.microbatch = microbatch if microbatch > 0 else batch_size
         self.lr = lr
         self.ema_rate = (
             [ema_rate]
@@ -57,8 +53,6 @@ class TrainLoop(LightningModule):
         self.log_interval = log_interval
         self.save_interval = save_interval
         self.resume_checkpoint = resume_checkpoint
-        self.use_fp16 = use_fp16
-        self.fp16_scale_growth = fp16_scale_growth
         self.schedule_sampler = schedule_sampler or UniformSampler(diffusion)
         self.global_batch = 2 * batch_size
         self.weight_decay = weight_decay
@@ -67,20 +61,16 @@ class TrainLoop(LightningModule):
         self.step = 0
         self.resume_step = 0
 
-        self.sync_cuda = th.cuda.is_available()
-
-        # self._load_and_sync_parameters()
-        self.mp_trainer = MixedPrecisionTrainer(
+        self.dpm_trainer = DPMTrainer(
             model=self.model,
-            use_fp16=self.use_fp16,
-            fp16_scale_growth=fp16_scale_growth,
         )
 
         self.opt = AdamW(
-            self.mp_trainer.master_params, lr=self.lr, weight_decay=self.weight_decay
+            self.dpm_trainer.master_params, lr=self.lr, weight_decay=self.weight_decay
         )
 
-        self.pl_trainer = pl.Trainer(gpus=2, strategy='ddp')
+        self.pl_trainer = pl.Trainer(gpus=2, strategy='ddp')#, precision=16)
+        self.automatic_optimization = False # Manual optimization flow
 
         if self.resume_step:
             self._load_optimizer_state()
@@ -91,7 +81,7 @@ class TrainLoop(LightningModule):
             ]
         else:
             self.ema_params = [
-                copy.deepcopy(self.mp_trainer.master_params)
+                copy.deepcopy(self.dpm_trainer.master_params)
                 for _ in range(len(self.ema_rate))
             ]
 
@@ -113,7 +103,7 @@ class TrainLoop(LightningModule):
         dist_util.sync_params(self.model.parameters())
 
     def _load_ema_parameters(self, rate):
-        ema_params = copy.deepcopy(self.mp_trainer.master_params)
+        ema_params = copy.deepcopy(self.dpm_trainer.master_params)
 
         main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
         ema_checkpoint = find_ema_checkpoint(main_checkpoint, self.resume_step, rate)
@@ -123,7 +113,7 @@ class TrainLoop(LightningModule):
                 state_dict = dist_util.load_state_dict(
                     ema_checkpoint, map_location=dist_util.dev()
                 )
-                ema_params = self.mp_trainer.state_dict_to_master_params(state_dict)
+                ema_params = self.dpm_trainer.state_dict_to_master_params(state_dict)
 
         dist_util.sync_params(ema_params)
         return ema_params
@@ -141,80 +131,73 @@ class TrainLoop(LightningModule):
             self.opt.load_state_dict(state_dict)
 
     def run(self):
+        # Driven code
         self.pl_trainer.fit(self, self.data)
 
-    # def run_loop(self):
-    def training_step(self, batch):
-        while (
-            not self.lr_anneal_steps
-            or self.step + self.resume_step < self.lr_anneal_steps
-        ):
-            batch, cond = next(self.data)
+    def training_step(self, batch, batch_idx):
+        dat, cond = batch
 
-            self.run_step(batch, cond)
-            if self.step % self.log_interval == 0:
-                logger.dumpkvs()
-            if self.step % self.save_interval == 0:
-                self.save()
-                # Run for a finite amount of time in integration tests.
-                if os.environ.get("DIFFUSION_TRAINING_TEST", "") and self.step > 0:
-                    return
-            self.step += 1
-        # Save the last checkpoint if it wasn't already saved.
-        if (self.step - 1) % self.save_interval != 0:
+        self.run_step(dat, cond)
+        if self.step % self.log_interval == 0:
+            logger.dumpkvs()
+        if self.step % self.save_interval == 0:
             self.save()
+            # Run for a finite amount of time in integration tests.
+            if os.environ.get("DIFFUSION_TRAINING_TEST", "") and self.step > 0:
+                return
+        self.step += 1
+        # Save the last checkpoint if it wasn't already saved.
+        # if (self.step - 1) % self.save_interval != 0:
+        #     self.save()
+    
 
-    def forward(self):
-        self.run_loop()
-
-    def run_step(self, batch, cond):
-        self.forward_backward(batch, cond)
-        took_step = self.mp_trainer.optimize(self.opt)
+    def run_step(self, dat, cond):
+        self.forward_backward(dat, cond)
+        took_step = self.dpm_trainer.optimize(self.opt)
+        print("GLOBAL STEP : ", self.global_step)
+        print("LOCAL STEP : ", self.step)
+        print("EPOCH : " , self.current_epoch)
+        print("GLOBAL RANK : ", self.global_rank)
+        print("#"*50)
         if took_step:
             self._update_ema()
         self._anneal_lr()
         self.log_step()
 
     def forward_backward(self, batch, cond):
-        self.mp_trainer.zero_grad()
+        self.dpm_trainer.zero_grad()
 
-        for i in range(0, batch.shape[0], self.microbatch):
-            micro = batch[i : i + self.microbatch]
-            micro_cond = {
-                k: v[i : i + self.microbatch]
-                for k, v in cond.items()
-            }
-            last_batch = (i + self.microbatch) >= batch.shape[0]
-            t, weights = self.schedule_sampler.sample(micro.shape[0], dist_util.dev())
+        cond = {
+            k: v
+            for k, v in cond.items()
+        }
 
-            compute_losses = functools.partial(
-                self.diffusion.training_losses,
-                self.ddp_model,
-                micro,
-                t,
-                model_kwargs=micro_cond,
+        t, weights = self.schedule_sampler.sample(batch.shape[0], self.device)
+
+        compute_losses = functools.partial(
+            self.diffusion.training_losses,
+            self.ddp_model,
+            batch,
+            t,
+            model_kwargs=cond,
+        )
+
+        losses = compute_losses()
+
+        if isinstance(self.schedule_sampler, LossAwareSampler):
+            self.schedule_sampler.update_with_local_losses(
+                t, losses["loss"].detach()
             )
 
-            if last_batch or not self.use_ddp:
-                losses = compute_losses()
-            else:
-                with self.ddp_model.no_sync():
-                    losses = compute_losses()
-
-            if isinstance(self.schedule_sampler, LossAwareSampler):
-                self.schedule_sampler.update_with_local_losses(
-                    t, losses["loss"].detach()
-                )
-
-            loss = (losses["loss"] * weights).mean()
-            log_loss_dict(
-                self.diffusion, t, {k: v * weights for k, v in losses.items()}
-            )
-            self.mp_trainer.backward(loss)
+        loss = (losses["loss"] * weights).mean()
+        log_loss_dict(
+            self.diffusion, t, {k: v * weights for k, v in losses.items()}
+        )
+        self.manual_backward(loss)
 
     def _update_ema(self):
         for rate, params in zip(self.ema_rate, self.ema_params):
-            update_ema(params, self.mp_trainer.master_params, rate=rate)
+            update_ema(params, self.dpm_trainer.master_params, rate=rate)
 
     def _anneal_lr(self):
         if not self.lr_anneal_steps:
@@ -230,7 +213,7 @@ class TrainLoop(LightningModule):
 
     def save(self):
         def save_checkpoint(rate, params):
-            state_dict = self.mp_trainer.master_params_to_state_dict(params)
+            state_dict = self.dpm_trainer.master_params_to_state_dict(params)
             if dist.get_rank() == 0:
                 logger.log(f"saving model {rate}...")
                 if not rate:
@@ -240,7 +223,7 @@ class TrainLoop(LightningModule):
                 with bf.BlobFile(bf.join(get_blob_logdir(), filename), "wb") as f:
                     th.save(state_dict, f)
 
-        save_checkpoint(0, self.mp_trainer.master_params)
+        save_checkpoint(0, self.dpm_trainer.master_params)
         for rate, params in zip(self.ema_rate, self.ema_params):
             save_checkpoint(rate, params)
 
@@ -254,6 +237,9 @@ class TrainLoop(LightningModule):
         dist.barrier()
 
     def configure_optimizers(self):
+        self.opt = AdamW(
+            self.dpm_trainer.master_params, lr=self.lr, weight_decay=self.weight_decay
+        )
         return self.opt
 
 def parse_resume_step_from_filename(filename):

@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from pytorch_lightning.core.lightning import LightningModule
 
-from .fp16_util import convert_module_to_f16, convert_module_to_f32
+from .trainer_util import convert_module_to_f16, convert_module_to_f32
 from .nn import (
     checkpoint,
     conv_nd,

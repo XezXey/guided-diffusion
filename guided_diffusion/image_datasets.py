@@ -83,7 +83,8 @@ def load_data(
             img_dataset, batch_size=batch_size, shuffle=True, num_workers=1, drop_last=True
         )
     while True:
-        yield from loader
+        return loader
+        # yield from loader
 
 
 def _list_image_files_recursively(data_dir):
