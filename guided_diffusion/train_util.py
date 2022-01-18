@@ -8,6 +8,9 @@ import torch.distributed as dist
 from torch.nn.parallel.distributed import DistributedDataParallel as DDP
 from torch.optim import AdamW
 from pytorch_lightning.core.lightning import LightningModule
+from pytorch_lightning.utilities import rank_zero_only
+from pytorch_lightning.loggers import TensorBoardLogger
+
 import pytorch_lightning as pl
 
 from . import dist_util, logger
@@ -69,7 +72,9 @@ class TrainLoop(LightningModule):
             self.dpm_trainer.master_params, lr=self.lr, weight_decay=self.weight_decay
         )
 
-        self.pl_trainer = pl.Trainer(gpus=2, strategy='ddp')#, precision=16)
+        logger = TensorBoardLogger("tb_logs", name="my_model")
+        self.pl_trainer = pl.Trainer(gpus=[0, 1, 3], strategy='ddp', logger=logger)#, precision=16)
+
         self.automatic_optimization = False # Manual optimization flow
 
         if self.resume_step:
@@ -150,19 +155,37 @@ class TrainLoop(LightningModule):
         # if (self.step - 1) % self.save_interval != 0:
         #     self.save()
     
+    def on_train_batch_end(self, outputs, batch, batch_idx):
+        '''
+        callbacks every training step ends
+        1. update ema (Update after the optimizer.step())
+        2. logs
+        '''
+        if self.took_step:
+            self._update_ema()
+        self._anneal_lr()
+        self.log_rank_zero()
+        # self.save_rank_zero()
+
+        # Reset took_step flag
+        self.took_step = False
+    
+    def on_batch_end(self):
+        pass
+
+    @rank_zero_only 
+    def save_rank_zero(self):
+        if (self.step * self.batch_size * 3) % self.save_interval == 0:
+            self.save()
+
+    @rank_zero_only 
+    def log_rank_zero(self):
+        self.log_step()
 
     def run_step(self, dat, cond):
         self.forward_backward(dat, cond)
         took_step = self.dpm_trainer.optimize(self.opt)
-        print("GLOBAL STEP : ", self.global_step)
-        print("LOCAL STEP : ", self.step)
-        print("EPOCH : " , self.current_epoch)
-        print("GLOBAL RANK : ", self.global_rank)
-        print("#"*50)
-        if took_step:
-            self._update_ema()
-        self._anneal_lr()
-        self.log_step()
+        self.took_step = took_step
 
     def forward_backward(self, batch, cond):
         self.dpm_trainer.zero_grad()
@@ -190,7 +213,7 @@ class TrainLoop(LightningModule):
             )
 
         loss = (losses["loss"] * weights).mean()
-        log_loss_dict(
+        self.log_loss_dict(
             self.diffusion, t, {k: v * weights for k, v in losses.items()}
         )
         self.manual_backward(loss)
@@ -200,6 +223,9 @@ class TrainLoop(LightningModule):
             update_ema(params, self.dpm_trainer.master_params, rate=rate)
 
     def _anneal_lr(self):
+        '''
+        Default set to 0 => No lr_anneal step
+        '''
         if not self.lr_anneal_steps:
             return
         frac_done = (self.step + self.resume_step) / self.lr_anneal_steps
@@ -242,6 +268,17 @@ class TrainLoop(LightningModule):
         )
         return self.opt
 
+    @rank_zero_only
+    def log_loss_dict(self, diffusion, ts, losses):
+        for key, values in losses.items():
+            self.log(key, values.mean().item())
+            logger.logkv_mean(key, values.mean().item())
+            # log the quantiles (four quartiles, in particular).
+            for sub_t, sub_loss in zip(ts.cpu().numpy(), values.detach().cpu().numpy()):
+                quartile = int(4 * sub_t / diffusion.num_timesteps)
+                logger.logkv_mean(f"{key}_q{quartile}", sub_loss)
+                self.log(f"{key}_q{quartile}", sub_loss)
+
 def parse_resume_step_from_filename(filename):
     """
     Parse filenames of the form path/to/modelNNNNNN.pt, where NNNNNN is the
@@ -277,13 +314,3 @@ def find_ema_checkpoint(main_checkpoint, step, rate):
     if bf.exists(path):
         return path
     return None
-
-
-def log_loss_dict(diffusion, ts, losses):
-    for key, values in losses.items():
-        logger.logkv_mean(key, values.mean().item())
-        # Log the quantiles (four quartiles, in particular).
-        for sub_t, sub_loss in zip(ts.cpu().numpy(), values.detach().cpu().numpy()):
-            quartile = int(4 * sub_t / diffusion.num_timesteps)
-            logger.logkv_mean(f"{key}_q{quartile}", sub_loss)
-

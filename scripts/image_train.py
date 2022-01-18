@@ -3,7 +3,9 @@ Train a diffusion model on images.
 """
 
 import argparse, datetime
+from cmath import exp
 import pytorch_lightning as pl
+
 
 from guided_diffusion import logger
 from guided_diffusion.image_datasets import load_data
@@ -44,7 +46,7 @@ def main():
     )
 
     logger.log("training...")
-    TrainLoop(
+    train_loop = TrainLoop(
         model=model,
         diffusion=diffusion,
         data=data,
@@ -57,7 +59,9 @@ def main():
         schedule_sampler=schedule_sampler,
         weight_decay=args.weight_decay,
         lr_anneal_steps=args.lr_anneal_steps,
-    ).run()
+    )
+    
+    train_loop.run()
 
 
 def create_argparser():

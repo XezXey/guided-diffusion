@@ -65,8 +65,6 @@ def load_data(
         image_size,
         all_files,
         classes=classes,
-        shard=MPI.COMM_WORLD.Get_rank(),
-        num_shards=MPI.COMM_WORLD.Get_size(),
         random_crop=random_crop,
         random_flip=random_flip,
         flip=flip,
@@ -76,11 +74,11 @@ def load_data(
 
     if deterministic:
         loader = DataLoader(
-            img_dataset, batch_size=batch_size, shuffle=False, num_workers=1, drop_last=True
+            img_dataset, batch_size=batch_size, shuffle=False, num_workers=24, drop_last=True
         )
     else:
         loader = DataLoader(
-            img_dataset, batch_size=batch_size, shuffle=True, num_workers=1, drop_last=True
+            img_dataset, batch_size=batch_size, shuffle=True, num_workers=24, drop_last=True
         )
     while True:
         return loader
@@ -105,8 +103,6 @@ class ImageDataset(Dataset):
         resolution,
         image_paths,
         classes=None,
-        shard=0,
-        num_shards=1,
         random_crop=False,
         random_flip=False,
         flip=False,
@@ -115,8 +111,8 @@ class ImageDataset(Dataset):
     ):
         super().__init__()
         self.resolution = resolution
-        self.local_images = image_paths[shard:][::num_shards]
-        self.local_classes = None if classes is None else classes[shard:][::num_shards]
+        self.local_images = image_paths
+        self.local_classes = None if classes is None else classes
         self.precomp_z = precomp_z
         self.random_crop = random_crop
         self.random_flip = random_flip

@@ -52,7 +52,7 @@ def avg_pool_nd(dims, *args, **kwargs):
     raise ValueError(f"unsupported dimensions: {dims}")
 
 
-def update_ema(target_params, source_params, rate=0.99):
+def update_ema(target_params, source_params, rate=0.9999):
     """
     Update target parameters to be closer to those of source parameters using
     an exponential moving average.
@@ -61,10 +61,7 @@ def update_ema(target_params, source_params, rate=0.99):
     :param source_params: the source parameter sequence.
     :param rate: the EMA rate (closer to 1 means slower).
     """
-    print(target_params)
-    print(source_params)
     for targ, src in zip(target_params, source_params):
-        # targ.detach().mul_(rate).add_(src, alpha=1 - rate)
         targ.detach().type_as(src).mul_(rate).add_(src, alpha=1 - rate)
 
 

@@ -23,3 +23,8 @@ lightning_logs/version_84/hparams.yaml
 lightning_logs/version_85/hparams.yaml
 lightning_logs/version_86/hparams.yaml
 lightning_logs/version_98/hparams.yaml
+tb_logs/my_model/version_0/events.out.tfevents.1642535637.vision04.18283.0
+tb_logs/my_model/version_0/hparams.yaml
+tb_logs/my_model/version_0/checkpoints/epoch=18-step=227.ckpt
+tb_logs/my_model/version_0/checkpoints/epoch=19-step=239.ckpt
+tb_logs/my_model/version_1/checkpoints/epoch=0-step=11.ckpt
