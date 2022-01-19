@@ -45,9 +45,9 @@ class TrainLoop(LightningModule):
         super(TrainLoop, self).__init__()
 
         # Lightning
-        logger = TensorBoardLogger("tb_logs", name="my_model", version="ggez")
+        logger = TensorBoardLogger("tb_logs", name="my_model", version="ggez_4rtz")
         self.pl_trainer = pl.Trainer(
-            gpus=1,
+            gpus=3,
             strategy='ddp', 
             logger=logger, 
             log_every_n_steps=1,
@@ -96,10 +96,6 @@ class TrainLoop(LightningModule):
                 copy.deepcopy(self.dpm_trainer.master_params)
                 for _ in range(len(self.ema_rate))
             ]
-
-        # for _ in range(len(self.ema_rate)):
-        #     for i, params in enumerate(self.ema_params):
-        #         [self.register_buffer('{}'.format(j), params[j]) for j in range(len(params))]
 
         self.ddp_model = self.model
 
@@ -178,8 +174,6 @@ class TrainLoop(LightningModule):
         self.log_rank_zero()
         self.save_rank_zero()
 
-        print("EMA : ", self.ema_params[0][0])
-        print("OPT : ", self.dpm_trainer.master_params[0])
         # Reset took_step flag
         self.took_step = False
     
@@ -199,6 +193,8 @@ class TrainLoop(LightningModule):
         self.forward_backward(dat, cond)
         took_step = self.dpm_trainer.optimize(self.opt)
         self.took_step = took_step
+
+
 
     def forward_backward(self, batch, cond):
         self.dpm_trainer.zero_grad()
@@ -231,16 +227,11 @@ class TrainLoop(LightningModule):
         )
         self.manual_backward(loss)
 
-    @rank_zero_only
+        return loss
+
     def _update_ema(self):
-        print("UPDATE EMA")
-        for i, (rate, params) in enumerate(zip(self.ema_rate, self.ema_params)):
-            print(self.ema_params[i][0])
+        for rate, params in zip(self.ema_rate, self.ema_params):
             update_ema(params, self.dpm_trainer.master_params, rate=rate)
-            # self.ema_params[i] = update_ema(params, self.dpm_trainer.master_params, rate=rate)
-            print(self.ema_params[i][0])
-            # update_ema(params, self.dpm_trainer.master_params, rate=rate)
-        print("DONE UPATED")
 
     def _anneal_lr(self):
         '''
@@ -273,12 +264,11 @@ class TrainLoop(LightningModule):
         for rate, params in zip(self.ema_rate, self.ema_params):
             save_checkpoint(rate, params)
 
-        if dist.get_rank() == 0:
-            with bf.BlobFile(
-                bf.join(get_blob_logdir(), f"opt{(self.step+self.resume_step):06d}.pt"),
-                "wb",
-            ) as f:
-                th.save(self.opt.state_dict(), f)
+        with bf.BlobFile(
+            bf.join(get_blob_logdir(), f"opt{(self.step+self.resume_step):06d}.pt"),
+            "wb",
+        ) as f:
+            th.save(self.opt.state_dict(), f)
 
         dist.barrier()
 
@@ -291,13 +281,13 @@ class TrainLoop(LightningModule):
     @rank_zero_only
     def log_loss_dict(self, diffusion, ts, losses):
         for key, values in losses.items():
-            self.log(key, values.mean().item())
+            self.log(f"training_loss/{key}", values.mean().item())
             logger.logkv_mean(key, values.mean().item())
             # log the quantiles (four quartiles, in particular).
             for sub_t, sub_loss in zip(ts.cpu().numpy(), values.detach().cpu().numpy()):
                 quartile = int(4 * sub_t / diffusion.num_timesteps)
                 logger.logkv_mean(f"{key}_q{quartile}", sub_loss)
-                self.log(f"{key}_q{quartile}", sub_loss)
+                self.log(f"training_loss/{key}_q{quartile}", sub_loss)
 
 def parse_resume_step_from_filename(filename):
     """

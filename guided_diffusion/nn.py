@@ -61,15 +61,8 @@ def update_ema(target_params, source_params, rate=0.9999):
     :param source_params: the source parameter sequence(list of nn.Parameters).
     :param rate: the EMA rate (closer to 1 means slower).
     """
-    for i, (targ, src) in enumerate(zip(target_params, source_params)):
-        # target_params[i] = targ.detach().mul_(rate).add_(src, alpha=1 - rate)
-        print("IN : ", target_params[i])
-        targ.type_as(src).detach().mul_(rate).add_(src, alpha=1 - rate)
-        # target_params[i] = (targ * rate) + (src * (1 - rate))
-        print("OUT : ", target_params[i])
-        print("EXP OUT : ", (targ * rate) + (src * (1 - rate)))
-        break
-    return target_params
+    for targ, src in zip(target_params, source_params):
+        targ.detach().mul_(rate).add_(src.to(targ.device), alpha=1 - rate)
     
 def zero_module(module):
     """
