@@ -43,6 +43,18 @@ class TrainLoop(LightningModule):
     ):
 
         super(TrainLoop, self).__init__()
+
+        # Lightning
+        logger = TensorBoardLogger("tb_logs", name="my_model", version="ggez")
+        self.pl_trainer = pl.Trainer(
+            gpus=1,
+            strategy='ddp', 
+            logger=logger, 
+            log_every_n_steps=1,
+            accelerator='gpu')#, precision=16)
+
+        self.automatic_optimization = False # Manual optimization flow
+
         self.model = model
         self.diffusion = diffusion
         self.data = data
@@ -72,11 +84,6 @@ class TrainLoop(LightningModule):
             self.dpm_trainer.master_params, lr=self.lr, weight_decay=self.weight_decay
         )
 
-        logger = TensorBoardLogger("tb_logs", name="my_model")
-        self.pl_trainer = pl.Trainer(gpus=[0, 1, 3], strategy='ddp', logger=logger)#, precision=16)
-
-        self.automatic_optimization = False # Manual optimization flow
-
         if self.resume_step:
             self._load_optimizer_state()
             # Model was resumed, either due to a restart or a checkpoint
@@ -89,6 +96,10 @@ class TrainLoop(LightningModule):
                 copy.deepcopy(self.dpm_trainer.master_params)
                 for _ in range(len(self.ema_rate))
             ]
+
+        # for _ in range(len(self.ema_rate)):
+        #     for i, params in enumerate(self.ema_params):
+        #         [self.register_buffer('{}'.format(j), params[j]) for j in range(len(params))]
 
         self.ddp_model = self.model
 
@@ -165,8 +176,10 @@ class TrainLoop(LightningModule):
             self._update_ema()
         self._anneal_lr()
         self.log_rank_zero()
-        # self.save_rank_zero()
+        self.save_rank_zero()
 
+        print("EMA : ", self.ema_params[0][0])
+        print("OPT : ", self.dpm_trainer.master_params[0])
         # Reset took_step flag
         self.took_step = False
     
@@ -218,9 +231,16 @@ class TrainLoop(LightningModule):
         )
         self.manual_backward(loss)
 
+    @rank_zero_only
     def _update_ema(self):
-        for rate, params in zip(self.ema_rate, self.ema_params):
+        print("UPDATE EMA")
+        for i, (rate, params) in enumerate(zip(self.ema_rate, self.ema_params)):
+            print(self.ema_params[i][0])
             update_ema(params, self.dpm_trainer.master_params, rate=rate)
+            # self.ema_params[i] = update_ema(params, self.dpm_trainer.master_params, rate=rate)
+            print(self.ema_params[i][0])
+            # update_ema(params, self.dpm_trainer.master_params, rate=rate)
+        print("DONE UPATED")
 
     def _anneal_lr(self):
         '''

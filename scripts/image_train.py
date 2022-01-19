@@ -29,7 +29,7 @@ def main():
     model, diffusion = create_model_and_diffusion(
         **args_to_dict(args, model_and_diffusion_defaults().keys())
     )
-
+    model.cuda()
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
 
     logger.log("creating data loader...")
@@ -73,6 +73,7 @@ def create_argparser():
         lr_anneal_steps=0,
         batch_size=1,
         ema_rate="0.9999",  # comma-separated list of EMA values
+        # ema_rate="0.5",  # comma-separated list of EMA values
         log_interval=10,
         save_interval=100000,
         resume_checkpoint="",

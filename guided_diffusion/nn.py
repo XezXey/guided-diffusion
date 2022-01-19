@@ -57,14 +57,20 @@ def update_ema(target_params, source_params, rate=0.9999):
     Update target parameters to be closer to those of source parameters using
     an exponential moving average.
 
-    :param target_params: the target parameter sequence.
-    :param source_params: the source parameter sequence.
+    :param target_params: the target parameter sequence(list of nn.Parameters). 
+    :param source_params: the source parameter sequence(list of nn.Parameters).
     :param rate: the EMA rate (closer to 1 means slower).
     """
-    for targ, src in zip(target_params, source_params):
-        targ.detach().type_as(src).mul_(rate).add_(src, alpha=1 - rate)
-
-
+    for i, (targ, src) in enumerate(zip(target_params, source_params)):
+        # target_params[i] = targ.detach().mul_(rate).add_(src, alpha=1 - rate)
+        print("IN : ", target_params[i])
+        targ.type_as(src).detach().mul_(rate).add_(src, alpha=1 - rate)
+        # target_params[i] = (targ * rate) + (src * (1 - rate))
+        print("OUT : ", target_params[i])
+        print("EXP OUT : ", (targ * rate) + (src * (1 - rate)))
+        break
+    return target_params
+    
 def zero_module(module):
     """
     Zero out the parameters of a module and return it.

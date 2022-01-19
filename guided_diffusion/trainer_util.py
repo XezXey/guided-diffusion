@@ -128,6 +128,7 @@ class DPMTrainer:
         self.model = model
         self.model_params = list(self.model.parameters())
         self.master_params = self.model_params
+        print("MASTER : ", self.master_params[0].device)
 
     def zero_grad(self):
         zero_grad(self.model_params)

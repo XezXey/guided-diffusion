@@ -58,7 +58,6 @@ def model_and_diffusion_defaults():
         use_checkpoint=False,
         use_scale_shift_norm=True,
         resblock_updown=False,
-        use_fp16=False,
         use_new_attention_order=False,
         z_cond=False,
     )
@@ -94,7 +93,6 @@ def create_model_and_diffusion(
     use_checkpoint,
     use_scale_shift_norm,
     resblock_updown,
-    use_fp16,
     use_new_attention_order,
     z_cond,
 ):
@@ -113,7 +111,6 @@ def create_model_and_diffusion(
         use_scale_shift_norm=use_scale_shift_norm,
         dropout=dropout,
         resblock_updown=resblock_updown,
-        use_fp16=use_fp16,
         use_new_attention_order=use_new_attention_order,
         z_cond=z_cond,
     )
@@ -145,7 +142,6 @@ def create_model(
     use_scale_shift_norm=False,
     dropout=0,
     resblock_updown=False,
-    use_fp16=False,
     use_new_attention_order=False,
     z_cond=False,
 ):
@@ -178,7 +174,6 @@ def create_model(
         channel_mult=channel_mult,
         num_classes=(NUM_CLASSES if class_cond else None),
         use_checkpoint=use_checkpoint,
-        use_fp16=use_fp16,
         num_heads=num_heads,
         num_head_channels=num_head_channels,
         num_heads_upsample=num_heads_upsample,
