@@ -761,7 +761,12 @@ class GaussianDiffusion:
         if noise is None:
             noise = th.randn_like(x_start)
 
+        print(noise.shape)
+        print(th.max(noise), th.min(noise))
+        print(th.mean(noise), th.std(noise))
         x_t = self.q_sample(x_start, t, noise=noise)
+        print(x_t.shape)
+        exit()
 
         # print(x_t.device, t.device, noise.device, self._scale_timesteps(t).device)
         terms = {}

@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
 import math
+from time import time
 
 import numpy as np
 import torch as th
@@ -358,7 +359,6 @@ def count_flops_attn(model, _x, y):
     matmul_ops = 2 * b * (num_spatial ** 2) * c
     model.total_ops += th.DoubleTensor([matmul_ops])
 
-
 class QKVAttentionLegacy(nn.Module):
     """
     A module which performs QKV attention. Matches legacy QKVAttention + input/ouput heads shaping
@@ -712,27 +712,6 @@ class UNetModel(nn.Module):
             h = h.type(x.dtype)
             return self.out(h)
 
-
-
-
-
-class SuperResModel(UNetModel):
-    """
-    A UNetModel that performs super-resolution.
-
-    Expects an extra kwarg `low_res` to condition on a low-resolution image.
-    """
-
-    def __init__(self, image_size, in_channels, *args, **kwargs):
-        super().__init__(image_size, in_channels * 2, *args, **kwargs)
-
-    def forward(self, x, timesteps, low_res=None, **kwargs):
-        _, _, new_height, new_width = x.shape
-        upsampled = F.interpolate(low_res, (new_height, new_width), mode="bilinear")
-        x = th.cat([x, upsampled], dim=1)
-        return super().forward(x, timesteps, **kwargs)
-
-
 class EncoderUNetModel(nn.Module):
     """
     The half UNet model with attention and timestep embedding.
@@ -946,7 +925,6 @@ class EncoderUNetModel(nn.Module):
             h = h.type(x.dtype)
             return self.out(h)
 
-
 class ResBlockCondition(TimestepBlockCond):
     """
     A residual block that can optionally change the number of channels.
@@ -1079,3 +1057,129 @@ class ResBlockCondition(TimestepBlockCond):
                 h = h + emb_out
                 h = self.out_layers(h)
             return self.skip_connection(x) + h
+
+
+class DenseResBlock(TimestepBlock):
+    # TODO. 
+    pass
+
+class DECADense(TimestepBlock):
+    """
+    The full UNet model with attention and timestep embedding.
+
+    :param in_channels: channels in the input Tensor.
+    :param model_channels: base channel count for the model.
+    :param out_channels: channels in the output Tensor.
+    :param num_res_blocks: number of residual blocks per downsample.
+    :param attention_resolutions: a collection of downsample rates at which
+        attention will take place. May be a set, list, or tuple.
+        For example, if this contains 4, then at 4x downsampling, attention
+        will be used.
+    :param dropout: the dropout probability.
+    :param channel_mult: channel multiplier for each level of the UNet.
+    :param conv_resample: if True, use learned convolutions for upsampling and
+        downsampling.
+    :param dims: determines if the signal is 1D, 2D, or 3D.
+    :param num_classes: if specified (as an int), then this model will be
+        class-conditional with `num_classes` classes.
+    :param use_checkpoint: use gradient checkpointing to reduce memory usage.
+    :param num_heads: the number of attention heads in each attention layer.
+    :param num_heads_channels: if specified, ignore num_heads and instead use
+                               a fixed channel width per attention head.
+    :param num_heads_upsample: works with num_heads to set a different number
+                               of heads for upsampling. Deprecated.
+    :param use_scale_shift_norm: use a FiLM-like conditioning mechanism.
+    :param resblock_updown: use residual blocks for up/downsampling.
+    :param use_new_attention_order: use a different attention pattern for potentially
+                                    increased efficiency.
+    """
+    def __init__(
+        self,
+        in_channels,
+        model_channels,
+        out_channels,
+        dropout=0,
+        n_layer=3,
+        use_checkpoint=False,
+        use_scale_shift_norm=False,
+        combined='cat'
+    ):
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.model_channels = model_channels
+        self.out_channels = out_channels
+        self.dropout = dropout
+        self.n_layer = n_layer
+        self.use_checkpoint = use_checkpoint
+        self.use_scale_shift_norm = use_scale_shift_norm
+        self.combined = combined
+
+        time_embed_dim = model_channels * 4
+
+        self.emb_layer = nn.Sequential(
+            nn.SiLU(),
+            linear(
+                time_embed_dim, 
+                2 * self.model_channels if self.use_scale_shift_norm else self.model_channels
+            )
+        )
+
+        self.time_embed = nn.Sequential(
+            linear(model_channels, time_embed_dim),
+            nn.SiLU(),
+            linear(time_embed_dim, time_embed_dim),
+        )
+        
+        # Input 
+        self.input_mlp = nn.ModuleList([normalization(self.in_channels)])
+
+        for i in range(n_layer):
+            if i == 0:
+                self.input_mlp.append(linear(in_channels, time_embed_dim))
+            else:
+                self.input_mlp.append(linear(time_embed_dim, time_embed_dim))
+        
+        # Middle - Condition
+        self.mid_mlp = linear(time_embed_dim + 32768, time_embed_dim)
+
+        # Output
+        self.output_mlp = nn.ModuleList([])
+        for i in range(n_layer):
+            if i == 0:
+                self.output_mlp.append(linear(time_embed_dim, time_embed_dim))
+            else:
+                self.output_mlp.append(linear(time_embed_dim, out_channels))
+
+
+    def forward(self, x, cond, timesteps):
+        """
+        :param x: the input parameters [N x 159] -> Specifically, 159 is DECA face params
+        :param cond: the condition from DDPM branch [N x 512 x 8 x 8] (for default)
+        :param timesteps: a 1-D batch of timesteps.
+        """
+
+        emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
+        emb_out = self.emb_layers(emb).type(x.dtype)
+
+        h = self.input_mlp[0](x)
+        if self.use_scale_shift_norm:
+            pass
+
+        else:
+            h = h + emb_out
+
+
+        if self.combined == 'cat':
+            cond = cond.flatten()
+            h_cond = th.cat((h, cond), dim=1)
+        else :
+            raise NotImplemented
+
+        h = self.mid_mlp(h_cond)
+        out = self.output_mlp
+
+        return out
+        
+
+
