@@ -5,6 +5,7 @@ Train a diffusion model on images.
 import argparse, datetime
 from cmath import exp
 import pytorch_lightning as pl
+from pytorch_lightning.loggers import TensorBoardLogger
 
 
 from guided_diffusion import logger
@@ -46,6 +47,9 @@ def main():
     )
 
     logger.log("training...")
+
+    tb_logger = TensorBoardLogger("tb_logs", name="diffusion", version=args.log_dir.split('/')[-1])
+
     train_loop = TrainLoop(
         model=model,
         diffusion=diffusion,
@@ -59,6 +63,8 @@ def main():
         schedule_sampler=schedule_sampler,
         weight_decay=args.weight_decay,
         lr_anneal_steps=args.lr_anneal_steps,
+        n_gpus=args.n_gpus,
+        tb_logger=tb_logger
     )
     
     train_loop.run()
@@ -72,8 +78,7 @@ def create_argparser():
         weight_decay=0.0,
         lr_anneal_steps=0,
         batch_size=1,
-        ema_rate="0.9999",  # comma-separated list of EMA values
-        # ema_rate="0.5",  # comma-separated list of EMA values
+        ema_rate="0.9999,0.5",  # comma-separated list of EMA values
         log_interval=10,
         save_interval=100000,
         resume_checkpoint="",
@@ -82,6 +87,7 @@ def create_argparser():
         out_c='rgb',
         z_cond=False,
         precomp_z="",
+        n_gpus=1,
     )
     defaults.update(model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()

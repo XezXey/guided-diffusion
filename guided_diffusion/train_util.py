@@ -4,12 +4,12 @@ import os
 
 import blobfile as bf
 import torch as th
+import numpy as np
 import torch.distributed as dist
 from torch.nn.parallel.distributed import DistributedDataParallel as DDP
 from torch.optim import AdamW
 from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning.utilities import rank_zero_only
-from pytorch_lightning.loggers import TensorBoardLogger
 
 import pytorch_lightning as pl
 
@@ -18,11 +18,6 @@ from .trainer_util import DPMTrainer
 from .nn import update_ema
 from .resample import LossAwareSampler, UniformSampler
 from .script_util import seed_all
-
-# For ImageNet experiments, this was a good default value.
-# We found that the lg_loss_scale quickly climbed to
-# 20-21 within the first ~1K steps of training.
-INITIAL_LOG_LOSS_SCALE = 20.0
 
 class TrainLoop(LightningModule):
     def __init__(
@@ -37,21 +32,25 @@ class TrainLoop(LightningModule):
         log_interval,
         save_interval,
         resume_checkpoint,
+        tb_logger,
         schedule_sampler=None,
         weight_decay=0.0,
         lr_anneal_steps=0,
+        n_gpus=1,
     ):
 
         super(TrainLoop, self).__init__()
 
         # Lightning
-        logger = TensorBoardLogger("tb_logs", name="my_model", version="ggez_4rtz")
+        self.n_gpus = n_gpus
+        self.tb_logger = tb_logger
         self.pl_trainer = pl.Trainer(
-            gpus=3,
+            gpus=self.n_gpus,
             strategy='ddp', 
-            logger=logger, 
+            logger=self.tb_logger, 
             log_every_n_steps=1,
-            accelerator='gpu')#, precision=16)
+            accelerator='gpu')
+            #, precision=16)
 
         self.automatic_optimization = False # Manual optimization flow
 
@@ -69,7 +68,7 @@ class TrainLoop(LightningModule):
         self.save_interval = save_interval
         self.resume_checkpoint = resume_checkpoint
         self.schedule_sampler = schedule_sampler or UniformSampler(diffusion)
-        self.global_batch = 2 * batch_size
+        self.global_batch = self.n_gpus * batch_size
         self.weight_decay = weight_decay
         self.lr_anneal_steps = lr_anneal_steps
 
@@ -144,23 +143,20 @@ class TrainLoop(LightningModule):
 
     def run(self):
         # Driven code
+        # Logging for first time
+        if self.step % self.log_interval == 0:
+            logger.dumpkvs()
+        if self.step % self.save_interval == 0:
+            self.save()
+
         self.pl_trainer.fit(self, self.data)
 
     def training_step(self, batch, batch_idx):
         dat, cond = batch
 
         self.run_step(dat, cond)
-        if self.step % self.log_interval == 0:
-            logger.dumpkvs()
-        if self.step % self.save_interval == 0:
-            self.save()
-            # Run for a finite amount of time in integration tests.
-            if os.environ.get("DIFFUSION_TRAINING_TEST", "") and self.step > 0:
-                return
+
         self.step += 1
-        # Save the last checkpoint if it wasn't already saved.
-        # if (self.step - 1) % self.save_interval != 0:
-        #     self.save()
     
     def on_train_batch_end(self, outputs, batch, batch_idx):
         '''
@@ -182,7 +178,7 @@ class TrainLoop(LightningModule):
 
     @rank_zero_only 
     def save_rank_zero(self):
-        if (self.step * self.batch_size * 3) % self.save_interval == 0:
+        if self.step % self.save_interval == 0:
             self.save()
 
     @rank_zero_only 
@@ -193,8 +189,6 @@ class TrainLoop(LightningModule):
         self.forward_backward(dat, cond)
         took_step = self.dpm_trainer.optimize(self.opt)
         self.took_step = took_step
-
-
 
     def forward_backward(self, batch, cond):
         self.dpm_trainer.zero_grad()
@@ -245,20 +239,24 @@ class TrainLoop(LightningModule):
             param_group["lr"] = lr
 
     def log_step(self):
-        logger.logkv("step", self.step + self.resume_step)
-        logger.logkv("samples", (self.step + self.resume_step + 1) * self.global_batch)
+        step_ = float(self.step + self.resume_step)
+        self.log("training_progress/step", step_)
+        self.log("training_progress/global_step", (step_ + 1) * self.global_batch)
+        self.log("training_progress/samples", (step_ + 1) * self.batch_size)
+        self.log("training_progress/global_samples", (step_ + 1) * self.global_batch)
+        logger.logkv("step", step_)
+        logger.logkv("samples", (step_ + 1) * self.global_batch)
 
     def save(self):
         def save_checkpoint(rate, params):
             state_dict = self.dpm_trainer.master_params_to_state_dict(params)
-            if dist.get_rank() == 0:
-                logger.log(f"saving model {rate}...")
-                if not rate:
-                    filename = f"model{(self.step+self.resume_step):06d}.pt"
-                else:
-                    filename = f"ema_{rate}_{(self.step+self.resume_step):06d}.pt"
-                with bf.BlobFile(bf.join(get_blob_logdir(), filename), "wb") as f:
-                    th.save(state_dict, f)
+            logger.log(f"saving model {rate}...")
+            if not rate:
+                filename = f"model{(self.step+self.resume_step):06d}.pt"
+            else:
+                filename = f"ema_{rate}_{(self.step+self.resume_step):06d}.pt"
+            with bf.BlobFile(bf.join(get_blob_logdir(), filename), "wb") as f:
+                th.save(state_dict, f)
 
         save_checkpoint(0, self.dpm_trainer.master_params)
         for rate, params in zip(self.ema_rate, self.ema_params):
@@ -270,7 +268,6 @@ class TrainLoop(LightningModule):
         ) as f:
             th.save(self.opt.state_dict(), f)
 
-        dist.barrier()
 
     def configure_optimizers(self):
         self.opt = AdamW(

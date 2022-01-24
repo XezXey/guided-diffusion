@@ -55,7 +55,7 @@ def load_data(
         class_names = [bf.basename(path).split("_")[0] for path in all_files]
         sorted_classes = {x: i for i, x in enumerate(sorted(set(class_names)))}
         classes = [sorted_classes[x] for x in class_names]
-    
+
     if z_cond and precomp_z != "":
         precomp_z = pd.read_csv(precomp_z, header=None, sep=" ", index_col=False, names=["img_name"] + list(range(27)), lineterminator='\n')
         precomp_z = precomp_z.set_index('img_name').T.to_dict('list')

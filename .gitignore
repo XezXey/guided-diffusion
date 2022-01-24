@@ -112,3 +112,9 @@ tb_logs/my_model/ggez_4rtz/hparams.yaml
 tb_logs/my_model/ggez_4rtz/checkpoints/epoch=5-step=71.ckpt
 tb_logs/my_model/ggez_4rtz/checkpoints/epoch=6-step=83.ckpt
 tb_logs/my_model/ggez_4rtz/checkpoints/epoch=7-step=95.ckpt
+logs/ggez/ema_0.5_000000.pt
+logs/ggez/ema_0.9999_000000.pt
+logs/ggez/log.txt
+logs/ggez/model000000.pt
+logs/ggez/opt000000.pt
+logs/ggez/progress.csv
