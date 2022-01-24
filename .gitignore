@@ -118,3 +118,13 @@ logs/ggez/log.txt
 logs/ggez/model000000.pt
 logs/ggez/opt000000.pt
 logs/ggez/progress.csv
+logs/IMG_DECA/DECA_ema_0.5_000000.pt
+logs/IMG_DECA/DECA_ema_0.9999_000000.pt
+logs/IMG_DECA/DECA_model000000.pt
+logs/IMG_DECA/img_ema_0.5_000000.pt
+logs/IMG_DECA/img_ema_0.9999_000000.pt
+logs/IMG_DECA/img_model000000.pt
+logs/IMG_DECA/log.txt
+logs/IMG_DECA/opt000000.pt
+logs/IMG_DECA/progress.csv
+logs/

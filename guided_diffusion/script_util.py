@@ -5,7 +5,8 @@ from guided_diffusion.unet_deca import DECADense
 
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
-from .unet import SuperResModel, UNetModel, EncoderUNetModel
+from .unet import UNetModel, EncoderUNetModel
+from .unet_deca import UNetModelDECA
 
 NUM_CLASSES = 1000
 
@@ -158,6 +159,7 @@ def create_model(
     resblock_updown=False,
     use_new_attention_order=False,
     z_cond=False,
+    model=UNetModel
 ):
     if channel_mult == "":
         if image_size == 512:
@@ -177,11 +179,13 @@ def create_model(
     for res in attention_resolutions.split(","):
         attention_ds.append(image_size // int(res))
 
-    return UNetModel(
+    return model(
         image_size=image_size,
+        # in_channels=3,
         in_channels=3,
         model_channels=num_channels,
-        out_channels=(3 if not learn_sigma else 6),
+        # out_channels=(3 if not learn_sigma else 6),
+        out_channels=3,
         num_res_blocks=num_res_blocks,
         attention_resolutions=tuple(attention_ds),
         dropout=dropout,
@@ -239,6 +243,7 @@ def create_deca_and_diffusion(
         resblock_updown=resblock_updown,
         use_new_attention_order=use_new_attention_order,
         z_cond=z_cond,
+        model=UNetModelDECA
     )
 
     params_model = create_params_model(

@@ -27,11 +27,9 @@ def main():
     logger.configure(dir=args.log_dir)
 
     logger.log("creating model and diffusion...")
-    img_model, params_model, diffusion = create_deca_and_diffusion(
+    img_model, deca_model, diffusion = create_deca_and_diffusion(
         **args_to_dict(args, model_and_diffusion_defaults().keys())
     )
-    print(params_model)
-    exit()
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
 
     logger.log("creating data loader...")
@@ -52,7 +50,8 @@ def main():
     tb_logger = TensorBoardLogger("tb_logs", name="diffusion", version=args.log_dir.split('/')[-1])
 
     train_loop = DECATrainLoop(
-        model=img_model,
+        img_model=img_model,
+        deca_model=deca_model,
         diffusion=diffusion,
         data=data,
         batch_size=args.batch_size,

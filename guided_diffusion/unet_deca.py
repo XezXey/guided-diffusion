@@ -427,7 +427,7 @@ class QKVAttention(nn.Module):
         return count_flops_attn(model, _x, y)
 
 
-class UNetModel(nn.Module):
+class UNetModelDECA(nn.Module):
     """
     The full UNet model with attention and timestep embedding.
 
@@ -695,11 +695,12 @@ class UNetModel(nn.Module):
                 h = module(h, emb)
                 hs.append(h)
             h = self.middle_block(h, emb)
+            bottle_neck = h
             for module in self.output_blocks:
                 h = th.cat([h, hs.pop()], dim=1)
                 h = module(h, emb)
             h = h.type(x.dtype)
-            return self.out(h)
+            return {'output':self.out(h), 'middle_block':bottle_neck}
         elif 'precomp_z' in kwargs.keys():
             z_cond = kwargs['precomp_z']
             for module in self.input_blocks:
@@ -1064,42 +1065,14 @@ class DenseResBlock(TimestepBlock):
     pass
 
 class DECADense(TimestepBlock):
-    """
-    The full UNet model with attention and timestep embedding.
-
-    :param in_channels: channels in the input Tensor.
-    :param model_channels: base channel count for the model.
-    :param out_channels: channels in the output Tensor.
-    :param num_res_blocks: number of residual blocks per downsample.
-    :param attention_resolutions: a collection of downsample rates at which
-        attention will take place. May be a set, list, or tuple.
-        For example, if this contains 4, then at 4x downsampling, attention
-        will be used.
-    :param dropout: the dropout probability.
-    :param channel_mult: channel multiplier for each level of the UNet.
-    :param conv_resample: if True, use learned convolutions for upsampling and
-        downsampling.
-    :param dims: determines if the signal is 1D, 2D, or 3D.
-    :param num_classes: if specified (as an int), then this model will be
-        class-conditional with `num_classes` classes.
-    :param use_checkpoint: use gradient checkpointing to reduce memory usage.
-    :param num_heads: the number of attention heads in each attention layer.
-    :param num_heads_channels: if specified, ignore num_heads and instead use
-                               a fixed channel width per attention head.
-    :param num_heads_upsample: works with num_heads to set a different number
-                               of heads for upsampling. Deprecated.
-    :param use_scale_shift_norm: use a FiLM-like conditioning mechanism.
-    :param resblock_updown: use residual blocks for up/downsampling.
-    :param use_new_attention_order: use a different attention pattern for potentially
-                                    increased efficiency.
-    """
+   
     def __init__(
         self,
         in_channels,
         model_channels,
         out_channels,
         dropout=0,
-        n_layer=3,
+        n_layer=2,
         use_checkpoint=False,
         use_scale_shift_norm=False,
         combined='cat'
@@ -1117,11 +1090,11 @@ class DECADense(TimestepBlock):
 
         time_embed_dim = model_channels * 4
 
-        self.emb_layer = nn.Sequential(
+        self.emb_layers = nn.Sequential(
             nn.SiLU(),
             linear(
-                time_embed_dim, 
-                2 * self.model_channels if self.use_scale_shift_norm else self.model_channels
+                time_embed_dim, time_embed_dim
+                # 2 * self.model_channels if self.use_scale_shift_norm else self.model_channels
             )
         )
 
@@ -1132,7 +1105,7 @@ class DECADense(TimestepBlock):
         )
         
         # Input 
-        self.input_mlp = nn.ModuleList([normalization(self.in_channels)])
+        self.input_mlp = nn.ModuleList([])
 
         for i in range(n_layer):
             if i == 0:
@@ -1152,34 +1125,51 @@ class DECADense(TimestepBlock):
                 self.output_mlp.append(linear(time_embed_dim, out_channels))
 
 
-    def forward(self, x, cond, timesteps):
+    def forward(self, x, timesteps, **kwargs):
         """
         :param x: the input parameters [N x 159] -> Specifically, 159 is DECA face params
         :param cond: the condition from DDPM branch [N x 512 x 8 x 8] (for default)
         :param timesteps: a 1-D batch of timesteps.
         """
+        middle_block = kwargs['middle_block']
 
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
+        print("EMB : ", emb.shape)
         emb_out = self.emb_layers(emb).type(x.dtype)
+        print("EMB OUT : ", emb_out.shape)
 
+        print(x.shape)
         h = self.input_mlp[0](x)
+        for layer in self.input_mlp[1:]:
+            h = layer(h)
+            print("H : ", h.shape)
+
         if self.use_scale_shift_norm:
-            pass
+            raise NotImplemented
 
         else:
+            print(h.shape, emb_out.shape)
             h = h + emb_out
 
-
+        print("AFTER TIME EMB : ", h.shape)
         if self.combined == 'cat':
-            cond = cond.flatten()
+            cond = middle_block.flatten(start_dim=1, end_dim=-1)
+            print(h.shape, cond.shape)
             h_cond = th.cat((h, cond), dim=1)
         else :
             raise NotImplemented
 
         h = self.mid_mlp(h_cond)
-        out = self.output_mlp
+        print("mid mlp : ", h.shape)
 
-        return out
+        out = self.output_mlp[0](h)
+        for layer in self.output_mlp[1:]:
+            out = layer(out)
+            print("out : ", out.shape)
+        print("FINAL : ", out.shape)
+        # exit()
+
+        return {'output':out}
         
 
 

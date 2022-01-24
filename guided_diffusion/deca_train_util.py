@@ -14,7 +14,7 @@ from pytorch_lightning.utilities import rank_zero_only
 import pytorch_lightning as pl
 
 from . import dist_util, logger
-from .trainer_util import DPMTrainer
+from .deca_trainer_util import DECATrainer
 from .nn import update_ema
 from .resample import LossAwareSampler, UniformSampler
 from .script_util import seed_all
@@ -23,7 +23,8 @@ class DECATrainLoop(LightningModule):
     def __init__(
         self,
         *,
-        model,
+        img_model,
+        deca_model,
         diffusion,
         data,
         batch_size,
@@ -54,7 +55,8 @@ class DECATrainLoop(LightningModule):
 
         self.automatic_optimization = False # Manual optimization flow
 
-        self.model = model
+        self.img_model = img_model
+        self.deca_model = deca_model
         self.diffusion = diffusion
         self.data = data
         self.batch_size = batch_size
@@ -75,28 +77,38 @@ class DECATrainLoop(LightningModule):
         self.step = 0
         self.resume_step = 0
 
-        self.dpm_trainer = DPMTrainer(
-            model=self.model,
+        self.img_trainer = DECATrainer(
+            model=self.img_model,
+        )
+
+        self.deca_trainer = DECATrainer(
+            model=self.deca_model,
         )
 
         self.opt = AdamW(
-            self.dpm_trainer.master_params, lr=self.lr, weight_decay=self.weight_decay
+            list(self.img_trainer.master_params) + list(self.deca_trainer.master_params),
+            lr=self.lr, weight_decay=self.weight_decay
         )
 
         if self.resume_step:
             self._load_optimizer_state()
             # Model was resumed, either due to a restart or a checkpoint
             # being specified at the command line.
-            self.ema_params = [
-                self._load_ema_parameters(rate) for rate in self.ema_rate
+            self.img_ema_params = [
+                self._load_ema_parameters(rate, trainer=self.img_trainer, name='img') for rate in self.ema_rate
+            ]
+            self.deca_ema_params = [
+                self._load_ema_parameters(rate, trainer=self.deca_trainer, name='DECA') for rate in self.ema_rate
             ]
         else:
-            self.ema_params = [
-                copy.deepcopy(self.dpm_trainer.master_params)
+            self.img_ema_params = [
+                copy.deepcopy(self.img_trainer.master_params)
                 for _ in range(len(self.ema_rate))
             ]
-
-        self.ddp_model = self.model
+            self.deca_ema_params = [
+                copy.deepcopy(self.deca_trainer.master_params)
+                for _ in range(len(self.ema_rate))
+            ]
 
     def _load_and_sync_parameters(self):
         resume_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
@@ -113,18 +125,18 @@ class DECATrainLoop(LightningModule):
 
         dist_util.sync_params(self.model.parameters())
 
-    def _load_ema_parameters(self, rate):
-        ema_params = copy.deepcopy(self.dpm_trainer.master_params)
+    def _load_ema_parameters(self, rate, trainer, name):
+        ema_params = copy.deepcopy(trainer.master_params)
 
         main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
-        ema_checkpoint = find_ema_checkpoint(main_checkpoint, self.resume_step, rate)
+        ema_checkpoint = find_ema_checkpoint(main_checkpoint, self.resume_step, rate, name)
         if ema_checkpoint:
             if dist.get_rank() == 0:
                 logger.log(f"loading EMA from checkpoint: {ema_checkpoint}...")
                 state_dict = dist_util.load_state_dict(
                     ema_checkpoint, map_location=dist_util.dev()
                 )
-                ema_params = self.dpm_trainer.state_dict_to_master_params(state_dict)
+                ema_params = trainer.state_dict_to_master_params(state_dict)
 
         dist_util.sync_params(ema_params)
         return ema_params
@@ -187,11 +199,13 @@ class DECATrainLoop(LightningModule):
 
     def run_step(self, dat, cond):
         self.forward_backward(dat, cond)
-        took_step = self.dpm_trainer.optimize(self.opt)
-        self.took_step = took_step
+        img_took_step = self.img_trainer.optimize(self.opt)
+        deca_took_step = self.deca_trainer.optimize(self.opt)
+        self.took_step = deca_took_step and img_took_step
 
     def forward_backward(self, batch, cond):
-        self.dpm_trainer.zero_grad()
+        self.img_trainer.zero_grad()
+        self.deca_trainer.zero_grad()
 
         cond = {
             k: v
@@ -200,32 +214,56 @@ class DECATrainLoop(LightningModule):
 
         t, weights = self.schedule_sampler.sample(batch.shape[0], self.device)
 
-        compute_losses = functools.partial(
-            self.diffusion.training_losses,
-            self.ddp_model,
+        # Image losses
+        img_compute_losses = functools.partial(
+            self.diffusion.training_losses_deca,
+            self.img_model,
             batch,
             t,
             model_kwargs=cond,
         )
+        img_losses, model_output = img_compute_losses()
+        # print(model_output.keys())
+        # print(model_output['output'].shape)
+        # print(model_output['middle_block'].shape)
+        cond.update(model_output)
 
-        losses = compute_losses()
+        # DECA losses
+        print(self.deca_model)
+        deca_compute_losses = functools.partial(
+            self.diffusion.training_losses_deca,
+            self.deca_model,
+            th.rand(batch.shape[0], 159).to(batch.device),
+            t,
+            model_kwargs=cond,
+        )
+        deca_losses, output = deca_compute_losses()
+        print("IMG : ", img_losses)
+        print("DECA : ", deca_losses)
+        # exit()
 
         if isinstance(self.schedule_sampler, LossAwareSampler):
             self.schedule_sampler.update_with_local_losses(
-                t, losses["loss"].detach()
+                t, img_losses["loss"].detach()
             )
 
-        loss = (losses["loss"] * weights).mean()
+        loss = (img_losses["loss"] * weights).mean() + (deca_losses["loss"] * weights).mean()
         self.log_loss_dict(
-            self.diffusion, t, {k: v * weights for k, v in losses.items()}
+            self.diffusion, t, {k: v * weights for k, v in deca_losses.items()}
+        )
+        self.log_loss_dict(
+            self.diffusion, t, {k: v * weights for k, v in img_losses.items()}
         )
         self.manual_backward(loss)
 
         return loss
 
     def _update_ema(self):
-        for rate, params in zip(self.ema_rate, self.ema_params):
-            update_ema(params, self.dpm_trainer.master_params, rate=rate)
+        for rate, params in zip(self.ema_rate, self.deca_ema_params):
+            update_ema(params, self.deca_trainer.master_params, rate=rate)
+
+        for rate, params in zip(self.ema_rate, self.img_ema_params):
+            update_ema(params, self.img_trainer.master_params, rate=rate)
 
     def _anneal_lr(self):
         '''
@@ -248,19 +286,22 @@ class DECATrainLoop(LightningModule):
         logger.logkv("samples", (step_ + 1) * self.global_batch)
 
     def save(self):
-        def save_checkpoint(rate, params):
-            state_dict = self.dpm_trainer.master_params_to_state_dict(params)
+        def save_checkpoint(rate, params, trainer, name=""):
+            state_dict = trainer.master_params_to_state_dict(params)
             logger.log(f"saving model {rate}...")
             if not rate:
-                filename = f"model{(self.step+self.resume_step):06d}.pt"
+                filename = f"{name}_model{(self.step+self.resume_step):06d}.pt"
             else:
-                filename = f"ema_{rate}_{(self.step+self.resume_step):06d}.pt"
+                filename = f"{name}_ema_{rate}_{(self.step+self.resume_step):06d}.pt"
             with bf.BlobFile(bf.join(get_blob_logdir(), filename), "wb") as f:
                 th.save(state_dict, f)
 
-        save_checkpoint(0, self.dpm_trainer.master_params)
-        for rate, params in zip(self.ema_rate, self.ema_params):
-            save_checkpoint(rate, params)
+        save_checkpoint(0, self.deca_trainer.master_params, self.deca_trainer, name='DECA')
+        save_checkpoint(0, self.img_trainer.master_params, self.img_trainer, name='img')
+        for rate, params in zip(self.ema_rate, self.deca_ema_params):
+            save_checkpoint(rate, params, self.deca_trainer, name='DECA')
+        for rate, params in zip(self.ema_rate, self.img_ema_params):
+            save_checkpoint(rate, params, self.img_trainer, name='img')
 
         with bf.BlobFile(
             bf.join(get_blob_logdir(), f"opt{(self.step+self.resume_step):06d}.pt"),
@@ -271,7 +312,7 @@ class DECATrainLoop(LightningModule):
 
     def configure_optimizers(self):
         self.opt = AdamW(
-            self.dpm_trainer.master_params, lr=self.lr, weight_decay=self.weight_decay
+            list(self.img_trainer.master_params) + list(self.deca_trainer.master_params), lr=self.lr, weight_decay=self.weight_decay
         )
         return self.opt
 
@@ -313,10 +354,10 @@ def find_resume_checkpoint():
     return None
 
 
-def find_ema_checkpoint(main_checkpoint, step, rate):
+def find_ema_checkpoint(main_checkpoint, step, rate, name):
     if main_checkpoint is None:
         return None
-    filename = f"ema_{rate}_{(step):06d}.pt"
+    filename = f"{name}_ema_{rate}_{(step):06d}.pt"
     path = bf.join(bf.dirname(main_checkpoint), filename)
     if bf.exists(path):
         return path
