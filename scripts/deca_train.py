@@ -9,7 +9,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 
 from guided_diffusion import logger
-from guided_diffusion.image_datasets import load_data
+from guided_diffusion.deca_datasets import load_data_deca
 from guided_diffusion.resample import create_named_schedule_sampler
 from guided_diffusion.script_util import (
     model_and_diffusion_defaults,
@@ -33,13 +33,14 @@ def main():
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
 
     logger.log("creating data loader...")
-    data = load_data(
+    data = load_data_deca(
         data_dir=args.data_dir,
+        deca_dir=args.deca_dir,
         batch_size=args.batch_size,
         image_size=args.image_size,
-        class_cond=args.class_cond,
         deterministic=True, # For paired training
-        flip=args.flip,
+        augment_mode=args.augment_mode,
+        resize_mode=args.resize_mode,
         out_c=args.out_c,
         z_cond=args.z_cond,
         precomp_z=args.precomp_z
@@ -73,6 +74,7 @@ def main():
 def create_argparser():
     defaults = dict(
         data_dir="",
+        deca_dir="",
         schedule_sampler="uniform",
         lr=1e-4,
         weight_decay=0.0,
@@ -83,7 +85,8 @@ def create_argparser():
         save_interval=100000,
         resume_checkpoint="",
         log_dir="./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_image")),
-        flip=False,
+        augment_mode=None,
+        resize_mode="resize",
         out_c='rgb',
         z_cond=False,
         precomp_z="",

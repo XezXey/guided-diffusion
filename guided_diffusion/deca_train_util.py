@@ -50,7 +50,7 @@ class DECATrainLoop(LightningModule):
             strategy='ddp', 
             logger=self.tb_logger, 
             log_every_n_steps=1,
-            accelerator='gpu')
+            accelerator='cpu')
             #, precision=16)
 
         self.automatic_optimization = False # Manual optimization flow
@@ -160,7 +160,7 @@ class DECATrainLoop(LightningModule):
             logger.dumpkvs()
         if self.step % self.save_interval == 0:
             self.save()
-
+# 
         self.pl_trainer.fit(self, self.data)
 
     def training_step(self, batch, batch_idx):
@@ -212,6 +212,9 @@ class DECATrainLoop(LightningModule):
             for k, v in cond.items()
         }
 
+        print(self.deca_model)
+        print(cond['uv_detail_normals'].shape)
+        exit()
         t, weights = self.schedule_sampler.sample(batch.shape[0], self.device)
 
         # Image losses
@@ -229,11 +232,10 @@ class DECATrainLoop(LightningModule):
         cond.update(model_output)
 
         # DECA losses
-        print(self.deca_model)
         deca_compute_losses = functools.partial(
             self.diffusion.training_losses_deca,
             self.deca_model,
-            th.rand(batch.shape[0], 159).to(batch.device),
+            cond['uv_detail_normals'].to(batch.device),
             t,
             model_kwargs=cond,
         )

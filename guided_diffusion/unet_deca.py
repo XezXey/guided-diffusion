@@ -1114,7 +1114,10 @@ class DECADense(TimestepBlock):
                 self.input_mlp.append(linear(time_embed_dim, time_embed_dim))
         
         # Middle - Condition
-        self.mid_mlp = linear(time_embed_dim + 32768, time_embed_dim)
+        self.mid_mlp = nn.Sequential(
+            # linear(time_embed_dim + 32768, time_embed_dim + 32768),
+            linear(time_embed_dim + 32768, time_embed_dim)
+            )
 
         # Output
         self.output_mlp = nn.ModuleList([])
@@ -1134,40 +1137,29 @@ class DECADense(TimestepBlock):
         middle_block = kwargs['middle_block']
 
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
-        print("EMB : ", emb.shape)
         emb_out = self.emb_layers(emb).type(x.dtype)
-        print("EMB OUT : ", emb_out.shape)
 
-        print(x.shape)
         h = self.input_mlp[0](x)
         for layer in self.input_mlp[1:]:
             h = layer(h)
-            print("H : ", h.shape)
 
         if self.use_scale_shift_norm:
             raise NotImplemented
 
         else:
-            print(h.shape, emb_out.shape)
             h = h + emb_out
 
-        print("AFTER TIME EMB : ", h.shape)
         if self.combined == 'cat':
             cond = middle_block.flatten(start_dim=1, end_dim=-1)
-            print(h.shape, cond.shape)
             h_cond = th.cat((h, cond), dim=1)
         else :
             raise NotImplemented
 
         h = self.mid_mlp(h_cond)
-        print("mid mlp : ", h.shape)
 
         out = self.output_mlp[0](h)
         for layer in self.output_mlp[1:]:
             out = layer(out)
-            print("out : ", out.shape)
-        print("FINAL : ", out.shape)
-        # exit()
 
         return {'output':out}
         
