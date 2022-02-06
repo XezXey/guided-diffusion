@@ -58,13 +58,11 @@ def load_deca_params(deca_dir):
         # uv detail normals
         for img_path in uv_detail_normals_path:
             if img_name_ext in img_path:
-                tmp = img_path
                 deca_params[img_name]['uv_detail_normals'] = img_path 
                 break
-            break
     
-    for img_name in tqdm.tqdm(deca_params.keys(), desc="Loading uv_detail_normals..."):
-        deca_params[img_name]['uv_detail_normals'] = tmp    
+    # for img_name in tqdm.tqdm(deca_params.keys(), desc="Loading uv_detail_normals..."):
+        # deca_params[img_name]['uv_detail_normals'] = tmp    
     
     return deca_params
 
