@@ -50,7 +50,6 @@ class TrainLoop(LightningModule):
             logger=self.tb_logger, 
             log_every_n_steps=1,
             accelerator='gpu')
-            #, precision=16)
 
         self.automatic_optimization = False # Manual optimization flow
 

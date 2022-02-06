@@ -9,7 +9,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 
 from guided_diffusion import logger
-from guided_diffusion.deca_datasets import load_data_deca
+from guided_diffusion.deca_datasets import kpt_cropped, load_data_deca
 from guided_diffusion.resample import create_named_schedule_sampler
 from guided_diffusion.script_util import (
     model_and_diffusion_defaults,
@@ -38,12 +38,11 @@ def main():
         deca_dir=args.deca_dir,
         batch_size=args.batch_size,
         image_size=args.image_size,
-        deterministic=True, # For paired training
+        deterministic=True,
         augment_mode=args.augment_mode,
         resize_mode=args.resize_mode,
-        out_c=args.out_c,
-        z_cond=args.z_cond,
-        precomp_z=args.precomp_z
+        use_detector=args.use_detector,
+        in_image=args.in_image,
     )
 
     logger.log("training...")
@@ -76,6 +75,8 @@ def create_argparser():
         data_dir="",
         deca_dir="",
         schedule_sampler="uniform",
+        in_channels=3,
+        out_channels=3,
         lr=1e-4,
         weight_decay=0.0,
         lr_anneal_steps=0,
@@ -87,10 +88,10 @@ def create_argparser():
         log_dir="./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_image")),
         augment_mode=None,
         resize_mode="resize",
-        out_c='rgb',
-        z_cond=False,
-        precomp_z="",
+        in_image="raw",
         n_gpus=1,
+        image_size=256,
+        use_detector=False
     )
     defaults.update(model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()

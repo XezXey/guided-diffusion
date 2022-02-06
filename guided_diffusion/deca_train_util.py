@@ -50,7 +50,7 @@ class DECATrainLoop(LightningModule):
             strategy='ddp', 
             logger=self.tb_logger, 
             log_every_n_steps=1,
-            accelerator='cpu')
+            accelerator='gpu')
             #, precision=16)
 
         self.automatic_optimization = False # Manual optimization flow
@@ -212,11 +212,16 @@ class DECATrainLoop(LightningModule):
             for k, v in cond.items()
         }
 
-        print(self.deca_model)
-        print(cond['uv_detail_normals'].shape)
-        exit()
         t, weights = self.schedule_sampler.sample(batch.shape[0], self.device)
+        # import matplotlib.pyplot as plt
+        # plt.imshow(np.transpose(batch[0].cpu().numpy(), (1, 2, 0))[..., :3])
+        # plt.show()
 
+        # plt.imshow(np.transpose(batch[0].cpu().numpy(), (1, 2, 0))[..., :3] + 1)
+        # plt.show()
+
+        # plt.imshow(((np.transpose(batch[0].cpu().numpy(), (1, 2, 0))[..., :3] + 1) * 127.5).astype(np.uint8))
+        # plt.show()
         # Image losses
         img_compute_losses = functools.partial(
             self.diffusion.training_losses_deca,
@@ -225,24 +230,18 @@ class DECATrainLoop(LightningModule):
             t,
             model_kwargs=cond,
         )
-        img_losses, model_output = img_compute_losses()
-        # print(model_output.keys())
-        # print(model_output['output'].shape)
-        # print(model_output['middle_block'].shape)
-        cond.update(model_output)
+        img_losses, img_output = img_compute_losses()
+        cond.update(img_output)
 
         # DECA losses
         deca_compute_losses = functools.partial(
             self.diffusion.training_losses_deca,
             self.deca_model,
-            cond['uv_detail_normals'].to(batch.device),
+            cond['deca_params'].to(batch.device),
             t,
             model_kwargs=cond,
         )
-        deca_losses, output = deca_compute_losses()
-        print("IMG : ", img_losses)
-        print("DECA : ", deca_losses)
-        # exit()
+        deca_losses, deca_output = deca_compute_losses()
 
         if isinstance(self.schedule_sampler, LossAwareSampler):
             self.schedule_sampler.update_with_local_losses(
@@ -251,14 +250,12 @@ class DECATrainLoop(LightningModule):
 
         loss = (img_losses["loss"] * weights).mean() + (deca_losses["loss"] * weights).mean()
         self.log_loss_dict(
-            self.diffusion, t, {k: v * weights for k, v in deca_losses.items()}
+            self.diffusion, t, {k: v * weights for k, v in deca_losses.items()}, module="DECA",
         )
         self.log_loss_dict(
-            self.diffusion, t, {k: v * weights for k, v in img_losses.items()}
+            self.diffusion, t, {k: v * weights for k, v in img_losses.items()}, module="IMAGE",
         )
         self.manual_backward(loss)
-
-        return loss
 
     def _update_ema(self):
         for rate, params in zip(self.ema_rate, self.deca_ema_params):
@@ -280,9 +277,8 @@ class DECATrainLoop(LightningModule):
 
     def log_step(self):
         step_ = float(self.step + self.resume_step)
-        self.log("training_progress/step", step_)
-        self.log("training_progress/global_step", (step_ + 1) * self.global_batch)
-        self.log("training_progress/samples", (step_ + 1) * self.batch_size)
+        self.log("training_progress/step", step_ + 1)
+        self.log("training_progress/global_step", (step_ + 1) * self.n_gpus)
         self.log("training_progress/global_samples", (step_ + 1) * self.global_batch)
         logger.logkv("step", step_)
         logger.logkv("samples", (step_ + 1) * self.global_batch)
@@ -319,15 +315,15 @@ class DECATrainLoop(LightningModule):
         return self.opt
 
     @rank_zero_only
-    def log_loss_dict(self, diffusion, ts, losses):
+    def log_loss_dict(self, diffusion, ts, losses, module):
         for key, values in losses.items():
-            self.log(f"training_loss/{key}", values.mean().item())
+            self.log(f"training_loss_{module}/{key}", values.mean().item())
             logger.logkv_mean(key, values.mean().item())
             # log the quantiles (four quartiles, in particular).
             for sub_t, sub_loss in zip(ts.cpu().numpy(), values.detach().cpu().numpy()):
                 quartile = int(4 * sub_t / diffusion.num_timesteps)
                 logger.logkv_mean(f"{key}_q{quartile}", sub_loss)
-                self.log(f"training_loss/{key}_q{quartile}", sub_loss)
+                self.log(f"training_loss_{module}/{key}_q{quartile}", sub_loss)
 
 def parse_resume_step_from_filename(filename):
     """

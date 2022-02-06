@@ -48,8 +48,10 @@ def model_and_diffusion_defaults():
     Defaults for image training.
     """
     res = dict(
-        image_size=64,
+        image_size=256,
         num_channels=128,
+        in_channels=3,
+        out_channels=3,
         num_res_blocks=2,
         num_heads=4,
         num_heads_upsample=-1,
@@ -145,6 +147,8 @@ def create_params_model(
 def create_model(
     image_size,
     num_channels,
+    in_channels,
+    out_channels,
     num_res_blocks,
     channel_mult="",
     learn_sigma=False,
@@ -181,11 +185,9 @@ def create_model(
 
     return model(
         image_size=image_size,
-        # in_channels=3,
-        in_channels=3,
+        in_channels=in_channels,
         model_channels=num_channels,
-        # out_channels=(3 if not learn_sigma else 6),
-        out_channels=3,
+        out_channels=out_channels,
         num_res_blocks=num_res_blocks,
         attention_resolutions=tuple(attention_ds),
         dropout=dropout,
@@ -206,6 +208,8 @@ def create_deca_and_diffusion(
     class_cond,
     learn_sigma,
     num_channels,
+    in_channels,
+    out_channels,
     num_res_blocks,
     channel_mult,
     num_heads,
@@ -229,6 +233,8 @@ def create_deca_and_diffusion(
     img_model = create_model(
         image_size,
         num_channels,
+        in_channels,
+        out_channels,
         num_res_blocks,
         channel_mult=channel_mult,
         learn_sigma=learn_sigma,

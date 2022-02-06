@@ -15,6 +15,12 @@ from torch.utils.data import DataLoader, Dataset
 from .recolor_util import recolor as recolor
 import matplotlib.pyplot as plt
 from collections import defaultdict
+from model_3d.FLAME import FLAME
+import model_3d.FLAME.utils.util as util
+import model_3d.FLAME.utils.detectors as detectors
+from skimage.io import imread, imsave
+from skimage.transform import estimate_transform, warp, resize, rescale
+
 
 
 def read_params(path):
@@ -41,31 +47,24 @@ def load_deca_params(deca_dir):
             deca_params[k] = read_params(path=path)
     
     deca_params = swap_key(deca_params)
-    
+
     # deca uv_detail_normals
-    tmp = 0
     uv_detail_normals_path = glob.glob(f'{deca_dir}/uv_detail_normals/*.png')
     for img_name in tqdm.tqdm(deca_params.keys(), desc="Loading uv_detail_normals..."):
-        img_name_tmp = img_name.replace('.jpg', '.png')
+        img_name_ext = img_name.replace('.jpg', '.png')
         # img_name_tmp = img_name.replace('.jpg', '.npy')
 
         # print(filter(lambda name: img_name_tmp in name, uv_detail_normals_path))
         # uv detail normals
         for img_path in uv_detail_normals_path:
-            if img_name_tmp in img_path:
-                # img_uvdn = PIL.Image.open(img_path)
-                # img_uvdn = img_uvdn.load()
-                # deca_params[img_name]['uv_detail_normals'] = (np.array(img_uvdn) / 127.5) - 1
-                # img_uvdn = np.load(img_path, allow_pickle=True)
-                # tmp = img_uvdn.copy()
-                # deca_params[img_name]['uv_detail_normals'] = img_uvdn
+            if img_name_ext in img_path:
                 tmp = img_path
                 deca_params[img_name]['uv_detail_normals'] = img_path 
                 break
-        break   # Remove this after done
+            break
     
     for img_name in tqdm.tqdm(deca_params.keys(), desc="Loading uv_detail_normals..."):
-        deca_params[img_name]['uv_detail_normals'] = tmp
+        deca_params[img_name]['uv_detail_normals'] = tmp    
     
     return deca_params
 
@@ -78,9 +77,8 @@ def load_data_deca(
     deterministic=False,
     resize_mode="resize",
     augment_mode=None,
-    out_c='rgb',
-    z_cond=False,
-    precomp_z="",
+    use_detector=False,
+    in_image="raw",
 ):
     """
     For a dataset, create a generator over (images, kwargs) pairs.
@@ -104,11 +102,6 @@ def load_data_deca(
         raise ValueError("unspecified data directory")
     all_files = _list_image_files_recursively(data_dir)
 
-    if z_cond and precomp_z != "":
-        precomp_z = pd.read_csv(precomp_z, header=None, sep=" ", index_col=False, names=["img_name"] + list(range(27)), lineterminator='\n')
-        precomp_z = precomp_z.set_index('img_name').T.to_dict('list')
-    else: precomp_z = None
-
     deca_params = load_deca_params(deca_dir)
 
     img_dataset = DECADataset(
@@ -116,9 +109,9 @@ def load_data_deca(
         all_files,
         resize_mode=resize_mode,
         augment_mode=augment_mode,
-        out_c=out_c, 
-        precomp_z=precomp_z,
-        deca_params=deca_params
+        deca_params=deca_params,
+        use_detector=use_detector,
+        in_image=in_image,
     )
 
     if deterministic:
@@ -131,8 +124,48 @@ def load_data_deca(
         )
     while True:
         return loader
-        # yield from loader
 
+def bbox2point(left, right, top, bottom, type='bbox'):
+    ''' bbox from detector and landmarks are different
+    '''
+    if type=='kpt68':
+        old_size = (right - left + bottom - top)/2*1.1
+        center = np.array([right - (right - left) / 2.0, bottom - (bottom - top) / 2.0 ])
+    elif type=='bbox':
+        old_size = (right - left + bottom - top)/2
+        center = np.array([right - (right - left) / 2.0, bottom - (bottom - top) / 2.0  + old_size*0.12])
+    else:
+        raise NotImplementedError
+    return old_size, center
+
+def kpt_cropped(img, detector='fan', crop_size=244, scale=1.25):
+    # image_config
+    img = np.array(img)
+    resolution_inp = crop_size
+
+    h, w, _ = img.shape
+    if detector == 'fan':
+        face_detector = detectors.FAN()
+
+    bbox, bbox_type = face_detector.run(img)
+    if len(bbox) < 4:
+        print('no face detected! run original image')
+        left = 0; right = h-1; top=0; bottom=w-1
+    else:
+        left = bbox[0]; right=bbox[2]
+        top = bbox[1]; bottom=bbox[3]
+
+    old_size, center = bbox2point(left, right, top, bottom, type=bbox_type)
+    size = int(old_size*scale)
+    src_pts = np.array([[center[0]-size/2, center[1]-size/2], [center[0] - size/2, center[1]+size/2], [center[0]+size/2, center[1]-size/2]])
+
+    DST_PTS = np.array([[0,0], [0,resolution_inp - 1], [resolution_inp - 1, 0]])
+    tform = estimate_transform('similarity', src_pts, DST_PTS)
+    
+    image = img/255.
+
+    dst_image = warp(image, tform.inverse, output_shape=(resolution_inp, resolution_inp))
+    return dst_image
 
 def _list_image_files_recursively(data_dir):
     results = []
@@ -154,18 +187,17 @@ class DECADataset(Dataset):
         resize_mode,
         augment_mode,
         deca_params,
-        out_c='rgb',
-        precomp_z=None,
-
+        use_detector,
+        in_image='raw',
     ):
         super().__init__()
         self.resolution = resolution
         self.local_images = image_paths
-        self.precomp_z = precomp_z
         self.resize_mode = resize_mode
+        self.use_detector = use_detector
         self.augment_mode = augment_mode
         self.deca_params = deca_params
-        self.out_c = out_c
+        self.in_image = in_image
 
     def __len__(self):
         return len(self.local_images)
@@ -178,31 +210,45 @@ class DECADataset(Dataset):
             pil_image.load()
         pil_image = pil_image.convert("RGB")
 
-        arr = self.augmentation(pil_image=pil_image)
-        arr = self.recolor(img=arr, out_c=self.out_c)
+        if self.use_detector:
+            raw_img = self.detector(pil_image=pil_image)
+        else:
+            raw_img = self.augmentation(pil_image=pil_image)
+        raw_img = (raw_img / 127.5) - 1
 
+        # Deca params of img-path
         out_dict = {}
-
-        # Deca
         params_key = ['shape', 'pose', 'exp', 'cam']
         img_name = path.split('/')[-1]
-        out_dict["params"] = np.concatenate([self.deca_params[img_name][k] for k in params_key])
+        out_dict["deca_params"] = np.concatenate([self.deca_params[img_name][k] for k in params_key])
+        # out_dict["deca_params"] = {k:None for k in params_key}
+        # out_dict["deca_params"]["shape"] = self.deca_params[img_name]["shape"]
+        # out_dict["deca_params"]["pose"] = self.deca_params[img_name]["pose"]
+        # out_dict["deca_params"]["exp"] = self.deca_params[img_name]["exp"]
+        # out_dict["deca_params"]["cam"] = self.deca_params[img_name]["cam"]
 
-        path = self.deca_params[img_name]['uv_detail_normals']
-        with bf.BlobFile(path, "rb") as f:
+        uvdn_path = self.deca_params[img_name]['uv_detail_normals']
+        with bf.BlobFile(uvdn_path, "rb") as f:
             pil_image = PIL.Image.open(f)
             pil_image.load()
         pil_image = pil_image.convert("RGB")
 
-        arr = self.augmentation(pil_image=pil_image)
-        uvdn = (arr / 127.5) - 1
-        out_dict["uv_detail_normals"] = np.transpose(uvdn, [2, 0, 1])
+        uvdn = self.augmentation(pil_image=pil_image)
+        uvdn = (uvdn / 127.5) - 1
 
-        if self.precomp_z is not None:
-            img_name = path.split('/')[-1]
-            out_dict["precomp_z"] = np.array(self.precomp_z[img_name])
+        # Input to model
+        if self.in_image == 'raw':
+            arr = raw_img
+        elif self.in_image == 'raw+uvdn':
+            arr = np.concatenate((raw_img, uvdn), axis=2)
+        else : raise NotImplementedError
 
         return np.transpose(arr, [2, 0, 1]), out_dict
+
+    def detector(self, pil_image):
+        arr = kpt_cropped(pil_image, crop_size=self.resolution)
+        arr = arr * 255
+        return arr
 
     def augmentation(self, pil_image):
         # Resize image by resizing/cropping to match the resolution
@@ -225,36 +271,6 @@ class DECADataset(Dataset):
         
         return arr
     
-    def recolor(self, img, out_c):
-        if out_c == 'sepia':
-            img_ = recolor.rgb_to_sepia(img)
-            img_ = img_.astype(np.float32) / 127.5 - 1
-        elif out_c == 'hsv':
-            img_ = recolor.rgb_to_hsv(img)
-            img_h_norm = img_[..., [0]].astype(np.float32) / 90.0 - 1
-            img_s_norm = img_[..., [1]].astype(np.float32) / 127.5 - 1
-            img_v_norm = img_[..., [2]].astype(np.float32) / 127.5 - 1
-            img_ = np.concatenate((img_h_norm, img_s_norm, img_v_norm), axis=2)
-        elif out_c == 'hls':
-            img_ = recolor.rgb_to_hls(img)
-            img_h_norm = img_[..., [0]].astype(np.float32) / 90.0 - 1
-            img_l_norm = img_[..., [1]].astype(np.float32) / 127.5 - 1
-            img_s_norm = img_[..., [2]].astype(np.float32) / 127.5 - 1
-            img_ = np.concatenate((img_h_norm, img_l_norm, img_s_norm), axis=2)
-        elif out_c == 'ycrcb':
-            img_ = recolor.rgb_to_ycrcb(img)
-            img_ = img_.astype(np.float32) / 127.5 - 1
-        elif out_c == 'luv':
-            img_ = recolor.rgb_to_luv(img)
-            img_ = img_.astype(np.float32) / 127.5 - 1
-        elif out_c in ['rgb', 'rbg', 'brg', 'bgr', 'grb', 'gbr']:
-            img_ = recolor.rgb_sw_chn(img, ch=out_c)
-            img_ = img_.astype(np.float32) / 127.5 - 1
-        else: raise NotImplementedError
-
-        return img_
-
-
 def resize_arr(pil_image, image_size):
     img = pil_image.resize((image_size, image_size), PIL.Image.ANTIALIAS)
     return np.array(img)
