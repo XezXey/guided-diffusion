@@ -13,8 +13,7 @@ models/try_tensorboards/log.txt
 models/try_tensorboards/model000000.pt
 models/try_tensorboards/opt000000.pt
 models/try_tensorboards/progress.csv
-./model_3d/
-./model_3d/FLAME
+./model_3d/FLAME/data/
 lightning_logs
 lightning_logs/
 lightning_logs/version_113/hparams.yaml
