@@ -1165,4 +1165,13 @@ class DECADense(TimestepBlock):
         return {'output':out}
         
 
+class DECA_DPM():
+    def __init__(
+        self,
+        img_model: UNetModelDECA, 
+        deca_model: DECADense,
+    ):
+        super().__init__()
+        self.img_model
+        self.deca_model
 
