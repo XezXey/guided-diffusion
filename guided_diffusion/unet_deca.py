@@ -700,8 +700,9 @@ class UNetModelDECA(nn.Module):
                 h = th.cat([h, hs.pop()], dim=1)
                 h = module(h, emb)
             h = h.type(x.dtype)
-            # return {'output':self.out(h), 'middle_block':bottle_neck}
-            return self.out(h)
+            return {'output':self.out(h), 'middle_block':bottle_neck}
+            # return self.out(h)
+
         elif 'precomp_z' in kwargs.keys():
             z_cond = kwargs['precomp_z']
             for module in self.input_blocks:
