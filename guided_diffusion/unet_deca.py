@@ -668,6 +668,7 @@ class UNetModelDECA(nn.Module):
         self.output_blocks.apply(convert_module_to_f32)
 
     def forward(self, x, timesteps, y=None, **kwargs):
+        x = x.float().cuda()
         """
         Apply the model to an input batch.
 
@@ -687,7 +688,6 @@ class UNetModelDECA(nn.Module):
             assert y.shape == (x.shape[0],)
             emb = emb + self.label_emb(y)
 
-        # h = x.type(self.dtype)
         h = x
 
         if 'precomp_z' not in kwargs.keys():
@@ -700,7 +700,8 @@ class UNetModelDECA(nn.Module):
                 h = th.cat([h, hs.pop()], dim=1)
                 h = module(h, emb)
             h = h.type(x.dtype)
-            return {'output':self.out(h), 'middle_block':bottle_neck}
+            # return {'output':self.out(h), 'middle_block':bottle_neck}
+            return self.out(h)
         elif 'precomp_z' in kwargs.keys():
             z_cond = kwargs['precomp_z']
             for module in self.input_blocks:
