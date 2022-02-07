@@ -168,6 +168,7 @@ class DECATrainLoop(LightningModule):
 
         self.run_step(dat, cond)
 
+        print("GGEZ : ", self.step)
         self.step += 1
     
     def on_train_batch_end(self, outputs, batch, batch_idx):

@@ -39,6 +39,7 @@ def swap_key(params):
 
 def load_deca_params(deca_dir):
     deca_params = {}
+
     # face params 
     params_key = ['shape', 'pose', 'exp', 'cam']
     for k in tqdm.tqdm(params_key, desc="Loading deca params..."):
@@ -50,20 +51,11 @@ def load_deca_params(deca_dir):
 
     # deca uv_detail_normals
     uv_detail_normals_path = glob.glob(f'{deca_dir}/uv_detail_normals/*.png')
-    for img_name in tqdm.tqdm(deca_params.keys(), desc="Loading uv_detail_normals..."):
-        img_name_ext = img_name.replace('.jpg', '.png')
-        # img_name_tmp = img_name.replace('.jpg', '.npy')
+    for path in tqdm.tqdm(uv_detail_normals_path, desc="Loading uv_detail_normals"):
+        img_name = path.split('/')[-1].split('_')[-1]
+        img_name_ext = img_name.replace('.png', '.jpg')
+        deca_params[img_name_ext]['uv_detail_normals'] = path
 
-        # print(filter(lambda name: img_name_tmp in name, uv_detail_normals_path))
-        # uv detail normals
-        for img_path in uv_detail_normals_path:
-            if img_name_ext in img_path:
-                deca_params[img_name]['uv_detail_normals'] = img_path 
-                break
-    
-    # for img_name in tqdm.tqdm(deca_params.keys(), desc="Loading uv_detail_normals..."):
-        # deca_params[img_name]['uv_detail_normals'] = tmp    
-    
     return deca_params
 
 def load_data_deca(
