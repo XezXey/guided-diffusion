@@ -30,6 +30,8 @@ def main():
     img_model, deca_model, diffusion = create_deca_and_diffusion(
         **args_to_dict(args, model_and_diffusion_defaults().keys())
     )
+    print(deca_model)
+    exit()
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
 
     logger.log("creating data loader...")
