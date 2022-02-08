@@ -1193,6 +1193,7 @@ class DECADense(TimestepBlock):
         self.combined = combined
         self.activation = nn.LeakyReLU()
 
+        self.conv3 = nn.Sequential(*[nn.Conv2d(in_channels=512, out_channels=512, kernel_size=(3, 3), stride=2)]*2)
 
         time_embed_dim = model_channels * 4
 
@@ -1223,7 +1224,8 @@ class DECADense(TimestepBlock):
         
         # Middle - Condition
         self.mid_mlp = nn.Sequential(
-            linear(time_embed_dim + 32768, time_embed_dim),
+            # linear(time_embed_dim + 32768, time_embed_dim),
+            linear(time_embed_dim + 512, time_embed_dim),
             self.activation,
         )
 
@@ -1261,7 +1263,8 @@ class DECADense(TimestepBlock):
             h = h + emb_out
 
         if self.combined == 'cat':
-            cond = middle_block.flatten(start_dim=1, end_dim=-1)
+            cond = self.conv3(middle_block).flatten(start_dim=1, end_dim=-1)
+            # cond = middle_block.flatten(start_dim=1, end_dim=-1)
             h_cond = th.cat((h, cond), dim=1)
         else :
             raise NotImplemented
