@@ -1066,7 +1066,6 @@ class DenseResBlock(TimestepBlock):
     # TODO. 
     pass
 
-'''
 class DECADense(TimestepBlock):
    
     def __init__(
@@ -1166,8 +1165,7 @@ class DECADense(TimestepBlock):
             out = layer(out)
 
         return {'output':out}
-'''    
-
+'''
 class DECADense(TimestepBlock):
    
     def __init__(
@@ -1276,16 +1274,4 @@ class DECADense(TimestepBlock):
             out = layer(out)
 
         return {'output':out}
-
-
-class DECA_DPM():
-    # Todo for inference
-    def __init__(
-        self,
-        img_model: UNetModelDECA, 
-        deca_model: DECADense,
-    ):
-        super().__init__()
-        self.img_model
-        self.deca_model
-
+'''

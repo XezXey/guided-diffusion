@@ -259,9 +259,9 @@ class GaussianDiffusion:
 
         B, C = x.shape[:2]
         assert t.shape == (B,)
-        model_output = model(x, self._scale_timesteps(t), **model_kwargs)
-        print(model_output.keys())
-        exit()
+        model_output_ = model(x, self._scale_timesteps(t), **model_kwargs)
+        model_output = model_output_["output"]
+        # print(model_output.keys())
 
         if self.model_var_type in [ModelVarType.LEARNED, ModelVarType.LEARNED_RANGE]:
             assert model_output.shape == (B, C * 2, *x.shape[2:])
@@ -327,6 +327,7 @@ class GaussianDiffusion:
             "variance": model_variance,
             "log_variance": model_log_variance,
             "pred_xstart": pred_xstart,
+            "middle_block" : model_output_['middle_block']
         }
 
     def _predict_xstart_from_eps(self, x_t, t, eps):
@@ -440,7 +441,7 @@ class GaussianDiffusion:
                 cond_fn, out, x, t, model_kwargs=model_kwargs
             )
         sample = out["mean"] + nonzero_mask * th.exp(0.5 * out["log_variance"]) * noise
-        return {"sample": sample, "pred_xstart": out["pred_xstart"]}
+        return {"sample": sample, "pred_xstart": out["pred_xstart"], "middle_block":out["middle_block"]}
 
     def p_sample_loop(
         self,
@@ -535,7 +536,6 @@ class GaussianDiffusion:
                     cond_fn=cond_fn,
                     model_kwargs=model_kwargs,
                 )
-                print(out["sample"].shape)
                 yield out
                 img = out["sample"]
 
