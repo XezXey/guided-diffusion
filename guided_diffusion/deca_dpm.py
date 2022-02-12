@@ -43,21 +43,22 @@ class Diffusion_DECA(GaussianDiffusion):
                 B, C = img.shape[:2]
                 assert t.shape == (B,)
                 img_model_output_ = self.img_model(img, self.diffusion._scale_timesteps(t), **model_kwargs)
-                model_input = img.clone()
+                img_model_input = img.clone()
                 img = img_model_output_["output"]
 
-                # Forward pass - deca model
-                # t = th.tensor([i] * shape_dict['deca'][0]).cuda()    # [i] * batch_size
-                # model_kwargs.update(img_model_output_)
-                # B, C = deca.shape[:2]
-                # assert t.shape == (B,)
-                # deca_model_output_ = self.deca_model(deca.float(), self.diffusion._scale_timesteps(t), **model_kwargs)
-                # deca = deca_model_output_["output"]
+                # Update dict - intermidiate features
+                model_kwargs.update(img_model_output_)
 
-                # img, deca = inner_forward(img=img, deca=deca)
+                # Forward pass - deca model
+                t = th.tensor([i] * shape_dict['deca'][0]).cuda()    # [i] * batch_size
+                B, C = deca.shape[:2]
+                assert t.shape == (B,)
+                deca_model_output_ = self.deca_model(deca.float(), self.diffusion._scale_timesteps(t), **model_kwargs)
+                deca_model_input = deca.clone()
+                deca = deca_model_output_["output"]
 
                 out_img = self.p_sample(
-                    model_input=model_input,
+                    model_input=img_model_input,
                     model_output=img,
                     t=t,
                     clip_denoised=clip_denoised,
@@ -67,16 +68,16 @@ class Diffusion_DECA(GaussianDiffusion):
                 )
                 img = out_img["sample"]
 
-                # out_deca = self.p_sample(
-                #     x=deca,
-                #     t=t,
-                #     clip_denoised=clip_denoised,
-                #     denoised_fn=denoised_fn,
-                #     cond_fn=cond_fn,
-                #     model_kwargs=model_kwargs,
-                # )
-                # yield out
-                # deca = out_deca["sample"]
+                out_deca = self.p_sample(
+                    model_input=deca_model_input,
+                    model_output=deca,
+                    t=t,
+                    clip_denoised=clip_denoised,
+                    denoised_fn=denoised_fn,
+                    cond_fn=cond_fn,
+                    model_kwargs=model_kwargs,
+                )
+                deca = out_deca["sample"]
 
 
         return img, deca
