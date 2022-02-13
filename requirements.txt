@@ -22,7 +22,6 @@ filelock==3.4.0
 freetype-py==2.2.0
 gitdb==4.0.9
 GitPython==3.1.20
--e git+https://github.com/openai/guided-diffusion.git@27c20a8fab9cb472df5d6bdd6c8d11c8f430b924#egg=guided_diffusion
 idna==3.3
 imageio==2.13.3
 importlib-metadata==4.8.2
