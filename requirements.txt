@@ -110,3 +110,4 @@ xmltodict==0.12.0
 yaspin==2.1.0
 zipp==3.6.0
 pytorch-lightning
+scikit-image
