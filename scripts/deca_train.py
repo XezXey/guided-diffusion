@@ -81,7 +81,8 @@ def create_argparser():
         log_dir="./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_image")),
         augment_mode=None,
         n_gpus=1,
-        use_detector=False
+        use_detector=False,
+        deca_cond=False
     )
     defaults.update(model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()

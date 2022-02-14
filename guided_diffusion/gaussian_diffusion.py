@@ -261,7 +261,6 @@ class GaussianDiffusion:
         assert t.shape == (B,)
         model_output_ = model(x, self._scale_timesteps(t), **model_kwargs)
         model_output = model_output_["output"]
-        # print(model_output.keys())
 
         if self.model_var_type in [ModelVarType.LEARNED, ModelVarType.LEARNED_RANGE]:
             assert model_output.shape == (B, C * 2, *x.shape[2:])

@@ -5,8 +5,7 @@ from guided_diffusion.unet_deca import DECADenseUnCond, DECADenseCond
 
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
-from .unet import UNetModel
-from .unet_deca import UNetModelDECA
+from .unet_deca import UNetModelDECA, UNetModel
 
 NUM_CLASSES = 1000
 

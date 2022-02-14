@@ -4,35 +4,36 @@ Train a diffusion model on images.
 
 import argparse, datetime
 from cmath import exp
+import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 
 
 from guided_diffusion import logger
-from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
+from guided_diffusion.deca_datasets import kpt_cropped, load_data_deca
 from guided_diffusion.resample import create_named_schedule_sampler
 from guided_diffusion.script_util import (
     model_and_diffusion_defaults,
-    create_img_deca_and_diffusion,
+    create_deca_and_diffusion,
     args_to_dict,
     add_dict_to_argparser,
     seed_all,
 )
-from guided_diffusion.train_util.img_deca_train_util import ImgDecaTrainLoop
+from guided_diffusion.deca_train_util import DECATrainLoop
 
 def main():
     args = create_argparser().parse_args()
-    seed_all(47)    # Seeding the model - Independent training
+    seed_all(33)    # Seeding the model - Independent training
 
     logger.configure(dir=args.log_dir)
 
     logger.log("creating model and diffusion...")
-    img_model, deca_model, diffusion = create_img_deca_and_diffusion(
+    img_model, deca_model, diffusion = create_deca_and_diffusion(
         **args_to_dict(args, model_and_diffusion_defaults().keys())
     )
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
 
     logger.log("creating data loader...")
-    data = load_data_img_deca(
+    data = load_data_deca(
         data_dir=args.data_dir,
         deca_dir=args.deca_dir,
         batch_size=args.batch_size,
@@ -48,7 +49,7 @@ def main():
 
     tb_logger = TensorBoardLogger("tb_logs", name="diffusion", version=args.log_dir.split('/')[-1])
 
-    train_loop = ImgDecaTrainLoop(
+    train_loop = DECATrainLoop(
         img_model=img_model,
         deca_model=deca_model,
         diffusion=diffusion,
@@ -80,7 +81,7 @@ def create_argparser():
         weight_decay=0.0,
         lr_anneal_steps=0,
         batch_size=1,
-        ema_rate="0.5,0.9999",  # comma-separated list of EMA values
+        ema_rate="0.9999,0.5",  # comma-separated list of EMA values
         log_interval=10,
         save_interval=100000,
         resume_checkpoint="",
@@ -90,8 +91,7 @@ def create_argparser():
         in_image="raw",
         n_gpus=1,
         image_size=256,
-        use_detector=False,
-        deca_cond=True,
+        use_detector=False
     )
     defaults.update(model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()

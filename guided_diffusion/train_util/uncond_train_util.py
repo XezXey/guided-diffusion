@@ -6,14 +6,13 @@ import blobfile as bf
 import torch as th
 import numpy as np
 import torch.distributed as dist
-from torch.nn.parallel.distributed import DistributedDataParallel as DDP
 from torch.optim import AdamW
 from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning.utilities import rank_zero_only
 
 import pytorch_lightning as pl
 
-from .. import dist_util, logger
+from .. import logger
 from ..trainer_util import Trainer
 from ..nn import update_ema
 from ..resample import LossAwareSampler, UniformSampler
