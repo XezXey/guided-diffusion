@@ -864,7 +864,10 @@ class GaussianDiffusion:
             if self.loss_type == LossType.RESCALED_KL:
                 terms["loss"] *= self.num_timesteps
         elif self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
+            print(model_kwargs.keys())
             model_kwargs.update()
+            print(model_kwargs.keys())
+            exit()
             output = model(x_t.type(th.cuda.FloatTensor), self._scale_timesteps(t).type(th.cuda.LongTensor), **model_kwargs)
             model_output = output['output']
 
@@ -898,11 +901,6 @@ class GaussianDiffusion:
                 ModelMeanType.EPSILON: noise,
             }[self.model_mean_type]
             assert model_output.shape == target.shape == x_start.shape
-            # Test
-            # print(target.shape, model_output.shape)
-            # x = th.cat((target, model_output), dim=2)
-            # plt.imshow(np.transpose(x.detach().cpu().numpy()[0], [1, 2, 0]))
-            # plt.show()
             terms["mse"] = mean_flat((target.type_as(model_output) - model_output) ** 2)
             if "vb" in terms:
                 terms["loss"] = terms["mse"] + terms["vb"]

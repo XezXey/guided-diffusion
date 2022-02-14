@@ -46,12 +46,11 @@ class DECATrainLoop(LightningModule):
         self.n_gpus = n_gpus
         self.tb_logger = tb_logger
         self.pl_trainer = pl.Trainer(
-            gpus=self.n_gpus,
+            gpus=[1],#self.n_gpus,
             strategy='ddp', 
             logger=self.tb_logger, 
             log_every_n_steps=1,
             accelerator='gpu')
-            #, precision=16)
 
         self.automatic_optimization = False # Manual optimization flow
 
@@ -213,15 +212,6 @@ class DECATrainLoop(LightningModule):
         }
 
         t, weights = self.schedule_sampler.sample(batch.shape[0], self.device)
-        # import matplotlib.pyplot as plt
-        # plt.imshow(np.transpose(batch[0].cpu().numpy(), (1, 2, 0))[..., :3])
-        # plt.show()
-
-        # plt.imshow(np.transpose(batch[0].cpu().numpy(), (1, 2, 0))[..., :3] + 1)
-        # plt.show()
-
-        # plt.imshow(((np.transpose(batch[0].cpu().numpy(), (1, 2, 0))[..., :3] + 1) * 127.5).astype(np.uint8))
-        # plt.show()
         # Image losses
         img_compute_losses = functools.partial(
             self.diffusion.training_losses_deca,
@@ -283,10 +273,11 @@ class DECATrainLoop(LightningModule):
         logger.logkv("step", step_)
         logger.logkv("samples", (step_ + 1) * self.global_batch)
 
+    @rank_zero_only
     def save(self):
         def save_checkpoint(rate, params, trainer, name=""):
             state_dict = trainer.master_params_to_state_dict(params)
-            logger.log(f"saving model {rate}...")
+            logger.log(f"saving {name}_model {rate}...")
             if not rate:
                 filename = f"{name}_model{(self.step+self.resume_step):06d}.pt"
             else:
@@ -299,7 +290,7 @@ class DECATrainLoop(LightningModule):
         for rate, params in zip(self.ema_rate, self.deca_ema_params):
             save_checkpoint(rate, params, self.deca_trainer, name='DECA')
         for rate, params in zip(self.ema_rate, self.img_ema_params):
-            save_checkpoint(rate, params, self.img_trainer, name='img')
+            save_checkpoint(rate, params, self.img_trainer, name='IMG')
 
         with bf.BlobFile(
             bf.join(get_blob_logdir(), f"opt{(self.step+self.resume_step):06d}.pt"),
