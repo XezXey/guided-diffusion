@@ -1,15 +1,14 @@
 import argparse
 import inspect
 
-from guided_diffusion.unet_deca import DECADense
+from guided_diffusion.unet_deca import DECADenseUnCond, DECADenseCond
 
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
-from .unet import UNetModel, EncoderUNetModel
+from .unet import UNetModel
 from .unet_deca import UNetModelDECA
 
 NUM_CLASSES = 1000
-
 
 def diffusion_defaults():
     """
@@ -25,23 +24,6 @@ def diffusion_defaults():
         rescale_timesteps=False,
         rescale_learned_sigmas=False,
     )
-
-
-def classifier_defaults():
-    """
-    Defaults for classifier models.
-    """
-    return dict(
-        image_size=64,
-        classifier_use_fp16=False,
-        classifier_width=128,
-        classifier_depth=2,
-        classifier_attention_resolutions="32,16,8",  # 16
-        classifier_use_scale_shift_norm=True,  # False
-        classifier_resblock_updown=True,  # False
-        classifier_pool="attention",
-    )
-
 
 def model_and_diffusion_defaults():
     """
@@ -64,21 +46,19 @@ def model_and_diffusion_defaults():
         use_scale_shift_norm=True,
         resblock_updown=False,
         use_new_attention_order=False,
-        z_cond=False,
+        deca_cond=True,
     )
     res.update(diffusion_defaults())
     return res
 
-def classifier_and_diffusion_defaults():
-    res = classifier_defaults()
-    res.update(diffusion_defaults())
-    return res
-
-def create_model_and_diffusion(
+# Pipeline
+def create_img_deca_and_diffusion(
     image_size,
     class_cond,
     learn_sigma,
     num_channels,
+    in_channels,
+    out_channels,
     num_res_blocks,
     channel_mult,
     num_heads,
@@ -97,11 +77,13 @@ def create_model_and_diffusion(
     use_scale_shift_norm,
     resblock_updown,
     use_new_attention_order,
-    z_cond,
+    deca_cond
 ):
-    model = create_model(
+    img_model = create_model(
         image_size,
         num_channels,
+        in_channels,
+        out_channels,
         num_res_blocks,
         channel_mult=channel_mult,
         learn_sigma=learn_sigma,
@@ -115,8 +97,16 @@ def create_model_and_diffusion(
         dropout=dropout,
         resblock_updown=resblock_updown,
         use_new_attention_order=use_new_attention_order,
-        z_cond=z_cond,
+        model=UNetModelDECA
     )
+
+    params_model = create_params_model(
+        in_channels=159,
+        model_channels=128,
+        out_channels=159,
+        deca_cond=deca_cond,
+    )
+
     diffusion = create_gaussian_diffusion(
         steps=diffusion_steps,
         learn_sigma=learn_sigma,
@@ -127,22 +117,129 @@ def create_model_and_diffusion(
         rescale_learned_sigmas=rescale_learned_sigmas,
         timestep_respacing=timestep_respacing,
     )
-    return model, diffusion
+    return img_model, params_model, diffusion
 
+def create_deca_and_diffusion(
+    learn_sigma,
+    diffusion_steps,
+    noise_schedule,
+    timestep_respacing,
+    use_kl,
+    predict_xstart,
+    rescale_timesteps,
+    rescale_learned_sigmas,
+    use_checkpoint,
+    deca_cond,
+    **kwargs
+):
+
+    params_model = create_params_model(
+        in_channels=159,
+        model_channels=128,
+        out_channels=159,
+        deca_cond=deca_cond,
+        use_checkpoint=use_checkpoint,
+    )
+
+    diffusion = create_gaussian_diffusion(
+        steps=diffusion_steps,
+        learn_sigma=learn_sigma,
+        noise_schedule=noise_schedule,
+        use_kl=use_kl,
+        predict_xstart=predict_xstart,
+        rescale_timesteps=rescale_timesteps,
+        rescale_learned_sigmas=rescale_learned_sigmas,
+        timestep_respacing=timestep_respacing,
+    )
+
+    return params_model, diffusion
+
+def create_img_and_diffusion(
+    image_size,
+    class_cond,
+    learn_sigma,
+    num_channels,
+    in_channels,
+    out_channels,
+    num_res_blocks,
+    channel_mult,
+    num_heads,
+    num_head_channels,
+    num_heads_upsample,
+    attention_resolutions,
+    dropout,
+    diffusion_steps,
+    noise_schedule,
+    timestep_respacing,
+    use_kl,
+    predict_xstart,
+    rescale_timesteps,
+    rescale_learned_sigmas,
+    use_checkpoint,
+    use_scale_shift_norm,
+    resblock_updown,
+    use_new_attention_order,
+):
+    img_model = create_model(
+        image_size,
+        num_channels,
+        in_channels,
+        out_channels,
+        num_res_blocks,
+        channel_mult=channel_mult,
+        learn_sigma=learn_sigma,
+        class_cond=class_cond,
+        use_checkpoint=use_checkpoint,
+        attention_resolutions=attention_resolutions,
+        num_heads=num_heads,
+        num_head_channels=num_head_channels,
+        num_heads_upsample=num_heads_upsample,
+        use_scale_shift_norm=use_scale_shift_norm,
+        dropout=dropout,
+        resblock_updown=resblock_updown,
+        use_new_attention_order=use_new_attention_order,
+        model=UNetModelDECA
+    )
+
+    diffusion = create_gaussian_diffusion(
+        steps=diffusion_steps,
+        learn_sigma=learn_sigma,
+        noise_schedule=noise_schedule,
+        use_kl=use_kl,
+        predict_xstart=predict_xstart,
+        rescale_timesteps=rescale_timesteps,
+        rescale_learned_sigmas=rescale_learned_sigmas,
+        timestep_respacing=timestep_respacing,
+    )
+
+    return img_model, diffusion
+
+# Each sub-modules
 def create_params_model(
     in_channels,
     model_channels,
     out_channels,
+    deca_cond,
     use_checkpoint=False,
     use_scale_shift_norm=False,
 ):
-    return DECADense(
-        in_channels=in_channels,
-        out_channels=out_channels,
-        model_channels=model_channels,
-        use_checkpoint=use_checkpoint,
-        use_scale_shift_norm=use_scale_shift_norm
-    )
+    if deca_cond:
+        return DECADenseUnCond(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            model_channels=model_channels,
+            use_checkpoint=use_checkpoint,
+            use_scale_shift_norm=use_scale_shift_norm
+        )
+
+    else:
+        return DECADenseUnCond(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            model_channels=model_channels,
+            use_checkpoint=use_checkpoint,
+            use_scale_shift_norm=use_scale_shift_norm
+        )
 
 def create_model(
     image_size,
@@ -162,7 +259,6 @@ def create_model(
     dropout=0,
     resblock_updown=False,
     use_new_attention_order=False,
-    z_cond=False,
     model=UNetModel
 ):
     if channel_mult == "":
@@ -200,155 +296,7 @@ def create_model(
         use_scale_shift_norm=use_scale_shift_norm,
         resblock_updown=resblock_updown,
         use_new_attention_order=use_new_attention_order,
-        z_cond=z_cond,
     )
-
-def create_deca_and_diffusion(
-    image_size,
-    class_cond,
-    learn_sigma,
-    num_channels,
-    in_channels,
-    out_channels,
-    num_res_blocks,
-    channel_mult,
-    num_heads,
-    num_head_channels,
-    num_heads_upsample,
-    attention_resolutions,
-    dropout,
-    diffusion_steps,
-    noise_schedule,
-    timestep_respacing,
-    use_kl,
-    predict_xstart,
-    rescale_timesteps,
-    rescale_learned_sigmas,
-    use_checkpoint,
-    use_scale_shift_norm,
-    resblock_updown,
-    use_new_attention_order,
-    z_cond,
-):
-    img_model = create_model(
-        image_size,
-        num_channels,
-        in_channels,
-        out_channels,
-        num_res_blocks,
-        channel_mult=channel_mult,
-        learn_sigma=learn_sigma,
-        class_cond=class_cond,
-        use_checkpoint=use_checkpoint,
-        attention_resolutions=attention_resolutions,
-        num_heads=num_heads,
-        num_head_channels=num_head_channels,
-        num_heads_upsample=num_heads_upsample,
-        use_scale_shift_norm=use_scale_shift_norm,
-        dropout=dropout,
-        resblock_updown=resblock_updown,
-        use_new_attention_order=use_new_attention_order,
-        z_cond=z_cond,
-        model=UNetModelDECA
-    )
-
-    params_model = create_params_model(
-        in_channels=159,
-        model_channels=128,
-        out_channels=159)
-
-    diffusion = create_gaussian_diffusion(
-        steps=diffusion_steps,
-        learn_sigma=learn_sigma,
-        noise_schedule=noise_schedule,
-        use_kl=use_kl,
-        predict_xstart=predict_xstart,
-        rescale_timesteps=rescale_timesteps,
-        rescale_learned_sigmas=rescale_learned_sigmas,
-        timestep_respacing=timestep_respacing,
-    )
-    return img_model, params_model, diffusion
-
-def create_classifier_and_diffusion(
-    image_size,
-    classifier_use_fp16,
-    classifier_width,
-    classifier_depth,
-    classifier_attention_resolutions,
-    classifier_use_scale_shift_norm,
-    classifier_resblock_updown,
-    classifier_pool,
-    learn_sigma,
-    diffusion_steps,
-    noise_schedule,
-    timestep_respacing,
-    use_kl,
-    predict_xstart,
-    rescale_timesteps,
-    rescale_learned_sigmas,
-):
-    classifier = create_classifier(
-        image_size,
-        classifier_use_fp16,
-        classifier_width,
-        classifier_depth,
-        classifier_attention_resolutions,
-        classifier_use_scale_shift_norm,
-        classifier_resblock_updown,
-        classifier_pool,
-    )
-    diffusion = create_gaussian_diffusion(
-        steps=diffusion_steps,
-        learn_sigma=learn_sigma,
-        noise_schedule=noise_schedule,
-        use_kl=use_kl,
-        predict_xstart=predict_xstart,
-        rescale_timesteps=rescale_timesteps,
-        rescale_learned_sigmas=rescale_learned_sigmas,
-        timestep_respacing=timestep_respacing,
-    )
-    return classifier, diffusion
-
-def create_classifier(
-    image_size,
-    classifier_use_fp16,
-    classifier_width,
-    classifier_depth,
-    classifier_attention_resolutions,
-    classifier_use_scale_shift_norm,
-    classifier_resblock_updown,
-    classifier_pool,
-):
-    if image_size == 512:
-        channel_mult = (0.5, 1, 1, 2, 2, 4, 4)
-    elif image_size == 256:
-        channel_mult = (1, 1, 2, 2, 4, 4)
-    elif image_size == 128:
-        channel_mult = (1, 1, 2, 3, 4)
-    elif image_size == 64:
-        channel_mult = (1, 2, 3, 4)
-    else:
-        raise ValueError(f"unsupported image size: {image_size}")
-
-    attention_ds = []
-    for res in classifier_attention_resolutions.split(","):
-        attention_ds.append(image_size // int(res))
-
-    return EncoderUNetModel(
-        image_size=image_size,
-        in_channels=3,
-        model_channels=classifier_width,
-        out_channels=1000,
-        num_res_blocks=classifier_depth,
-        attention_resolutions=tuple(attention_ds),
-        channel_mult=channel_mult,
-        use_fp16=classifier_use_fp16,
-        num_head_channels=64,
-        use_scale_shift_norm=classifier_use_scale_shift_norm,
-        resblock_updown=classifier_resblock_updown,
-        pool=classifier_pool,
-    )
-
 
 def create_gaussian_diffusion(
     *,
@@ -390,7 +338,7 @@ def create_gaussian_diffusion(
         rescale_timesteps=rescale_timesteps,
     )
 
-
+# Utils
 def add_dict_to_argparser(parser, default_dict):
     for k, v in default_dict.items():
         v_type = type(v)
@@ -400,10 +348,8 @@ def add_dict_to_argparser(parser, default_dict):
             v_type = str2bool
         parser.add_argument(f"--{k}", default=v, type=v_type)
 
-
 def args_to_dict(args, keys):
     return {k: getattr(args, k) for k in keys}
-
 
 def str2bool(v):
     """

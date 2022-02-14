@@ -13,13 +13,13 @@ from pytorch_lightning.utilities import rank_zero_only
 
 import pytorch_lightning as pl
 
-from . import dist_util, logger
-from .deca_trainer_util import DECATrainer
-from .nn import update_ema
-from .resample import LossAwareSampler, UniformSampler
-from .script_util import seed_all
+from .. import dist_util, logger
+from ..deca_trainer_util import Trainer
+from ..nn import update_ema
+from ..resample import LossAwareSampler, UniformSampler
+from ..script_util import seed_all
 
-class DECATrainLoop(LightningModule):
+class ImgDecaTrainLoop(LightningModule):
     def __init__(
         self,
         *,
@@ -40,7 +40,7 @@ class DECATrainLoop(LightningModule):
         n_gpus=1,
     ):
 
-        super(DECATrainLoop, self).__init__()
+        super(ImgDecaTrainLoop, self).__init__()
 
         # Lightning
         self.n_gpus = n_gpus
@@ -76,11 +76,11 @@ class DECATrainLoop(LightningModule):
         self.step = 0
         self.resume_step = 0
 
-        self.img_trainer = DECATrainer(
+        self.img_trainer = Trainer(
             model=self.img_model,
         )
 
-        self.deca_trainer = DECATrainer(
+        self.deca_trainer = Trainer(
             model=self.deca_model,
         )
 

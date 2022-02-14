@@ -9,16 +9,16 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 
 from guided_diffusion import logger
-from guided_diffusion.image_datasets import load_data
+from guided_diffusion.dataloader.img_deca_datasets import kpt_cropped, load_data_deca
 from guided_diffusion.resample import create_named_schedule_sampler
 from guided_diffusion.script_util import (
     model_and_diffusion_defaults,
-    create_model_and_diffusion,
+    create_img_and_diffusion,
     args_to_dict,
     add_dict_to_argparser,
     seed_all,
 )
-from guided_diffusion.train_util import TrainLoop
+from guided_diffusion.train_util.uncond_train_util import TrainLoop
 
 def main():
     args = create_argparser().parse_args()
@@ -27,23 +27,22 @@ def main():
     logger.configure(dir=args.log_dir)
 
     logger.log("creating model and diffusion...")
-    model, diffusion = create_model_and_diffusion(
+    img_model, diffusion = create_img_and_diffusion(
         **args_to_dict(args, model_and_diffusion_defaults().keys())
     )
-    # model.cuda()
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
 
     logger.log("creating data loader...")
-    data = load_data(
+    data = load_data_deca(
         data_dir=args.data_dir,
+        deca_dir=args.deca_dir,
         batch_size=args.batch_size,
         image_size=args.image_size,
-        class_cond=args.class_cond,
-        deterministic=True, # For paired training
-        flip=args.flip,
-        out_c=args.out_c,
-        z_cond=args.z_cond,
-        precomp_z=args.precomp_z
+        deterministic=True,
+        augment_mode=args.augment_mode,
+        resize_mode=args.resize_mode,
+        use_detector=args.use_detector,
+        in_image=args.in_image,
     )
 
     logger.log("training...")
@@ -51,7 +50,7 @@ def main():
     tb_logger = TensorBoardLogger("tb_logs", name="diffusion", version=args.log_dir.split('/')[-1])
 
     train_loop = TrainLoop(
-        model=model,
+        model=img_model,
         diffusion=diffusion,
         data=data,
         batch_size=args.batch_size,
@@ -73,7 +72,10 @@ def main():
 def create_argparser():
     defaults = dict(
         data_dir="",
+        deca_dir="",
         schedule_sampler="uniform",
+        in_channels=3,
+        out_channels=3,
         lr=1e-4,
         weight_decay=0.0,
         lr_anneal_steps=0,
@@ -83,11 +85,12 @@ def create_argparser():
         save_interval=100000,
         resume_checkpoint="",
         log_dir="./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_image")),
-        flip=False,
-        out_c='rgb',
-        z_cond=False,
-        precomp_z="",
+        augment_mode=None,
+        resize_mode="resize",
+        in_image="raw",
         n_gpus=1,
+        image_size=256,
+        use_detector=False
     )
     defaults.update(model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()

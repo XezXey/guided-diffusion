@@ -124,7 +124,7 @@ def param_grad_or_zeros(param):
         return th.zeros_like(param)
 
 
-class DECATrainer:
+class Trainer:
     def __init__(self, *, model):
         self.model = model
         self.model_params = list(self.model.parameters())

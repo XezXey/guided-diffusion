@@ -12,7 +12,7 @@ import tqdm
 import os
 import glob
 from torch.utils.data import DataLoader, Dataset
-from .recolor_util import recolor as recolor
+from ..recolor_util import recolor as recolor
 import matplotlib.pyplot as plt
 from collections import defaultdict
 from model_3d.FLAME import FLAME
@@ -58,7 +58,7 @@ def load_deca_params(deca_dir):
 
     return deca_params
 
-def load_data_deca(
+def load_data_img_deca(
     *,
     data_dir,
     deca_dir,
@@ -211,11 +211,6 @@ class DECADataset(Dataset):
         params_key = ['shape', 'pose', 'exp', 'cam']
         img_name = path.split('/')[-1]
         out_dict["deca_params"] = np.concatenate([self.deca_params[img_name][k] for k in params_key])
-        # out_dict["deca_params"] = {k:None for k in params_key}
-        # out_dict["deca_params"]["shape"] = self.deca_params[img_name]["shape"]
-        # out_dict["deca_params"]["pose"] = self.deca_params[img_name]["pose"]
-        # out_dict["deca_params"]["exp"] = self.deca_params[img_name]["exp"]
-        # out_dict["deca_params"]["cam"] = self.deca_params[img_name]["cam"]
 
         uvdn_path = self.deca_params[img_name]['uv_detail_normals']
         with bf.BlobFile(uvdn_path, "rb") as f:
