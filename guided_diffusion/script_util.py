@@ -225,7 +225,7 @@ def create_params_model(
     use_scale_shift_norm=False,
 ):
     if deca_cond:
-        return DECADenseUnCond(
+        return DECADenseCond(
             in_channels=in_channels,
             out_channels=out_channels,
             model_channels=model_channels,

@@ -14,7 +14,7 @@ from pytorch_lightning.utilities import rank_zero_only
 import pytorch_lightning as pl
 
 from .. import dist_util, logger
-from ..deca_trainer_util import Trainer
+from ..trainer_util import Trainer
 from ..nn import update_ema
 from ..resample import LossAwareSampler, UniformSampler
 from ..script_util import seed_all
