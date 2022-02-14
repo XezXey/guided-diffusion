@@ -179,6 +179,7 @@ def create_img_and_diffusion(
     use_scale_shift_norm,
     resblock_updown,
     use_new_attention_order,
+    **kwargs,   # handle unused params e.g. deca_cond
 ):
     img_model = create_model(
         image_size,

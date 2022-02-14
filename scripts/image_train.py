@@ -9,7 +9,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 
 from guided_diffusion import logger
-from guided_diffusion.dataloader.img_deca_datasets import kpt_cropped, load_data_deca
+from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
 from guided_diffusion.resample import create_named_schedule_sampler
 from guided_diffusion.script_util import (
     model_and_diffusion_defaults,
@@ -33,7 +33,7 @@ def main():
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
 
     logger.log("creating data loader...")
-    data = load_data_deca(
+    data = load_data_img_deca(
         data_dir=args.data_dir,
         deca_dir=args.deca_dir,
         batch_size=args.batch_size,
@@ -63,7 +63,8 @@ def main():
         weight_decay=args.weight_decay,
         lr_anneal_steps=args.lr_anneal_steps,
         n_gpus=args.n_gpus,
-        tb_logger=tb_logger
+        tb_logger=tb_logger,
+        name="Image"
     )
     
     train_loop.run()
@@ -80,7 +81,7 @@ def create_argparser():
         weight_decay=0.0,
         lr_anneal_steps=0,
         batch_size=1,
-        ema_rate="0.9999,0.5",  # comma-separated list of EMA values
+        ema_rate="0.5,0.9999",  # comma-separated list of EMA values
         log_interval=10,
         save_interval=100000,
         resume_checkpoint="",
