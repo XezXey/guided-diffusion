@@ -37,7 +37,32 @@ def swap_key(params):
 
     return params_s
 
+def normalize(arr, min_val=None, max_val=None, a=-1, b=1):
+    '''
+    Normalize any vars to [a, b]
+    :param a: new minimum value
+    :param b: new maximum value
+    :param arr: np.array shape=(N, #params_dim) e.g. deca's params_dim = 159
+    '''
+    if max_val is None and min_val is None:
+        max_val = np.max(arr, axis=0)    
+        min_val = np.min(arr, axis=0)
+
+    arr_norm = ((b-a) * (arr - min_val) / (max_val - min_val)) + a
+    return arr_norm, min_val, max_val
+
+def denormalize(arr_norm, min_val, max_val, a=-1, b=1):
+    arr_denorm = (((arr_norm - a) * (max_val - min_val)) / (b - a)) + min_val
+    return arr_denorm
+
+
+
+
 def load_deca_params(deca_dir):
+    '''
+    Return the dict of deca params = {'0.jpg':{'shape':(100,), 'pose':(6,), 'exp':(50,), 'cam':(3,)}, 
+                                      '1.jpg': ..., '2.jpg': ...}
+    '''
     deca_params = {}
 
     # face params 
@@ -48,6 +73,17 @@ def load_deca_params(deca_dir):
             deca_params[k] = read_params(path=path)
     
     deca_params = swap_key(deca_params)
+
+
+    all_params = []
+    for img_name in deca_params:
+        each_img = []
+        for k in params_key:
+            each_img.append(deca_params[img_name][k])
+        all_params.append(np.concatenate(each_img))
+    all_params = np.stack(all_params)
+    all_params_norm, min_val, max_val = normalize(a=-1, b=1, arr=all_params)
+    deca_params['normalize'] = {'min_val':min_val, 'max_val':max_val}
 
     # deca uv_detail_normals
     uv_detail_normals_path = glob.glob(f'{deca_dir}/uv_detail_normals/*.png')
@@ -74,6 +110,7 @@ def load_data_deca(
     data_dir,
     deca_dir,
     batch_size,
+    bound,
     deterministic=False,
 ):
     """
@@ -98,11 +135,13 @@ def load_data_deca(
         raise ValueError("unspecified data directory")
 
     deca_params = load_deca_params(deca_dir)
+
     image_paths = _list_image_files_recursively(data_dir)
 
     deca_dataset = DECADataset(
         deca_params=deca_params,
         image_paths=image_paths,
+        bound=bound
     )
 
     if deterministic:
@@ -121,10 +160,12 @@ class DECADataset(Dataset):
         self,
         image_paths,
         deca_params,
+        bound,
     ):
         super().__init__()
         self.deca_params = deca_params
         self.local_images = image_paths
+        self.bound = bound
 
     def __len__(self):
         return len(self.local_images)
@@ -137,6 +178,10 @@ class DECADataset(Dataset):
         out_dict = {}
         params_key = ['shape', 'pose', 'exp', 'cam']
         img_name = path.split('/')[-1]
-        out_dict["deca_params"] = np.concatenate([self.deca_params[img_name][k] for k in params_key])
+        params = np.concatenate([self.deca_params[img_name][k] for k in params_key])[None, :]
+        params_norm, _, _ = normalize(arr=params, min_val=self.deca_params['normalize']['min_val'], 
+                                max_val=self.deca_params['normalize']['max_val'], a=-self.bound, b=self.bound,
+        )
+        out_dict["deca_params"] = params_norm[0]
 
         return out_dict["deca_params"], {}

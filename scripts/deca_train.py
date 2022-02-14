@@ -37,6 +37,7 @@ def main():
         data_dir=args.data_dir,
         deca_dir=args.deca_dir,
         batch_size=args.batch_size,
+        bound=args.bound,
         deterministic=True,
     )
 
@@ -82,7 +83,8 @@ def create_argparser():
         augment_mode=None,
         n_gpus=1,
         use_detector=False,
-        deca_cond=False
+        deca_cond=False,
+        bound=1.0,
     )
     defaults.update(model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()

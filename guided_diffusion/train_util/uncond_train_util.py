@@ -45,7 +45,8 @@ class TrainLoop(LightningModule):
         self.n_gpus = n_gpus
         self.tb_logger = tb_logger
         self.pl_trainer = pl.Trainer(
-            gpus=[1],#self.n_gpus,
+            # gpus=[1],#self.n_gpus,
+            gpus=self.n_gpus,
             strategy='ddp', 
             logger=self.tb_logger, 
             log_every_n_steps=1,

@@ -853,7 +853,6 @@ class GaussianDiffusion:
             model_kwargs.update()
             output = model(x_t.type(th.cuda.FloatTensor), self._scale_timesteps(t).type(th.cuda.LongTensor), **model_kwargs)
             model_output = output['output']
-
             target = {
                 ModelMeanType.PREVIOUS_X: self.q_posterior_mean_variance(
                     x_start=x_start, x_t=x_t, t=t
