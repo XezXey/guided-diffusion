@@ -20,7 +20,6 @@ from .nn import (
     timestep_embedding,
 )
 
-
 class DenseResBlock(nn.Module):
     """Fully-connected residual block."""
     def __init__(self, in_channels, out_channels):
@@ -87,14 +86,11 @@ class DenseDDPM(nn.Module):
         x = inputs
         x = self.in_layers(x)
 
-
         for i in range(len(self.mid_layers)):
             scale, shift = self.mid_layers[i][0](t)    # DenseFiLM
             x = self.mid_layers[i][1](x, scale=scale, shift=shift)    # ResBlock
         out = self.out_layers(x)
-        print(out.shape)
-        exit()
-        return out
+        return {'output':out}
 
 class DenseFiLM(nn.Module):
     """Feature-wise linear modulation (FiLM) generator."""
@@ -122,3 +118,79 @@ class DenseFiLM(nn.Module):
         scale = self.scale_layer(emb)
         shift = self.shift_layer(emb)
         return scale, shift
+
+class AutoEncoderDPM(nn.Module):
+    '''
+    P'ta's architecture => https://arxiv.org/pdf/2111.15640.pdf
+    '''
+    def __init__(self, in_channels, num_layers, out_channels, model_channels, use_checkpoint):
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.model_channels = model_channels
+        self.num_layers = num_layers
+        self.use_checkpoint = use_checkpoint
+        self.skip_connection = list(range(0, self.num_layers))
+
+        self.in_layers = nn.Linear(in_channels, model_channels)
+
+        self.mid_layers = nn.ModuleList([])
+        for i in range(self.num_layers):
+            if i == 0:
+                self.mid_layers.append(nn.Sequential(*[
+                    DenseFiLM(128, model_channels),
+                    AutoEncoderResBlock(model_channels, model_channels)
+                ]))
+            else:
+                self.mid_layers.append(nn.Sequential(*[
+                    DenseFiLM(128, model_channels+in_channels),
+                    AutoEncoderResBlock(model_channels+in_channels, model_channels)
+                ]))
+
+        self.out_layers = nn.Sequential(
+                nn.LayerNorm(self.model_channels+in_channels),
+                nn.Linear(self.model_channels+in_channels, self.out_channels),
+            )
+    
+    def forward(self, inputs, t):
+        # inputs.shape = (batch_size, z_dims)
+        # t.shape = (batch_size, 1)
+        x = inputs
+        h = self.in_layers(x)
+
+        for i in range(len(self.mid_layers)):
+            scale, shift = self.mid_layers[i][0](t)    # DenseFiLM
+            h = self.mid_layers[i][1](h, scale=scale, shift=shift)    # ResBlock
+            if i in self.skip_connection:
+                h = th.cat((h, inputs), dim=1)
+
+        out = self.out_layers(h)
+        return {'output':out}
+
+class AutoEncoderResBlock(nn.Module):
+    '''
+    Encoder block consisted of In -> MLP -> FiLM -> LayerNorm -> concat(Out, In)
+    '''
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+
+        self.resblock = nn.Sequential(
+            nn.SiLU(),
+            FeaturewiseAffine(),
+            nn.LayerNorm(self.in_channels),
+            nn.Linear(self.in_channels, self.out_channels),
+        )
+
+    def forward(self, inputs, scale, shift):
+        x = inputs
+        for i in range(len(self.resblock)):
+            if type(self.resblock[i]) is FeaturewiseAffine:
+                x = self.resblock[i](x, scale, shift)
+            else:
+                x = self.resblock[i](x)
+
+        output = x
+
+        return output
