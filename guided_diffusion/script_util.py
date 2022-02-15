@@ -245,18 +245,19 @@ def create_params_model(
             # use_checkpoint=use_checkpoint,
             # use_scale_shift_norm=use_scale_shift_norm
         # )
-        # return DenseDDPM(
-            # in_channels=in_channels,
-            # model_channels=model_channels,
-            # use_checkpoint=use_checkpoint,
-        # )
-        return AutoEncoderDPM(
+        return DenseDDPM(
             in_channels=in_channels,
-            out_channels=159,
             model_channels=model_channels,
             num_layers=num_layers,
             use_checkpoint=use_checkpoint,
         )
+        # return AutoEncoderDPM(
+        #     in_channels=in_channels,
+        #     out_channels=159,
+        #     model_channels=model_channels,
+        #     num_layers=num_layers,
+        #     use_checkpoint=use_checkpoint,
+        # )
 
 
 def create_model(
