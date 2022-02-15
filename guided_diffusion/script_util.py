@@ -47,6 +47,7 @@ def model_and_diffusion_defaults():
         resblock_updown=False,
         use_new_attention_order=False,
         deca_cond=True,
+        num_layers=10,
     )
     res.update(diffusion_defaults())
     return res
