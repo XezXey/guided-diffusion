@@ -130,6 +130,7 @@ def create_deca_and_diffusion(
     rescale_learned_sigmas,
     use_checkpoint,
     deca_cond,
+    num_layers,
     **kwargs
 ):
 
@@ -137,6 +138,7 @@ def create_deca_and_diffusion(
         in_channels=159,
         model_channels=2048,
         out_channels=159,
+        num_layers=num_layers,
         deca_cond=deca_cond,
         use_checkpoint=use_checkpoint,
     )
@@ -220,6 +222,7 @@ def create_params_model(
     in_channels,
     model_channels,
     out_channels,
+    num_layers,
     deca_cond,
     use_checkpoint=False,
     use_scale_shift_norm=False,
@@ -250,7 +253,7 @@ def create_params_model(
             in_channels=in_channels,
             out_channels=159,
             model_channels=model_channels,
-            num_layers=3,
+            num_layers=num_layers,
             use_checkpoint=use_checkpoint,
         )
 

@@ -84,6 +84,7 @@ def create_argparser():
         n_gpus=1,
         use_detector=False,
         deca_cond=False,
+        num_layers=10,
         bound=1.0,
     )
     defaults.update(model_and_diffusion_defaults())
