@@ -6,6 +6,7 @@ from guided_diffusion.unet_deca import DECADenseUnCond, DECADenseCond
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
 from .unet_deca import UNetModelDECA, UNetModel
+from .dense_deca import DenseDDPM
 
 NUM_CLASSES = 1000
 
@@ -134,7 +135,7 @@ def create_deca_and_diffusion(
 
     params_model = create_params_model(
         in_channels=159,
-        model_channels=128,
+        model_channels=2048,
         out_channels=159,
         deca_cond=deca_cond,
         use_checkpoint=use_checkpoint,
@@ -233,13 +234,19 @@ def create_params_model(
         )
 
     else:
-        return DECADenseUnCond(
+        # return DECADenseUnCond(
+            # in_channels=in_channels,
+            # out_channels=out_channels,
+            # model_channels=model_channels,
+            # use_checkpoint=use_checkpoint,
+            # use_scale_shift_norm=use_scale_shift_norm
+        # )
+        return DenseDDPM(
             in_channels=in_channels,
-            out_channels=out_channels,
             model_channels=model_channels,
             use_checkpoint=use_checkpoint,
-            use_scale_shift_norm=use_scale_shift_norm
         )
+
 
 def create_model(
     image_size,

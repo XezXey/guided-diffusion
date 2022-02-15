@@ -7,7 +7,6 @@ import numpy as np
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
-from pytorch_lightning.core.lightning import LightningModule
 
 from .trainer_util import convert_module_to_f16, convert_module_to_f32
 from .nn import (
@@ -1347,10 +1346,6 @@ class ResBlockCondition(TimestepBlockCond):
             return self.skip_connection(x) + h
 
 
-class DenseResBlock(TimestepBlock):
-    # TODO. 
-    pass
-
 class DECADenseCond(TimestepBlock):
    
     def __init__(
@@ -1541,4 +1536,3 @@ class DECADenseUnCond(TimestepBlock):
             out = layer(out)
 
         return {'output':out}
-
