@@ -80,9 +80,6 @@ class DenseDDPM(nn.Module):
             nn.Linear(model_channels, in_channels)
         )
         
-        print(self.mid_layers)
-        exit()
-
     def forward(self, inputs, t):
         # inputs.shape = (batch_size, z_dims)
         # t.shape = (batch_size, 1)
