@@ -43,6 +43,7 @@ def normalize(arr, min_val=None, max_val=None, a=-1, b=1):
     :param a: new minimum value
     :param b: new maximum value
     :param arr: np.array shape=(N, #params_dim) e.g. deca's params_dim = 159
+    ref : https://stats.stackexchange.com/questions/178626/how-to-normalize-data-between-1-and-1
     '''
     if max_val is None and min_val is None:
         max_val = np.max(arr, axis=0)    
@@ -56,9 +57,7 @@ def denormalize(arr_norm, min_val, max_val, a=-1, b=1):
     return arr_denorm
 
 
-
-
-def load_deca_params(deca_dir):
+def load_deca_params(deca_dir, bound):
     '''
     Return the dict of deca params = {'0.jpg':{'shape':(100,), 'pose':(6,), 'exp':(50,), 'cam':(3,)}, 
                                       '1.jpg': ..., '2.jpg': ...}
@@ -82,7 +81,7 @@ def load_deca_params(deca_dir):
             each_img.append(deca_params[img_name][k])
         all_params.append(np.concatenate(each_img))
     all_params = np.stack(all_params)
-    all_params_norm, min_val, max_val = normalize(a=-1, b=1, arr=all_params)
+    _, min_val, max_val = normalize(a=-bound, b=bound, arr=all_params)
     deca_params['normalize'] = {'min_val':min_val, 'max_val':max_val}
 
     # deca uv_detail_normals
@@ -134,7 +133,7 @@ def load_data_deca(
     if not deca_dir:
         raise ValueError("unspecified data directory")
 
-    deca_params = load_deca_params(deca_dir)
+    deca_params = load_deca_params(deca_dir, bound)
 
     image_paths = _list_image_files_recursively(data_dir)
 

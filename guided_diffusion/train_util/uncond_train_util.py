@@ -50,7 +50,8 @@ class TrainLoop(LightningModule):
             strategy='ddp', 
             logger=self.tb_logger, 
             log_every_n_steps=1,
-            accelerator='gpu')
+            accelerator='gpu',
+            max_epochs=1e6)
 
         self.automatic_optimization = False # Manual optimization flow
 
@@ -149,7 +150,7 @@ class TrainLoop(LightningModule):
             logger.dumpkvs()
         if self.step % self.save_interval == 0:
             self.save()
-# 
+
         self.pl_trainer.fit(self, self.data)
 
     def training_step(self, batch, batch_idx):

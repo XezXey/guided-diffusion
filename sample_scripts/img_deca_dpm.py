@@ -1,4 +1,6 @@
-from .gaussian_diffusion import GaussianDiffusion
+import sys
+sys.path.insert(0, '../')
+from guided_diffusion.gaussian_diffusion import GaussianDiffusion
 import numpy as np
 import torch as th
 
