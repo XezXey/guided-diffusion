@@ -47,7 +47,7 @@ def model_and_diffusion_defaults():
         resblock_updown=False,
         use_new_attention_order=False,
         deca_cond=True,
-        deca_arch='magenta'
+        deca_arch='magenta',
         num_layers=10,
     )
     res.update(diffusion_defaults())
@@ -146,6 +146,8 @@ def create_deca_and_diffusion(
         deca_arch=deca_arch,
         use_checkpoint=use_checkpoint,
     )
+    print(params_model)
+    exit()
 
     diffusion = create_gaussian_diffusion(
         steps=diffusion_steps,
@@ -244,7 +246,6 @@ def create_params_model(
     else:
         if deca_arch == 'magenta':
             print('magenta')
-            exit()
             return DenseDDPM(
                 in_channels=in_channels,
                 model_channels=model_channels,
@@ -253,7 +254,6 @@ def create_params_model(
             )
         elif deca_arch == 'autoenc':
             print('autoenc')
-            exit()
             return AutoEncoderDPM(
                 in_channels=in_channels,
                 out_channels=159,
