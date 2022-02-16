@@ -84,6 +84,7 @@ def create_argparser():
         n_gpus=1,
         use_detector=False,
         deca_cond=False,
+        deca_arch='magenta',
         num_layers=10,
         bound=1.0,
     )

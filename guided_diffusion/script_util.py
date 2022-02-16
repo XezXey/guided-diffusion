@@ -16,7 +16,7 @@ def diffusion_defaults():
     """
     return dict(
         learn_sigma=False,
-        diffusion_steps=250,
+        diffusion_steps=1000,
         noise_schedule="linear",
         timestep_respacing="",
         use_kl=False,
@@ -47,6 +47,7 @@ def model_and_diffusion_defaults():
         resblock_updown=False,
         use_new_attention_order=False,
         deca_cond=True,
+        deca_arch='magenta'
         num_layers=10,
     )
     res.update(diffusion_defaults())
@@ -131,6 +132,7 @@ def create_deca_and_diffusion(
     rescale_learned_sigmas,
     use_checkpoint,
     deca_cond,
+    deca_arch,
     num_layers,
     **kwargs
 ):
@@ -141,6 +143,7 @@ def create_deca_and_diffusion(
         out_channels=159,
         num_layers=num_layers,
         deca_cond=deca_cond,
+        deca_arch=deca_arch,
         use_checkpoint=use_checkpoint,
     )
 
@@ -225,6 +228,7 @@ def create_params_model(
     out_channels,
     num_layers,
     deca_cond,
+    deca_arch,
     use_checkpoint=False,
     use_scale_shift_norm=False,
 ):
@@ -238,26 +242,33 @@ def create_params_model(
         )
 
     else:
+        if deca_arch == 'magenta':
+            print('magenta')
+            exit()
+            return DenseDDPM(
+                in_channels=in_channels,
+                model_channels=model_channels,
+                num_layers=num_layers,
+                use_checkpoint=use_checkpoint,
+            )
+        elif deca_arch == 'autoenc':
+            print('autoenc')
+            exit()
+            return AutoEncoderDPM(
+                in_channels=in_channels,
+                out_channels=159,
+                model_channels=model_channels,
+                num_layers=num_layers,
+                use_checkpoint=use_checkpoint,
+            )
+        else: raise NotImplementedError
         # return DECADenseUnCond(
-            # in_channels=in_channels,
-            # out_channels=out_channels,
-            # model_channels=model_channels,
-            # use_checkpoint=use_checkpoint,
-            # use_scale_shift_norm=use_scale_shift_norm
-        # )
-        return DenseDDPM(
-            in_channels=in_channels,
-            model_channels=model_channels,
-            num_layers=num_layers,
-            use_checkpoint=use_checkpoint,
-        )
-        # return AutoEncoderDPM(
-        #     in_channels=in_channels,
-        #     out_channels=159,
-        #     model_channels=model_channels,
-        #     num_layers=num_layers,
-        #     use_checkpoint=use_checkpoint,
-        # )
+                # in_channels=in_channels,
+                # out_channels=out_channels,
+                # model_channels=model_channels,
+                # use_checkpoint=use_checkpoint,
+                # use_scale_shift_norm=use_scale_shift_norm
+            # )
 
 
 def create_model(
