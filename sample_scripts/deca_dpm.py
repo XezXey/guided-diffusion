@@ -56,7 +56,6 @@ class Diffusion_DECA(GaussianDiffusion):
                     model_kwargs=model_kwargs,
                 )
                 deca = out_deca["sample"]
-                print(i, th.max(deca), th.min(deca))
 
         return deca
             

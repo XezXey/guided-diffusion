@@ -232,10 +232,10 @@ def batch_orth_proj(X, camera):
         camera: scale and translation, [bz, 3], [scale, tx, ty]
     '''
     camera = camera.clone().view(-1, 1, 3)
-    X_trans = X[:, :, :2] + camera[:, :, 1:]
-    X_trans = torch.cat([X_trans, X[:,:,2:]], 2)
+    X_trans = X[:, :, :2] + camera[:, :, 1:]        # Translation with x + tx, y + ty
+    X_trans = torch.cat([X_trans, X[:,:,2:]], 2)    # Concat with z : (x + tx, y + ty, z)
     shape = X_trans.shape
-    Xn = (camera[:, :, 0:1] * X_trans)
+    Xn = (camera[:, :, 0:1] * X_trans) # Scaling
     return Xn
     
 # -------------------------------------- image processing

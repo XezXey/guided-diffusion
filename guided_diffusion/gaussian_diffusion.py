@@ -259,7 +259,9 @@ class GaussianDiffusion:
 
         B, C = x.shape[:2]
         assert t.shape == (B,)
-        model_output_ = model(x, self._scale_timesteps(t), **model_kwargs)
+        # print(type(x), type(self._scale_timesteps(t)))
+        # assert False
+        model_output_ = model(x.float(), self._scale_timesteps(t), **model_kwargs)
         model_output = model_output_["output"]
 
         if self.model_var_type in [ModelVarType.LEARNED, ModelVarType.LEARNED_RANGE]:
@@ -326,7 +328,7 @@ class GaussianDiffusion:
             "variance": model_variance,
             "log_variance": model_log_variance,
             "pred_xstart": pred_xstart,
-            "middle_block" : model_output_['middle_block']
+            "middle_block" : model_output_['middle_block'] if 'middle_block' in model_output_.keys() else None
         }
 
     def _predict_xstart_from_eps(self, x_t, t, eps):
