@@ -23,7 +23,7 @@ class Diffusion_DECA(GaussianDiffusion):
         self.bound = bound
 
     def p_sample_loop(self, shape_dict=None, noise=None, clip_denoised=True, denoised_fn=None, cond_fn=None, model_kwargs=None):
-        if noise is not None:
+        if noise['deca'] is not None:
             deca = noise['deca']
         else:
             deca = th.randn(*shape_dict['deca']).cuda()
