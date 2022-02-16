@@ -26,7 +26,8 @@ class Diffusion_DECA(GaussianDiffusion):
         if noise['deca'] is not None:
             deca = noise['deca']
         else:
-            deca = th.randn(*shape_dict['deca']).cuda()
+            pass
+            # deca = th.randn(*shape_dict['deca']).cuda()
 
         indices = list(range(self.diffusion.num_timesteps))[::-1]
         if self.progress:
