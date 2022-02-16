@@ -146,8 +146,6 @@ def create_deca_and_diffusion(
         deca_arch=deca_arch,
         use_checkpoint=use_checkpoint,
     )
-    print(params_model)
-    exit()
 
     diffusion = create_gaussian_diffusion(
         steps=diffusion_steps,
