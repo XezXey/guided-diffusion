@@ -2,23 +2,19 @@
 Train a diffusion model on images.
 """
 
-import argparse, datetime
-from cmath import exp
-import pytorch_lightning as pl
-from pytorch_lightning.loggers import TensorBoardLogger
-
+import argparse
+import datetime
 
 from guided_diffusion import logger
 from guided_diffusion.dataloader.deca_datasets import load_data_deca
 from guided_diffusion.resample import create_named_schedule_sampler
-from guided_diffusion.script_util import (
-    model_and_diffusion_defaults,
-    create_deca_and_diffusion,
-    args_to_dict,
-    add_dict_to_argparser,
-    seed_all,
-)
+from guided_diffusion.script_util import (add_dict_to_argparser, args_to_dict,
+                                          create_deca_and_diffusion,
+                                          model_and_diffusion_defaults,
+                                          seed_all)
 from guided_diffusion.train_util.uncond_train_util import TrainLoop
+from pytorch_lightning.loggers import TensorBoardLogger
+
 
 def main():
     args = create_argparser().parse_args()

@@ -128,7 +128,7 @@ logs/IMG_DECA/log.txt
 logs/IMG_DECA/opt000000.pt
 logs/IMG_DECA/progress.csv
 logs/
-model_3d/FLAME/data/
+# model_3d/FLAME/data/
 rendered_obj/0.jpg.obj
 rendered_obj/0.obj
 rendered_obj/1.jpg.obj
