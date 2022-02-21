@@ -22,7 +22,6 @@ from skimage.io import imread, imsave
 from skimage.transform import estimate_transform, warp, resize, rescale
 
 
-
 def read_params(path):
     params = pd.read_csv(path, header=None, sep=" ", index_col=False, lineterminator='\n')
     params.rename(columns={0:'img_name'}, inplace=True)

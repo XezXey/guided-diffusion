@@ -218,6 +218,7 @@ class TrainLoop(LightningModule):
         )
         self.manual_backward(loss)
 
+    @rank_zero_only
     def _update_ema(self):
         for rate, params in zip(self.ema_rate, self.model_ema_params):
             update_ema(params, self.model_trainer.master_params, rate=rate)
