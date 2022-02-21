@@ -7,7 +7,7 @@ from calendar import c
 import datetime
 import yaml
 
-from guided_diffusion.config import parse_args
+from config.base_config import parse_args
 from guided_diffusion import logger
 from guided_diffusion.dataloader.deca_datasets import load_data_deca
 from guided_diffusion.resample import create_named_schedule_sampler
@@ -34,7 +34,7 @@ def main():
         deca_dir=cfg.dataset.deca_dir,
         batch_size=cfg.dataset.batch_size,
         bound=cfg.param_model.bound,
-        deterministic=True,
+        deterministic=cfg.train.deterministic,
     )
 
     logger.log("training...")
@@ -45,7 +45,7 @@ def main():
         model=deca_model,
         diffusion=diffusion,
         data=data,
-        batch_size=cfg.dataset.batch_size,
+        batch_size=cfg.train.batch_size,
         lr=cfg.train.lr,
         ema_rate=cfg.train.ema_rate,
         log_interval=cfg.train.log_interval,
