@@ -105,11 +105,13 @@ def load_data_img_deca(
 
     if deterministic:
         loader = DataLoader(
-            img_dataset, batch_size=batch_size, shuffle=False, num_workers=24, drop_last=True
+            img_dataset, batch_size=batch_size, shuffle=False, num_workers=24, drop_last=True, 
+            pin_memory=True, persistent_workers=True
         )
     else:
         loader = DataLoader(
-            img_dataset, batch_size=batch_size, shuffle=True, num_workers=24, drop_last=True
+            img_dataset, batch_size=batch_size, shuffle=True, num_workers=24, drop_last=True, pin_memory=True,
+            persistent_workers=True
         )
     while True:
         return loader

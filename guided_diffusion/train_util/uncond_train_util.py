@@ -45,13 +45,12 @@ class TrainLoop(LightningModule):
         self.n_gpus = n_gpus
         self.tb_logger = tb_logger
         self.pl_trainer = pl.Trainer(
-            # gpus=[1],#self.n_gpus,
             gpus=self.n_gpus,
             strategy='ddp', 
-            logger=self.tb_logger, 
-            log_every_n_steps=1,
+            logger=self.tb_logger,
+            log_every_n_steps=50,
             accelerator='gpu',
-            max_epochs=1,
+            max_epochs=1e6,
             profiler='simple')
 
         self.automatic_optimization = False # Manual optimization flow
@@ -166,6 +165,7 @@ class TrainLoop(LightningModule):
         1. update ema (Update after the optimizer.step())
         2. logs
         '''
+        print(self.step, "GGEZ")
         if self.took_step:
             self._update_ema()
         self._anneal_lr()
@@ -215,7 +215,7 @@ class TrainLoop(LightningModule):
 
         loss = (model_losses["loss"] * weights).mean()
         self.log_loss_dict(
-            self.diffusion, t, {k: v * weights for k, v in model_losses.items()}, module="DECA",
+            self.diffusion, t, {k: v * weights for k, v in model_losses.items()}, module=self.name,
         )
         self.manual_backward(loss)
 
