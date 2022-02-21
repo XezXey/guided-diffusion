@@ -13,7 +13,6 @@ from guided_diffusion.dataloader.deca_datasets import load_data_deca
 from guided_diffusion.resample import create_named_schedule_sampler
 from guided_diffusion.script_util import (add_dict_to_argparser, args_to_dict,
                                           create_deca_and_diffusion,
-                                          model_and_diffusion_defaults,
                                           seed_all)
 from guided_diffusion.train_util.uncond_train_util import TrainLoop
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -24,11 +23,7 @@ def main():
     seed_all(47)    # Seeding the model - Independent training
 
     logger.configure(dir=cfg.train.log_dir)
-
     logger.log("creating model and diffusion...")
-    # deca_model, diffusion = create_deca_and_diffusion(
-    #     **args_to_dict(args, model_and_diffusion_defaults().keys())
-    # )
 
     deca_model, diffusion = create_deca_and_diffusion(cfg)
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
@@ -65,37 +60,6 @@ def main():
     )
     
     train_loop.run()
-
-
-# def create_argparser():
-    # defaults = dict(
-    #     data_dir="",
-    #     deca_dir="",
-    #     schedule_sampler="uniform",
-    #     lr=1e-4,
-    #     weight_decay=0.0,
-    #     lr_anneal_steps=0,
-    #     batch_size=1,
-    #     ema_rate="0.5,0.9999",  # comma-separated list of EMA values
-    #     log_interval=10,
-    #     save_interval=100000,
-    #     resume_checkpoint="",
-    #     log_dir="./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_image")),
-    #     augment_mode=None,
-    #     n_gpus=1,
-    #     use_detector=False,
-    #     deca_cond=False,
-    #     deca_arch='magenta',
-    #     num_layers=10,
-    #     bound=1.0,
-    # )
-    # cfg = parse_args()
-    # print(cfg)
-    # exit()
-    # defaults.update(model_and_diffusion_defaults())
-    # parser = argparse.ArgumentParser()
-    # add_dict_to_argparser(parser, defaults)
-    # return parser
 
 if __name__ == "__main__":
     main()

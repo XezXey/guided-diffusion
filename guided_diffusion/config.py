@@ -1,6 +1,7 @@
 '''
 Default config for Diffusion training
 '''
+from re import A
 from guided_diffusion.models.unet_deca import UNetModel
 from guided_diffusion.models.dense_deca import DenseDDPM, DECADenseCond, DECADenseUnCond
 from yacs.config import CfgNode as CN
@@ -33,8 +34,8 @@ cfg.param_model.n_pose = 6
 cfg.param_model.n_exp = 50
 cfg.param_model.n_cam = 3
 cfg.param_model.bound = 1.0
-cfg.param_model.n_params = [cfg.param_model.n_shape, 
-                            cfg.param_model.n_pose, 
+cfg.param_model.n_params = [cfg.param_model.n_shape,
+                            cfg.param_model.n_pose,
                             cfg.param_model.n_exp,
                             cfg.param_model.n_cam]
 # Network parts
@@ -50,6 +51,7 @@ cfg.param_model.use_checkpoint = ""
 # Options for Image model (e.g. raw image, uv_displacement_normal, depth, etc.) 
 # ---------------------------------------------------------------------------- #
 cfg.img_model = CN()
+cfg.img_model.name = "Img"
 cfg.img_model.uv_size = 256
 cfg.img_model.img_list = ['raw', 'uvdn']
 cfg.img_model.augment_mode = None
@@ -102,9 +104,8 @@ cfg.train.n_gpus = 1
 # ---------------------------------------------------------------------------- #
 cfg.diffusion = CN()
 cfg.diffusion.schedule_sampler = "uniform"
-cfg.diffusion.diffusion_steps = 1000
-cfg.diffusion.diffusion_steps = 1000
 cfg.diffusion.learn_sigma = False
+cfg.diffusion.diffusion_steps = 1000
 cfg.diffusion.sigma_small = False
 cfg.diffusion.noise_schedule = "linear"
 cfg.diffusion.use_kl = False
@@ -132,7 +133,7 @@ def parse_args():
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg', type=str, help='cfg file path')
-    args = parser.parse_args()
+    args, opts = parser.parse_known_args()
 
     print("Merging with : ", args, end='\n\n')
 
@@ -143,7 +144,23 @@ def parse_args():
         cfg = update_cfg(cfg, args.cfg)
         cfg.cfg_file = cfg_file
 
+    # Merge with cmd-line argument(s)
+    if opts != []:
+        cfg_list = cmd_to_cfg_format(opts)
+        cfg.merge_from_list(cfg_list)
+    print(cfg)
     return cfg
+
+def cmd_to_cfg_format(opts):
+    """Override config from a list"""
+    opts_new = []
+    for i, opt in enumerate(opts):
+        if (i+1) % 2 != 0:
+            opts_new.append(opt[2:])
+        else: 
+            opts_new.append(opt)
+    return opts_new
+
 
 if __name__ == '__main__':
     print(parse_args())

@@ -2,53 +2,10 @@ import argparse
 
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
-from .models.unet_deca import UNetModelDECA, UNetModel
-from .models.dense_deca import DenseDDPM, AutoEncoderDPM, DECADenseUnCond, DECADenseCond
+from .models.unet_deca import UNetModelDECA
+from .models.dense_deca import DenseDDPM, AutoEncoderDPM, DECADenseCond
 
 NUM_CLASSES = 1000
-
-def diffusion_defaults():
-    """
-    Defaults for image and classifier training.
-    """
-    return dict(
-        learn_sigma=False,
-        diffusion_steps=1000,
-        noise_schedule="linear",
-        timestep_respacing="",
-        use_kl=False,
-        predict_xstart=False,
-        rescale_timesteps=False,
-        rescale_learned_sigmas=False,
-    )
-
-def model_and_diffusion_defaults():
-    """
-    Defaults for image training.
-    """
-    res = dict(
-        image_size=256,
-        num_channels=128,
-        in_channels=3,
-        out_channels=3,
-        num_res_blocks=2,
-        num_heads=4,
-        num_heads_upsample=-1,
-        num_head_channels=-1,
-        attention_resolutions="16,8",
-        channel_mult="",
-        dropout=0.0,
-        class_cond=False,
-        use_checkpoint=False,
-        use_scale_shift_norm=True,
-        resblock_updown=False,
-        use_new_attention_order=False,
-        deca_cond=True,
-        deca_arch='magenta',
-        num_layers=10,
-    )
-    res.update(diffusion_defaults())
-    return res
 
 # Pipeline
 def create_img_deca_and_diffusion(cfg):
