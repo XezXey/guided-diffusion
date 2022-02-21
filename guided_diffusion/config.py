@@ -152,7 +152,12 @@ def parse_args():
     return cfg
 
 def cmd_to_cfg_format(opts):
-    """Override config from a list"""
+    """
+    Override config from a list
+    src-format : ['--dataset.train', '/data/mint/dataset']
+    dst-format : ['dataset.train', '/data/mint/dataset']
+    for writing a "dataset.train" key
+    """
     opts_new = []
     for i, opt in enumerate(opts):
         if (i+1) % 2 != 0:
