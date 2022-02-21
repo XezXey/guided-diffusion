@@ -1,5 +1,5 @@
 '''
-Default config for DECA
+Default config for Diffusion training
 '''
 from guided_diffusion.models.unet_deca import UNetModel
 from guided_diffusion.models.dense_deca import DenseDDPM, DECADenseCond, DECADenseUnCond
