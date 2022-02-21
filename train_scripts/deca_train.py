@@ -18,7 +18,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 def main():
     args = create_argparser().parse_args()
-    seed_all(33)    # Seeding the model - Independent training
+    seed_all(47)    # Seeding the model - Independent training
 
     logger.configure(dir=args.log_dir)
 

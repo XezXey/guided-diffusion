@@ -1,12 +1,9 @@
 import argparse
-import inspect
-
-from guided_diffusion.unet_deca import DECADenseUnCond, DECADenseCond
 
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
-from .unet_deca import UNetModelDECA, UNetModel
-from .dense_deca import DenseDDPM, AutoEncoderDPM
+from .models.unet_deca import UNetModelDECA, UNetModel
+from .models.dense_deca import DenseDDPM, AutoEncoderDPM, DECADenseUnCond, DECADenseCond
 
 NUM_CLASSES = 1000
 

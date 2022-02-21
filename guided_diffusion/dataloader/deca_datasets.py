@@ -6,7 +6,6 @@ from matplotlib import image
 from numpy.core.numeric import full_like
 import pandas as pd
 import blobfile as bf
-from mpi4py import MPI
 import numpy as np
 import tqdm
 import os
@@ -18,8 +17,6 @@ from collections import defaultdict
 from model_3d.FLAME import FLAME
 import model_3d.FLAME.utils.util as util
 import model_3d.FLAME.utils.detectors as detectors
-from skimage.io import imread, imsave
-from skimage.transform import estimate_transform, warp, resize, rescale
 
 
 
