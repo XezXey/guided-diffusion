@@ -33,35 +33,3 @@ cfg.dataset = CN()
 cfg.dataset.training_data = ['ffhq_256_with_anno']
 cfg.dataset.deca_dir = '/data/mint/ffhq_256_with_anno'
 cfg.dataset.data_dir = '/data/mint/ffhq_256_with_anno/ffhq_256/train'
-
-# ---------------------------------------------------------------------------- #
-# Options for training
-# ---------------------------------------------------------------------------- #
-cfg.train = CN()
-cfg.train.lr = 1e-4
-cfg.train.batch_size = 128
-cfg.train.lr_anneal_steps = 0.0
-cfg.train.weight_decay = 0.0
-cfg.train.ema_rate = "0.9999"
-cfg.train.log_interval = 50
-cfg.train.save_interval = 50000
-cfg.train.resume_checkpoint = ""
-cfg.train.log_dir = "./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_image"))
-cfg.train.n_gpus = 1
-cfg.train.deterministic = True
-
-# ---------------------------------------------------------------------------- #
-# Options for diffusion 
-# ---------------------------------------------------------------------------- #
-cfg.diffusion = CN()
-cfg.diffusion.schedule_sampler = "uniform"
-cfg.diffusion.learn_sigma = False
-cfg.diffusion.diffusion_steps = 1000
-cfg.diffusion.sigma_small = False
-cfg.diffusion.noise_schedule = "linear"
-cfg.diffusion.use_kl = False
-cfg.diffusion.predict_xstart = False
-cfg.diffusion.rescale_timesteps = False
-cfg.diffusion.rescale_learned_sigmas = False
-cfg.diffusion.timestep_respacing = ""
-
