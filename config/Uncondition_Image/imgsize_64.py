@@ -25,18 +25,6 @@ cfg.img_model.image_size = 64
 cfg.img_model.num_channels = 128
 cfg.img_model.in_channels = sum(img_type.values())
 cfg.img_model.out_channels = sum(img_type.values())
-cfg.img_model.num_res_blocks = 2
-cfg.img_model.num_heads = 4
-cfg.img_model.num_heads_upsample = -1
-cfg.img_model.num_head_channels = -1
-cfg.img_model.attention_resolutions = "16,8"
-cfg.img_model.channel_mult = ""
-cfg.img_model.dropout = 0.0
-cfg.img_model.class_cond = False
-cfg.img_model.use_checkpoint = False
-cfg.img_model.use_scale_shift_norm = True
-cfg.img_model.resblock_updown = False
-cfg.img_model.use_new_attention_order = False
 
 # ---------------------------------------------------------------------------- #
 # Options for Dataset
