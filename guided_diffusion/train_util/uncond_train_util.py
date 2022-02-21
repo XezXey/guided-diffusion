@@ -159,6 +159,7 @@ class TrainLoop(LightningModule):
 
         self.step += 1
     
+    @rank_zero_only
     def on_train_batch_end(self, outputs, batch, batch_idx):
         '''
         callbacks every training step ends
