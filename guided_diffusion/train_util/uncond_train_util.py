@@ -48,7 +48,7 @@ class TrainLoop(LightningModule):
             gpus=self.n_gpus,
             strategy='ddp', 
             logger=self.tb_logger,
-            log_every_n_steps=50,
+            log_every_n_steps=log_interval,
             accelerator='gpu',
             max_epochs=1e6,
             profiler='simple')
@@ -146,8 +146,7 @@ class TrainLoop(LightningModule):
     def run(self):
         # Driven code
         # Logging for first time
-        if self.step % self.save_interval == 0:
-            self.save()
+        self.save()
 
         self.pl_trainer.fit(self, self.data)
 
@@ -165,7 +164,6 @@ class TrainLoop(LightningModule):
         1. update ema (Update after the optimizer.step())
         2. logs
         '''
-        print(self.step, "GGEZ")
         if self.took_step:
             self._update_ema()
         self._anneal_lr()
@@ -182,7 +180,8 @@ class TrainLoop(LightningModule):
 
     @rank_zero_only 
     def log_rank_zero(self):
-        self.log_step()
+        if self.step % self.log_interval == 0:
+            self.log_step()
 
     def run_step(self, dat, cond):
         self.forward_backward(dat, cond)
@@ -214,10 +213,12 @@ class TrainLoop(LightningModule):
             )
 
         loss = (model_losses["loss"] * weights).mean()
-        self.log_loss_dict(
-            self.diffusion, t, {k: v * weights for k, v in model_losses.items()}, module=self.name,
-        )
         self.manual_backward(loss)
+
+        if self.step % self.log_interval:
+            self.log_loss_dict(
+                self.diffusion, t, {k: v * weights for k, v in model_losses.items()}, module=self.name,
+            )
 
     @rank_zero_only
     def _update_ema(self):
