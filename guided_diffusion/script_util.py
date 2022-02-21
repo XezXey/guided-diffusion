@@ -2,7 +2,7 @@ import argparse
 
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
-from .models.unet_deca import UNetModelDECA, UNetModel
+from .models.unet_deca import UNetModelCondition, UNetModelDECA, UNetModel
 from .models.dense_deca import DenseDDPM, AutoEncoderDPM, DECADenseCond
 
 NUM_CLASSES = 1000
@@ -34,7 +34,6 @@ def create_param_model(cfg):
             use_checkpoint=cfg.use_checkpoint,
             use_scale_shift_norm=cfg.use_scale_shift_norm
         )
-
     else:
         if cfg.arch == 'magenta':
             print('magenta')
@@ -93,6 +92,25 @@ def create_model(cfg):
             resblock_updown=cfg.resblock_updown,
             use_new_attention_order=cfg.use_new_attention_order,
         )
+    elif cfg.arch == 'UNetCond':
+        return UNetModelCondition(
+                    image_size=cfg.image_size,
+                    in_channels=cfg.in_channels,
+                    model_channels=cfg.num_channels,
+                    out_channels=cfg.out_channels,
+                    num_res_blocks=cfg.num_res_blocks,
+                    attention_resolutions=tuple(attention_ds),
+                    dropout=cfg.dropout,
+                    channel_mult=channel_mult,
+                    num_classes=(NUM_CLASSES if cfg.class_cond else None),
+                    use_checkpoint=cfg.use_checkpoint,
+                    num_heads=cfg.num_heads,
+                    num_head_channels=cfg.num_head_channels,
+                    num_heads_upsample=cfg.num_heads_upsample,
+                    use_scale_shift_norm=cfg.use_scale_shift_norm,
+                    resblock_updown=cfg.resblock_updown,
+                    use_new_attention_order=cfg.use_new_attention_order,
+                )
     else: raise NotImplementedError
 
 def create_gaussian_diffusion(cfg):

@@ -1,6 +1,6 @@
 The experiment note bond with the config file for each folder
 
-1. "Uncondition DECA"
+1. "Uncondition_Deca"
     DATE : 10-17 Feb. 2022
     - Experiment on Diffusion with only DECA
     - Unconditional DECA
@@ -9,4 +9,6 @@ The experiment note bond with the config file for each folder
     - Test the KNN sample. To make sense, it needs PCA(Singular value) to weight the 
     components
 
-2. ""
+2. "Image"
+    DATE : 17-24 Feb. 2022
+    - 
