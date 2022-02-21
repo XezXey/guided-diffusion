@@ -14,7 +14,7 @@ import pytorch_lightning as pl
 
 from .. import logger
 from ..trainer_util import Trainer
-from ..nn import update_ema
+from ..models.nn import update_ema
 from ..resample import LossAwareSampler, UniformSampler
 from ..script_util import seed_all
 

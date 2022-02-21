@@ -25,6 +25,7 @@ cfg.device_id = '0'
 # Options for Parameters model (e.g. DECA, SMPL, SMPL-X, etc)
 # ---------------------------------------------------------------------------- #
 cfg.param_model = CN()
+cfg.param_model.name = "Deca"
 cfg.param_model.uv_size = 256
 cfg.param_model.param_list = ['shape', 'pose', 'exp', 'cam']
 cfg.param_model.n_shape = 100
@@ -37,26 +38,25 @@ cfg.param_model.n_params = [cfg.param_model.n_shape,
                             cfg.param_model.n_exp,
                             cfg.param_model.n_cam]
 # Network parts
-cfg.param_model.arch = 'Magenta'
+cfg.param_model.arch = 'magenta'
 cfg.param_model.num_layers = 3
 cfg.param_model.deca_cond = False
 cfg.param_model.in_channels = sum(cfg.param_model.n_params)
 cfg.param_model.model_channels = 2048
 cfg.param_model.out_channels = sum(cfg.param_model.n_params)
+cfg.param_model.use_checkpoint = ""
 
 # ---------------------------------------------------------------------------- #
 # Options for Image model (e.g. raw image, uv_displacement_normal, depth, etc.) 
 # ---------------------------------------------------------------------------- #
-cfg.param_model = CN()
-cfg.param_model.uv_size = 256
-cfg.param_model.param_list = ['raw', 'uvdn']
-cfg.param_model.n_shape = 100
-cfg.param_model.n_pose = 6
-cfg.param_model.n_exp = 50
-cfg.param_model.n_cam = 3
+cfg.img_model = CN()
+cfg.img_model.uv_size = 256
+cfg.img_model.img_list = ['raw', 'uvdn']
+cfg.img_model.augment_mode = None
+cfg.img_model.use_detector = False
 # Network
 cfg.img_model.arch = 'UNet'
-cfg.img_model.image_size = 'UNet'
+cfg.img_model.image_size = 128
 cfg.img_model.num_channels = 128
 cfg.img_model.in_channels = 3
 cfg.img_model.out_channels = 3
@@ -72,9 +72,6 @@ cfg.img_model.use_checkpoint = False
 cfg.img_model.use_scale_shift_norm = True
 cfg.img_model.resblock_updown = False
 cfg.img_model.use_new_attention_order = False
-cfg.img_model.model = UNetModel
-
-cfg.param_model.deca_cond = False
 
 # ---------------------------------------------------------------------------- #
 # Options for Dataset
@@ -82,6 +79,8 @@ cfg.param_model.deca_cond = False
 cfg.dataset = CN()
 cfg.dataset.training_data = ['ffhq_256_with_anno']
 cfg.dataset.batch_size = 128
+cfg.dataset.deca_dir = '/data/mint/ffhq_256_with_anno'
+cfg.dataset.data_dir = '/data/mint/ffhq_256_with_anno/ffhq_256/train'
 
 # ---------------------------------------------------------------------------- #
 # Options for training
@@ -104,6 +103,16 @@ cfg.train.n_gpus = 1
 cfg.diffusion = CN()
 cfg.diffusion.schedule_sampler = "uniform"
 cfg.diffusion.diffusion_steps = 1000
+cfg.diffusion.diffusion_steps = 1000
+cfg.diffusion.learn_sigma = False
+cfg.diffusion.sigma_small = False
+cfg.diffusion.noise_schedule = "linear"
+cfg.diffusion.use_kl = False
+cfg.diffusion.predict_xstart = False
+cfg.diffusion.rescale_timesteps = False
+cfg.diffusion.rescale_learned_sigmas = False
+cfg.diffusion.timestep_respacing = ""
+
 
 
 def get_cfg_defaults():
@@ -117,16 +126,18 @@ def update_cfg(cfg, cfg_file):
     return cfg.clone()
 
 def parse_args():
+    '''
+    Return dict-like cfg, accesible with cfg.<key1>.<key2> or cfg[<key1>][<key2>]
+    e.g. <key1> = dataset, <key2> = training_data
+    '''
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg', type=str, help='cfg file path')
-
     args = parser.parse_args()
-    print(args, end='\n\n')
+
+    print("Merging with : ", args, end='\n\n')
 
     cfg = get_cfg_defaults()
     cfg.cfg_file = None
-    cfg.mode = args.mode
-    # import ipdb; ipdb.set_trace()
     if args.cfg is not None:
         cfg_file = args.cfg
         cfg = update_cfg(cfg, args.cfg)
@@ -136,3 +147,5 @@ def parse_args():
 
 if __name__ == '__main__':
     print(parse_args())
+    cfg = parse_args()
+    print(cfg.dataset)

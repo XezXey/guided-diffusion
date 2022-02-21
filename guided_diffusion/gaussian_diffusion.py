@@ -11,7 +11,7 @@ import math
 import numpy as np
 import torch as th
 
-from .nn import mean_flat
+from .models.nn import mean_flat
 from .losses import normal_kl, discretized_gaussian_log_likelihood
 
 
