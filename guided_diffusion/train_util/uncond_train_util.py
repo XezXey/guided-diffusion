@@ -51,7 +51,8 @@ class TrainLoop(LightningModule):
             logger=self.tb_logger, 
             log_every_n_steps=1,
             accelerator='gpu',
-            max_epochs=1e6)
+            max_epochs=1,
+            profiler='simple')
 
         self.automatic_optimization = False # Manual optimization flow
 
@@ -146,8 +147,6 @@ class TrainLoop(LightningModule):
     def run(self):
         # Driven code
         # Logging for first time
-        if self.step % self.log_interval == 0:
-            logger.dumpkvs()
         if self.step % self.save_interval == 0:
             self.save()
 
@@ -175,9 +174,6 @@ class TrainLoop(LightningModule):
         # Reset took_step flag
         self.took_step = False
     
-    def on_batch_end(self):
-        pass
-
     @rank_zero_only 
     def save_rank_zero(self):
         if self.step % self.save_interval == 0:
@@ -242,14 +238,13 @@ class TrainLoop(LightningModule):
         self.log("training_progress/step", step_ + 1)
         self.log("training_progress/global_step", (step_ + 1) * self.n_gpus)
         self.log("training_progress/global_samples", (step_ + 1) * self.global_batch)
-        logger.logkv("step", step_)
-        logger.logkv("samples", (step_ + 1) * self.global_batch)
 
     @rank_zero_only
     def save(self):
         def save_checkpoint(rate, params, trainer, name=""):
             state_dict = trainer.master_params_to_state_dict(params)
-            logger.log(f"saving {name}_model {rate}...")
+            # logger.log(f"saving {name}_model {rate}...")
+            print(f"saving {name}_model {rate}...")
             if not rate:
                 filename = f"{name}_model{(self.step+self.resume_step):06d}.pt"
             else:
@@ -278,11 +273,9 @@ class TrainLoop(LightningModule):
     def log_loss_dict(self, diffusion, ts, losses, module):
         for key, values in losses.items():
             self.log(f"training_loss_{module}/{key}", values.mean().item())
-            logger.logkv_mean(key, values.mean().item())
             # log the quantiles (four quartiles, in particular).
             for sub_t, sub_loss in zip(ts.cpu().numpy(), values.detach().cpu().numpy()):
                 quartile = int(4 * sub_t / diffusion.num_timesteps)
-                logger.logkv_mean(f"{key}_q{quartile}", sub_loss)
                 self.log(f"training_loss_{module}/{key}_q{quartile}", sub_loss)
 
 def parse_resume_step_from_filename(filename):

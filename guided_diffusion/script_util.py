@@ -2,7 +2,7 @@ import argparse
 
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
-from .models.unet_deca import UNetModelDECA
+from .models.unet_deca import UNetModelDECA, UNetModel
 from .models.dense_deca import DenseDDPM, AutoEncoderDPM, DECADenseCond
 
 NUM_CLASSES = 1000
@@ -75,7 +75,7 @@ def create_model(cfg):
         attention_ds.append(cfg.image_size // int(res))
 
     if cfg.arch == 'UNet':
-        return UNetModelDECA(
+        return UNetModel(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
             model_channels=cfg.num_channels,

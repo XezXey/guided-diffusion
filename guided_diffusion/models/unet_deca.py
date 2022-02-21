@@ -428,7 +428,6 @@ class QKVAttention(nn.Module):
 class UNetModel(nn.Module):
     """
     The full UNet model with attention and timestep embedding.
-
     :param in_channels: channels in the input Tensor.
     :param model_channels: base channel count for the model.
     :param out_channels: channels in the output Tensor.
@@ -470,13 +469,13 @@ class UNetModel(nn.Module):
         dims=2,
         num_classes=None,
         use_checkpoint=False,
+        use_fp16=False,
         num_heads=1,
         num_head_channels=-1,
         num_heads_upsample=-1,
         use_scale_shift_norm=False,
         resblock_updown=False,
         use_new_attention_order=False,
-        z_cond=False
     ):
         super().__init__()
 
@@ -494,6 +493,7 @@ class UNetModel(nn.Module):
         self.conv_resample = conv_resample
         self.num_classes = num_classes
         self.use_checkpoint = use_checkpoint
+        self.dtype = th.float16 if use_fp16 else th.float32
         self.num_heads = num_heads
         self.num_head_channels = num_head_channels
         self.num_heads_upsample = num_heads_upsample
@@ -505,15 +505,12 @@ class UNetModel(nn.Module):
             linear(time_embed_dim, time_embed_dim),
         )
 
-        resblock = ResBlock if not z_cond else ResBlockCondition
-        time_emb_seq = TimestepEmbedSequential if not z_cond else TimestepEmbedSequentialCond 
-        # n_group = 32 if model_channels % 4 == 0 else 3
         if self.num_classes is not None:
             self.label_emb = nn.Embedding(num_classes, time_embed_dim)
 
         ch = input_ch = int(channel_mult[0] * model_channels)
         self.input_blocks = nn.ModuleList(
-            [time_emb_seq(conv_nd(dims, in_channels, ch, 3, padding=1))]
+            [TimestepEmbedSequential(conv_nd(dims, in_channels, ch, 3, padding=1))]
         )
         self._feature_size = ch
         input_block_chans = [ch]
@@ -521,7 +518,7 @@ class UNetModel(nn.Module):
         for level, mult in enumerate(channel_mult):
             for _ in range(num_res_blocks):
                 layers = [
-                    resblock(
+                    ResBlock(
                         ch,
                         time_embed_dim,
                         dropout,
@@ -542,14 +539,14 @@ class UNetModel(nn.Module):
                             use_new_attention_order=use_new_attention_order,
                         )
                     )
-                self.input_blocks.append(time_emb_seq(*layers))
+                self.input_blocks.append(TimestepEmbedSequential(*layers))
                 self._feature_size += ch
                 input_block_chans.append(ch)
             if level != len(channel_mult) - 1:
                 out_ch = ch
                 self.input_blocks.append(
-                    time_emb_seq(
-                        resblock(
+                    TimestepEmbedSequential(
+                        ResBlock(
                             ch,
                             time_embed_dim,
                             dropout,
@@ -570,8 +567,8 @@ class UNetModel(nn.Module):
                 ds *= 2
                 self._feature_size += ch
 
-        self.middle_block = time_emb_seq(
-            resblock(
+        self.middle_block = TimestepEmbedSequential(
+            ResBlock(
                 ch,
                 time_embed_dim,
                 dropout,
@@ -586,7 +583,7 @@ class UNetModel(nn.Module):
                 num_head_channels=num_head_channels,
                 use_new_attention_order=use_new_attention_order,
             ),
-            resblock(
+            ResBlock(
                 ch,
                 time_embed_dim,
                 dropout,
@@ -602,7 +599,7 @@ class UNetModel(nn.Module):
             for i in range(num_res_blocks + 1):
                 ich = input_block_chans.pop()
                 layers = [
-                    resblock(
+                    ResBlock(
                         ch + ich,
                         time_embed_dim,
                         dropout,
@@ -626,7 +623,7 @@ class UNetModel(nn.Module):
                 if level and i == num_res_blocks:
                     out_ch = ch
                     layers.append(
-                        resblock(
+                        ResBlock(
                             ch,
                             time_embed_dim,
                             dropout,
@@ -640,7 +637,7 @@ class UNetModel(nn.Module):
                         else Upsample(ch, conv_resample, dims=dims, out_channels=out_ch)
                     )
                     ds //= 2
-                self.output_blocks.append(time_emb_seq(*layers))
+                self.output_blocks.append(TimestepEmbedSequential(*layers))
                 self._feature_size += ch
 
         self.out = nn.Sequential(
@@ -668,7 +665,6 @@ class UNetModel(nn.Module):
     def forward(self, x, timesteps, y=None, **kwargs):
         """
         Apply the model to an input batch.
-
         :param x: an [N x C x ...] Tensor of inputs.
         :param timesteps: a 1-D batch of timesteps.
         :param y: an [N] Tensor of labels, if class-conditional.
@@ -685,30 +681,16 @@ class UNetModel(nn.Module):
             assert y.shape == (x.shape[0],)
             emb = emb + self.label_emb(y)
 
-        # h = x.type(self.dtype)
-        h = x
-
-        if 'precomp_z' not in kwargs.keys():
-            for module in self.input_blocks:
-                h = module(h, emb)
-                hs.append(h)
-            h = self.middle_block(h, emb)
-            for module in self.output_blocks:
-                h = th.cat([h, hs.pop()], dim=1)
-                h = module(h, emb)
-            h = h.type(x.dtype)
-            return self.out(h)
-        elif 'precomp_z' in kwargs.keys():
-            z_cond = kwargs['precomp_z']
-            for module in self.input_blocks:
-                h = module(h, emb, cond=z_cond)
-                hs.append(h)
-            h = self.middle_block(h, emb, cond=z_cond)
-            for module in self.output_blocks:
-                h = th.cat([h, hs.pop()], dim=1)
-                h = module(h, emb, cond=z_cond)
-            h = h.type(x.dtype)
-            return self.out(h)
+        h = x.type(self.dtype)
+        for module in self.input_blocks:
+            h = module(h, emb)
+            hs.append(h)
+        h = self.middle_block(h, emb)
+        for module in self.output_blocks:
+            h = th.cat([h, hs.pop()], dim=1)
+            h = module(h, emb)
+        h = h.type(x.dtype)
+        return {'output':self.out(h)}
 
 
 class UNetModelDECA(nn.Module):
