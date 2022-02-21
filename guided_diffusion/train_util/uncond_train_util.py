@@ -8,6 +8,8 @@ import numpy as np
 import torch.distributed as dist
 from torch.optim import AdamW
 from pytorch_lightning.core.lightning import LightningModule
+from pytorch_lightning.plugins import DDPPlugin
+
 from pytorch_lightning.utilities import rank_zero_only
 
 import pytorch_lightning as pl
@@ -51,7 +53,8 @@ class TrainLoop(LightningModule):
             log_every_n_steps=log_interval,
             accelerator='gpu',
             max_epochs=1e6,
-            profiler='simple')
+            profiler='simple',
+            )
 
         self.automatic_optimization = False # Manual optimization flow
 
@@ -264,7 +267,6 @@ class TrainLoop(LightningModule):
             "wb",
         ) as f:
             th.save(self.opt.state_dict(), f)
-
 
     def configure_optimizers(self):
         self.opt = AdamW(

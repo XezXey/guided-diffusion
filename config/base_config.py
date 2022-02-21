@@ -27,7 +27,6 @@ cfg.device_id = '0'
 # ---------------------------------------------------------------------------- #
 cfg.param_model = CN()
 cfg.param_model.name = "Deca"
-cfg.param_model.uv_size = 256
 cfg.param_model.param_list = ['shape', 'pose', 'exp', 'cam']
 cfg.param_model.n_shape = 100
 cfg.param_model.n_pose = 6
@@ -150,7 +149,6 @@ def parse_args():
     if opts != []:
         cfg_list = cmd_to_cfg_format(opts)
         cfg.merge_from_list(cfg_list)
-    print(cfg)
     return cfg
 
 def cmd_to_cfg_format(opts):
