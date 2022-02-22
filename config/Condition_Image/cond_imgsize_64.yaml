@@ -1,5 +1,5 @@
 img_model:
-  name: "Img"
+  name: "ImgCond"
   arch: "UNetCond"
   image_size: 64
   in_image: 'raw'

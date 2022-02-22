@@ -83,7 +83,6 @@ def create_model(cfg):
             attention_resolutions=tuple(attention_ds),
             dropout=cfg.dropout,
             channel_mult=channel_mult,
-            num_classes=(NUM_CLASSES if cfg.class_cond else None),
             use_checkpoint=cfg.use_checkpoint,
             num_heads=cfg.num_heads,
             num_head_channels=cfg.num_head_channels,
@@ -91,7 +90,6 @@ def create_model(cfg):
             use_scale_shift_norm=cfg.use_scale_shift_norm,
             resblock_updown=cfg.resblock_updown,
             use_new_attention_order=cfg.use_new_attention_order,
-            condition=False,
         )
     elif cfg.arch == 'UNetCond':
         return UNetModelCondition(
@@ -103,7 +101,6 @@ def create_model(cfg):
             attention_resolutions=tuple(attention_ds),
             dropout=cfg.dropout,
             channel_mult=channel_mult,
-            num_classes=(NUM_CLASSES if cfg.class_cond else None),
             use_checkpoint=cfg.use_checkpoint,
             num_heads=cfg.num_heads,
             num_head_channels=cfg.num_head_channels,
@@ -112,7 +109,7 @@ def create_model(cfg):
             resblock_updown=cfg.resblock_updown,
             use_new_attention_order=cfg.use_new_attention_order,
             condition_dim=cfg.condition_dim,
-            condition=True,
+            conditioning=True,
         )
     else: raise NotImplementedError
 
