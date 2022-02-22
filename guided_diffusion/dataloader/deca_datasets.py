@@ -153,11 +153,11 @@ def load_data_deca(
 
     if deterministic:
         loader = DataLoader(
-            deca_dataset, batch_size=batch_size, shuffle=False, num_workers=24, drop_last=True, pin_memory=True
+            deca_dataset, batch_size=batch_size, shuffle=False, num_workers=24, drop_last=True#), pin_memory=True
         )
     else:
         loader = DataLoader(
-            deca_dataset, batch_size=batch_size, shuffle=True, num_workers=24, drop_last=True, pin_memory=True
+            deca_dataset, batch_size=batch_size, shuffle=True, num_workers=24, drop_last=True#), pin_memory=True
         )
     while True:
         return loader
