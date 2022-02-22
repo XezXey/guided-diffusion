@@ -91,27 +91,29 @@ def create_model(cfg):
             use_scale_shift_norm=cfg.use_scale_shift_norm,
             resblock_updown=cfg.resblock_updown,
             use_new_attention_order=cfg.use_new_attention_order,
+            condition=False,
         )
     elif cfg.arch == 'UNetCond':
         return UNetModelCondition(
-                    image_size=cfg.image_size,
-                    in_channels=cfg.in_channels,
-                    model_channels=cfg.num_channels,
-                    out_channels=cfg.out_channels,
-                    num_res_blocks=cfg.num_res_blocks,
-                    attention_resolutions=tuple(attention_ds),
-                    dropout=cfg.dropout,
-                    channel_mult=channel_mult,
-                    num_classes=(NUM_CLASSES if cfg.class_cond else None),
-                    use_checkpoint=cfg.use_checkpoint,
-                    num_heads=cfg.num_heads,
-                    num_head_channels=cfg.num_head_channels,
-                    num_heads_upsample=cfg.num_heads_upsample,
-                    use_scale_shift_norm=cfg.use_scale_shift_norm,
-                    resblock_updown=cfg.resblock_updown,
-                    use_new_attention_order=cfg.use_new_attention_order,
-                    condition_dim=cfg.condition_dim
-                )
+            image_size=cfg.image_size,
+            in_channels=cfg.in_channels,
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=cfg.num_res_blocks,
+            attention_resolutions=tuple(attention_ds),
+            dropout=cfg.dropout,
+            channel_mult=channel_mult,
+            num_classes=(NUM_CLASSES if cfg.class_cond else None),
+            use_checkpoint=cfg.use_checkpoint,
+            num_heads=cfg.num_heads,
+            num_head_channels=cfg.num_head_channels,
+            num_heads_upsample=cfg.num_heads_upsample,
+            use_scale_shift_norm=cfg.use_scale_shift_norm,
+            resblock_updown=cfg.resblock_updown,
+            use_new_attention_order=cfg.use_new_attention_order,
+            condition_dim=cfg.condition_dim,
+            condition=True,
+        )
     else: raise NotImplementedError
 
 def create_gaussian_diffusion(cfg):
