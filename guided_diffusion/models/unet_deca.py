@@ -289,7 +289,6 @@ class ResBlock(TimestepBlock):
             h = self.out_layers(h)
         return self.skip_connection(x) + h
 
-
 class AttentionBlock(nn.Module):
     """
     An attention block that allows spatial positions to attend to each other.
@@ -693,9 +692,17 @@ class UNetModel(nn.Module):
         return {'output':self.out(h)}
 
 class UNetModelCondition(UNetModel):
-    def __init__(self, image_size, in_channels, model_channels, out_channels, num_res_blocks, attention_resolutions, dropout=0, channel_mult=(1, 2, 4, 8), conv_resample=True, dims=2, num_classes=None, use_checkpoint=False, use_fp16=False, num_heads=1, num_head_channels=-1, num_heads_upsample=-1, use_scale_shift_norm=False, resblock_updown=False, use_new_attention_order=False):
+    def __init__(self, image_size, in_channels, model_channels, out_channels, num_res_blocks, attention_resolutions, dropout=0, channel_mult=(1, 2, 4, 8), conv_resample=True, dims=2, num_classes=None, use_checkpoint=False, use_fp16=False, num_heads=1, num_head_channels=-1, num_heads_upsample=-1, condition_dim=159, use_scale_shift_norm=False, resblock_updown=False, use_new_attention_order=False):
         super().__init__(image_size, in_channels, model_channels, out_channels, num_res_blocks, attention_resolutions, dropout, channel_mult, conv_resample, dims, num_classes, use_checkpoint, use_fp16, num_heads, num_head_channels, num_heads_upsample, use_scale_shift_norm, resblock_updown, use_new_attention_order)
-        self.one_d_block = nn.Conv1d(158, 225, kernel_size=(3, 3))
+        self.condition_dim = condition_dim
+        self.conv1d = nn.Conv1d(self.condition_dim, 225, kernel_size=(3, 3))
+        self.linear = []
+        for chn in channel_mult:
+            self.linear.append(linear(self.condition_dim, chn * model_channels))
+        print(self.linear)
+        print(condition_dim)
+        print(self.conv1d)
+        exit()
 
     def forward(self, x, timesteps, y=None, **kwargs):
         """

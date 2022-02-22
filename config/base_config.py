@@ -51,7 +51,6 @@ cfg.param_model.use_checkpoint = ""
 # ---------------------------------------------------------------------------- #
 cfg.img_model = CN()
 cfg.img_model.name = "Img"
-cfg.img_model.uv_size = 256
 img_type = {'raw':3, 'uvdn':3}
 cfg.img_model.in_image = '+'.join(img_type.keys())
 cfg.img_model.resize_mode = 'resize'
@@ -75,6 +74,7 @@ cfg.img_model.use_checkpoint = False
 cfg.img_model.use_scale_shift_norm = True
 cfg.img_model.resblock_updown = False
 cfg.img_model.use_new_attention_order = False
+cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
 
 # ---------------------------------------------------------------------------- #
 # Options for Dataset
