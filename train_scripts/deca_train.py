@@ -14,7 +14,8 @@ from guided_diffusion.resample import create_named_schedule_sampler
 from guided_diffusion.script_util import (add_dict_to_argparser, args_to_dict,
                                           create_deca_and_diffusion,
                                           seed_all)
-from guided_diffusion.train_util.uncond_train_util import TrainLoop
+from guided_diffusion.train_util.uncond_train_util import TrainLoop as TrainLoopUnCond
+from guided_diffusion.train_util.cond_train_util import TrainLoop as TrainLoopCond
 from pytorch_lightning.loggers import TensorBoardLogger
 
 
@@ -32,16 +33,22 @@ def main():
     data = load_data_deca(
         data_dir=cfg.dataset.data_dir,
         deca_dir=cfg.dataset.deca_dir,
-        batch_size=cfg.dataset.batch_size,
+        batch_size=cfg.train.batch_size,
         bound=cfg.param_model.bound,
         deterministic=cfg.train.deterministic,
+        image_size=cfg.img_model.image_size,
+        augment_mode=cfg.img_model.augment_mode,
+        resize_mode=cfg.img_model.resize_mode,
+        use_detector=cfg.img_model.use_detector,
+        in_image=cfg.img_model.in_image,
     )
 
     logger.log("training...")
 
     tb_logger = TensorBoardLogger("tb_logs", name="diffusion", version=cfg.train.log_dir.split('/')[-1])
 
-    train_loop = TrainLoop(
+    train_looper = TrainLoopCond if cfg.param_model.conditioning else TrainLoopUnCond
+    train_loop = train_looper(
         model=deca_model,
         diffusion=diffusion,
         data=data,

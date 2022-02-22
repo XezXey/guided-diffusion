@@ -12,12 +12,13 @@ import os
 import glob
 from torch.utils.data import DataLoader, Dataset
 from ..recolor_util import recolor as recolor
-import matplotlib.pyplot as plt
 from collections import defaultdict
-from model_3d.FLAME import FLAME
-import model_3d.FLAME.utils.util as util
-import model_3d.FLAME.utils.detectors as detectors
 
+from .img_util import (
+    resize_arr,
+    center_crop_arr,
+    random_crop_arr
+)
 
 
 def read_params(path):
@@ -107,7 +108,12 @@ def load_data_deca(
     deca_dir,
     batch_size,
     bound,
-    deterministic=False,
+    image_size,
+    deterministic=False, 
+    resize_mode="resize",
+    augment_mode=None,
+    use_detector=False,
+    in_image="raw",
 ):
     """
     For a dataset, create a generator over (images, kwargs) pairs.
@@ -137,7 +143,12 @@ def load_data_deca(
     deca_dataset = DECADataset(
         deca_params=deca_params,
         image_paths=image_paths,
-        bound=bound
+        bound=bound,
+        resize_mode=resize_mode,
+        augment_mode=augment_mode,
+        use_detector=use_detector,
+        in_image=in_image,
+        resolution=image_size
     )
 
     if deterministic:
@@ -157,11 +168,21 @@ class DECADataset(Dataset):
         image_paths,
         deca_params,
         bound,
+        resize_mode,
+        resolution,
+        augment_mode,
+        in_image,
+        use_detector=False,
     ):
         super().__init__()
         self.deca_params = deca_params
         self.local_images = image_paths
         self.bound = bound
+        self.in_image = in_image
+        self.resolution = resolution
+        self.resize_mode = resize_mode
+        self.augment_mode = augment_mode
+        self.use_detector = use_detector
 
     def __len__(self):
         return len(self.local_images)
@@ -169,6 +190,12 @@ class DECADataset(Dataset):
     def __getitem__(self, idx):
         # Raw Images in dataset
         path = self.local_images[idx]
+        with bf.BlobFile(path, "rb") as f:
+            pil_image = PIL.Image.open(f)
+            pil_image.load()
+        pil_image = pil_image.convert("RGB")
+        raw_img = self.augmentation(pil_image=pil_image)
+        raw_img = (raw_img / 127.5) - 1
 
         # Deca params of img-path
         out_dict = {}
@@ -180,4 +207,42 @@ class DECADataset(Dataset):
         )
         out_dict["deca_params"] = params_norm[0]
 
-        return out_dict["deca_params"], {}
+        uvdn_path = self.deca_params[img_name]['uv_detail_normals']
+        with bf.BlobFile(uvdn_path, "rb") as f:
+            pil_image = PIL.Image.open(f)
+            pil_image.load()
+        pil_image = pil_image.convert("RGB")
+
+        uvdn = self.augmentation(pil_image=pil_image)
+        uvdn = (uvdn / 127.5) - 1
+
+        # Input to model
+        if self.in_image == 'raw':
+            arr = raw_img
+        elif self.in_image == 'raw+uvdn':
+            arr = np.concatenate((raw_img, uvdn), axis=2)
+        else : raise NotImplementedError
+
+
+        return out_dict["deca_params"], {'image':np.transpose(arr, [2, 0, 1])}
+
+    def augmentation(self, pil_image):
+        # Resize image by resizing/cropping to match the resolution
+        if self.resize_mode == 'random_crop':
+            arr = random_crop_arr(pil_image, self.resolution)
+        elif self.resize_mode == 'center_crop':
+            arr = center_crop_arr(pil_image, self.resolution)
+        elif self.resize_mode == 'resize':
+            arr = resize_arr(pil_image, self.resolution)
+        else: raise NotImplemented
+
+        # Augmentation an image by flipping
+        if self.augment_mode == 'random_flip' and random.random() < 0.5:
+            arr = arr[:, ::-1]
+        elif self.augment_mode == 'flip':
+            arr = arr[:, ::-1]
+        elif self.augment_mode is None:
+            pass
+        else: raise NotImplemented
+        
+        return arr

@@ -2,8 +2,8 @@ import argparse
 
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
-from .models.unet_deca import UNetModelCondition, UNetModel
-from .models.dense_deca import DenseDDPM, AutoEncoderDPM, DECADenseCond
+from .models.unet_deca import EncoderUNetModel, UNetModelCondition, UNetModel
+from .models.dense_deca import DenseDDPM, AutoEncoderDPM, DenseDDPMCond
 
 NUM_CLASSES = 1000
 
@@ -15,7 +15,10 @@ def create_img_deca_and_diffusion(cfg):
     return img_model, params_model, diffusion
 
 def create_deca_and_diffusion(cfg):
-    param_model = create_param_model(cfg.param_model)
+    if cfg.param_model.conditioning:
+        param_model = create_param_model(cfg=cfg.param_model, cfg_cond=cfg)
+    else:
+        param_model = create_param_model(cfg=cfg.param_model)
     diffusion = create_gaussian_diffusion(cfg.diffusion)
     return param_model, diffusion
 
@@ -25,18 +28,19 @@ def create_img_and_diffusion(cfg):
     return img_model, diffusion
 
 # Each sub-modules
-def create_param_model(cfg):
+def create_param_model(cfg, cfg_cond=None):
     if cfg.deca_cond:
-        return DECADenseCond(
-            in_channels=cfg.in_channels,
-            out_channels=cfg.out_channels,
-            model_channels=cfg.model_channels,
-            use_checkpoint=cfg.use_checkpoint,
-            use_scale_shift_norm=cfg.use_scale_shift_norm
-        )
+        img_model, _ = create_img_and_diffusion(cfg_cond)
+        if cfg.arch == 'magenta':
+            return DenseDDPMCond(
+                in_channels=cfg.in_channels,
+                model_channels=cfg.model_channels,
+                num_layers=cfg.num_layers,
+                use_checkpoint=cfg.use_checkpoint,
+                encoder=img_model)
+        else: raise NotImplementedError
     else:
         if cfg.arch == 'magenta':
-            print('magenta')
             return DenseDDPM(
                 in_channels=cfg.in_channels,
                 model_channels=cfg.model_channels,
@@ -44,7 +48,6 @@ def create_param_model(cfg):
                 use_checkpoint=cfg.use_checkpoint,
             )
         elif cfg.arch == 'autoenc':
-            print('autoenc')
             return AutoEncoderDPM(
                 in_channels=cfg.in_channels,
                 out_channels=cfg.out_channels,
@@ -93,6 +96,26 @@ def create_model(cfg):
         )
     elif cfg.arch == 'UNetCond':
         return UNetModelCondition(
+            image_size=cfg.image_size,
+            in_channels=cfg.in_channels,
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=cfg.num_res_blocks,
+            attention_resolutions=tuple(attention_ds),
+            dropout=cfg.dropout,
+            channel_mult=channel_mult,
+            use_checkpoint=cfg.use_checkpoint,
+            num_heads=cfg.num_heads,
+            num_head_channels=cfg.num_head_channels,
+            num_heads_upsample=cfg.num_heads_upsample,
+            use_scale_shift_norm=cfg.use_scale_shift_norm,
+            resblock_updown=cfg.resblock_updown,
+            use_new_attention_order=cfg.use_new_attention_order,
+            condition_dim=cfg.condition_dim,
+            conditioning=True,
+        )
+    elif cfg.arch == 'EncoderUNet':
+        return EncoderUNetModel(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
             model_channels=cfg.num_channels,

@@ -2,8 +2,6 @@
 Default config for Diffusion training
 '''
 from re import A
-from guided_diffusion.models.unet_deca import UNetModel
-from guided_diffusion.models.dense_deca import DenseDDPM, DECADenseCond, DECADenseUnCond
 from yacs.config import CfgNode as CN
 import argparse
 import yaml
@@ -41,6 +39,7 @@ cfg.param_model.n_params = [cfg.param_model.n_shape,
 cfg.param_model.arch = 'magenta'
 cfg.param_model.num_layers = 3
 cfg.param_model.deca_cond = False
+cfg.param_model.conditioning = False
 cfg.param_model.in_channels = sum(cfg.param_model.n_params)
 cfg.param_model.model_channels = 2048
 cfg.param_model.out_channels = sum(cfg.param_model.n_params)
@@ -69,7 +68,6 @@ cfg.img_model.num_head_channels = -1
 cfg.img_model.attention_resolutions = "16,8"
 cfg.img_model.channel_mult = ""
 cfg.img_model.dropout = 0.0
-cfg.img_model.class_cond = False
 cfg.img_model.use_checkpoint = False
 cfg.img_model.use_scale_shift_norm = True
 cfg.img_model.resblock_updown = False
