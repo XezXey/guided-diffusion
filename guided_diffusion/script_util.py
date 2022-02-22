@@ -2,7 +2,7 @@ import argparse
 
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
-from .models.unet_deca import UNetModelCondition, UNetModelDECA, UNetModel
+from .models.unet_deca import UNetModelCondition, UNetModel
 from .models.dense_deca import DenseDDPM, AutoEncoderDPM, DECADenseCond
 
 NUM_CLASSES = 1000
