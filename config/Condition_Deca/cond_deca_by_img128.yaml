@@ -1,7 +1,7 @@
 img_model:
   name: "DecaCond"
   arch: "EncoderUNet"
-  image_size: 64
+  image_size: 128
   in_image: 'raw'
   in_channels: 3
   out_channels: 2048 # Output channels from encoderUNet
