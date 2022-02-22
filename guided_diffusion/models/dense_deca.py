@@ -220,10 +220,6 @@ class DenseDDPMCond(DenseDDPM):
         # Conditioning from an image
         cond = kwargs['image']
         cond = self.encoder(x=cond.type_as(x), timesteps=t)
-        # import matplotlib.pyplot as plt
-        # plt.imshow(((np.transpose(kwargs['image'][0].cpu().numpy(), (1, 2, 0))+1)*127.5).astype(np.uint8))
-        # plt.savefig('./vis.png')
-        # exit()
 
         # DenseDDPM
         x = self.in_layers(x) * cond
