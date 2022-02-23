@@ -6,7 +6,6 @@ from matplotlib import image
 from numpy.core.numeric import full_like
 import pandas as pd
 import blobfile as bf
-from mpi4py import MPI
 import numpy as np
 import tqdm
 import os

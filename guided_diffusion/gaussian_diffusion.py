@@ -962,4 +962,4 @@ def _extract_into_tensor(arr, timesteps, broadcast_shape):
     res = th.from_numpy(arr)[timesteps]
     while len(res.shape) < len(broadcast_shape):
         res = res[..., None]
-    return res.expand(broadcast_shape).cuda()
+    return res.expand(broadcast_shape)#.cuda()

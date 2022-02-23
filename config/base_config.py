@@ -112,6 +112,7 @@ cfg.diffusion.predict_xstart = False
 cfg.diffusion.rescale_timesteps = False
 cfg.diffusion.rescale_learned_sigmas = False
 cfg.diffusion.timestep_respacing = ""
+cfg.diffusion.clip_denoised = True
 
 
 
@@ -125,7 +126,7 @@ def update_cfg(cfg, cfg_file):
     cfg.merge_from_file(cfg_file)
     return cfg.clone()
 
-def parse_args():
+def parse_args(ipynb={'mode':False, 'cfg':None}):
     '''
     Return dict-like cfg, accesible with cfg.<key1>.<key2> or cfg[<key1>][<key2>]
     e.g. <key1> = dataset, <key2> = training_data
@@ -133,6 +134,10 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg', type=str, help='cfg file path')
     args, opts = parser.parse_known_args()
+    if ipynb['mode']:
+        # Using this with ipynb will have some opts defaults from ipynb and we need to filter out.
+        opts=[]
+        args.cfg = ipynb['cfg']
 
     print("Merging with : ", args, end='\n\n')
 
@@ -144,6 +149,7 @@ def parse_args():
         cfg.cfg_file = cfg_file
 
     # Merge with cmd-line argument(s)
+
     if opts != []:
         cfg_list = cmd_to_cfg_format(opts)
         cfg.merge_from_list(cfg_list)
