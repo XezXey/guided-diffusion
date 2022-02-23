@@ -133,7 +133,7 @@ def create_model(cfg):
             use_new_attention_order=cfg.use_new_attention_order,
             condition_dim=cfg.condition_dim,
             conditioning=True,
-            pool='attention'
+            pool=cfg.pool
         )
     else: raise NotImplementedError
 

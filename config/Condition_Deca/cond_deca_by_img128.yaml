@@ -6,6 +6,7 @@ img_model:
   in_channels: 3
   out_channels: 2048 # Output channels from encoderUNet
   condition_dim: 159  # It's the numbers of deca
+  pool: "adaptive"
 
 param_model:
   name: "DecaCond"

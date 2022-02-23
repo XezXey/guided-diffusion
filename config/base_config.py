@@ -73,6 +73,7 @@ cfg.img_model.use_scale_shift_norm = True
 cfg.img_model.resblock_updown = False
 cfg.img_model.use_new_attention_order = False
 cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
+cfg.img_model.pool = 'attention'
 
 # ---------------------------------------------------------------------------- #
 # Options for Dataset

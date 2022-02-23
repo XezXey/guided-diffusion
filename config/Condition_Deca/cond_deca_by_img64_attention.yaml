@@ -12,6 +12,7 @@ img_model:
   resblock_updown: True
   num_res_blocks: 2
   num_channels: 128
+  pool: "attention"
 
 
 param_model:
