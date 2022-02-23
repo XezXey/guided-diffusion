@@ -103,55 +103,23 @@ class TrainLoop(LightningModule):
                 for _ in range(len(self.ema_rate))
             ]
 
-    def _load_and_sync_parameters(self):
-        resume_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
-
-        if resume_checkpoint:
-            self.resume_step = parse_resume_step_from_filename(resume_checkpoint)
-            if dist.get_rank() == 0:
-                logger.log(f"loading model from checkpoint: {resume_checkpoint}...")
-                self.model.load_state_dict(
-                    dist_util.load_state_dict(
-                        resume_checkpoint, map_location=dist_util.dev()
-                    )
-                )
-
-        dist_util.sync_params(self.model.parameters())
-
-    def _load_ema_parameters(self, rate, trainer, name):
-        ema_params = copy.deepcopy(trainer.master_params)
-
-        main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
-        ema_checkpoint = find_ema_checkpoint(main_checkpoint, self.resume_step, rate, name)
-        if ema_checkpoint:
-            if dist.get_rank() == 0:
-                logger.log(f"loading EMA from checkpoint: {ema_checkpoint}...")
-                state_dict = dist_util.load_state_dict(
-                    ema_checkpoint, map_location=dist_util.dev()
-                )
-                ema_params = trainer.state_dict_to_master_params(state_dict)
-
-        dist_util.sync_params(ema_params)
-        return ema_params
-
-    def _load_optimizer_state(self):
-        main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
-        opt_checkpoint = bf.join(
-            bf.dirname(main_checkpoint), f"opt{self.resume_step:06}.pt"
-        )
-        if bf.exists(opt_checkpoint):
-            logger.log(f"loading optimizer state from checkpoint: {opt_checkpoint}")
-            state_dict = dist_util.load_state_dict(
-                opt_checkpoint, map_location=dist_util.dev()
-            )
-            self.opt.load_state_dict(state_dict)
+    def on_fit_start(self):
+        '''
+        This callbacks called when trainer.fit() is begin. We set the ema_params from loaded master_params.
+        '''
+        self.model_ema_params = [
+            copy.deepcopy(self.model_trainer.master_params)
+            for _ in range(len(self.ema_rate))
+        ]
+        self.resume_step = int(self.resume_checkpoint.split('=')[-1].split(".")[0])
+        print(self.step, self.resume_step)
 
     def run(self):
         # Driven code
         # Logging for first time
         self.save()
 
-        self.pl_trainer.fit(self, self.data)
+        self.pl_trainer.fit(self, self.data, ckpt_path=self.resume_checkpoint)
 
     def training_step(self, batch, batch_idx):
         dat, cond = batch

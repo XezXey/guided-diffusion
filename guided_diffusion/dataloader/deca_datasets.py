@@ -65,7 +65,7 @@ def load_deca_params(deca_dir, bound):
     # face params 
     params_key = ['shape', 'pose', 'exp', 'cam']
     for k in tqdm.tqdm(params_key, desc="Loading deca params..."):
-        params_path = glob.glob(f"{deca_dir}/params/*{k}-anno.txt")
+        params_path = glob.glob(f"{deca_dir}/params/train/*{k}-anno.txt")
         for path in params_path:
             deca_params[k] = read_params(path=path)
     
@@ -83,7 +83,7 @@ def load_deca_params(deca_dir, bound):
     deca_params['normalize'] = {'min_val':min_val, 'max_val':max_val}
 
     # deca uv_detail_normals
-    uv_detail_normals_path = glob.glob(f'{deca_dir}/uv_detail_normals/*.png')
+    uv_detail_normals_path = glob.glob(f'{deca_dir}/uv_detail_normals/train/*.png')
     for path in tqdm.tqdm(uv_detail_normals_path, desc="Loading uv_detail_normals"):
         img_name = path.split('/')[-1].split('_')[-1]
         img_name_ext = img_name.replace('.png', '.jpg')
