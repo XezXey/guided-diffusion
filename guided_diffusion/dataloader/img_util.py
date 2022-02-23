@@ -2,6 +2,7 @@ import numpy as np
 import math
 import PIL
 import random
+import torch as th
 
 def resize_arr(pil_image, image_size):
     img = pil_image.resize((image_size, image_size), PIL.Image.ANTIALIAS)
@@ -49,3 +50,22 @@ def random_crop_arr(pil_image, image_size, min_crop_frac=0.8, max_crop_frac=1.0)
     crop_y = random.randrange(arr.shape[0] - image_size + 1)
     crop_x = random.randrange(arr.shape[1] - image_size + 1)
     return arr[crop_y : crop_y + image_size, crop_x : crop_x + image_size]
+
+def decolor(s, out_c='rgb'):
+    if out_c in ['rgb', 'rbg', 'brg', 'bgr', 'grb', 'gbr']:
+        s_ = ((s + 1) * 127.5).clamp(0, 255).to(th.uint8)
+    elif out_c == 'luv':
+        s_ = ((s + 1) * 127.5).clamp(0, 255).to(th.uint8)
+    elif out_c == 'ycrcb':
+        s_ = ((s + 1) * 127.5).clamp(0, 255).to(th.uint8)
+    elif out_c in ['hsv', 'hls']:
+        h = (s[..., [0]] + 1) * 90.0 
+        l_s = (s[..., [1]] + 1) * 127.5
+        v = (s[..., [2]] + 1) * 127.5
+        s_ = th.cat((h, l_s, v), axis=2).clamp(0, 255).to(th.uint8)
+    elif out_c == 'sepia':
+        s_ = ((s + 1) * 127.5).clamp(0, 255).to(th.uint8)
+
+    else: raise NotImplementedError
+
+    return s_

@@ -1,0 +1,10 @@
+param_model:
+  name: "Deca"
+  deca_cond: False
+  conditioning: False
+
+
+dataset:
+  deca_dir: "/data/mint/ffhq_256_with_anno"
+  data_dir: "/data/mint/ffhq_256_with_anno/ffhq_256/train"
+
