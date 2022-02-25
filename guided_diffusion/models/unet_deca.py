@@ -1101,3 +1101,76 @@ class EncoderUNetModel(nn.Module):
         else:
             h = h.type(x.dtype)
             return self.out(h)
+
+class UNetModelChnMem(UNetModel):
+    def __init__(self, 
+        image_size, 
+        in_channels, 
+        model_channels, 
+        out_channels, 
+        num_res_blocks, 
+        attention_resolutions, 
+        dropout=0, 
+        channel_mult=(1, 2, 4, 8), 
+        conv_resample=True, 
+        dims=2, 
+        use_checkpoint=False, 
+        use_fp16=False, 
+        num_heads=1, 
+        num_head_channels=-1, 
+        num_heads_upsample=-1, 
+        use_scale_shift_norm=False, 
+        resblock_updown=False, 
+        use_new_attention_order=False, 
+        condition_dim=159, 
+        conditioning=True
+    ):
+        UNetModel.__init__(self, 
+            image_size=image_size, 
+            in_channels=in_channels, 
+            model_channels=model_channels, 
+            out_channels=out_channels, 
+            num_res_blocks=num_res_blocks, 
+            attention_resolutions=attention_resolutions, 
+            conditioning=conditioning, 
+            dropout=dropout, 
+            channel_mult=channel_mult, 
+            conv_resample=conv_resample, 
+            dims=dims, 
+            use_checkpoint=use_checkpoint, 
+            use_fp16=use_fp16, 
+            num_heads=num_heads, 
+            num_head_channels=num_head_channels, 
+            num_heads_upsample=num_heads_upsample, 
+            use_scale_shift_norm=use_scale_shift_norm, 
+            resblock_updown=resblock_updown, 
+            use_new_attention_order=use_new_attention_order,
+            condition_dim = condition_dim)
+        super().__init__
+        self.condition_dim = condition_dim
+
+        print(self)
+        exit()
+
+    def forward(self, x, timesteps, y=None, **kwargs):
+        """
+        Apply the model to an input batch.
+        :param x: an [N x C x ...] Tensor of inputs.
+        :param timesteps: a 1-D batch of timesteps.
+        :param y: an [N] Tensor of labels, if class-conditional.
+        :return: an [N x C x ...] Tensor of outputs.
+        """
+        hs = []
+        emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
+
+
+        h = x.type(self.dtype)
+        for module in self.input_blocks:
+            h = module(h, emb)
+            hs.append(h)
+        h = self.middle_block(h, emb)
+        for module in self.output_blocks:
+            h = th.cat([h, hs.pop()], dim=1)
+            h = module(h, emb)
+        h = h.type(x.dtype)
+        return {'output':self.out(h)}
