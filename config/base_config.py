@@ -74,6 +74,7 @@ cfg.img_model.resblock_updown = False
 cfg.img_model.use_new_attention_order = False
 cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
 cfg.img_model.pool = 'attention'
+cfg.img_model.conditioning = False
 
 # ---------------------------------------------------------------------------- #
 # Options for Dataset
