@@ -5,7 +5,9 @@ img_model:
   in_channels: 3
   out_channels: 3
   arch: "UNetChnMem"
+  conditioning: False
+  add_mem: [False, True]
 
 dataset:
-  deca_dir: "/data/mint/ffhq_256_with_anno"
+  deca_dir: "/data/mint/ffhq_256_with_anno/"
   data_dir: "/data/mint/ffhq_256_with_anno/ffhq_256/train"

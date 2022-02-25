@@ -1,0 +1,14 @@
+img_model:
+  name: "Img"
+  image_size: 64
+  in_image: 'raw'
+  in_channels: 3
+  out_channels: 3
+  arch: "UNetChnMem"
+  conditioning: False
+  # add_mem: [True, True]
+  add_mem: [False, False]
+
+dataset:
+  deca_dir: "/data/mint/ffhq_256_with_anno/"
+  data_dir: "/data/mint/ffhq_256_with_anno/ffhq_256/train"

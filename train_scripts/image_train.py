@@ -10,7 +10,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 from config.base_config import parse_args
 from guided_diffusion import logger
-from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
+from guided_diffusion.dataloader.img_datasets import load_data_img_deca
 from guided_diffusion.resample import create_named_schedule_sampler
 from guided_diffusion.script_util import (
     create_img_and_diffusion,
@@ -24,8 +24,6 @@ def main():
 
     logger.configure(dir=cfg.train.log_dir)
     logger.log("creating model and diffusion...")
-    print(cfg.img_model.arch)
-    exit()
     img_model, diffusion = create_img_and_diffusion(cfg)
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
 

@@ -2,7 +2,20 @@ import argparse
 
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
-from .models.unet_deca import EncoderUNetModel, UNetModelChnMem, UNetModelCondition, UNetModel
+from .models.unet_deca import (
+    EncoderUNetModel, 
+    ResBlock, 
+    ResBlockChnMem, 
+    ResBlockCondition, 
+    TimestepBlock, 
+    TimestepBlockCond, 
+    TimestepEmbedSequential,
+    TimestepEmbedSequentialCond, 
+    UNetModel,
+    UNetModelChnMem, 
+    UNetModelCondition, 
+
+)
 from .models.dense_deca import DenseDDPM, AutoEncoderDPM, DenseDDPMCond
 
 NUM_CLASSES = 1000
@@ -93,6 +106,8 @@ def create_model(cfg):
             use_scale_shift_norm=cfg.use_scale_shift_norm,
             resblock_updown=cfg.resblock_updown,
             use_new_attention_order=cfg.use_new_attention_order,
+            resblock_module=ResBlock,
+            time_embed_seq_module=TimestepEmbedSequential
         )
     elif cfg.arch == 'UNetCond':
         return UNetModelCondition(
@@ -113,6 +128,8 @@ def create_model(cfg):
             use_new_attention_order=cfg.use_new_attention_order,
             condition_dim=cfg.condition_dim,
             conditioning=True,
+            resblock_module=ResBlockCondition,
+            time_embed_seq_module=TimestepEmbedSequentialCond
         )
     elif cfg.arch == 'EncoderUNet':
         return EncoderUNetModel(
@@ -152,6 +169,11 @@ def create_model(cfg):
             use_scale_shift_norm=cfg.use_scale_shift_norm,
             resblock_updown=cfg.resblock_updown,
             use_new_attention_order=cfg.use_new_attention_order,
+            conditioning=cfg.conditioning,
+            add_mem=cfg.add_mem,
+            resblock_module=ResBlockChnMem,
+            time_embed_seq_module=TimestepEmbedSequential,
+
         )
     else: raise NotImplementedError
 
