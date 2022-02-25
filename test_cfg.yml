@@ -1,4 +1,0 @@
-dataset:
-  data_dir: "/data/mint/ffhq_256_with_anno/displacement_map"
-  batch_size: 256
-  google: "HELLO"
