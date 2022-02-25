@@ -135,7 +135,7 @@ def create_model(cfg):
             conditioning=True,
             pool=cfg.pool
         )
-    if cfg.arch == 'UNetChnMem':
+    elif cfg.arch == "UNetChnMem":
         return UNetModelChnMem(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,

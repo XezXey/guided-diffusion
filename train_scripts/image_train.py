@@ -24,7 +24,8 @@ def main():
 
     logger.configure(dir=cfg.train.log_dir)
     logger.log("creating model and diffusion...")
-
+    print(cfg.img_model.arch)
+    exit()
     img_model, diffusion = create_img_and_diffusion(cfg)
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
 

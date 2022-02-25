@@ -1148,7 +1148,7 @@ class UNetModelChnMem(UNetModel):
             condition_dim = condition_dim)
         super().__init__
         self.condition_dim = condition_dim
-
+        print("ASDSADSDAASD")
         print(self)
         exit()
 

@@ -4,7 +4,7 @@ img_model:
   in_image: 'raw'
   in_channels: 3
   out_channels: 3
-  arch: "UNetHash"
+  arch: "UNetChnMem"
 
 dataset:
   deca_dir: "/data/mint/ffhq_256_with_anno"
