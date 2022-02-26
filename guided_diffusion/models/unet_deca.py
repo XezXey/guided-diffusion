@@ -1372,28 +1372,16 @@ class UNetModelChnMem(nn.Module):
         :return: an [N x C x ...] Tensor of outputs.
         """
         hs = []
-        tmp = []
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
 
-        print("INPUT BLOCK")
         h = x.type(self.dtype)
         for module in self.input_blocks:
-            print("="*100)
-            print(f"Input : cat ({h.shape}, {emb.shape})")
             h = module(h, emb)
-            print("Output : ", h.shape)
             hs.append(h)
-            tmp.append(h)
         h = self.middle_block(h, emb)
-        print("MIDDLE BLOCK : ", h.shape)
-        print("OUTPUT BLOCK")
         for module in self.output_blocks:
-            print("="*100)
-            print(f"Input : cat ({h.shape}, {tmp.pop().shape}) => ", end='')
             h = th.cat([h, hs.pop()], dim=1)
-            print(h.shape)
             h = module(h, emb)
-            print("Output : ", h.shape)
         h = h.type(x.dtype)
         return {'output':self.out(h)}
 
