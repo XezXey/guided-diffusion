@@ -38,7 +38,7 @@ class TrainLoop(LightningModule):
         schedule_sampler=None,
         weight_decay=0.0,
         lr_anneal_steps=0,
-        n_gpus=1,
+        n_gpus="1",
     ):
 
         super(TrainLoop, self).__init__()
@@ -73,7 +73,7 @@ class TrainLoop(LightningModule):
         self.save_interval = save_interval
         self.resume_checkpoint = resume_checkpoint
         self.schedule_sampler = schedule_sampler or UniformSampler(diffusion)
-        self.global_batch = self.n_gpus * batch_size
+        self.global_batch = sum([alp.isdigit() for alp in self.n_gpus]) * batch_size
         self.weight_decay = weight_decay
         self.lr_anneal_steps = lr_anneal_steps
         self.name = name
@@ -241,9 +241,10 @@ class TrainLoop(LightningModule):
             param_group["lr"] = lr
 
     def log_step(self):
+        n_gpus_mult = sum(alp.isdigit() for alp in self.n_gpus)
         step_ = float(self.step + self.resume_step)
         self.log("training_progress/step", step_ + 1)
-        self.log("training_progress/global_step", (step_ + 1) * self.n_gpus)
+        self.log("training_progress/global_step", (step_ + 1) * n_gpus_mult)
         self.log("training_progress/global_samples", (step_ + 1) * self.global_batch)
 
     @rank_zero_only

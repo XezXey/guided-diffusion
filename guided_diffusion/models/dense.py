@@ -9,7 +9,7 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .unet_deca import TimestepBlock, EncoderUNetModel, UNetModel
+from .unet import TimestepBlock, EncoderUNetModel, UNetModel
 from .nn import (
     checkpoint,
     conv_nd,

@@ -75,7 +75,7 @@ cfg.img_model.use_new_attention_order = False
 cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
 cfg.img_model.pool = 'attention'
 cfg.img_model.conditioning = False
-cfg.img_model.add_mem = [False, True]
+cfg.img_model.add_mem = [False, False]
 cfg.img_model.n_channels_mem = 4
 
 # ---------------------------------------------------------------------------- #
