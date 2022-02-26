@@ -36,7 +36,7 @@ GitPython==3.1.20
 google-auth==2.3.3
 google-auth-oauthlib==0.4.6
 grpcio==1.43.0
--e git+https://github.com/XezXey/guided-diffusion.git@374b4afa5e66637db2f6bc3d3bd7186573011e72#egg=guided_diffusion
+-e git+https://github.com/XezXey/guided-diffusion.git@f4ac9b0f835f467dd92982062a00b3eb85a75455#egg=guided_diffusion
 idna==3.3
 idna-ssl==1.1.0
 imageio==2.13.3
