@@ -6,7 +6,10 @@ img_model:
   out_channels: 3
   arch: "UNetChnMem"
   add_mem: [False, True]
-  n_channels_mem: 4
+  n_channels_mem: 8
+
+train:
+  n_gpus: "\"2,\""
 
 dataset:
   deca_dir: "/data/mint/ffhq_256_with_anno/"

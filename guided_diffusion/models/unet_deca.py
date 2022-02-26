@@ -181,7 +181,6 @@ class ResBlock(TimestepBlock):
 
     def __init__(
         self,
-        image_size,
         channels,
         emb_channels,
         dropout,
@@ -192,7 +191,8 @@ class ResBlock(TimestepBlock):
         use_checkpoint=False,
         up=False,
         down=False,
-        condition_dim=0
+        condition_dim=0,
+        image_size=64
     ):
         super().__init__()
         self.channels = channels
