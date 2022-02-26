@@ -173,7 +173,7 @@ def create_model(cfg):
             add_mem=cfg.add_mem,
             resblock_module=ResBlockChnMem,
             time_embed_seq_module=TimestepEmbedSequential,
-
+            n_channels_mem=cfg.n_channels_mem
         )
     else: raise NotImplementedError
 

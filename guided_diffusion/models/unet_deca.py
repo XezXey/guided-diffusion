@@ -1130,6 +1130,7 @@ class UNetModelChnMem(nn.Module):
         resblock_module,
         time_embed_seq_module,
         add_mem,
+        n_channels_mem=8,
         dropout=0, 
         channel_mult=(1, 2, 4, 8), 
         conv_resample=True, 
@@ -1167,6 +1168,7 @@ class UNetModelChnMem(nn.Module):
         self.conditioning = conditioning
         self.condition_dim = condition_dim
         self.add_mem = add_mem
+        self.n_channels_mem = n_channels_mem
 
         time_embed_dim = model_channels * 4
         self.time_embed = nn.Sequential(
@@ -1187,8 +1189,12 @@ class UNetModelChnMem(nn.Module):
         self.middle_block_hw = self.block_hw[-1]
         self.input_add_mem = [self.add_mem[0]] * len(self.block_hw)
         self.output_add_mem = [self.add_mem[1]] * len(self.block_hw)
+
+        # self.n_channels_mem = [self.n_channels_mem * mult for mult in channel_mult]
+        self.n_channels_mem = [self.n_channels_mem] * len(channel_mult)
         print("Img size : ", self.block_hw, self.middle_block_hw, self.block_hw[::-1])
         print("Adding mem : ", self.input_add_mem, self.output_add_mem)
+        print("Channels mem : ", self.n_channels_mem)
 
         for level, mult in enumerate(channel_mult):
             for _ in range(num_res_blocks):
@@ -1203,7 +1209,8 @@ class UNetModelChnMem(nn.Module):
                         use_scale_shift_norm=use_scale_shift_norm,
                         condition_dim=condition_dim,
                         image_size=self.block_hw[level],
-                        add_mem=self.input_add_mem[level]
+                        add_mem=self.input_add_mem[level],
+                        n_channels_mem=self.n_channels_mem[level]
                     )
                 ]
                 ch = int(mult * model_channels)
@@ -1235,7 +1242,8 @@ class UNetModelChnMem(nn.Module):
                             down=True,
                             condition_dim=condition_dim,
                             image_size= self.block_hw[level],
-                            add_mem=self.input_add_mem[level]
+                            add_mem=self.input_add_mem[level],
+                            n_channels_mem=self.n_channels_mem[level]
                         )
                         if resblock_updown
                         else Downsample(
@@ -1247,7 +1255,6 @@ class UNetModelChnMem(nn.Module):
                 input_block_chans.append(ch)
                 ds *= 2
                 self._feature_size += ch
-
 
         self.middle_block = time_embed_seq_module(
             resblock_module(
@@ -1295,7 +1302,8 @@ class UNetModelChnMem(nn.Module):
                         use_scale_shift_norm=use_scale_shift_norm,
                         condition_dim=condition_dim,
                         image_size=self.block_hw[level],
-                        add_mem=self.output_add_mem[level]
+                        add_mem=self.output_add_mem[level],
+                        n_channels_mem=self.n_channels_mem[level]
                     )
                 ]
                 ch = int(model_channels * mult)
@@ -1323,7 +1331,8 @@ class UNetModelChnMem(nn.Module):
                             up=True,
                             condition_dim=condition_dim,
                             image_size=self.block_hw[level],
-                            add_mem=self.output_add_mem[level]
+                            add_mem=self.output_add_mem[level],
+                            n_channels_mem=self.n_channels_mem[level]
                         )
                         if resblock_updown
                         else Upsample(ch, conv_resample, dims=dims, out_channels=out_ch)
@@ -1366,22 +1375,26 @@ class UNetModelChnMem(nn.Module):
         tmp = []
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
 
+        print("INPUT BLOCK")
         h = x.type(self.dtype)
         for module in self.input_blocks:
+            print("="*100)
+            print(f"Input : cat ({h.shape}, {emb.shape})")
             h = module(h, emb)
+            print("Output : ", h.shape)
             hs.append(h)
             tmp.append(h)
         h = self.middle_block(h, emb)
+        print("MIDDLE BLOCK : ", h.shape)
         print("OUTPUT BLOCK")
         for module in self.output_blocks:
             print("="*100)
-            print(module)
-            print(f"Input : cat ({h.shape}, {tmp.pop().shape})")
+            print(f"Input : cat ({h.shape}, {tmp.pop().shape}) => ", end='')
             h = th.cat([h, hs.pop()], dim=1)
+            print(h.shape)
             h = module(h, emb)
             print("Output : ", h.shape)
         h = h.type(x.dtype)
-        exit()
         return {'output':self.out(h)}
 
 class ResBlockChnMem(TimestepBlock):
@@ -1416,6 +1429,7 @@ class ResBlockChnMem(TimestepBlock):
         n_channels_mem=8,
         image_size=64,
         add_mem=False,
+        n_group=32
     ):
         super().__init__()
         self.channels = channels
@@ -1429,19 +1443,21 @@ class ResBlockChnMem(TimestepBlock):
         self.condition_dim = condition_dim
         self.image_size = image_size
         self.add_mem = add_mem
+        self.n_group = n_group
         
         # Trainable params
         h = w = self.image_size
         if add_mem:
             self.channels_mem = th.nn.parameter.Parameter(data=th.zeros(size=(1, self.n_channels_mem, h, w)))
+            in_channels = channels + self.n_channels_mem
+        else:
+            in_channels = channels
 
-        in_channels = channels + self.n_channels_mem if add_mem else channels
         self.in_layers = nn.Sequential(
-            normalization(in_channels, n_group= 34 if add_mem else 32),
+            normalization(channels, n_group=32),
             nn.SiLU(),
             conv_nd(dims, in_channels, self.out_channels, 3, padding=1),
         )
-
         self.updown = up or down
 
         if up:
@@ -1461,7 +1477,7 @@ class ResBlockChnMem(TimestepBlock):
             ),
         )
         self.out_layers = nn.Sequential(
-            normalization(self.out_channels),
+            normalization(self.out_channels, n_group=32),
             nn.SiLU(),
             nn.Dropout(p=dropout),
             zero_module(
@@ -1492,18 +1508,22 @@ class ResBlockChnMem(TimestepBlock):
     def _forward(self, x, emb):
 
         x_orig = x
+
+        x = self.in_layers[0](x)
         if self.add_mem:
-            print("channels_mem : ", x.shape, self.channels_mem.shape)
             x = th.cat((x, self.channels_mem.repeat(x.shape[0], 1, 1, 1)), dim=1)
 
         if self.updown:
-            in_rest, in_conv = self.in_layers[:-1], self.in_layers[-1]
+            in_rest, in_conv = self.in_layers[1:-1], self.in_layers[-1]
             h = in_rest(x)
             h = self.h_upd(h)
             x = self.x_upd(x)
             h = in_conv(h)
         else:
-            h = self.in_layers(x)
+            h = self.in_layers[1:](x)
+
+
+        
         emb_out = self.emb_layers(emb).type(h.dtype)
         while len(emb_out.shape) < len(h.shape):
             emb_out = emb_out[..., None]

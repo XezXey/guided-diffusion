@@ -19,32 +19,6 @@ cfg.name = "Diffusion - Deca"
 cfg.device = 'cuda'
 cfg.device_id = '0'
 
-
-# ---------------------------------------------------------------------------- #
-# Options for Parameters model (e.g. DECA, SMPL, SMPL-X, etc)
-# ---------------------------------------------------------------------------- #
-cfg.param_model = CN()
-cfg.param_model.name = "Deca"
-cfg.param_model.param_list = ['shape', 'pose', 'exp', 'cam']
-cfg.param_model.n_shape = 100
-cfg.param_model.n_pose = 6
-cfg.param_model.n_exp = 50
-cfg.param_model.n_cam = 3
-cfg.param_model.bound = 1.0
-cfg.param_model.n_params = [cfg.param_model.n_shape,
-                            cfg.param_model.n_pose,
-                            cfg.param_model.n_exp,
-                            cfg.param_model.n_cam]
-# Network parts
-cfg.param_model.arch = 'magenta'
-cfg.param_model.num_layers = 3
-cfg.param_model.deca_cond = False
-cfg.param_model.conditioning = False
-cfg.param_model.in_channels = sum(cfg.param_model.n_params)
-cfg.param_model.model_channels = 2048
-cfg.param_model.out_channels = sum(cfg.param_model.n_params)
-cfg.param_model.use_checkpoint = ""
-
 # ---------------------------------------------------------------------------- #
 # Options for Image model (e.g. raw image, uv_displacement_normal, depth, etc.) 
 # ---------------------------------------------------------------------------- #
@@ -76,6 +50,7 @@ cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
 cfg.img_model.pool = 'attention'
 cfg.img_model.conditioning = False
 cfg.img_model.add_mem = [False, True]
+cfg.img_model.n_channels_mem = 4
 
 # ---------------------------------------------------------------------------- #
 # Options for Dataset

@@ -6,8 +6,8 @@ img_model:
   out_channels: 3
   arch: "UNetChnMem"
   conditioning: False
-  # add_mem: [True, True]
-  add_mem: [False, False]
+  add_mem: [True, True]
+  n_channels_mem: 8
 
 dataset:
   deca_dir: "/data/mint/ffhq_256_with_anno/"
