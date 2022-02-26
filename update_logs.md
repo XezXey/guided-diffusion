@@ -20,5 +20,5 @@ Date : 26/2/2022
 
             class UNetChnMem(): ...
             class ResBlockChnMem(): ...
-
+    ![image](./arch_26feb2022.PNG)
 Commit name : 26/2/2022 updates
