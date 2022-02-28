@@ -130,8 +130,8 @@ class Trainer:
         self.model_params = list(self.model.parameters())
         self.master_params = self.model_params
 
-    def zero_grad(self):
-        zero_grad(self.model_params)
+    def zero_grad(self, opt: th.optim.Optimizer):
+        opt.zero_grad()
 
     def backward(self, loss: th.Tensor):
         loss.backward()
@@ -162,6 +162,27 @@ class Trainer:
     def state_dict_to_master_params(self, state_dict):
         return state_dict_to_master_params(self.model, state_dict)
 
+class MultipleOptimizer():
+    def __init__(self, *opt):
+        self.optimizers = opt
+
+    def zero_grad(self):
+        for i, opt in enumerate(self.optimizers):
+            opt.zero_grad()
+
+    def step(self):
+        for i, opt in enumerate(self.optimizers):
+            opt.step()
+
+
+    def state_dict(self):
+        state_dict = {}
+        for opt in self.optimizers:
+            state_dict.update(opt.state_dict())
+        return state_dict
+
+    def get_optimizers(self):
+        return self.optimizers
 
 def check_overflow(value):
     return (value == float("inf")) or (value == -float("inf")) or (value != value)

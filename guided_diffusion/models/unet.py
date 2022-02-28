@@ -1436,7 +1436,8 @@ class ResBlockChnMem(TimestepBlock):
         # Trainable params
         h = w = self.image_size
         if add_mem:
-            self.channels_mem = th.nn.parameter.Parameter(data=th.zeros(size=(1, self.n_channels_mem, h, w)))
+            self.channels_mem = nn.Parameter(data=th.ones(size=(1, self.n_channels_mem, h, w)))
+            self.register_parameter(name='channel_mem', param=self.channels_mem)
             in_channels = channels + self.n_channels_mem
         else:
             in_channels = channels

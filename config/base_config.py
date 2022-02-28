@@ -103,6 +103,16 @@ cfg.train.n_gpus = "1"
 cfg.train.deterministic = True
 
 # ---------------------------------------------------------------------------- #
+# Options for extra optimizers for any additional trainable parameters
+# ---------------------------------------------------------------------------- #
+cfg.extra_opt = CN()
+cfg.extra_opt.lr = 1e-4
+cfg.extra_opt.weight_decay = 0.0
+
+
+
+
+# ---------------------------------------------------------------------------- #
 # Options for diffusion 
 # ---------------------------------------------------------------------------- #
 cfg.diffusion = CN()
@@ -117,6 +127,7 @@ cfg.diffusion.rescale_timesteps = False
 cfg.diffusion.rescale_learned_sigmas = False
 cfg.diffusion.timestep_respacing = ""
 cfg.diffusion.clip_denoised = True
+
 
 
 

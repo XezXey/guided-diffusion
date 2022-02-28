@@ -6,9 +6,6 @@ img_model:
   out_channels: 3
   arch: "UNet"
 
-train:
-  n_gpus: "\"0,\""
-
 dataset:
   deca_dir: "/data/mint/ffhq_256_with_anno"
   data_dir: "/data/mint/ffhq_256_with_anno/ffhq_256/train"

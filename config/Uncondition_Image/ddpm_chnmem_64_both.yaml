@@ -9,8 +9,8 @@ img_model:
   add_mem: [True, True]
   n_channels_mem: 8
 
-train:
-  n_gpus: "\"1,\""
+extra_opt:
+  lr: 1.0
 
 dataset:
   deca_dir: "/data/mint/ffhq_256_with_anno/"

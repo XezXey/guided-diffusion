@@ -60,6 +60,8 @@ def main():
         n_gpus=cfg.train.n_gpus,
         tb_logger=tb_logger,
         name=cfg.img_model.name,
+        extra_lr=cfg.extra_opt.lr,
+        extra_weight_decay=cfg.extra_opt.weight_decay,
     )
     
     train_loop.run()

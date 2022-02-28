@@ -15,7 +15,7 @@ from pytorch_lightning.utilities import rank_zero_only
 import pytorch_lightning as pl
 
 from .. import logger
-from ..trainer_util import Trainer
+from ..trainer_util import Trainer, MultipleOptimizer
 from ..models.nn import update_ema
 from ..resample import LossAwareSampler, UniformSampler
 from ..script_util import seed_all
@@ -37,6 +37,8 @@ class TrainLoop(LightningModule):
         name,
         schedule_sampler=None,
         weight_decay=0.0,
+        extra_lr=1e-4,
+        extra_weight_decay=0.0,
         lr_anneal_steps=0,
         n_gpus="1",
     ):
@@ -64,6 +66,8 @@ class TrainLoop(LightningModule):
         self.data = data
         self.batch_size = batch_size
         self.lr = lr
+        self.extra_lr = extra_lr
+        self.extra_weight_decay = extra_weight_decay
         self.ema_rate = (
             [ema_rate]
             if isinstance(ema_rate, float)
@@ -81,78 +85,56 @@ class TrainLoop(LightningModule):
         self.step = 0
         self.resume_step = 0
 
+        # print(self.model.state_dict().keys())
+        # exit()
         self.model_trainer = Trainer(
             model=self.model,
         )
+        self.p_main, self.p_extra = self._find_parameters_to_optimize()
 
-        self.opt = AdamW(
-            list(self.model_trainer.master_params),
-            lr=self.lr, weight_decay=self.weight_decay
-        )
+        # Initialize optimizer
+        self.configure_optimizers()
 
-        if self.resume_step:
-            self._load_optimizer_state()
-            # Model was resumed, either due to a restart or a checkpoint
-            # being specified at the command line.
-            self.model_ema_params = [
-                self._load_ema_parameters(rate, trainer=self.model_trainer, name=self.name) for rate in self.ema_rate
-            ]
+        self.model_ema_params = [
+            copy.deepcopy(self.model_trainer.master_params)
+            for _ in range(len(self.ema_rate))
+        ]
+       
+    def _find_parameters_to_optimize(self):
+        """
+        Seperate extra parameters that need additional optimizer
+        """
+        p_extra_name = "channels_mem"
+        p_extra_list = []
+        p_main_list = []
 
-        else:
+        for i, (name, _value) in enumerate(self.model.named_parameters()):
+            if p_extra_name in name:
+                p_extra_list.append(_value)
+            else:
+                p_main_list.append(_value)
+
+        return p_main_list, p_extra_list
+
+    def on_fit_start(self):
+        '''
+        This callbacks called when trainer.fit() is begin. We set the ema_params from loaded master_params.
+        '''
+        if self.resume_checkpoint != "":
+            # Reload the ema_params from checkpoint
             self.model_ema_params = [
                 copy.deepcopy(self.model_trainer.master_params)
                 for _ in range(len(self.ema_rate))
             ]
-
-    def _load_and_sync_parameters(self):
-        resume_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
-
-        if resume_checkpoint:
-            self.resume_step = parse_resume_step_from_filename(resume_checkpoint)
-            if dist.get_rank() == 0:
-                logger.log(f"loading model from checkpoint: {resume_checkpoint}...")
-                self.model.load_state_dict(
-                    dist_util.load_state_dict(
-                        resume_checkpoint, map_location=dist_util.dev()
-                    )
-                )
-
-        dist_util.sync_params(self.model.parameters())
-
-    def _load_ema_parameters(self, rate, trainer, name):
-        ema_params = copy.deepcopy(trainer.master_params)
-
-        main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
-        ema_checkpoint = find_ema_checkpoint(main_checkpoint, self.resume_step, rate, name)
-        if ema_checkpoint:
-            if dist.get_rank() == 0:
-                logger.log(f"loading EMA from checkpoint: {ema_checkpoint}...")
-                state_dict = dist_util.load_state_dict(
-                    ema_checkpoint, map_location=dist_util.dev()
-                )
-                ema_params = trainer.state_dict_to_master_params(state_dict)
-
-        dist_util.sync_params(ema_params)
-        return ema_params
-
-    def _load_optimizer_state(self):
-        main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
-        opt_checkpoint = bf.join(
-            bf.dirname(main_checkpoint), f"opt{self.resume_step:06}.pt"
-        )
-        if bf.exists(opt_checkpoint):
-            logger.log(f"loading optimizer state from checkpoint: {opt_checkpoint}")
-            state_dict = dist_util.load_state_dict(
-                opt_checkpoint, map_location=dist_util.dev()
-            )
-            self.opt.load_state_dict(state_dict)
+            self.resume_step = int(self.resume_checkpoint.split('=')[-1].split(".")[0])
+            print(self.step, self.resume_step)
 
     def run(self):
         # Driven code
         # Logging for first time
         self.save()
 
-        self.pl_trainer.fit(self, self.data)
+        self.pl_trainer.fit(self, self.data, ckpt_path=self.resume_checkpoint)
 
     def training_step(self, batch, batch_idx):
         dat, cond = batch
@@ -193,7 +175,11 @@ class TrainLoop(LightningModule):
         self.took_step = took_step
 
     def forward_backward(self, batch, cond):
-        self.model_trainer.zero_grad()
+        for k, v in self.model.named_parameters():
+            print(k, v)
+            break
+        input() 
+        self.opt.zero_grad()
 
         cond = {
             k: v
@@ -271,11 +257,31 @@ class TrainLoop(LightningModule):
             th.save(self.opt.state_dict(), f)
 
     def configure_optimizers(self):
-        self.opt = AdamW(
-            list(self.model_trainer.master_params), lr=self.lr, weight_decay=self.weight_decay
-        )
-        return self.opt
 
+        if self.p_extra == []:
+            opt_main = AdamW(
+                list(self.p_main), lr=self.lr, weight_decay=self.weight_decay
+            )
+
+            opt = MultipleOptimizer(opt_main)
+
+        else:
+            opt_extra = AdamW(
+                list(self.p_extra), 
+                lr=self.extra_lr, 
+                weight_decay=self.extra_weight_decay
+            )
+            opt_main = AdamW(
+                list(self.p_main), 
+                lr=self.lr, 
+                weight_decay=self.weight_decay
+            )
+
+            opt = MultipleOptimizer(opt_main, opt_extra)
+
+        self.opt = opt
+        return opt.get_optimizers()
+   
     @rank_zero_only
     def log_loss_dict(self, diffusion, ts, losses, module):
         for key, values in losses.items():
