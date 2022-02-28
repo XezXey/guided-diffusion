@@ -165,6 +165,9 @@ class Trainer:
 class MultipleOptimizer():
     def __init__(self, *opt):
         self.optimizers = opt
+        print("Optimizer : ")
+        for opt in self.optimizers:
+            print(opt)
 
     def zero_grad(self):
         for i, opt in enumerate(self.optimizers):
