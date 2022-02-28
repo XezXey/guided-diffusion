@@ -175,10 +175,6 @@ class TrainLoop(LightningModule):
         self.took_step = took_step
 
     def forward_backward(self, batch, cond):
-        for k, v in self.model.named_parameters():
-            print(k, v)
-            break
-        input() 
         self.opt.zero_grad()
 
         cond = {
