@@ -48,6 +48,7 @@ def main():
         model=img_model,
         diffusion=diffusion,
         data=data,
+        cfg=cfg,
         batch_size=cfg.train.batch_size,
         lr=cfg.train.lr,
         ema_rate=cfg.train.ema_rate,

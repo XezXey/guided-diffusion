@@ -7,6 +7,7 @@ import torch as th
 import numpy as np
 import torch.distributed as dist
 from torch.optim import AdamW
+from torchvision.utils import make_grid
 from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning.plugins import DDPPlugin
 
@@ -27,6 +28,7 @@ class TrainLoop(LightningModule):
         model,
         diffusion,
         data,
+        cfg,
         batch_size,
         lr,
         ema_rate,
@@ -64,6 +66,7 @@ class TrainLoop(LightningModule):
         self.model = model
         self.diffusion = diffusion
         self.data = data
+        self.cfg=cfg
         self.batch_size = batch_size
         self.lr = lr
         self.extra_lr = extra_lr
@@ -85,8 +88,6 @@ class TrainLoop(LightningModule):
         self.step = 0
         self.resume_step = 0
 
-        # print(self.model.state_dict().keys())
-        # exit()
         self.model_trainer = Trainer(
             model=self.model,
         )
@@ -99,7 +100,7 @@ class TrainLoop(LightningModule):
             copy.deepcopy(self.model_trainer.master_params)
             for _ in range(len(self.ema_rate))
         ]
-       
+
     def _find_parameters_to_optimize(self):
         """
         Seperate extra parameters that need additional optimizer
@@ -163,6 +164,8 @@ class TrainLoop(LightningModule):
     def save_rank_zero(self):
         if self.step % self.save_interval == 0:
             self.save()
+        if self.step % (self.save_interval/2) == 0:
+            self.sampling()
 
     @rank_zero_only 
     def log_rank_zero(self):
@@ -251,6 +254,31 @@ class TrainLoop(LightningModule):
             "wb",
         ) as f:
             th.save(self.opt.state_dict(), f)
+
+    @rank_zero_only
+    def sampling(self):
+        print("Sampling...")
+        n_gpus_mult = sum(alp.isdigit() for alp in self.n_gpus)
+        step_ = float(self.step + self.resume_step)
+        tb = self.tb_logger.experiment
+        H = W = self.cfg.img_model.image_size
+        n = 12
+        sample_from_ps = self.diffusion.p_sample_loop(
+            model=self.model,
+            shape=(n, 3, H, W),
+            clip_denoised=True,
+        )
+        sample_from_ps = (sample_from_ps + 1) * 127.5
+        tb.add_image(tag=f'p_sample', img_tensor=make_grid(sample_from_ps, nrow=3), global_step=(step_ + 1) * n_gpus_mult)
+
+        sample_from_ddim = self.diffusion.ddim_sample_loop(
+            model=self.model,
+            shape=(n, 3, H, W),
+            clip_denoised=True,
+        )
+        sample_from_ddim = (sample_from_ddim + 1) * 127.5
+        tb.add_image(tag=f'ddim_sample', img_tensor=make_grid(sample_from_ddim, nrow=3), global_step=(step_ + 1) * n_gpus_mult)
+
 
     def configure_optimizers(self):
 
