@@ -16,7 +16,8 @@ from guided_diffusion.script_util import (
     create_img_and_diffusion,
     seed_all,
 )
-from guided_diffusion.train_util.uncond_train_util import TrainLoop
+# from guided_diffusion.train_util.uncond_train_util import TrainLoop
+from guided_diffusion.train_util.cond_train_util import TrainLoop
 
 def main():
     cfg = parse_args()
@@ -37,8 +38,8 @@ def main():
         deterministic=cfg.train.deterministic,
         augment_mode=cfg.img_model.augment_mode,
         resize_mode=cfg.img_model.resize_mode,
-        use_detector=cfg.img_model.use_detector,
         in_image=cfg.img_model.in_image,
+        params_selector=cfg.param_model.params_selector,
     )
 
     logger.log("training...")
@@ -61,6 +62,7 @@ def main():
         n_gpus=cfg.train.n_gpus,
         tb_logger=tb_logger,
         name=cfg.img_model.name,
+        cfg=cfg,
     )
     
     train_loop.run()

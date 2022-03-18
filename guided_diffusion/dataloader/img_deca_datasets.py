@@ -3,7 +3,6 @@ import random
 
 import PIL
 from matplotlib import image
-from numpy.core.numeric import full_like
 import pandas as pd
 import blobfile as bf
 import numpy as np
@@ -45,11 +44,12 @@ def load_deca_params(deca_dir):
     deca_params = {}
 
     # face params 
-    params_key = ['shape', 'pose', 'exp', 'cam']
+    params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
     for k in tqdm.tqdm(params_key, desc="Loading deca params..."):
         params_path = glob.glob(f"{deca_dir}/params/train/*{k}-anno.txt")
         for path in params_path:
             deca_params[k] = read_params(path=path)
+
     
     deca_params = swap_key(deca_params)
 
@@ -68,10 +68,10 @@ def load_data_img_deca(
     deca_dir,
     batch_size,
     image_size,
+    params_selector,
     deterministic=False,
     resize_mode="resize",
     augment_mode=None,
-    use_detector=False,
     in_image="raw",
 ):
     """
@@ -104,8 +104,8 @@ def load_data_img_deca(
         resize_mode=resize_mode,
         augment_mode=augment_mode,
         deca_params=deca_params,
-        use_detector=use_detector,
         in_image=in_image,
+        params_selector=params_selector,
     )
 
     if deterministic:
@@ -183,17 +183,17 @@ class DECADataset(Dataset):
         resize_mode,
         augment_mode,
         deca_params,
-        use_detector,
+        params_selector,
         in_image='raw',
     ):
         super().__init__()
         self.resolution = resolution
         self.local_images = image_paths
         self.resize_mode = resize_mode
-        self.use_detector = use_detector
         self.augment_mode = augment_mode
         self.deca_params = deca_params
         self.in_image = in_image
+        self.params_selector = params_selector
 
     def __len__(self):
         return len(self.local_images)
@@ -206,17 +206,15 @@ class DECADataset(Dataset):
             pil_image.load()
         pil_image = pil_image.convert("RGB")
 
-        if self.use_detector:
-            raw_img = self.detector(pil_image=pil_image)
-        else:
-            raw_img = self.augmentation(pil_image=pil_image)
+        raw_img = self.augmentation(pil_image=pil_image)
         raw_img = (raw_img / 127.5) - 1
 
         # Deca params of img-path
         out_dict = {}
-        params_key = ['shape', 'pose', 'exp', 'cam']
+        params_key = self.params_selector
+
         img_name = path.split('/')[-1]
-        out_dict["deca_params"] = np.concatenate([self.deca_params[img_name][k] for k in params_key])
+        out_dict["cond_params"] = np.concatenate([self.deca_params[img_name][k] for k in params_key])
 
         uvdn_path = self.deca_params[img_name]['uv_detail_normals']
         with bf.BlobFile(uvdn_path, "rb") as f:

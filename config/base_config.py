@@ -25,16 +25,21 @@ cfg.device_id = '0'
 # ---------------------------------------------------------------------------- #
 cfg.param_model = CN()
 cfg.param_model.name = "Deca"
-cfg.param_model.param_list = ['shape', 'pose', 'exp', 'cam']
+cfg.param_model.params_selector = ['shape', 'pose', 'exp', 'cam']
 cfg.param_model.n_shape = 100
 cfg.param_model.n_pose = 6
 cfg.param_model.n_exp = 50
 cfg.param_model.n_cam = 3
+cfg.param_model.light = 27
+cfg.param_model.faceemb = 512
 cfg.param_model.bound = 1.0
-cfg.param_model.n_params = [cfg.param_model.n_shape,
-                            cfg.param_model.n_pose,
-                            cfg.param_model.n_exp,
-                            cfg.param_model.n_cam]
+
+
+params_dict = {'shape':100, 'pose':6, 'exp':50, 'cam':3, 'light':27, 'faceemb':512}
+cfg.param_model.n_params = []
+for param in cfg.param_model.params_selector:
+    cfg.param_model.n_params.append(params_dict[param])
+
 # Network parts
 cfg.param_model.arch = 'magenta'
 cfg.param_model.num_layers = 3
@@ -54,7 +59,6 @@ img_type = {'raw':3, 'uvdn':3}
 cfg.img_model.in_image = '+'.join(img_type.keys())
 cfg.img_model.resize_mode = 'resize'
 cfg.img_model.augment_mode = None
-cfg.img_model.use_detector = False
 # Network
 cfg.img_model.arch = 'UNet'
 cfg.img_model.image_size = 128
@@ -73,6 +77,7 @@ cfg.img_model.use_scale_shift_norm = True
 cfg.img_model.resblock_updown = False
 cfg.img_model.use_new_attention_order = False
 cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
+cfg.img_model.condition_proj_dim = 512
 cfg.img_model.pool = 'attention'
 cfg.img_model.conditioning = False
 
@@ -155,7 +160,28 @@ def parse_args(ipynb={'mode':False, 'cfg':None}):
     if opts != []:
         cfg_list = cmd_to_cfg_format(opts)
         cfg.merge_from_list(cfg_list)
+
+    # Some parameters in config need to be updated
+    cfg = update_params(cfg)
     return cfg
+
+def update_params(cfg):
+    '''
+    Recalculate new config paramters
+    1. conditioned-parameters shape
+    '''
+
+    cfg.param_model.n_params = []
+    for param in cfg.param_model.params_selector:
+        cfg.param_model.n_params.append(params_dict[param])
+
+    # Replace with updated n_params from params_selector
+    cfg.param_model.in_channels = sum(cfg.param_model.n_params)
+    cfg.param_model.out_channels = sum(cfg.param_model.n_params)
+    cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
+
+    return cfg
+
 
 def cmd_to_cfg_format(opts):
     """

@@ -461,6 +461,7 @@ class UNetModel(nn.Module):
         use_new_attention_order=False,
         conditioning=False,
         condition_dim=0,
+        condition_proj_dim=0,
     ):
         super().__init__()
 
@@ -483,6 +484,7 @@ class UNetModel(nn.Module):
         self.num_heads_upsample = num_heads_upsample
         self.conditioning = conditioning
         self.condition_dim = condition_dim
+        self.condition_proj_dim = condition_proj_dim
 
         time_embed_dim = model_channels * 4
         self.time_embed = nn.Sequential(
@@ -512,7 +514,8 @@ class UNetModel(nn.Module):
                         dims=dims,
                         use_checkpoint=use_checkpoint,
                         use_scale_shift_norm=use_scale_shift_norm,
-                        condition_dim=condition_dim
+                        condition_dim=condition_dim,
+                        condition_proj_dim=condition_proj_dim
                     )
                 ]
                 ch = int(mult * model_channels)
@@ -542,7 +545,8 @@ class UNetModel(nn.Module):
                             use_checkpoint=use_checkpoint,
                             use_scale_shift_norm=use_scale_shift_norm,
                             down=True,
-                            condition_dim=condition_dim
+                            condition_dim=condition_dim,
+                            condition_proj_dim=condition_proj_dim
                         )
                         if resblock_updown
                         else Downsample(
@@ -563,7 +567,8 @@ class UNetModel(nn.Module):
                 dims=dims,
                 use_checkpoint=use_checkpoint,
                 use_scale_shift_norm=use_scale_shift_norm,
-                condition_dim=condition_dim
+                condition_dim=condition_dim,
+                condition_proj_dim=condition_proj_dim
             ),
             AttentionBlock(
                 ch,
@@ -579,7 +584,8 @@ class UNetModel(nn.Module):
                 dims=dims,
                 use_checkpoint=use_checkpoint,
                 use_scale_shift_norm=use_scale_shift_norm,
-                condition_dim=condition_dim
+                condition_dim=condition_dim,
+                condition_proj_dim=condition_proj_dim
             ),
         )
         self._feature_size += ch
@@ -597,7 +603,8 @@ class UNetModel(nn.Module):
                         dims=dims,
                         use_checkpoint=use_checkpoint,
                         use_scale_shift_norm=use_scale_shift_norm,
-                        condition_dim=condition_dim
+                        condition_dim=condition_dim,
+                        condition_proj_dim=condition_proj_dim
                     )
                 ]
                 ch = int(model_channels * mult)
@@ -624,6 +631,7 @@ class UNetModel(nn.Module):
                             use_scale_shift_norm=use_scale_shift_norm,
                             up=True,
                             condition_dim=condition_dim,
+                            condition_proj_dim=condition_proj_dim
                         )
                         if resblock_updown
                         else Upsample(ch, conv_resample, dims=dims, out_channels=out_ch)
@@ -697,6 +705,7 @@ class UNetModelCondition(UNetModel):
         resblock_updown=False, 
         use_new_attention_order=False, 
         condition_dim=159, 
+        condition_proj_dim=512,
         conditioning=True
     ):
         UNetModel.__init__(self, 
@@ -719,7 +728,8 @@ class UNetModelCondition(UNetModel):
             use_scale_shift_norm=use_scale_shift_norm, 
             resblock_updown=resblock_updown, 
             use_new_attention_order=use_new_attention_order,
-            condition_dim = condition_dim)
+            condition_dim = condition_dim,
+            condition_proj_dim=condition_proj_dim)
         super().__init__
         self.condition_dim = condition_dim
 
@@ -737,12 +747,12 @@ class UNetModelCondition(UNetModel):
 
         h = x.type(self.dtype)
         for module in self.input_blocks:
-            h = module(h, emb, condition=kwargs['deca_params'])
+            h = module(h, emb, condition=kwargs['cond_params'])
             hs.append(h)
-        h = self.middle_block(h, emb, condition=kwargs['deca_params'])
+        h = self.middle_block(h, emb, condition=kwargs['cond_params'])
         for module in self.output_blocks:
             h = th.cat([h, hs.pop()], dim=1)
-            h = module(h, emb, condition=kwargs['deca_params'])
+            h = module(h, emb, condition=kwargs['cond_params'])
         h = h.type(x.dtype)
         return {'output':self.out(h)}
 
@@ -769,6 +779,7 @@ class ResBlockCondition(TimestepBlockCond):
         emb_channels,
         dropout,
         condition_dim,
+        condition_proj_dim,
         out_channels=None,
         use_conv=False,
         use_scale_shift_norm=False,
@@ -784,6 +795,7 @@ class ResBlockCondition(TimestepBlockCond):
         self.out_channels = out_channels or channels
         self.use_conv = use_conv
         self.condition_dim = condition_dim
+        self.condition_proj_dim = condition_proj_dim
         self.use_checkpoint = use_checkpoint
         self.use_scale_shift_norm = use_scale_shift_norm
 
@@ -794,11 +806,11 @@ class ResBlockCondition(TimestepBlockCond):
         )
 
         self.cond_proj_layers = nn.Sequential(
-            nn.Linear(self.condition_dim, 256),
+            nn.Linear(self.condition_dim, self.condition_proj_dim),
             nn.SiLU(),
-            nn.Linear(256, 256),
+            nn.Linear(self.condition_proj_dim, self.condition_proj_dim),
             nn.SiLU(),
-            nn.Linear(256, self.out_channels),
+            nn.Linear(self.condition_proj_dim, self.out_channels),
             nn.SiLU(),
         )
 

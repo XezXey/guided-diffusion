@@ -6,6 +6,7 @@ import blobfile as bf
 import torch as th
 import numpy as np
 import torch.distributed as dist
+from torchvision.utils import make_grid
 from torch.optim import AdamW
 from pytorch_lightning.core.lightning import LightningModule
 from pytorch_lightning.plugins import DDPPlugin
@@ -35,6 +36,7 @@ class TrainLoop(LightningModule):
         resume_checkpoint,
         tb_logger,
         name,
+        cfg,
         schedule_sampler=None,
         weight_decay=0.0,
         lr_anneal_steps=0,
@@ -76,6 +78,7 @@ class TrainLoop(LightningModule):
         self.weight_decay = weight_decay
         self.lr_anneal_steps = lr_anneal_steps
         self.name = name
+        self.cfg = cfg
 
         self.step = 0
         self.resume_step = 0
@@ -107,12 +110,13 @@ class TrainLoop(LightningModule):
         '''
         This callbacks called when trainer.fit() is begin. We set the ema_params from loaded master_params.
         '''
-        self.model_ema_params = [
-            copy.deepcopy(self.model_trainer.master_params)
-            for _ in range(len(self.ema_rate))
-        ]
-        self.resume_step = int(self.resume_checkpoint.split('=')[-1].split(".")[0])
-        print(self.step, self.resume_step)
+        if self.resume_checkpoint != "" and os.path.exists(self.resume_checkpoint):
+            self.model_ema_params = [
+                copy.deepcopy(self.model_trainer.master_params)
+                for _ in range(len(self.ema_rate))
+            ]
+            self.resume_step = int(self.resume_checkpoint.split('=')[-1].split(".")[0])
+            print(self.step, self.resume_step)
 
     def run(self):
         # Driven code
@@ -138,7 +142,7 @@ class TrainLoop(LightningModule):
         if self.took_step:
             self._update_ema()
         self._anneal_lr()
-        self.log_rank_zero()
+        self.log_rank_zero(batch)
         self.save_rank_zero()
 
         # Reset took_step flag
@@ -150,9 +154,11 @@ class TrainLoop(LightningModule):
             self.save()
 
     @rank_zero_only 
-    def log_rank_zero(self):
+    def log_rank_zero(self, batch):
         if self.step % self.log_interval == 0:
             self.log_step()
+        if self.step % (self.save_interval/2) == 0:
+            self.log_sampling(batch)
 
     def run_step(self, dat, cond):
         self.forward_backward(dat, cond)
@@ -207,11 +213,50 @@ class TrainLoop(LightningModule):
         for param_group in self.opt.param_groups:
             param_group["lr"] = lr
 
+    @rank_zero_only
     def log_step(self):
         step_ = float(self.step + self.resume_step)
         self.log("training_progress/step", step_ + 1)
         self.log("training_progress/global_step", (step_ + 1) * self.n_gpus)
         self.log("training_progress/global_samples", (step_ + 1) * self.global_batch)
+
+    @rank_zero_only
+    def log_sampling(self, batch):
+        print("Sampling...")
+
+        step_ = float(self.step + self.resume_step)
+        tb = self.tb_logger.experiment
+        H = W = self.cfg.img_model.image_size
+        n = 20
+
+        r_idx = np.random.choice(a=np.arange(0, self.batch_size), size=n, replace=False,)
+        noise = th.randn((n, 3, H, W)).cuda()
+
+        dat, cond = batch
+        cond = {
+            k: v[r_idx]
+            for k, v in cond.items()
+        }
+        tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat[r_idx] + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        sample_from_ps = self.diffusion.p_sample_loop(
+            model=self.model,
+            shape=(n, 3, H, W),
+            clip_denoised=True,
+            model_kwargs=cond,
+            noise=noise,
+        )
+        sample_from_ps = ((sample_from_ps + 1) * 127.5) / 255.
+        tb.add_image(tag=f'p_sample', img_tensor=make_grid(sample_from_ps, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+
+        sample_from_ddim = self.diffusion.ddim_sample_loop(
+            model=self.model,
+            shape=(n, 3, H, W),
+            clip_denoised=True,
+            model_kwargs=cond,
+            noise=noise,
+        )
+        sample_from_ddim = ((sample_from_ddim + 1) * 127.5) / 255.
+        tb.add_image(tag=f'ddim_sample', img_tensor=make_grid(sample_from_ddim, nrow=4), global_step=(step_ + 1) * self.n_gpus)
 
     @rank_zero_only
     def save(self):
