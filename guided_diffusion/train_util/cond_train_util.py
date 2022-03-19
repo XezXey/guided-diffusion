@@ -110,10 +110,6 @@ class TrainLoop(LightningModule):
                 for _ in range(len(self.ema_rate))
             ]
 
-
-
-
-
     def load_ckpt(self):
         '''
         Load model checkpoint from filename = model{step}.pt
@@ -166,7 +162,6 @@ class TrainLoop(LightningModule):
         dat, cond = batch
 
         self.run_step(dat, cond)
-
         self.step += 1
     
     @rank_zero_only
@@ -194,7 +189,7 @@ class TrainLoop(LightningModule):
     def log_rank_zero(self, batch):
         if self.step % self.log_interval == 0:
             self.log_step()
-        if self.step % (self.save_interval/2) == 0:
+        if (self.step % (self.save_interval/2) == 0) or (self.resume_step!=0 and self.step==1) :
             self.log_sampling(batch)
 
     def run_step(self, dat, cond):
