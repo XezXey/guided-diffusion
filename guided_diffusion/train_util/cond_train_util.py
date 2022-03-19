@@ -123,7 +123,7 @@ class TrainLoop(LightningModule):
             self.resume_step = parse_resume_step_from_filename(resume_checkpoint)
             logger.log(f"Loading model checkpoint(step={self.resume_step}): {self.resume_checkpoint}")
             self.model.load_state_dict(
-                th.load(self.resume_checkpoint),
+                th.load(self.resume_checkpoint, map_location='cpu'),
             )
 
     def _load_optimizer_state(self):
@@ -134,20 +134,22 @@ class TrainLoop(LightningModule):
         opt_checkpoint = bf.join(
             bf.dirname(main_checkpoint), f"opt{self.resume_step:06}.pt"
         )
+        print("OPT: " , main_checkpoint, opt_checkpoint)
         if bf.exists(opt_checkpoint):
             logger.log(f"Loading optimizer state from checkpoint: {opt_checkpoint}")
             self.opt.load_state_dict(
-                th.load(opt_checkpoint),
+                th.load(opt_checkpoint, map_location='cpu'),
             )
     
     def _load_ema_parameters(self, rate, name):
-        ema_params = copy.deepcopy(self.model_trainer.master_params)
+        # ema_params = copy.deepcopy(self.model_trainer.master_params)
 
         main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
         ema_checkpoint = find_ema_checkpoint(main_checkpoint, self.resume_step, rate, name)
+        print("EMA : ", ema_checkpoint, main_checkpoint)
         if ema_checkpoint:
             logger.log(f"Loading EMA from checkpoint: {ema_checkpoint}...")
-            state_dict = th.load(ema_checkpoint)
+            state_dict = th.load(ema_checkpoint, map_location='cpu')
             ema_params = self.model_trainer.state_dict_to_master_params(state_dict)
 
         return ema_params
@@ -155,7 +157,8 @@ class TrainLoop(LightningModule):
     def run(self):
         # Driven code
         # Logging for first time
-        self.save()
+        if not self.resume_checkpoint:
+            self.save()
 
         self.pl_trainer.fit(self, self.data)
 
