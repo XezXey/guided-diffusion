@@ -123,7 +123,7 @@ class TrainLoop(LightningModule):
             self.resume_step = parse_resume_step_from_filename(resume_checkpoint)
             logger.log(f"Loading model checkpoint(step={self.resume_step}): {self.resume_checkpoint}")
             self.model.load_state_dict(
-                th.load(self.resume_checkpoint, map_location='cpu'),
+                th.load(self.resume_checkpoint, map_location='cuda'),
             )
 
     def _load_optimizer_state(self):
@@ -138,7 +138,7 @@ class TrainLoop(LightningModule):
         if bf.exists(opt_checkpoint):
             logger.log(f"Loading optimizer state from checkpoint: {opt_checkpoint}")
             self.opt.load_state_dict(
-                th.load(opt_checkpoint, map_location='cpu'),
+                th.load(opt_checkpoint, map_location='cuda'),
             )
     
     def _load_ema_parameters(self, rate, name):
@@ -149,7 +149,7 @@ class TrainLoop(LightningModule):
         print("EMA : ", ema_checkpoint, main_checkpoint)
         if ema_checkpoint:
             logger.log(f"Loading EMA from checkpoint: {ema_checkpoint}...")
-            state_dict = th.load(ema_checkpoint, map_location='cpu')
+            state_dict = th.load(ema_checkpoint, map_location='cuda')
             ema_params = self.model_trainer.state_dict_to_master_params(state_dict)
 
         return ema_params
@@ -327,11 +327,11 @@ class TrainLoop(LightningModule):
     @rank_zero_only
     def log_loss_dict(self, diffusion, ts, losses, module):
         for key, values in losses.items():
-            self.log(f"training_loss_{module}/{key}", values.mean().item())
+            self.log(f"training_loss_{module}/{key}", values.mean().item(), )
             # log the quantiles (four quartiles, in particular).
             for sub_t, sub_loss in zip(ts.cpu().numpy(), values.detach().cpu().numpy()):
                 quartile = int(4 * sub_t / diffusion.num_timesteps)
-                self.log(f"training_loss_{module}/{key}_q{quartile}", sub_loss)
+                self.log(f"training_loss_{module}/{key}_q{quartile}", sub_loss, )
 
 def parse_resume_step_from_filename(filename):
     """
