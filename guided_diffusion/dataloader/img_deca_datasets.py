@@ -216,20 +216,9 @@ class DECADataset(Dataset):
         img_name = path.split('/')[-1]
         out_dict["cond_params"] = np.concatenate([self.deca_params[img_name][k] for k in params_key])
 
-        uvdn_path = self.deca_params[img_name]['uv_detail_normals']
-        with bf.BlobFile(uvdn_path, "rb") as f:
-            pil_image = PIL.Image.open(f)
-            pil_image.load()
-        pil_image = pil_image.convert("RGB")
-
-        uvdn = self.augmentation(pil_image=pil_image)
-        uvdn = (uvdn / 127.5) - 1
-
         # Input to model
         if self.in_image == 'raw':
             arr = raw_img
-        elif self.in_image == 'raw+uvdn':
-            arr = np.concatenate((raw_img, uvdn), axis=2)
         else : raise NotImplementedError
 
         return np.transpose(arr, [2, 0, 1]), out_dict
