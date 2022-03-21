@@ -92,4 +92,7 @@ def get_arcface_emb(img_path):
             emb.append(features.detach().cpu().numpy())
 
     emb = np.concatenate(emb, axis=0)
-    return emb
+    for i, k in enumerate(emb_dict.keys()):
+        emb_dict[k] = {'faceemb':emb[i]}
+
+    return emb_dict, emb

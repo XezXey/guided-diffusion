@@ -92,7 +92,7 @@ class TestData(Dataset):
 
     def __getitem__(self, index):
         imagepath = self.imagepath_list[index]
-        imagename = imagepath.split('/')[-1].split('.')[0]
+        imagename = imagepath.split('/')[-1]
 
         image = np.array(imread(imagepath))
         if len(image.shape) == 2:

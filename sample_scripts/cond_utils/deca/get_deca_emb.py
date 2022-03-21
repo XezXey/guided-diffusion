@@ -10,6 +10,7 @@ from tqdm import tqdm
 import torch as th
 from PIL import Image
 import blobfile as bf
+import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from decalib.deca import DECA
@@ -70,16 +71,18 @@ def get_deca_emb(img_path):
     )
     parser = argparse.ArgumentParser()
     add_dict_to_argparser(parser, defaults)
-    args = parser.parse_args()
-    print(args)
+    args = parser.parse_args(args=[])
     
     # data = datasets.TestData(img_path, iscrop=args.iscrop, face_detector=args.detector)
     data = datasets.TestData(img_path, iscrop=args.iscrop, face_detector=args.detector)
     device = th.device('cuda' if th.cuda.is_available() else 'cpu')  # sets device for model and PyTorch tensors
+    # device = th.device('cpu')  # sets device for model and PyTorch tensors
 
     # run DECA
     deca_cfg.model.use_tex = args.useTex
     deca = DECA(config = deca_cfg, device=device)
+
+    deca_params = {}
 
     for i in tqdm(range(len(data))):
         name = data[i]['imagename']
@@ -87,7 +90,10 @@ def get_deca_emb(img_path):
         with th.no_grad():
             codedict = deca.encode(images)
             opdict, visdict = deca.decode(codedict) #tensor
-            deca.visualize(visdict)
+            plt.title(f"Imgage name : {name}")
+            plt.imshow(deca.visualize(visdict)[..., ::-1])
+            plt.show()
+
 
         '''
         if args.saveDepth or args.saveKpt or args.saveObj or args.saveMat or args.saveImages:
@@ -115,14 +121,21 @@ def get_deca_emb(img_path):
                 cv2.imwrite(os.path.join(savefolder, name, name + '_' + vis_name +'.jpg'), util.tensor2image(visdict[vis_name][0]))
         '''
 
-        print("OPDICT")
-        for k in opdict.keys():
-          print(f'{k} : {opdict[k].shape}, max = {th.max(opdict[k])}, min = {th.min(opdict[k])}')
-        print("CODEDICT")
-        for k in codedict.keys():
-          print(f'{k} : {codedict[k].shape}, max = {th.max(codedict[k])}, min = {th.min(codedict[k])}')
-        print("VISDICT")
-        for k in visdict.keys():
-          print(f'{k} : {visdict[k].shape}, max = {th.max(visdict[k])}, min = {th.min(visdict[k])}')
-        exit()
+        # print("OPDICT")
+        # for k in opdict.keys():
+        #   print(f'{k} : {opdict[k].shape}, max = {th.max(opdict[k])}, min = {th.min(opdict[k])}')
+        # print("CODEDICT")
+        # for k in codedict.keys():
+        #   print(f'{k} : {codedict[k].shape}, max = {th.max(codedict[k])}, min = {th.min(codedict[k])}')
+        # print("VISDICT")
+        # for k in visdict.keys():
+        #   print(f'{k} : {visdict[k].shape}, max = {th.max(visdict[k])}, min = {th.min(visdict[k])}')
         
+        deca_params[name] = {
+            'shape':codedict['shape'].flatten().detach().cpu().numpy(), 
+            'pose':codedict['pose'].flatten().detach().cpu().numpy(), 
+            'exp':codedict['exp'].flatten().detach().cpu().numpy(), 
+            'cam':codedict['cam'].flatten().detach().cpu().numpy(),
+            'light':codedict['light'].flatten().detach().cpu().numpy(),
+        }
+    return deca_params

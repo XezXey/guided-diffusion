@@ -7,7 +7,7 @@ from torch import nn
 from torch.nn import Parameter
 from torchscope import scope
 
-from config import device, num_classes
+from config_arcface import device, num_classes
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
            'resnet152']
