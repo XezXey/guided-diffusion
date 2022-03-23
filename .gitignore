@@ -386,3 +386,5 @@ sample_scripts/cond_utils/deca/data/mean_texture.jpg
 sample_scripts/cond_utils/deca/data/texture_data_256.npy
 sample_scripts/cond_utils/deca/data/uv_face_eye_mask.png
 sample_scripts/cond_utils/deca/data/uv_face_mask.png
+sample_scripts/itw_images/kellan.jpg
+sample_scripts/itw_images/supasorn.jpg
