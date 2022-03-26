@@ -628,6 +628,70 @@ class GaussianDiffusion:
 
         return {"sample": mean_pred, "pred_xstart": out["pred_xstart"]}
 
+    def ddim_reverse_sample_loop_progressive(
+        self,
+        model,
+        x,
+        clip_denoised=True,
+        model_kwargs=None,
+        progress=True,
+        device=None,
+        eta=0.0,
+    ):
+        if device is None:
+            device = next(model.parameters()).device
+
+        indices = list(range(self.num_timesteps))
+
+        if progress:
+            # Lazy import so that we don't depend on tqdm.
+            from tqdm.auto import tqdm
+
+            indices = tqdm(indices)
+
+        for i in indices:
+            t = th.tensor([i] * x.shape[0], device=device)
+            with th.no_grad():
+                out = self.ddim_reverse_sample(
+                    model=model,
+                    x = x,
+                    t = t,
+                    clip_denoised=clip_denoised,
+                    model_kwargs=model_kwargs,
+                    eta=eta
+                )
+                yield out
+                x = out['sample']
+
+    def ddim_reverse_sample_loop(
+        self,
+        model,
+        x,
+        model_kwargs,
+        clip_denoised,
+        progress=True,
+        device=None,
+    ):
+        """
+        Generate samples from the model using DDIM.
+
+        Same usage as p_sample_loop().
+        """
+        final = None
+        for sample in self.ddim_reverse_sample_loop_progressive(
+            model=model,
+            x=x,
+            clip_denoised=clip_denoised,
+            model_kwargs=model_kwargs,
+            progress=progress,
+            device=device,
+            eta=0.0,
+        ):
+            final = sample
+        return final["sample"]
+
+
+
     def ddim_sample_loop(
         self,
         model,

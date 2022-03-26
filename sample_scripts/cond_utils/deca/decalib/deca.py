@@ -84,7 +84,7 @@ class DECA(nn.Module):
         model_path = self.cfg.pretrained_modelpath
         if os.path.exists(model_path):
             print(f'trained model found. load {model_path}')
-            checkpoint = torch.load(model_path)
+            checkpoint = torch.load(model_path, map_location=self.device)
             self.checkpoint = checkpoint
             util.copy_state_dict(self.E_flame.state_dict(), checkpoint['E_flame'])
             util.copy_state_dict(self.E_detail.state_dict(), checkpoint['E_detail'])

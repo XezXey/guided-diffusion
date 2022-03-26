@@ -41,7 +41,6 @@ def str2bool(v):
         raise argparse.ArgumentTypeError("boolean value expected")
 
 
-
 def _list_image_files_recursively(data_dir):
     results = []
     for entry in sorted(bf.listdir(data_dir)):
@@ -53,11 +52,11 @@ def _list_image_files_recursively(data_dir):
             results.extend(_list_image_files_recursively(full_path))
     return results
 
-def get_deca_emb(img_path):
+def get_deca_emb(img_path, device):
     defaults = dict(
         input_path="",
         savefolder="./",
-        device='cuda',
+        device=device,
         iscrop=True,
         detector='fan',
         useTex=False,
@@ -73,10 +72,7 @@ def get_deca_emb(img_path):
     add_dict_to_argparser(parser, defaults)
     args = parser.parse_args(args=[])
     
-    # data = datasets.TestData(img_path, iscrop=args.iscrop, face_detector=args.detector)
-    data = datasets.TestData(img_path, iscrop=args.iscrop, face_detector=args.detector)
-    device = th.device('cuda' if th.cuda.is_available() else 'cpu')  # sets device for model and PyTorch tensors
-    # device = th.device('cpu')  # sets device for model and PyTorch tensors
+    data = datasets.TestData(img_path, iscrop=args.iscrop, face_detector=args.detector, device=device)
 
     # run DECA
     deca_cfg.model.use_tex = args.useTex

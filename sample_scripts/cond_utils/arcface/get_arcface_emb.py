@@ -39,8 +39,7 @@ def _list_image_files_recursively(data_dir):
             results.extend(_list_image_files_recursively(full_path))
     return results
 
-def get_arcface_emb(img_path):
-    device = th.device('cuda' if th.cuda.is_available() else 'cpu')  # sets device for model and PyTorch tensors
+def get_arcface_emb(img_path, device):
 
     # Model parameters
     image_w = 112
@@ -56,7 +55,7 @@ def get_arcface_emb(img_path):
     }
 
     # loading model
-    checkpoint = th.load('./cond_utils/arcface/pretrained/BEST_checkpoint_r18.tar')
+    checkpoint = th.load('./cond_utils/arcface/pretrained/BEST_checkpoint_r18.tar', map_location=device)
     model = checkpoint['model'].module.to(device)
 
     ## load data for my testing only
