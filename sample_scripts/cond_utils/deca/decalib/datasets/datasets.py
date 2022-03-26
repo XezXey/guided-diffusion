@@ -57,6 +57,7 @@ class TestData(Dataset):
             self.imagepath_list = [testpath]
         elif os.path.isfile(testpath) and (testpath[-3:] in ['mp4', 'csv', 'vid', 'ebm']):
             self.imagepath_list = video2sequence(testpath)
+            print(self.imagepath_list)
         else:
             print(f'please check the test path: {testpath}')
             exit()

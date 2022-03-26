@@ -41,18 +41,7 @@ def str2bool(v):
         raise argparse.ArgumentTypeError("boolean value expected")
 
 
-def _list_image_files_recursively(data_dir):
-    results = []
-    for entry in sorted(bf.listdir(data_dir)):
-        full_path = bf.join(data_dir, entry)
-        ext = entry.split(".")[-1]
-        if "." in entry and ext.lower() in ["jpg", "jpeg", "png", "gif"]:
-            results.append(full_path)
-        elif bf.isdir(full_path):
-            results.extend(_list_image_files_recursively(full_path))
-    return results
-
-def get_deca_emb(img_path, device):
+def get_deca_emb(img_path, device, vis=True):
     defaults = dict(
         input_path="",
         savefolder="./",
@@ -86,9 +75,10 @@ def get_deca_emb(img_path, device):
         with th.no_grad():
             codedict = deca.encode(images)
             opdict, visdict = deca.decode(codedict) #tensor
-            plt.title(f"Imgage name : {name}")
-            plt.imshow(deca.visualize(visdict)[..., ::-1])
-            plt.show()
+            if vis:
+                plt.title(f"Imgage name : {name}")
+                plt.imshow(deca.visualize(visdict)[..., ::-1])
+                plt.show()
 
 
         '''
