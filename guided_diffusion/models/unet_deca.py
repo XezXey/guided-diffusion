@@ -189,7 +189,8 @@ class ResBlock(TimestepBlock):
         use_checkpoint=False,
         up=False,
         down=False,
-        condition_dim=0
+        condition_dim=0,
+        condition_proj_dim=0
     ):
         super().__init__()
         self.channels = channels
