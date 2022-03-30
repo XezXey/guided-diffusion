@@ -5,12 +5,14 @@ img_model:
   in_image: 'raw'
   in_channels: 3
   out_channels: 3
-  conditioning: True  # Conditioning with DECA
+  conditioning: True  # Conditioning with params
   condition_proj_dim: 512
 
 img_cond_model:
+  arch: "EncoderUNet"
   in_image: 'raw'
   in_channels: 3
+  image_size: 64
 
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'img_latent']

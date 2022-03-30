@@ -1167,11 +1167,6 @@ class EncoderUNetModelNoTime(nn.Module):
         self.condition_dim = condition_dim
 
         time_embed_dim = model_channels * 4
-        self.time_embed = nn.Sequential(
-            linear(model_channels, time_embed_dim),
-            nn.SiLU(),
-            linear(time_embed_dim, time_embed_dim),
-        )
 
         ch = int(channel_mult[0] * model_channels)
         self.input_blocks = nn.ModuleList(
@@ -1386,13 +1381,6 @@ class ResBlockNoTime(nn.Module):
         else:
             self.h_upd = self.x_upd = nn.Identity()
 
-        self.emb_layers = nn.Sequential(
-            nn.SiLU(),
-            linear(
-                emb_channels,
-                2 * self.out_channels if use_scale_shift_norm else self.out_channels,
-            ),
-        )
         self.out_layers = nn.Sequential(
             normalization(self.out_channels),
             nn.SiLU(),
@@ -1431,15 +1419,7 @@ class ResBlockNoTime(nn.Module):
             h = in_conv(h)
         else:
             h = self.in_layers(x)
-        emb_out = self.emb_layers(emb).type(h.dtype)
-        while len(emb_out.shape) < len(h.shape):
-            emb_out = emb_out[..., None]
-        if self.use_scale_shift_norm:
-            out_norm, out_rest = self.out_layers[0], self.out_layers[1:]
-            scale, shift = th.chunk(emb_out, 2, dim=1)
-            h = out_norm(h) * (1 + scale) + shift
-            h = out_rest(h)
-        else:
-            h = h + emb_out
-            h = self.out_layers(h)
+
+        h = self.out_layers(h)
         return self.skip_connection(x) + h
+ 

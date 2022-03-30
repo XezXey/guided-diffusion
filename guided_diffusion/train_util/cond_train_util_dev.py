@@ -24,20 +24,18 @@ from ..script_util import seed_all
 
 import torch.nn as nn
 
-from abc import abstractmethod
 class ModelWrapper(nn.Module):
     def __init__(
         self,
         model_dict
     ):
         super().__init__()
-        self.model_dict = model_dict
+        self.img_model = model_dict['ImgCond']
+        self.img_cond_model = model_dict['ImgEncoder']
 
-        @abstractmethod
-        def forward(self):
-            """
-            Apply the module to `x` given `emb` timestep embeddings.
-            """
+    def forward(self, trainloop, dat, cond):
+        trainloop.run_step(dat, cond)
+
 
 class TrainLoop(LightningModule):
     def __init__(
@@ -83,8 +81,8 @@ class TrainLoop(LightningModule):
         for i, m in enumerate(model):
             self.model_dict[name[i]] = m
 
-        # self.model = ModelWrapper(self.model_dict)
-        self.model = self.model_dict['ImgEncoder']
+        self.model = ModelWrapper(self.model_dict)
+        # self.model = self.model_dict['ImgCond']
 
         self.diffusion = diffusion
         self.data = data
@@ -116,8 +114,7 @@ class TrainLoop(LightningModule):
             self.model_trainer_dict[name] = Trainer(model=model)
 
         self.opt = AdamW(
-            # sum([list(self.model_trainer_dict[name].master_params) for name in self.model_trainer_dict.keys()], []),
-            list(self.model_trainer_dict['ImgCond'].master_params) + list(self.model_trainer_dict['ImgEncoder'].master_params),
+            sum([list(self.model_trainer_dict[name].master_params) for name in self.model_trainer_dict.keys()], []),
             lr=self.lr, weight_decay=self.weight_decay
         )
 
@@ -138,9 +135,6 @@ class TrainLoop(LightningModule):
                 self.model_ema_params_dict[name] = [
                     copy.deepcopy(self.model_trainer_dict[name].master_params) for _ in range(len(self.ema_rate))
                 ]
-        print(self.model_ema_params_dict.keys())
-        print(self.model_dict['ImgCond'])
-        print(self.model_dict['ImgEncoder'])
 
     def load_ckpt(self):
         '''
@@ -191,9 +185,21 @@ class TrainLoop(LightningModule):
 
         self.pl_trainer.fit(self, self.data)
 
+    def run_step(self, dat, cond):
+        '''
+        1-Training step
+        :params dat: the image data in BxCxHxW
+        :params cond: the condition dict e.g. ['cond_params'] in BXD; D is dimension of DECA, Latent, ArcFace, etc.
+        '''
+        self.zero_grad_trainer()
+        self.forward_cond_network(dat, cond)
+        self.forward_backward(dat, cond)
+        took_step = self.optimize_trainer()
+        self.took_step = took_step
+
     def training_step(self, batch, batch_idx):
         dat, cond = batch
-        self.run_step(dat, cond)
+        self.model(trainloop=self, dat=dat, cond=cond)
         self.step += 1
     
     @rank_zero_only
@@ -224,27 +230,25 @@ class TrainLoop(LightningModule):
         if (self.step % (self.save_interval/2) == 0) or (self.resume_step!=0 and self.step==1) :
             self.log_sampling(batch)
 
-    def run_step(self, dat, cond):
-        '''
-        1-Training step
-        :params dat: the image data in BxCxHxW
-        :params cond: the condition dict e.g. ['cond_params'] in BXD; D is dimension of DECA, Latent, ArcFace, etc.
-        '''
-        self.zero_grad_trainer()
-        self.forward_cond_network(dat, cond)
-        self.forward_backward(dat, cond)
-        took_step = self.model_trainer.optimize(self.opt)
-        self.took_step = took_step
 
     def forward_cond_network(self, dat, cond):
-        cond = self.model_dict['ImgEncoder'](x=dat, emb=None)
-        print(cond.shape)
-        exit()
+        if self.cfg.img_cond_model.apply:
+            img_cond = self.model_dict['ImgEncoder'](x=dat.type(th.cuda.FloatTensor), emb=None)
+            cond['cond_params'] = th.cat((cond['cond_params'], img_cond), dim=-1)
 
 
     def zero_grad_trainer(self):
         for name in self.model_trainer_dict.keys():
             self.model_trainer_dict[name].zero_grad()
+
+
+    def optimize_trainer(self):
+        took_step = []
+        for name in self.model_trainer_dict.keys():
+            tk_s = self.model_trainer_dict[name].optimize(self.opt)
+            took_step.append(tk_s)
+        return all(took_step)
+        
 
     def forward_backward(self, batch, cond):
 
@@ -252,16 +256,12 @@ class TrainLoop(LightningModule):
             k: v
             for k, v in cond.items()
         }
-        print(cond.keys())
-        print(cond['cond_params'].shape)
-        print(batch.shape)
-        exit()
 
         t, weights = self.schedule_sampler.sample(batch.shape[0], self.device)
         # Losses
         model_compute_losses = functools.partial(
             self.diffusion.training_losses_deca,
-            self.model,
+            self.model_dict['ImgCond'],
             batch,
             t,
             model_kwargs=cond,
@@ -278,7 +278,7 @@ class TrainLoop(LightningModule):
 
         if self.step % self.log_interval:
             self.log_loss_dict(
-                self.diffusion, t, {k: v * weights for k, v in model_losses.items()}, module=self.name,
+                self.diffusion, t, {k: v * weights for k, v in model_losses.items()}, module=self.cfg.img_model.name,
             )
 
     @rank_zero_only
