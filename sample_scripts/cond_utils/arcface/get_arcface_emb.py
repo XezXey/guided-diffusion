@@ -10,6 +10,8 @@ import blobfile as bf
 import tqdm
 import cv2 
 from PIL import Image
+from detector.mtcnn.visualization_utils import show_bboxes
+from utils import get_central_face_attributes, align_face
 
 
 class ArcFaceDataset(Dataset):
@@ -39,7 +41,23 @@ def _list_image_files_recursively(data_dir):
             results.extend(_list_image_files_recursively(full_path))
     return results
 
-def get_arcface_emb(img_path, device):
+def preprocess(fn, vis=False):
+    src_img = cv2.imread(fn)  # BGR
+
+    bounding_boxes, landmarks = get_central_face_attributes(fn, detector='retinaface')
+    img_detected = show_bboxes(src_img.copy(), bounding_boxes, landmarks)
+    img_aligned = align_face(fn, landmarks)
+
+    if vis:
+        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(7, 4), dpi=80)
+        ax[0].imshow(src_img[..., ::-1])
+        ax[1].imshow(img_detected[..., ::-1])
+        ax[2].imshow(img_aligned[..., ::-1])
+        plt.show()
+
+    return img_aligned[..., ::-1]   # Return in RGB
+
+def get_arcface_emb(img_path, device, vis=False):
 
     # Model parameters
     image_w = 112
@@ -61,18 +79,18 @@ def get_arcface_emb(img_path, device):
     ## load data for my testing only
     paths = _list_image_files_recursively(img_path)
 
-    images = []
-    images_resized = []
+
+    images_aligned = []
     emb_dict = {}
     for i, fn in tqdm.tqdm(enumerate(paths), desc='Open&Resize images'):
-        images.append(np.array(Image.open(fn)))
-        images_resized.append(cv2.resize(images[i], (image_h, image_w)))
+        prep_image = preprocess(fn, vis)
+        images_aligned.append(prep_image)
         emb_dict[fn.split('/')[-1]] = None
 
     # reshape to prefered width height(112, 112)
-    images_resized = np.stack(images_resized)
+    images_aligned = np.stack(images_aligned)
     # create dataset
-    dataset = ArcFaceDataset(images_resized, data_transforms['normalize'])
+    dataset = ArcFaceDataset(images_aligned, data_transforms['normalize'])
     loader = DataLoader(
         dataset,
         num_workers=24,

@@ -1,8 +1,12 @@
 import numpy as np
 import math
-import PIL
+import PIL, cv2
 import random
 import torch as th
+import blobfile as bf
+import os
+
+from sample_scripts.cond_utils.arcface.config_arcface import IMG_DIR
 
 def resize_arr(pil_image, image_size):
     img = pil_image.resize((image_size, image_size), PIL.Image.ANTIALIAS)
@@ -81,3 +85,58 @@ def augmentation(pil_image, cfg):
     else: raise NotImplemented
 
     return arr
+
+def prep_images(path, image_size):
+    '''
+    Preprocess the image
+    Todo. 1. Aligned with the ffhq
+    '''
+    with bf.BlobFile(path, "rb") as f:
+        pil_image = PIL.Image.open(f)
+        pil_image.load()
+    pil_image = pil_image.convert("RGB")
+
+    raw_img = resize_arr(pil_image=pil_image, image_size=image_size)
+    raw_img = (raw_img / 127.5) - 1
+
+    return np.transpose(raw_img, [2, 0, 1])
+
+def video2sequence(video_path):
+    videofolder = video_path.split('.')[0]
+    os.makedirs(videofolder, exist_ok=True)
+    video_name = video_path.split('/')[-1].split('.')[0]
+    vidcap = cv2.VideoCapture(video_path)
+    success,image = vidcap.read()
+    count = 0
+    imagepath_list = []
+    while success:
+        imagepath = '{}/{}_frame{:04d}.jpg'.format(videofolder, video_name, count)
+        cv2.imwrite(imagepath, image)     # save frame as JPEG file
+        success,image = vidcap.read()
+        count += 1
+        imagepath_list.append(imagepath)
+    print('video frames are stored in {}'.format(videofolder))
+    return imagepath_list
+
+def sequence2gif(imgs, img_size, save_fn=''):
+    import imageio
+    with imageio.get_writer(f'./{save_fn}.gif', mode='I') as writer:
+        for img in imgs:
+            img = ((np.array(img)[0] + 1) * 127.5).astype(np.uint8)
+            if img.shape == (3, img_size, img_size):
+                img = np.transpose(img, (1, 2, 0))
+            writer.append_data(img)
+
+def sequence2video(img_path, save_path, vid_name, img_size):
+    os.makedirs(save_path, exist_ok=True)
+    fourcc = cv2.VideoWriter_fourcc('F', 'M', 'P', '4')
+    video = cv2.VideoWriter(f"{save_path}/{vid_name}.avi", fourcc, 1, (img_size, img_size)) 
+  
+    import tqdm
+    # Appending the images to the video one by one
+    for image in tqdm.tqdm(img_path): 
+        frame = cv2.imread(image)
+        frame = cv2.resize(frame, (img_size, img_size))
+        video.write(frame)
+      
+    video.release()  # releasing the video generated
