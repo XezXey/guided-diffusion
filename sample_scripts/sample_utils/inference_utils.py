@@ -228,5 +228,5 @@ def merge_cond(src_cond_params, dst_cond_params):
     merged = th.cat((src_cond_params.clone(), dst_cond_params.clone()), dim=0)
     return merged
 
-def interpolate_cond(src_cond_params, dst_cond_params):
+def interpolate_cond(src_cond_params, dst_cond_params, n_step):
     pass

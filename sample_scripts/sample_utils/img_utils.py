@@ -119,13 +119,15 @@ def video2sequence(video_path):
     return imagepath_list
 
 def sequence2gif(imgs, img_size, save_fn=''):
-    import imageio
-    with imageio.get_writer(f'./{save_fn}.gif', mode='I') as writer:
-        for img in imgs:
-            img = ((np.array(img)[0] + 1) * 127.5).astype(np.uint8)
-            if img.shape == (3, img_size, img_size):
-                img = np.transpose(img, (1, 2, 0))
-            writer.append_data(img)
+    out_fn = f'./{save_fn}.gif'
+    gif = []
+    for img in imgs:
+        img = np.array(img)
+        img = ((img + 1) * 127.5).astype(np.uint8)
+        if img.shape == (3, img_size, img_size):
+            img = np.transpose(img, (1, 2, 0))
+        gif.append(PIL.Image.fromarray(img))
+    gif[0].save(out_fn, save_all=True, append_images=gif[1:])
 
 def sequence2video(img_path, save_path, vid_name, img_size):
     os.makedirs(save_path, exist_ok=True)

@@ -59,7 +59,7 @@ class TrainLoop(LightningModule):
             strategy=DDPStrategy(find_unused_parameters=False)
             )
 
-        self.automatic_optimization = False # Manual optimization flow
+        self.automatic_optimization = True # Manual optimization flow
 
         self.model = model
         self.diffusion = diffusion
@@ -161,8 +161,10 @@ class TrainLoop(LightningModule):
 
     def training_step(self, batch, batch_idx):
         dat, cond = batch
-        self.run_step(dat, cond)
+
+        loss = self.run_step(dat, cond)
         self.step += 1
+        # return loss
     
     @rank_zero_only
     def on_train_batch_end(self, outputs, batch, batch_idx):
@@ -193,20 +195,10 @@ class TrainLoop(LightningModule):
             self.log_sampling(batch)
 
     def run_step(self, dat, cond):
-        '''
-        1-Training step
-        :params dat: the image data in BxCxHxW
-        :params cond: the condition dict e.g. ['cond_params'] in BXD; D is dimension of DECA, Latent, ArcFace, etc.
-        '''
-        self.forward_cond_network(dat, cond)
-        self.forward_backward(dat, cond)
-        took_step = self.model_trainer.optimize(self.opt)
-        self.took_step = took_step
-
-    def forward_cond_network(self, dat, cond):
-        cond['ggez'] = 'mint'
-        print(self.model)
-
+        loss = self.forward_backward(dat, cond)
+        # took_step = self.model_trainer.optimize(self.opt)
+        self.took_step = True
+        return loss
 
     def forward_backward(self, batch, cond):
         self.model_trainer.zero_grad()
@@ -215,10 +207,6 @@ class TrainLoop(LightningModule):
             k: v
             for k, v in cond.items()
         }
-        print(cond.keys())
-        print(cond['cond_params'].shape)
-        print(batch.shape)
-        exit()
 
         t, weights = self.schedule_sampler.sample(batch.shape[0], self.device)
         # Losses
@@ -237,12 +225,14 @@ class TrainLoop(LightningModule):
             )
 
         loss = (model_losses["loss"] * weights).mean()
-        self.manual_backward(loss)
+        # self.manual_backward(loss)
 
         if self.step % self.log_interval:
             self.log_loss_dict(
                 self.diffusion, t, {k: v * weights for k, v in model_losses.items()}, module=self.name,
             )
+
+        return loss
 
     @rank_zero_only
     def _update_ema(self):
