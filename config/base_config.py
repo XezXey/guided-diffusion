@@ -81,6 +81,36 @@ cfg.img_model.condition_proj_dim = 512
 cfg.img_model.pool = 'attention'
 cfg.img_model.conditioning = False
 
+# Additional Encoder Network
+cfg.img_cond_model = CN()
+cfg.img_cond_model.name = "ImgEncoder"
+cfg.img_cond_model.apply = True
+cfg.img_cond_model.arch = 'EncoderUNet'
+cfg.img_cond_model.in_image = '+'.join(img_type.keys())
+cfg.img_cond_model.image_size = 128
+cfg.img_cond_model.num_channels = 128
+cfg.img_cond_model.in_channels = sum(img_type.values())
+cfg.img_cond_model.out_channels = 32
+cfg.img_cond_model.condition_dim = 32
+cfg.img_cond_model.num_res_blocks = 2
+cfg.img_cond_model.num_heads = 4
+cfg.img_cond_model.num_heads_upsample = -1
+cfg.img_cond_model.num_head_channels = 64
+cfg.img_cond_model.attention_resolutions = "16,8"
+cfg.img_cond_model.channel_mult = ""
+cfg.img_cond_model.dropout = 0.0
+cfg.img_cond_model.use_checkpoint = False
+cfg.img_cond_model.use_scale_shift_norm = True
+cfg.img_cond_model.resblock_updown = True
+cfg.img_cond_model.use_new_attention_order = False
+cfg.img_cond_model.pool = 'attention'
+
+latent_dict = {'img_latent':cfg.img_cond_model.condition_dim}
+params_dict.update(latent_dict)
+
+
+
+
 # ---------------------------------------------------------------------------- #
 # Options for Dataset
 # ---------------------------------------------------------------------------- #

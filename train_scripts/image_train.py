@@ -17,7 +17,7 @@ from guided_diffusion.script_util import (
     seed_all,
 )
 # from guided_diffusion.train_util.uncond_train_util import TrainLoop
-from guided_diffusion.train_util.cond_train_util import TrainLoop
+from guided_diffusion.train_util.cond_train_util_dev import TrainLoop
 
 def main():
     cfg = parse_args()
@@ -47,7 +47,6 @@ def main():
     tb_logger = TensorBoardLogger("tb_logs", name="diffusion", version=cfg.train.log_dir.split('/')[-1])
 
     train_loop = TrainLoop(
-        model=img_model,
         diffusion=diffusion,
         data=data,
         batch_size=cfg.train.batch_size,
@@ -61,7 +60,8 @@ def main():
         lr_anneal_steps=cfg.train.lr_anneal_steps,
         n_gpus=cfg.train.n_gpus,
         tb_logger=tb_logger,
-        name=cfg.img_model.name,
+        model=list(img_model.values()),
+        name=list(img_model.keys()),
         cfg=cfg,
     )
     

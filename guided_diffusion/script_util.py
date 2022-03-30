@@ -2,7 +2,7 @@ import argparse
 
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
-from .models.unet_deca import EncoderUNetModel, UNetModelCondition, UNetModel
+from .models.unet_deca import EncoderUNetModelNoTime, UNetModelCondition, UNetModel
 from .models.dense_deca import DenseDDPM, AutoEncoderDPM, DenseDDPMCond
 
 NUM_CLASSES = 1000
@@ -24,8 +24,12 @@ def create_deca_and_diffusion(cfg):
 
 def create_img_and_diffusion(cfg):
     img_model = create_model(cfg.img_model)
+    if cfg.img_cond_model.apply:
+        img_cond_model = create_model(cfg.img_cond_model)
+    else: img_cond_model = None
     diffusion = create_gaussian_diffusion(cfg.diffusion)
-    return img_model, diffusion
+    
+    return {cfg.img_model.name:img_model, cfg.img_cond_model.name:img_cond_model}, diffusion
 
 # Each sub-modules
 def create_param_model(cfg, cfg_cond=None):
@@ -116,7 +120,7 @@ def create_model(cfg):
             conditioning=True,
         )
     elif cfg.arch == 'EncoderUNet':
-        return EncoderUNetModel(
+        return EncoderUNetModelNoTime(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
             model_channels=cfg.num_channels,
