@@ -84,7 +84,7 @@ cfg.img_model.conditioning = False
 # Additional Encoder Network
 cfg.img_cond_model = CN()
 cfg.img_cond_model.name = "ImgEncoder"
-cfg.img_cond_model.apply = True
+cfg.img_cond_model.apply = False
 cfg.img_cond_model.arch = 'EncoderUNet'
 cfg.img_cond_model.in_image = '+'.join(img_type.keys())
 cfg.img_cond_model.image_size = 128
@@ -109,8 +109,6 @@ latent_dict = {'img_latent':cfg.img_cond_model.condition_dim}
 params_dict.update(latent_dict)
 
 
-
-
 # ---------------------------------------------------------------------------- #
 # Options for Dataset
 # ---------------------------------------------------------------------------- #
@@ -130,10 +128,14 @@ cfg.train.weight_decay = 0.0
 cfg.train.ema_rate = "0.9999"
 cfg.train.log_interval = 50
 cfg.train.save_interval = 50000
+cfg.train.sampling_interval = 25000
+cfg.train.n_sampling = 20
 cfg.train.resume_checkpoint = ""
 cfg.train.log_dir = "./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_image"))
 cfg.train.n_gpus = 1
 cfg.train.deterministic = True
+
+
 
 # ---------------------------------------------------------------------------- #
 # Options for diffusion 

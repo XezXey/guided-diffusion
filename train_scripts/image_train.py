@@ -27,6 +27,8 @@ def main():
     logger.log("creating model and diffusion...")
 
     img_model, diffusion = create_img_and_diffusion(cfg)
+    # Filtered out the None model
+    img_model = {k: v for k, v in img_model.items() if v is not None}
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
 
     logger.log("creating data loader...")
@@ -47,22 +49,13 @@ def main():
     tb_logger = TensorBoardLogger("tb_logs", name="diffusion", version=cfg.train.log_dir.split('/')[-1])
 
     train_loop = TrainLoop(
-        diffusion=diffusion,
-        data=data,
-        batch_size=cfg.train.batch_size,
-        lr=cfg.train.lr,
-        ema_rate=cfg.train.ema_rate,
-        log_interval=cfg.train.log_interval,
-        save_interval=cfg.train.save_interval,
-        resume_checkpoint=cfg.train.resume_checkpoint,
-        schedule_sampler=schedule_sampler,
-        weight_decay=cfg.train.weight_decay,
-        lr_anneal_steps=cfg.train.lr_anneal_steps,
-        n_gpus=cfg.train.n_gpus,
-        tb_logger=tb_logger,
         model=list(img_model.values()),
         name=list(img_model.keys()),
+        diffusion=diffusion,
+        data=data,
         cfg=cfg,
+        tb_logger=tb_logger,
+        schedule_sampler=schedule_sampler,
     )
     
     train_loop.run()

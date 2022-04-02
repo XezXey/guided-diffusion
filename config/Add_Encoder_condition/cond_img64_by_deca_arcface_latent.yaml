@@ -9,6 +9,7 @@ img_model:
   condition_proj_dim: 512
 
 img_cond_model:
+  apply: True
   arch: "EncoderUNet"
   in_image: 'raw'
   in_channels: 3

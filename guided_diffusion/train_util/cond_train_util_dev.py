@@ -27,11 +27,15 @@ import torch.nn as nn
 class ModelWrapper(nn.Module):
     def __init__(
         self,
-        model_dict
+        model_dict,
+        cfg,
     ):
         super().__init__()
+        self.cfg = cfg
+        self.model_dict = model_dict
         self.img_model = model_dict['ImgCond']
-        self.img_cond_model = model_dict['ImgEncoder']
+        if self.cfg.img_cond_model.apply:
+            self.img_cond_model = model_dict['ImgEncoder']
 
     def forward(self, trainloop, dat, cond):
         trainloop.run_step(dat, cond)
@@ -42,66 +46,62 @@ class TrainLoop(LightningModule):
         self,
         *,
         model,
+        name,
         diffusion,
         data,
-        batch_size,
-        lr,
-        ema_rate,
-        log_interval,
-        save_interval,
-        resume_checkpoint,
-        tb_logger,
-        name,
         cfg,
+        tb_logger,
         schedule_sampler=None,
-        weight_decay=0.0,
-        lr_anneal_steps=0,
-        n_gpus=1,
     ):
 
         super(TrainLoop, self).__init__()
+        self.cfg = cfg
 
         # Lightning
-        self.n_gpus = n_gpus
+        self.n_gpus = self.cfg.train.n_gpus
         self.tb_logger = tb_logger
         self.pl_trainer = pl.Trainer(
             gpus=self.n_gpus,
             logger=self.tb_logger,
-            log_every_n_steps=log_interval,
+            log_every_n_steps=self.cfg.train.log_interval,
             max_epochs=1e6,
             accelerator='gpu',
             profiler='simple',
             strategy=DDPStrategy(find_unused_parameters=False)
             )
-
         self.automatic_optimization = False # Manual optimization flow
 
+        # Model
         assert len(model) == len(name)
         self.model_dict = {}
         for i, m in enumerate(model):
             self.model_dict[name[i]] = m
 
-        self.model = ModelWrapper(self.model_dict)
-        # self.model = self.model_dict['ImgCond']
+        self.model = ModelWrapper(model_dict=self.model_dict, cfg=self.cfg)
 
+        # Diffusion
         self.diffusion = diffusion
+
+        # Data
         self.data = data
-        self.batch_size = batch_size
-        self.lr = lr
+
+        # Other config
+        self.batch_size = self.cfg.train.batch_size
+        self.lr = self.cfg.train.lr
         self.ema_rate = (
-            [ema_rate]
-            if isinstance(ema_rate, float)
-            else [float(x) for x in ema_rate.split(",")]
+            [self.cfg.train.ema_rate]
+            if isinstance(self.cfg.train.ema_rate, float)
+            else [float(x) for x in self.cfg.train.ema_rate.split(",")]
         )
-        self.log_interval = log_interval
-        self.save_interval = save_interval
-        self.resume_checkpoint = resume_checkpoint
+        self.log_interval = self.cfg.train.log_interval
+        self.save_interval = self.cfg.train.save_interval
+        self.sampling_interval = self.cfg.train.sampling_interval
+        self.resume_checkpoint = self.cfg.train.resume_checkpoint
         self.schedule_sampler = schedule_sampler or UniformSampler(diffusion)
-        self.global_batch = self.n_gpus * batch_size
-        self.weight_decay = weight_decay
-        self.lr_anneal_steps = lr_anneal_steps
+        self.global_batch = self.n_gpus * self.batch_size
+        self.weight_decay = self.cfg.train.weight_decay
+        self.lr_anneal_steps = self.cfg.train.lr_anneal_steps
         self.name = name
-        self.cfg = cfg
 
         self.step = 0
         self.resume_step = 0
@@ -227,13 +227,16 @@ class TrainLoop(LightningModule):
     def log_rank_zero(self, batch):
         if self.step % self.log_interval == 0:
             self.log_step()
-        if (self.step % (self.save_interval/2) == 0) or (self.resume_step!=0 and self.step==1) :
+        if (self.step % self.sampling_interval == 0) or (self.resume_step!=0 and self.step==1) :
             self.log_sampling(batch)
 
 
     def forward_cond_network(self, dat, cond):
         if self.cfg.img_cond_model.apply:
-            img_cond = self.model_dict['ImgEncoder'](x=dat.type(th.cuda.FloatTensor), emb=None)
+            img_cond = self.model_dict[self.cfg.img_cond_model.name](
+                x=dat.type(th.cuda.FloatTensor), 
+                emb=None,
+            )
             cond['cond_params'] = th.cat((cond['cond_params'], img_cond), dim=-1)
 
 
@@ -261,7 +264,7 @@ class TrainLoop(LightningModule):
         # Losses
         model_compute_losses = functools.partial(
             self.diffusion.training_losses_deca,
-            self.model_dict['ImgCond'],
+            self.model_dict[self.cfg.img_model.name],
             batch,
             t,
             model_kwargs=cond,
@@ -312,19 +315,23 @@ class TrainLoop(LightningModule):
         step_ = float(self.step + self.resume_step)
         tb = self.tb_logger.experiment
         H = W = self.cfg.img_model.image_size
-        n = 20
-
+        n = self.cfg.train.n_sampling
         r_idx = np.random.choice(a=np.arange(0, self.batch_size), size=n, replace=False,)
+
         noise = th.randn((n, 3, H, W)).cuda()
 
         dat, cond = batch
+
+        if self.cfg.img_cond_model.apply:
+            self.forward_cond_network(dat=dat, cond=cond)
+
         cond = {
             k: v[r_idx]
             for k, v in cond.items()
         }
         tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat[r_idx] + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
         sample_from_ps = self.diffusion.p_sample_loop(
-            model=self.model,
+            model=self.model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
             clip_denoised=True,
             model_kwargs=cond,
@@ -334,7 +341,7 @@ class TrainLoop(LightningModule):
         tb.add_image(tag=f'p_sample', img_tensor=make_grid(sample_from_ps, nrow=4), global_step=(step_ + 1) * self.n_gpus)
 
         sample_from_ddim = self.diffusion.ddim_sample_loop(
-            model=self.model,
+            model=self.model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
             clip_denoised=True,
             model_kwargs=cond,
@@ -369,8 +376,7 @@ class TrainLoop(LightningModule):
 
     def configure_optimizers(self):
         self.opt = AdamW(
-            # sum([list(self.model_trainer_dict[name].master_params) for name in self.model_trainer_dict.keys()], []),
-            list(self.model_trainer_dict['ImgCond'].master_params) + list(self.model_trainer_dict['ImgEncoder'].master_params),
+            sum([list(self.model_trainer_dict[name].master_params) for name in self.model_trainer_dict.keys()], []),
             lr=self.lr, weight_decay=self.weight_decay
         )
         return self.opt
