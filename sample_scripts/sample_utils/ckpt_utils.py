@@ -45,9 +45,11 @@ class CkptLoader():
 
 
         img_model_path = f"{self.model_path}/{self.name}_{ckpt}.pt"
-        model, diffusion = create_img_and_diffusion(self.cfg)
+        model_dict, diffusion = create_img_and_diffusion(self.cfg)
+        model_dict = {k: v for k, v in img_model.items() if v is not None}
 
-        img_model = model[self.cfg.img_model.name]
+
+        img_model = model_dict[self.cfg.img_model.name]
         img_model.load_state_dict(
             th.load(img_model_path, map_location="cpu")
         )

@@ -16,7 +16,6 @@ class PLReverseSampling(pl.LightningModule):
 
     def forward(self, x, model_kwargs, progress=True):
         # Mimic the ddim_sample_loop or p_sample_loop
-        # seed_all(33)
 
         if self.sample_fn == self.diffusion.ddim_reverse_sample_loop:
             sample = self.sample_fn(
@@ -29,7 +28,7 @@ class PLReverseSampling(pl.LightningModule):
         elif self.sample_fn == self.diffusion.q_sample:
             sample = self.sample_fn(
                 x_start=x,
-                t = 999
+                t = self.diffusion.num_timesteps - 1
             )
         else: raise NotImplementedError
 
@@ -43,8 +42,20 @@ class PLSampling(pl.LightningModule):
         self.diffusion = diffusion
         self.cfg = cfg
 
-    def forward(self, model_kwargs, noise):
-        # seed_all(33)
+    def forward_cond_network(self, model_kwargs):
+        if self.cfg.img_cond_model.apply:
+            dat = model_kwargs['img']
+            cond = model_kwargs['cond_params']
+            img_cond = self.model_dict[self.cfg.img_cond_model.name](
+                x=dat.type(th.cuda.FloatTensor), 
+                emb=None,
+            )
+            cond['cond_params'] = th.cat((cond['cond_params'], img_cond), dim=-1)
+
+
+    def forward(self, model_kwargs, noise, img=None):
+        self.forward_cond_network(model_kwargs=model_kwargs)
+            
         sample = self.sample_fn(
             model=self.img_model,
             shape=noise.shape,

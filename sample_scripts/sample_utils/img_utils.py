@@ -118,8 +118,9 @@ def video2sequence(video_path):
     print('video frames are stored in {}'.format(videofolder))
     return imagepath_list
 
-def sequence2gif(imgs, img_size, save_fn=''):
-    out_fn = f'./{save_fn}.gif'
+def sequence2gif(imgs, img_size, save_path='./animated_results', save_fn=''):
+    os.makedirs(name=save_path, exist_ok=True)
+    out_fn = f'./{save_path}/{save_fn}.gif'
     gif = []
     for img in imgs:
         img = np.array(img)
@@ -140,5 +141,20 @@ def sequence2video(img_path, save_path, vid_name, img_size):
         frame = cv2.imread(image)
         frame = cv2.resize(frame, (img_size, img_size))
         video.write(frame)
+      
+    video.release()  # releasing the video generated
+
+def sequence2video(imgs, img_size, save_path='./animated_results/', save_fn=''):
+    os.makedirs(name=save_path, exist_ok=True)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video = cv2.VideoWriter(f"{save_path}/{save_fn}.mp4", fourcc, 5, (img_size, img_size)) 
+  
+    # Appending the images to the video one by one
+    for img in imgs:
+        img = np.array(img)
+        img = ((img + 1) * 127.5).astype(np.uint8)
+        if img.shape == (3, img_size, img_size):
+            img = np.transpose(img, (1, 2, 0))
+        video.write(img[..., ::-1])
       
     video.release()  # releasing the video generated
