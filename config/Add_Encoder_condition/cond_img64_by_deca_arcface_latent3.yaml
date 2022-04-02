@@ -14,6 +14,8 @@ img_cond_model:
   in_image: 'raw'
   in_channels: 3
   image_size: 64
+  out_channels: 3
+  condition_dim: 3
 
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'img_latent']

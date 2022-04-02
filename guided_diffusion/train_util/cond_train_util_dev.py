@@ -9,7 +9,6 @@ import torch.distributed as dist
 from torchvision.utils import make_grid
 from torch.optim import AdamW
 from pytorch_lightning.core.lightning import LightningModule
-from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning.strategies import DDPStrategy
 
 from pytorch_lightning.utilities import rank_zero_only
