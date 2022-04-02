@@ -1,3 +1,4 @@
+from typing import final
 import pytorch_lightning as pl
 import torch as th
 import numpy as np
@@ -228,5 +229,27 @@ def merge_cond(src_cond_params, dst_cond_params):
     merged = th.cat((src_cond_params.clone(), dst_cond_params.clone()), dim=0)
     return merged
 
-def interpolate_cond(src_cond_params, dst_cond_params, n_step):
-    pass
+def interpolate_cond(src_cond_params, dst_cond_params, n_step, params_loc, params_sel, itp_cond):
+    # Fixed the based-idx image
+
+    r_interp = np.linspace(0, 1, num=n_step)
+    params_selected_loc = params_loc
+    params_selector = params_sel
+
+    final_cond = src_cond_params.clone().repeat(n_step, 1)
+
+    for itp in itp_cond:
+        assert itp in params_selector
+        i, j = params_selected_loc[itp]
+
+        src = src_cond_params[:, i:j]
+        dst = dst_cond_params[:, i:j]
+        interp = []
+        for r in r_interp:
+            tmp = ((1-r) * src) + (r * dst)
+            interp.append(tmp.clone())
+
+        interp = th.cat((interp), dim=0)
+        final_cond[:, i:j] = interp
+
+    return final_cond

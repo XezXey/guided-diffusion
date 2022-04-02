@@ -1,15 +1,13 @@
 import argparse
 import logging
 
-from PIL import Image
 import cv2 as cv
 import numpy as np
 import torch
 
 from align_faces import get_reference_facial_points, warp_and_crop_face
-from config_arcface import image_h, image_w
-from detector.retinaface.detector import detect_faces as retinaface_detect_faces
-from detector.mtcnn.detector import detect_faces as mtcnn_detect_faces
+from config import image_h, image_w
+from retinaface.detector import detect_faces
 
 
 def clip_gradient(optimizer, grad_clip):
@@ -83,7 +81,7 @@ def accuracy(scores, targets, k=1):
 
 
 def align_face(img_fn, facial5points):
-    raw = cv.imread(img_fn, int(True))  # BGR
+    raw = cv.imread(img_fn, True)  # BGR
     facial5points = np.reshape(facial5points, (2, 5))
 
     crop_size = (image_h, image_w)
@@ -102,18 +100,10 @@ def align_face(img_fn, facial5points):
     return dst_img
 
 
-def get_face_attributes(full_path, detector='retinaface'):
+def get_face_attributes(full_path):
     try:
-        if detector == 'retinaface':
-            img = cv.imread(full_path, cv.IMREAD_COLOR)
-            bounding_boxes, landmarks = retinaface_detect_faces(img)
-        elif detector == 'mtcnn':
-            img = Image.open(full_path)
-            bounding_boxes, landmarks = mtcnn_detect_faces(img)
-        else:
-            raise NotImplementedError
-                
-
+        img = cv.imread(full_path, cv.IMREAD_COLOR)
+        bounding_boxes, landmarks = detect_faces(img)
 
         if len(landmarks) > 0:
             landmarks = [int(round(x)) for x in landmarks[0]]
@@ -141,16 +131,10 @@ def select_significant_face(bboxes):
     return best_index
 
 
-def get_central_face_attributes(full_path, detector='retinaface'):
-    if detector == 'retinaface':
-        img = cv.imread(full_path, cv.IMREAD_COLOR)
-        bboxes, landmarks = retinaface_detect_faces(img)
-    elif detector == 'mtcnn':
-        img = Image.open(full_path)
-        bboxes, landmarks = mtcnn_detect_faces(img)
-    else:
-        raise NotImplementedError
-                
+def get_central_face_attributes(full_path):
+    img = cv.imread(full_path, cv.IMREAD_COLOR)
+    bboxes, landmarks = detect_faces(img)
+
     if len(landmarks) > 0:
         i = select_significant_face(bboxes)
         return [bboxes[i]], [landmarks[i]]
@@ -158,17 +142,9 @@ def get_central_face_attributes(full_path, detector='retinaface'):
     return None, None
 
 
-def get_all_face_attributes(full_path, detector='retinaface'):
-
-    if detector == 'retinaface':
-        img = cv.imread(full_path, cv.IMREAD_COLOR)
-        bounding_boxes, landmarks = retinaface_detect_faces(img)
-    elif detector == 'mtcnn':
-        img = Image.open(full_path)
-        bounding_boxes, landmarks = mtcnn_detect_faces(img)
-    else:
-        raise NotImplementedError
-
+def get_all_face_attributes(full_path):
+    img = cv.imread(full_path, cv.IMREAD_COLOR)
+    bounding_boxes, landmarks = detect_faces(img)
     return bounding_boxes, landmarks
 
 
