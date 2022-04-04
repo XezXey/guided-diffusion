@@ -105,8 +105,6 @@ cfg.img_cond_model.resblock_updown = True
 cfg.img_cond_model.use_new_attention_order = False
 cfg.img_cond_model.pool = 'attention'
 
-latent_dict = {'img_latent':cfg.img_cond_model.condition_dim}
-params_dict.update(latent_dict)
 
 
 # ---------------------------------------------------------------------------- #
@@ -134,6 +132,12 @@ cfg.train.resume_checkpoint = ""
 cfg.train.log_dir = "./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_image"))
 cfg.train.n_gpus = 1
 cfg.train.deterministic = True
+
+# ---------------------------------------------------------------------------- #
+# Options for inference
+# ---------------------------------------------------------------------------- #
+cfg.inference = CN()
+cfg.inference.exc_params = [None]
 
 
 
@@ -204,6 +208,11 @@ def update_params(cfg):
     '''
 
     cfg.param_model.n_params = []
+
+    if cfg.img_cond_model.apply:
+        latent_dict = {'img_latent':cfg.img_cond_model.condition_dim}
+        params_dict.update(latent_dict)
+
     for param in cfg.param_model.params_selector:
         cfg.param_model.n_params.append(params_dict[param])
 

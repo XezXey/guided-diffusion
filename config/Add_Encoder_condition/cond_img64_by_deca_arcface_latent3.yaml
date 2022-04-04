@@ -20,6 +20,9 @@ img_cond_model:
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'img_latent']
 
+inference:
+  exc_params: ['img_latent']
+
 dataset:
   deca_dir: "/data/mint/ffhq_256_with_anno"
   data_dir: "/data/mint/ffhq_256_with_anno/ffhq_256/train"

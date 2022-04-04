@@ -20,7 +20,7 @@ class CkptLoader():
     def get_cfg(self,):
         cfg_file_path = glob.glob("../config/*/*", recursive=True)
         cfg_file_path = [cfg_path for cfg_path in cfg_file_path if f"/{self.cfg_name}" in cfg_path]    # Add /{}/ to achieve a case-sensitive of folder
-        assert len(cfg_file_path) <= 1
+        assert len(cfg_file_path) <= 1 and len(cfg_file_path) > 0
         cfg_file = cfg_file_path[0]
         cfg = parse_args(ipynb={'mode':True, 'cfg':cfg_file})
         return cfg
@@ -30,7 +30,7 @@ class CkptLoader():
         model_logs_path = glob.glob(f"{self.sshfs_mount_path}/*/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/*/", recursive=True)
         model_path = [m_log for m_log in model_logs_path if f"/{self.log_dir}/" in m_log]    # Add /{}/ to achieve a case-sensitive of folder
         print(model_path)
-        assert len(model_path) <= 1
+        assert len(model_path) <= 1 and len(model_path) > 0
         return model_path[0]
 
     # Load model
@@ -44,19 +44,19 @@ class CkptLoader():
         self.available_model()
 
 
-        img_model_path = f"{self.model_path}/{self.name}_{ckpt}.pt"
         model_dict, diffusion = create_img_and_diffusion(self.cfg)
-        model_dict = {k: v for k, v in img_model.items() if v is not None}
+        model_dict = {k: v for k, v in model_dict.items() if v is not None}
 
+        for m_name in model_dict.keys():
+            model_path = f"{self.model_path}/{m_name}_{ckpt}.pt"
+            print(f"Loading...{model_path}")
+            model_dict[m_name].load_state_dict(
+                th.load(model_path, map_location="cpu")
+            )
+            model_dict[m_name].to('cuda')
+            model_dict[m_name].eval()
 
-        img_model = model_dict[self.cfg.img_model.name]
-        img_model.load_state_dict(
-            th.load(img_model_path, map_location="cpu")
-        )
-        img_model.to('cuda')
-        img_model.eval()
-
-        return img_model, diffusion
+        return model_dict, diffusion
 
     def available_model(self):
 

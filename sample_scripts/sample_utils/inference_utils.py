@@ -7,19 +7,29 @@ import PIL
 from . import vis_utils, img_utils, params_utils
 
 class PLReverseSampling(pl.LightningModule):
-    def __init__(self, img_model, diffusion, sample_fn, cfg):
+    def __init__(self, model_dict, diffusion, sample_fn, cfg):
         super(PLReverseSampling, self).__init__()
         self.sample_fn = sample_fn
-        self.img_model = img_model
+        self.model_dict = model_dict 
         self.diffusion = diffusion
         self.cfg = cfg
+
+    def forward_cond_network(self, model_kwargs):
+        if self.cfg.img_cond_model.apply:
+            dat = model_kwargs['image']
+            cond = model_kwargs['cond_params']
+            img_cond = self.model_dict[self.cfg.img_cond_model.name](
+                x=dat.type(th.cuda.FloatTensor), 
+                emb=None,
+            )
+            cond['cond_params'] = th.cat((cond['cond_params'], img_cond), dim=-1)
 
     def forward(self, x, model_kwargs, progress=True):
         # Mimic the ddim_sample_loop or p_sample_loop
 
         if self.sample_fn == self.diffusion.ddim_reverse_sample_loop:
             sample = self.sample_fn(
-                model=self.img_model,
+                model=self.model_dict[self.cfg.img_model.name],
                 x=x,
                 clip_denoised=True,
                 model_kwargs=model_kwargs,
@@ -35,29 +45,27 @@ class PLReverseSampling(pl.LightningModule):
         return {"img_output":sample}
 
 class PLSampling(pl.LightningModule):
-    def __init__(self, img_model, diffusion, sample_fn, cfg):
+    def __init__(self, model_dict, diffusion, sample_fn, cfg):
         super(PLSampling, self).__init__()
-        self.img_model = img_model
+        self.model_dict = model_dict 
         self.sample_fn = sample_fn
         self.diffusion = diffusion
         self.cfg = cfg
 
     def forward_cond_network(self, model_kwargs):
         if self.cfg.img_cond_model.apply:
-            dat = model_kwargs['img']
-            cond = model_kwargs['cond_params']
+            dat = model_kwargs['image']
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
                 x=dat.type(th.cuda.FloatTensor), 
                 emb=None,
             )
-            cond['cond_params'] = th.cat((cond['cond_params'], img_cond), dim=-1)
+            model_kwargs['cond_params'] = th.cat((model_kwargs['cond_params'], img_cond), dim=-1)
+        return model_kwargs['cond_params']
 
-
-    def forward(self, model_kwargs, noise, img=None):
-        self.forward_cond_network(model_kwargs=model_kwargs)
+    def forward(self, model_kwargs, noise):
             
         sample = self.sample_fn(
-            model=self.img_model,
+            model=self.model_dict[self.cfg.img_model.name],
             shape=noise.shape,
             noise=noise,
             clip_denoised=self.cfg.diffusion.clip_denoised,
@@ -66,19 +74,22 @@ class PLSampling(pl.LightningModule):
         return {"img_output":sample}
 
 class InputManipulate():
-    def __init__(self, cfg, params, batch_size, sorted=False) -> None:
+    def __init__(self, cfg, params, batch_size, images, sorted=False) -> None:
         self.cfg = cfg
         if not sorted:
             self.rand_idx = list(np.random.choice(a=np.arange(0, len(params)), size=batch_size, replace=False))
         else:
             self.rand_idx = list(np.arange(0, len(params)))
         self.n = batch_size
+        self.params_dict = dict(zip(self.cfg.param_model.params_selector, self.cfg.param_model.n_params))
+        self.exc_params = self.cfg.inference.exc_params
+        self.images = [images[i] for i in self.rand_idx]
 
     def set_rand_idx(self, rand_idx):
         self.rand_idx = rand_idx
-        self.n = len(self.n)
+        self.n = len(self.rand_idx)
 
-    def get_cond_params(self, mode, params_set, interchange=None, base_idx=0, model_kwargs=None):
+    def get_cond_params(self, mode, params_set, base_idx=0, model_kwargs=None):
         '''
         Return the condition parameters used to condition the network.
         :params mode: 
@@ -91,15 +102,14 @@ class InputManipulate():
         if mode == 'fixed_cond':
             cond_params = th.stack([model_kwargs['cond_params'][base_idx]]*self.n, dim=0)
             image_name = [model_kwargs['image_name'][base_idx]] * self.n
+            image = th.stack([model_kwargs['image'][base_idx]] * self.n, dim=0)
         elif mode == 'vary_cond':
             cond_params = model_kwargs['cond_params']
             image_name = model_kwargs['image_name']
+            image = model_kwargs['image']
         else: raise NotImplementedError
         
-        if interchange is not None:
-            cond_params = self.interchange_condition(cond_params=cond_params, base_idx=base_idx, interchange=interchange)
-
-        return {'cond_params':cond_params, 'image_name':image_name}
+        return {'cond_params':cond_params, 'image_name':image_name, 'image':image}
 
     def interchange_condition(self, cond_params, interchange, base_idx):
         '''
@@ -148,17 +158,19 @@ class InputManipulate():
 
         img_size = self.cfg.img_model.image_size
         init_noise = self.get_init_noise(mode=mode['init_noise'], img_size=img_size)
-        model_kwargs = self.get_cond_params(mode=mode['cond_params'], params_set=params_set, interchange=interchange, base_idx=base_idx)
+        model_kwargs = self.get_cond_params(mode=mode['cond_params'], params_set=params_set, base_idx=base_idx)
+        if interchange is not None:
+            model_kwargs['cond_params'] = self.interchange_condition(cond_params=model_kwargs['cond_params'], interchange=interchange, base_idx=base_idx)
         return init_noise, model_kwargs
 
-    def load_img(self, all_files, vis=False):
+    def load_img(self, all_path, vis=False):
 
         '''
         Load image and stack all of thems into BxCxHxW
         '''
 
         imgs = []
-        for path in all_files[:self.n]:
+        for path in all_path:
             with bf.BlobFile(path, "rb") as f:
                 pil_image = PIL.Image.open(f)
                 pil_image.load()
@@ -179,17 +191,21 @@ class InputManipulate():
         Load deca condition and stack all of thems into 1D-vector
         '''
         img_name = [list(params.keys())[i] for i in self.rand_idx]
+        images = self.load_img(all_path=self.images, vis=True)['image']
 
         all = []
 
         # Choose only param in params_selector
         params_selector = self.cfg.param_model.params_selector
         for name in img_name:
-            each_param = [params[name][p_name] for p_name in params_selector]
+            each_param = []
+            for p_name in params_selector:
+                if p_name not in self.exc_params:
+                    each_param.append(params[name][p_name])
             all.append(np.concatenate(each_param))
 
         all = np.stack(all, axis=0)        
-        return {'cond_params':th.tensor(all).cuda(), 'image_name':img_name, 'r_idx':self.rand_idx}
+        return {'cond_params':th.tensor(all).cuda(), 'image_name':img_name, 'image':images, 'r_idx':self.rand_idx}
 
     def cond_params_location(self):
         '''
@@ -198,12 +214,12 @@ class InputManipulate():
 
         :param p: p in ['shape', 'pose', 'exp', ...]
         '''
-        params_dict = {'shape':100, 'pose':6, 'exp':50, 'cam':3, 'light':27, 'faceemb':512,}
+        
         params_selected_loc = {}
         params_ptr = 0
         for param in self.cfg.param_model.params_selector:
-            params_selected_loc[param] = [params_ptr, params_ptr + params_dict[param]]
-            params_ptr += params_dict[param]
+            params_selected_loc[param] = [params_ptr, params_ptr + self.params_dict[param]]
+            params_ptr += self.params_dict[param]
         return params_selected_loc
 
     def get_image(self, model_kwargs, params, img_dataset_path):
