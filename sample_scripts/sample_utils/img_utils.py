@@ -89,7 +89,6 @@ def augmentation(pil_image, cfg):
 def prep_images(path, image_size):
     '''
     Preprocess the image
-    Todo. 1. Aligned with the ffhq
     '''
     with bf.BlobFile(path, "rb") as f:
         pil_image = PIL.Image.open(f)

@@ -191,9 +191,19 @@ class TrainLoop(LightningModule):
         :params cond: the condition dict e.g. ['cond_params'] in BXD; D is dimension of DECA, Latent, ArcFace, etc.
         '''
         self.zero_grad_trainer()
+        # print(cond['cond_params'].shape)
         self.forward_cond_network(dat, cond)
+        # print(cond['cond_params'].shape)
         self.forward_backward(dat, cond)
+        # print(cond['cond_params'].shape)
+        # print(self.model_trainer_dict.keys())
+        # b4_en = self.model_trainer_dict['ImgEncoder'].master_params[0][:1][:10].clone()
+        # b4_un = self.model_trainer_dict['ImgCond'].master_params[0][:1][:10].clone()
         took_step = self.optimize_trainer()
+        # after_en = self.model_trainer_dict['ImgEncoder'].master_params[0][:1][:10].clone()
+        # after_un = self.model_trainer_dict['ImgCond'].master_params[0][:1][:10].clone()
+        # print(b4_en, after_en)
+        # print(b4_un, after_un)
         self.took_step = took_step
 
     def training_step(self, batch, batch_idx):
@@ -230,15 +240,6 @@ class TrainLoop(LightningModule):
             self.log_sampling(batch)
 
 
-    def forward_cond_network(self, dat, cond):
-        if self.cfg.img_cond_model.apply:
-            img_cond = self.model_dict[self.cfg.img_cond_model.name](
-                x=dat.type(th.cuda.FloatTensor), 
-                emb=None,
-            )
-            cond['cond_params'] = th.cat((cond['cond_params'], img_cond), dim=-1)
-
-
     def zero_grad_trainer(self):
         for name in self.model_trainer_dict.keys():
             self.model_trainer_dict[name].zero_grad()
@@ -250,7 +251,14 @@ class TrainLoop(LightningModule):
             tk_s = self.model_trainer_dict[name].optimize(self.opt)
             took_step.append(tk_s)
         return all(took_step)
-        
+
+    def forward_cond_network(self, dat, cond):
+        if self.cfg.img_cond_model.apply:
+            img_cond = self.model_dict[self.cfg.img_cond_model.name](
+                x=dat.type(th.cuda.FloatTensor), 
+                emb=None,
+            )
+            cond['cond_params'] = th.cat((cond['cond_params'], img_cond), dim=-1)
 
     def forward_backward(self, batch, cond):
 

@@ -31,7 +31,7 @@ class PLReverseSampling(pl.LightningModule):
             sample = self.sample_fn(
                 model=self.model_dict[self.cfg.img_model.name],
                 x=x,
-                clip_denoised=True,
+                clip_denoised=False,
                 model_kwargs=model_kwargs,
                 progress=progress
             )
@@ -163,7 +163,7 @@ class InputManipulate():
             model_kwargs['cond_params'] = self.interchange_condition(cond_params=model_kwargs['cond_params'], interchange=interchange, base_idx=base_idx)
         return init_noise, model_kwargs
 
-    def load_img(self, all_path, vis=False):
+    def load_imgs(self, all_path, vis=False):
 
         '''
         Load image and stack all of thems into BxCxHxW
@@ -174,11 +174,11 @@ class InputManipulate():
             with bf.BlobFile(path, "rb") as f:
                 pil_image = PIL.Image.open(f)
                 pil_image.load()
-                pil_image = pil_image.convert("RGB")
+            pil_image = pil_image.convert("RGB")
 
-                raw_img = img_utils.augmentation(pil_image=pil_image, cfg=self.cfg)
+            raw_img = img_utils.augmentation(pil_image=pil_image, cfg=self.cfg)
 
-                raw_img = (raw_img / 127.5) - 1
+            raw_img = (raw_img / 127.5) - 1
 
             imgs.append(np.transpose(raw_img, (2, 0, 1)))
         imgs = np.stack(imgs)
@@ -191,7 +191,7 @@ class InputManipulate():
         Load deca condition and stack all of thems into 1D-vector
         '''
         img_name = [list(params.keys())[i] for i in self.rand_idx]
-        images = self.load_img(all_path=self.images, vis=True)['image']
+        images = self.load_imgs(all_path=self.images, vis=True)['image']
 
         all = []
 
