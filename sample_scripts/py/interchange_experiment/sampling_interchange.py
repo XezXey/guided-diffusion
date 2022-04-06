@@ -38,14 +38,6 @@ from sample_utils import ckpt_utils, params_utils, vis_utils, file_utils, img_ut
 
 
 if __name__ == '__main__':
-    # interchange_str = '_'.join(args.interchange)
-    # out_folder = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interchange_str}/"
-    # os.makedirs(out_folder, exist_ok=True)
-    # with open(f"{out_folder}/seed={args.seed}_bidx={args.base_idx}_itc={interchange_str}.txt", 'w') as f:
-    #     f.writelines("GGEZ")
-    # f.close()
-    # print("DONE")
-    # exit()
     # Load ckpt
     ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
     cfg = ckpt_loader.cfg

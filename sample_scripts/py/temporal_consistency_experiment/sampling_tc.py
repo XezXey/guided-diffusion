@@ -25,16 +25,15 @@ import torch as th
 import PIL
 import copy
 import pytorch_lightning as pl
-sys.path.insert(0, '../../')
+sys.path.insert(0, '../../../')
 from guided_diffusion.script_util import (
     seed_all,
 )
 import importlib
 
 # Sample utils
-sys.path.insert(0, '../')
+sys.path.insert(0, '../../')
 from sample_utils import ckpt_utils, params_utils, vis_utils, file_utils, img_utils, inference_utils
-
 
 
 if __name__ == '__main__':
