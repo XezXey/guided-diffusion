@@ -31,6 +31,7 @@ def plot_sample(img, **kwargs):
                         wspace=0.1, 
                         hspace=0.2)
     plt.show()
+    return fig
 
 def plot_deca(sample, min_value, max_value, cfg):
 

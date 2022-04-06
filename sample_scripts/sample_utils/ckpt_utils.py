@@ -18,7 +18,7 @@ class CkptLoader():
 
     # Config file
     def get_cfg(self,):
-        cfg_file_path = glob.glob("../config/*/*", recursive=True)
+        cfg_file_path = glob.glob("/home/mint/guided-diffusion/config/*/*", recursive=True)
         cfg_file_path = [cfg_path for cfg_path in cfg_file_path if f"/{self.cfg_name}" in cfg_path]    # Add /{}/ to achieve a case-sensitive of folder
         assert len(cfg_file_path) <= 1 and len(cfg_file_path) > 0
         cfg_file = cfg_file_path[0]
@@ -29,7 +29,7 @@ class CkptLoader():
     def get_model_path(self,):
         model_logs_path = glob.glob(f"{self.sshfs_mount_path}/*/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/*/", recursive=True)
         model_path = [m_log for m_log in model_logs_path if f"/{self.log_dir}/" in m_log]    # Add /{}/ to achieve a case-sensitive of folder
-        print(model_path)
+        print("[#] Model Path : ", model_path)
         assert len(model_path) <= 1 and len(model_path) > 0
         return model_path[0]
 
@@ -49,7 +49,7 @@ class CkptLoader():
 
         for m_name in model_dict.keys():
             model_path = f"{self.model_path}/{m_name}_{ckpt}.pt"
-            print(f"Loading...{model_path}")
+            print(f"[#] Loading...{model_path}")
             model_dict[m_name].load_state_dict(
                 th.load(model_path, map_location="cpu")
             )
@@ -59,7 +59,6 @@ class CkptLoader():
         return model_dict, diffusion
 
     def available_model(self):
-
         import re
         avail_m = glob.glob(f"{self.model_path}/*.pt")
         filtered_m = []
@@ -67,4 +66,4 @@ class CkptLoader():
             r = re.search(r"(_(\d+).pt)", m)
             if r:
                 filtered_m.append(list(r.groups())[0])
-        print("Available ckpt : ", sorted(filtered_m))
+        print("[#] Available ckpt : ", sorted(filtered_m))

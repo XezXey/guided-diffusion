@@ -30,8 +30,8 @@ def params_to_model(shape, exp, pose, cam, i, uvdn=None):
 
     opdict = {'verts' : verts,}
 
-    os.makedirs('./rendered_obj', exist_ok=True)
-    save_obj(renderer=renderer, filename=(f'./rendered_obj/{i}.obj'), opdict=opdict)
+    # os.makedirs('./rendered_obj', exist_ok=True)
+    # save_obj(renderer=renderer, filename=(f'./rendered_obj/{i}.obj'), opdict=opdict)
     
     return {"shape_images":shape_images, "landmarks2d":landmarks2d, "landmarks3d":landmarks3d}
 

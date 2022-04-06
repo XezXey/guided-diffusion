@@ -55,7 +55,7 @@ def get_arcface_emb(img_path, device):
     }
 
     # loading model
-    checkpoint = th.load('./cond_utils/arcface/pretrained/BEST_checkpoint_r18.tar', map_location=device)
+    checkpoint = th.load('../cond_utils/arcface/pretrained/BEST_checkpoint_r18.tar', map_location=device)
     model = checkpoint['model'].module.to(device)
 
     ## load data for my testing only
