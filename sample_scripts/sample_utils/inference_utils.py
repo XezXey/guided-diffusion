@@ -256,14 +256,14 @@ def merge_cond(src_cond_params, dst_cond_params):
     merged = th.cat((src_cond_params.clone(), dst_cond_params.clone()), dim=0)
     return merged
 
-def interpolate_cond(src_cond_params, dst_cond_params, n_step, params_loc, params_sel, itp_cond):
+def interpolate_cond(base_cond_params, src_cond_params, dst_cond_params, n_step, params_loc, params_sel, itp_cond):
     # Fixed the based-idx image
 
     r_interp = np.linspace(0, 1, num=n_step)
     params_selected_loc = params_loc
     params_selector = params_sel
 
-    final_cond = src_cond_params.clone().repeat(n_step, 1)
+    final_cond = base_cond_params.clone().repeat(n_step, 1)
 
     for itp in itp_cond:
         assert itp in params_selector

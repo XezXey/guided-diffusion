@@ -8,8 +8,11 @@ parser.add_argument('--cfg_name', type=str, default='ema')
 parser.add_argument('--log_dir', type=str, default='ema')
 parser.add_argument('--batch_size', type=int, default=30)
 parser.add_argument('--base_idx', type=int, default=2)
+parser.add_argument('--src_idx', type=int, default=2)
+parser.add_argument('--dst_idx', type=int, default=10)
 parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--interchange', nargs='+', default=None)
+parser.add_argument('--interpolate', nargs='+', default=None)
 parser.add_argument('--out_dir', type=str, required=True)
 parser.add_argument('--gpu', type=str, default='0')
 args = parser.parse_args()
@@ -25,16 +28,15 @@ import torch as th
 import PIL
 import copy
 import pytorch_lightning as pl
-sys.path.insert(0, '../../')
+sys.path.insert(0, '../../../')
 from guided_diffusion.script_util import (
     seed_all,
 )
 import importlib
 
 # Sample utils
-sys.path.insert(0, '../')
+sys.path.insert(0, '../../')
 from sample_utils import ckpt_utils, params_utils, vis_utils, file_utils, img_utils, inference_utils
-
 
 
 if __name__ == '__main__':
@@ -58,35 +60,81 @@ if __name__ == '__main__':
     img_dataset_path = f'/data/mint/ffhq_256_with_anno/ffhq_256/{args.set}/'
     all_files = file_utils._list_image_files_recursively(img_dataset_path)
 
-    mode = {'init_noise':'vary_noise', 'cond_params':'vary_cond'}
+    mode = {'init_noise':'fixed_noise', 'cond_params':'vary_cond'}
     interchange = None
-
+    interpolate = args.interpolate
+    interpolate_str = '_'.join(args.interpolate)
+    out_folder_interpolate = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/"
+    out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/"
+    os.makedirs(out_folder_interpolate, exist_ok=True)
+    os.makedirs(out_folder_reconstruction, exist_ok=True)
 
     seed_all(args.seed)
     # Input manipulation
     im = inference_utils.InputManipulate(cfg=cfg, params=params_set, batch_size=args.batch_size, images=all_files)
-    interchange = args.interchange
     init_noise, model_kwargs = im.prep_model_input(params_set=params_set, mode=mode, interchange=interchange, base_idx=args.base_idx)
-    
-    # Sampling
-    pl_inference = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, cfg=cfg, sample_fn=diffusion.ddim_sample_loop)
-    model_kwargs['cond_params'] = pl_inference.forward_cond_network(model_kwargs=copy.deepcopy(model_kwargs))
-    sample_ddim = pl_inference(noise=init_noise, model_kwargs=model_kwargs)
 
-    # Show image
-    src_img_list, render_img_list = im.get_image(model_kwargs=model_kwargs, params=params_set, img_dataset_path=img_dataset_path)
-    src_img = th.cat(src_img_list, dim=0)
-    render_img = th.cat(render_img_list, dim=0)
-    fig = vis_utils.plot_sample(img=src_img, render_img=render_img, sampling_img=sample_ddim['img_output'])
+
+    # In-the-wild
+    sys.path.insert(0, '../../cond_utils/arcface/')
+    sys.path.insert(0, '../../cond_utils/arcface/detector/')
+    sys.path.insert(0, '../../cond_utils/deca/')
+    from cond_utils.arcface import get_arcface_emb
+    from cond_utils.deca import get_deca_emb
+
+    itw_path = "../../itw_images/aligned/"
+    all_itw_files = file_utils._list_image_files_recursively(itw_path)
+
+    device = 'cuda:2'
+    # ArcFace
+    faceemb_itw, emb = get_arcface_emb.get_arcface_emb(img_path=itw_path, device=device)
+
+    # DECA
+    params_dict = {'shape':100, 'pose':6, 'exp':50, 'cam':3, 'light':27, 'faceemb':512,}
+    deca_itw = get_deca_emb.get_deca_emb(img_path=itw_path, device=device)
+
+    assert deca_itw.keys() == faceemb_itw.keys()
+    params_itw = {}
+    for img_name in deca_itw.keys():
+        params_itw[img_name] = deca_itw[img_name]
+        params_itw[img_name].update(faceemb_itw[img_name])
+
+    itw_path = "../../itw_images/aligned/"
+    device = 'cuda:0'
+    all_itw_files = file_utils._list_image_files_recursively(itw_path)
+    itw_images = th.tensor(np.stack([img_utils.prep_images(all_itw_files[i], cfg.img_model.image_size) for i in range(len(all_itw_files))], axis=0)).to(device)
+
+    im_itw = inference_utils.InputManipulate(cfg=cfg, params=params_itw, batch_size=len(params_itw), images=all_itw_files, sorted=True)
+    itw_kwargs = im_itw.load_condition(params=params_itw)
+    itw_kwargs['cond_params'] = itw_kwargs['cond_params'].to(device)
+
+    # Reverse
+    pl_reverse_sampling = inference_utils.PLReverseSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_reverse_sample_loop, cfg=cfg)
+    reverse_ddim_sample = pl_reverse_sampling(x=itw_images, model_kwargs=itw_kwargs)
+
+    # Forward
+    pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
+    sample_ddim = pl_sampling(noise=reverse_ddim_sample['img_output'], model_kwargs=itw_kwargs)
+    fig = vis_utils.plot_sample(img=itw_images, reverse_sampling_images=reverse_ddim_sample['img_output'], sampling_img=sample_ddim['img_output'])
+    # Save a visualization
+    fig.suptitle(f"""Reverse Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
+                    model={args.log_dir}, seed={args.seed}, interpolate={args.interpolate}, base_idx={args.base_idx}
+                """, x=0.1, y=0.95, horizontalalignment='left', verticalalignment='top',)
+
+    plt.savefig(f"{out_folder_reconstruction}/seed={args.seed}_bidx={args.base_idx}_itc={interpolate_str}_reconstruction.png", bbox_inches='tight')
+
+
+    # Interpolate the condition
+    src_idx, dst_idx = args.src_idx, args.dst_idx
+    itw_kwargs['cond_params'] = inference_utils.interpolate_cond(base_cond_params=itw_kwargs['cond_params'][[args.base_idx]], src_cond_params=model_kwargs['cond_params'][[src_idx]], dst_cond_params=model_kwargs['cond_params'][[dst_idx]], n_step=args.batch_size, params_loc=im.cond_params_location(), params_sel=im.cfg.param_model.params_selector, itp_cond=interpolate)
+    pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
+    sample_ddim = pl_sampling(noise=th.cat([reverse_ddim_sample['img_output'][[args.base_idx]]] * args.batch_size, dim=0), model_kwargs=itw_kwargs)
+    fig = vis_utils.plot_sample(img=sample_ddim['img_output'])
 
     # Save a visualization
     fig.suptitle(f"""Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
-                    model={args.log_dir}, seed={args.seed}, interchange={args.interchange}, base_idx={args.base_idx}
+                    model={args.log_dir}, seed={args.seed}, interpolate={args.interpolate}, base_idx={args.base_idx}
                 """, x=0.1, y=0.95, horizontalalignment='left', verticalalignment='top',)
 
-    interchange_str = '_'.join(args.interchange)
-    out_folder = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interchange_str}/"
-    os.makedirs(out_folder, exist_ok=True)
-
-    plt.savefig(f"{out_folder}/seed={args.seed}_bidx={args.base_idx}_itc={interchange_str}.png", bbox_inches='tight')
+    plt.savefig(f"{out_folder_interpolate}/seed={args.seed}_bidx={args.base_idx}_itc={interpolate_str}_interpolate.png", bbox_inches='tight')
 

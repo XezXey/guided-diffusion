@@ -20,17 +20,19 @@ class CkptLoader():
     def get_cfg(self,):
         cfg_file_path = glob.glob("/home/mint/guided-diffusion/config/*/*", recursive=True)
         cfg_file_path = [cfg_path for cfg_path in cfg_file_path if f"/{self.cfg_name}" in cfg_path]    # Add /{}/ to achieve a case-sensitive of folder
-        assert len(cfg_file_path) <= 1 and len(cfg_file_path) > 0
+        assert len(cfg_file_path) <= 1
+        assert len(cfg_file_path) > 0
         cfg_file = cfg_file_path[0]
         cfg = parse_args(ipynb={'mode':True, 'cfg':cfg_file})
         return cfg
 
     # Log & Checkpoint file 
     def get_model_path(self,):
-        model_logs_path = glob.glob(f"{self.sshfs_mount_path}/*/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/*/", recursive=True)
+        model_logs_path = glob.glob(f"{self.sshfs_mount_path}/*/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/", recursive=True)
         model_path = [m_log for m_log in model_logs_path if f"/{self.log_dir}/" in m_log]    # Add /{}/ to achieve a case-sensitive of folder
         print("[#] Model Path : ", model_path)
-        assert len(model_path) <= 1 and len(model_path) > 0
+        assert len(model_path) <= 1 
+        assert len(model_path) > 0
         return model_path[0]
 
     # Load model
