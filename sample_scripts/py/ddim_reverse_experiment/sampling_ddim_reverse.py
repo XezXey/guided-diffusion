@@ -112,6 +112,7 @@ if __name__ == '__main__':
     pl_reverse_sampling = inference_utils.PLReverseSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_reverse_sample_loop, cfg=cfg)
     reverse_ddim_sample = pl_reverse_sampling(x=itw_images, model_kwargs=itw_kwargs)
 
+
     # Forward
     pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
     sample_ddim = pl_sampling(noise=reverse_ddim_sample['img_output'], model_kwargs=itw_kwargs)
@@ -124,17 +125,34 @@ if __name__ == '__main__':
     plt.savefig(f"{out_folder_reconstruction}/seed={args.seed}_bidx={args.base_idx}_itc={interpolate_str}_reconstruction.png", bbox_inches='tight')
 
 
-    # Interpolate the condition
-    src_idx, dst_idx = args.src_idx, args.dst_idx
-    itw_kwargs['cond_params'] = inference_utils.interpolate_cond(base_cond_params=itw_kwargs['cond_params'][[args.base_idx]], src_cond_params=model_kwargs['cond_params'][[src_idx]], dst_cond_params=model_kwargs['cond_params'][[dst_idx]], n_step=args.batch_size, params_loc=im.cond_params_location(), params_sel=im.cfg.param_model.params_selector, itp_cond=interpolate)
-    pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
-    sample_ddim = pl_sampling(noise=th.cat([reverse_ddim_sample['img_output'][[args.base_idx]]] * args.batch_size, dim=0), model_kwargs=itw_kwargs)
-    fig = vis_utils.plot_sample(img=sample_ddim['img_output'])
+    bidx = [0, 1, 2, 3, 4, 6, 10, 11, 12, 13, 15, 19, 28, 25, 23, 27]
+    interp_idx = [[12, 10], [9, 15], [26, 13], [23, 9]]
+    for itp_idx in interp_idx:
+        for b in bidx:
+            print(f"INTERPOLATING SAMPLE : {b}, src={itp_idx[0]}, dst={itp_idx[1]}")
+            # Interpolate the condition
+            src_idx, dst_idx = itp_idx[0], itp_idx[1]
+            itp_itw_kwargs = copy.deepcopy(itw_kwargs)
+            itp_itw_kwargs['cond_params'] = inference_utils.interpolate_cond(base_cond_params=copy.deepcopy(itw_kwargs['cond_params'][[b]]), 
+                                                                        src_cond_params=copy.deepcopy(model_kwargs['cond_params'][[src_idx]]), 
+                                                                        dst_cond_params=copy.deepcopy(model_kwargs['cond_params'][[dst_idx]]), 
+                                                                        n_step=args.batch_size, 
+                                                                        params_loc=im.cond_params_location(), 
+                                                                        params_sel=im.cfg.param_model.params_selector, 
+                                                                        itp_cond=interpolate)
 
-    # Save a visualization
-    fig.suptitle(f"""Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
-                    model={args.log_dir}, seed={args.seed}, interpolate={args.interpolate}, base_idx={args.base_idx}
-                """, x=0.1, y=0.95, horizontalalignment='left', verticalalignment='top',)
+            pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
+            sample_ddim = pl_sampling(noise=th.cat([reverse_ddim_sample['img_output'][[b]]] * args.batch_size, dim=0), model_kwargs=itp_itw_kwargs)
+            fig = vis_utils.plot_sample(img=sample_ddim['img_output'])
 
-    plt.savefig(f"{out_folder_interpolate}/seed={args.seed}_bidx={args.base_idx}_itc={interpolate_str}_interpolate.png", bbox_inches='tight')
+            tc_frames = sample_ddim['img_output'].detach().cpu().numpy()
+            tc_frames = list(tc_frames)
+            img_utils.sequence2video(imgs=tc_frames, img_size=cfg.img_model.image_size, save_path=out_folder_interpolate, save_fn=f'seed={args.seed}_bidx={b}_itp={interpolate_str}_src={src_idx}_dst={dst_idx}')
+
+            # Save a visualization
+            fig.suptitle(f"""Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
+                            model={args.log_dir}, seed={args.seed}, interpolate={args.interpolate}, base_idx={b}
+                        """, x=0.1, y=0.95, horizontalalignment='left', verticalalignment='top',)
+
+            plt.savefig(f"{out_folder_interpolate}/seed={args.seed}_bidx={b}_itc={interpolate_str}_interpolate.png", bbox_inches='tight')
 

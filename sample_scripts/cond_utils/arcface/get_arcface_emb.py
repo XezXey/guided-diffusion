@@ -39,7 +39,7 @@ def _list_image_files_recursively(data_dir):
             results.extend(_list_image_files_recursively(full_path))
     return results
 
-def get_arcface_emb(img_path, device):
+def get_arcface_emb(img_path, device, arcface_ckpt_path='../../cond_utils/arcface/pretrained/BEST_checkpoint_r18.tar'):
 
     # Model parameters
     image_w = 112
@@ -55,7 +55,7 @@ def get_arcface_emb(img_path, device):
     }
 
     # loading model
-    checkpoint = th.load('../../cond_utils/arcface/pretrained/BEST_checkpoint_r18.tar', map_location=device)
+    checkpoint = th.load(arcface_ckpt_path, map_location=device)
     model = checkpoint['model'].module.to(device)
 
     ## load data for my testing only
