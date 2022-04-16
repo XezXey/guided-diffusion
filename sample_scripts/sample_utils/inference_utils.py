@@ -250,13 +250,26 @@ class InputManipulate():
 
 def merge_cond(src_cond_params, dst_cond_params):
     '''
-    :params src_cond_params: src condition to merged in BxD
+    :params src_cond_params: src condition to merged in Bx
     :params dst_cond_params: dst condition to merged with in BxD
     '''
     merged = th.cat((src_cond_params.clone(), dst_cond_params.clone()), dim=0)
     return merged
 
-def interpolate_cond(base_cond_params, src_cond_params, dst_cond_params, n_step, params_loc, params_sel, itp_cond):
+def lerp(r, src, dst):
+    return ((1-r) * src) + (r * dst)
+
+def slerp(r, src, dst):
+    low = src.cpu().numpy()
+    high = dst.cpu().numpy()
+    val = r
+    omega = np.arccos(np.clip(np.dot(low/np.linalg.norm(low), high/np.linalg.norm(high)), -1, 1))
+    so = np.sin(omega)
+    if so == 0:
+        return th.tensor((1.0-val) * low + val * high) # L'Hopital's rule/LERP
+    return th.tensor(np.sin((1.0-val)*omega) / so * low + np.sin(val*omega) / so * high)
+
+def interpolate_cond(base_cond_params, src_cond_params, dst_cond_params, n_step, params_loc, params_sel, itp_cond, interp_fn=lerp):
     # Fixed the based-idx image
 
     r_interp = np.linspace(0, 1, num=n_step)
@@ -273,10 +286,28 @@ def interpolate_cond(base_cond_params, src_cond_params, dst_cond_params, n_step,
         dst = dst_cond_params[:, i:j]
         interp = []
         for r in r_interp:
-            tmp = ((1-r) * src) + (r * dst)
+            tmp = interp_fn(r=r, src=src, dst=dst)
             interp.append(tmp.clone())
 
         interp = th.cat((interp), dim=0)
         final_cond[:, i:j] = interp
+
+    return final_cond
+
+def interpolate_noise(base_noise, src_noise, dst_noise, n_step, interp_fn=lerp):
+    # Fixed the based-idx noise
+
+    print(base_noise.shape, src_noise.shape, dst_noise.shape)
+    r_interp = np.linspace(0, 1, num=n_step)
+
+    src = src_noise
+    dst = dst_noise
+    interp = []
+    for r in r_interp:
+        tmp = interp_fn(r=r, src=src, dst=dst)
+        interp.append(tmp.clone())
+
+    interp = th.cat((interp), dim=0)
+    final_cond = interp
 
     return final_cond
