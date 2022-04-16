@@ -297,7 +297,6 @@ def interpolate_cond(base_cond_params, src_cond_params, dst_cond_params, n_step,
 def interpolate_noise(base_noise, src_noise, dst_noise, n_step, interp_fn=lerp):
     # Fixed the based-idx noise
 
-    print(base_noise.shape, src_noise.shape, dst_noise.shape)
     r_interp = np.linspace(0, 1, num=n_step)
 
     src = src_noise

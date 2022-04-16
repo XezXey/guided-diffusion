@@ -1961,3 +1961,14 @@ sample_scripts/py/ddim_reverse_experiment/sampling_results/ddim_reverse/log=cond
 sample_scripts/py/ddim_reverse_experiment/sampling_results/ddim_reverse/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_500000/valid/pose/seed=23_bidx=15_itp=pose_src=12_dst=10.mp4
 sample_scripts/py/ddim_reverse_experiment/sampling_results/ddim_reverse/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_500000/valid/pose/seed=23_bidx=19_itc=pose_interpolate.png
 sample_scripts/py/ddim_reverse_experiment/sampling_results/ddim_reverse/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_500000/valid/pose/seed=23_bidx=19_itp=pose_src=12_dst=10.mp4
+sample_scripts/py/lighting_experiment/sampling_results/ddim_reverse/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_500000/valid/light/seed=23_bidx=0_itc=light_interpolate.png
+sample_scripts/py/lighting_experiment/sampling_results/ddim_reverse/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_500000/valid/light/seed=23_bidx=0_itp=light_src=0_dst=1.mp4
+sample_scripts/py/lighting_experiment/sampling_results/ddim_reverse/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_500000/valid/light/seed=23_bidx=1_itc=light_interpolate.png
+sample_scripts/py/lighting_experiment/sampling_results/ddim_reverse/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_500000/valid/light/seed=23_bidx=1_itp=light_src=0_dst=1.mp4
+sample_scripts/py/lighting_experiment/sampling_results/ddim_reverse/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_500000/valid/light/seed=23_bidx=2_itc=light_interpolate.png
+sample_scripts/py/lighting_experiment/sampling_results/ddim_reverse/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_500000/valid/light/seed=23_bidx=2_itc=light_reconstruction.png
+sample_scripts/py/lighting_experiment/sampling_results/ddim_reverse/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_500000/valid/light/seed=23_bidx=2_itp=light_src=0_dst=1.mp4
+sample_scripts/ipynb/animated_results/gg_fixed.mp4
+sample_scripts/ipynb/animated_results/gg.mp4
+sample_scripts/itw_images/aligned/60065.jpg
+sample_scripts/itw_images/aligned/60182.jpg
