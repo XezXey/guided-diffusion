@@ -140,8 +140,15 @@ if __name__ == '__main__':
                                                                         params_sel=im.cfg.param_model.params_selector, 
                                                                         itp_cond=interpolate)
 
+            interp_noise = inference_utils.interpolate_noise(src_noise=copy.deepcopy(reverse_ddim_sample['img_output'][b].flatten()), 
+                                                            dst_noise=copy.deepcopy(th.randn(reverse_ddim_sample['img_output'][b].flatten().shape)), 
+                                                            n_step=args.batch_size, 
+                                                            interp_fn=inference_utils.slerp)                                                                        
+
+            interp_noise = th.tensor(interp_noise.reshape((args.batch_size, 3, 64, 64))).cuda()
+
             pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
-            sample_ddim = pl_sampling(noise=th.cat([reverse_ddim_sample['img_output'][[b]]] * args.batch_size, dim=0), model_kwargs=itp_itw_kwargs)
+            sample_ddim = pl_sampling(noise=interp_noise, model_kwargs=itp_itw_kwargs)
             fig = vis_utils.plot_sample(img=sample_ddim['img_output'])
 
             tc_frames = sample_ddim['img_output'].detach().cpu().numpy()
@@ -153,5 +160,5 @@ if __name__ == '__main__':
                             model={args.log_dir}, seed={args.seed}, interpolate={args.interpolate}, base_idx={b}
                         """, x=0.1, y=0.95, horizontalalignment='left', verticalalignment='top',)
 
-            plt.savefig(f"{out_folder_interpolate}/seed={args.seed}_bidx={b}_itc={interpolate_str}_interpolate.png", bbox_inches='tight')
+            plt.savefig(f"{out_folder_interpolate}/seed={args.seed}_bidx={b}_itp={interpolate_str}_src={src_idx}_dst={dst_idx}_interpolate.png", bbox_inches='tight')
 

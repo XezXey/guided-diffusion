@@ -294,7 +294,7 @@ def interpolate_cond(base_cond_params, src_cond_params, dst_cond_params, n_step,
 
     return final_cond
 
-def interpolate_noise(base_noise, src_noise, dst_noise, n_step, interp_fn=lerp):
+def interpolate_noise(src_noise, dst_noise, n_step, interp_fn=lerp):
     # Fixed the based-idx noise
 
     r_interp = np.linspace(0, 1, num=n_step)
@@ -309,4 +309,30 @@ def interpolate_noise(base_noise, src_noise, dst_noise, n_step, interp_fn=lerp):
     interp = th.cat((interp), dim=0)
     final_cond = interp
 
+    return final_cond
+
+def modify_cond(mod_idx, cond_params, params_loc, params_sel, n_step, bound, mod_cond, force_zero=False):
+    '''
+    Manually change/scale the condition parameters at i-th index e.g. [c1, c2, c3, ..., cN] => [c1 * 2.0, c2, c3, ..., cN]
+    :params offset: offset to +- from condition
+
+    '''
+    # Fixed the based-idx image
+    mod_interp = np.linspace(-bound, bound, num=n_step)
+    mod_interp = np.stack([mod_interp]*len(mod_idx), axis=-1)
+    mod_interp = th.tensor(mod_interp).cuda()
+    params_selected_loc = params_loc
+    params_selector = params_sel
+
+    final_cond = cond_params.clone().repeat(n_step, 1)
+
+    for itp in mod_cond:
+        assert itp in params_selector
+        i, j = params_selected_loc[itp]
+        mod_idx = np.arange(i, j)[mod_idx]
+        if force_zero:
+            mod = (cond_params[:, mod_idx] * 0) + mod_interp
+        else:
+            mod = cond_params[:, mod_idx] + mod_interp
+        final_cond[:, mod_idx] = mod.float()
     return final_cond

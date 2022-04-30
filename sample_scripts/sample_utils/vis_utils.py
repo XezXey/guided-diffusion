@@ -5,7 +5,7 @@ from . import params_utils
 
 def plot_sample(img, **kwargs):
     columns = 6
-    rows = 15
+    rows = 17
     fig = plt.figure(figsize=(20, 20), dpi=100)
     img = img.permute(0, 2, 3, 1) # BxHxWxC
     pt = 0
