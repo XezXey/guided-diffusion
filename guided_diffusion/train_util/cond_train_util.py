@@ -191,19 +191,9 @@ class TrainLoop(LightningModule):
         :params cond: the condition dict e.g. ['cond_params'] in BXD; D is dimension of DECA, Latent, ArcFace, etc.
         '''
         self.zero_grad_trainer()
-        # print(cond['cond_params'].shape)
         self.forward_cond_network(dat, cond)
-        # print(cond['cond_params'].shape)
         self.forward_backward(dat, cond)
-        # print(cond['cond_params'].shape)
-        # print(self.model_trainer_dict.keys())
-        # b4_en = self.model_trainer_dict['ImgEncoder'].master_params[0][:1][:10].clone()
-        # b4_un = self.model_trainer_dict['ImgCond'].master_params[0][:1][:10].clone()
         took_step = self.optimize_trainer()
-        # after_en = self.model_trainer_dict['ImgEncoder'].master_params[0][:1][:10].clone()
-        # after_un = self.model_trainer_dict['ImgCond'].master_params[0][:1][:10].clone()
-        # print(b4_en, after_en)
-        # print(b4_un, after_un)
         self.took_step = took_step
 
     def training_step(self, batch, batch_idx):
