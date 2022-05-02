@@ -13,8 +13,6 @@ from torch.utils.data import DataLoader, Dataset
 from ..recolor_util import recolor as recolor
 import matplotlib.pyplot as plt
 from collections import defaultdict
-from model_3d.FLAME import FLAME
-import model_3d.FLAME.utils.util as util
 import model_3d.FLAME.utils.detectors as detectors
 from skimage.io import imread, imsave
 from skimage.transform import estimate_transform, warp, resize, rescale
@@ -134,35 +132,6 @@ def bbox2point(left, right, top, bottom, type='bbox'):
         raise NotImplementedError
     return old_size, center
 
-def kpt_cropped(img, detector='fan', crop_size=244, scale=1.25):
-    # image_config
-    img = np.array(img)
-    resolution_inp = crop_size
-
-    h, w, _ = img.shape
-    if detector == 'fan':
-        face_detector = detectors.FAN()
-
-    bbox, bbox_type = face_detector.run(img)
-    if len(bbox) < 4:
-        print('no face detected! run original image')
-        left = 0; right = h-1; top=0; bottom=w-1
-    else:
-        left = bbox[0]; right=bbox[2]
-        top = bbox[1]; bottom=bbox[3]
-
-    old_size, center = bbox2point(left, right, top, bottom, type=bbox_type)
-    size = int(old_size*scale)
-    src_pts = np.array([[center[0]-size/2, center[1]-size/2], [center[0] - size/2, center[1]+size/2], [center[0]+size/2, center[1]-size/2]])
-
-    DST_PTS = np.array([[0,0], [0,resolution_inp - 1], [resolution_inp - 1, 0]])
-    tform = estimate_transform('similarity', src_pts, DST_PTS)
-    
-    image = img/255.
-
-    dst_image = warp(image, tform.inverse, output_shape=(resolution_inp, resolution_inp))
-    return dst_image
-
 def _list_image_files_recursively(data_dir):
     results = []
     for entry in sorted(bf.listdir(data_dir)):
@@ -222,11 +191,6 @@ class DECADataset(Dataset):
         else : raise NotImplementedError
 
         return np.transpose(arr, [2, 0, 1]), out_dict
-
-    def detector(self, pil_image):
-        arr = kpt_cropped(pil_image, crop_size=self.resolution)
-        arr = arr * 255
-        return arr
 
     def augmentation(self, pil_image):
         # Resize image by resizing/cropping to match the resolution
