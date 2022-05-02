@@ -82,13 +82,12 @@ class ResBlockNormalCond(ResBlockCondition):
         self.emb_channels = emb_channels
         self.dropout = dropout
         self.out_channels = out_channels or channels
-        self.normals_channels = 9
+        self.normals_channels = normals_channels
         self.use_conv = use_conv
         self.condition_dim = condition_dim
         self.condition_proj_dim = condition_proj_dim
         self.use_checkpoint = use_checkpoint
         self.use_scale_shift_norm = use_scale_shift_norm
-        self.normals_channels = normals_channels
 
         self.out_layers = nn.Sequential(
             normalization(self.out_channels - self.normals_channels),
@@ -99,6 +98,8 @@ class ResBlockNormalCond(ResBlockCondition):
                 conv_nd(dims, self.out_channels, self.out_channels, 3, padding=1)
             ),
         )
+        print(self.out_layers)
+        exit()
 
     def forward(self, x, emb, cond):
         """
