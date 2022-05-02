@@ -129,17 +129,24 @@ class ResBlockNormalCond(ResBlockCondition):
         if self.use_scale_shift_norm:
             out_norm, normals_norm = self.out_layers[0], self.out_layers[1]
             out_rest = self.out_layers[2:]
+            print(out_rest)
             scale, shift = th.chunk(emb_out, 2, dim=1)
+
+            print(h[:, :self.out_channels-self.normals_channels, ...].shape)
+            print(h[:, self.out_channels-self.normals_channels:, ...].shape)
 
             h = th.cat((
                 out_norm(h[:, :self.out_channels-self.normals_channels, ...]), 
                 normals_norm(h[:, self.out_channels-self.normals_channels:, ...])
             ), dim=1)
             h = (h * (1 + scale) + shift) * cond[..., None, None].type(h.dtype)
+            print("b4 rest", h.shape)
             h = out_rest(h)
+            print("after rest", h.shape)
         else:
             h = h + emb_out
             h = self.out_layers(h)
+        print("DONE")
         return self.skip_connection(x) + h
 
 class UNetNormals(nn.Module):
@@ -336,7 +343,7 @@ class UNetNormals(nn.Module):
                 
                 if level == 0 and i == num_res_blocks:
                     # Add the normals to last layers
-                    # print("ADD normal")
+                    print("ADD normal")
                     layers = [
                         ResBlockNormalCond(
                             ch + ich,
@@ -415,8 +422,8 @@ class UNetNormals(nn.Module):
                     )
                     ds //= 2
                 self.output_blocks.append(time_embed_seq_module(*layers))
-                # print(i, layers)
-                # print("*"*100)
+                print(i, layers)
+                print("*"*100)
                 self._feature_size += ch
 
 
