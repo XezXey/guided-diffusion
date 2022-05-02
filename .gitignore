@@ -1,7 +1,6 @@
 .DS_Store
 __pycache__/
 lightning_logs
-models/
 lightning_logs/
 tb_logs/
 logs/
