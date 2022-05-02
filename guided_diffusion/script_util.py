@@ -116,6 +116,9 @@ def create_model(cfg):
             use_scale_shift_norm=cfg.use_scale_shift_norm,
             resblock_updown=cfg.resblock_updown,
             use_new_attention_order=cfg.use_new_attention_order,
+            condition_dim=cfg.condition_dim,
+            condition_proj_dim=cfg.condition_proj_dim,
+            conditioning=cfg.conditioning,
         )
 
     elif cfg.arch == 'UNetCond':
