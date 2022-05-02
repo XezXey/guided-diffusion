@@ -98,8 +98,6 @@ class ResBlockNormalCond(ResBlockCondition):
                 conv_nd(dims, self.out_channels, self.out_channels, 3, padding=1)
             ),
         )
-        print(self.out_layers)
-        exit()
 
     def forward(self, x, emb, cond):
         """
@@ -130,24 +128,24 @@ class ResBlockNormalCond(ResBlockCondition):
         if self.use_scale_shift_norm:
             out_norm, normals_norm = self.out_layers[0], self.out_layers[1]
             out_rest = self.out_layers[2:]
-            print(out_rest)
+            # print(out_rest)
             scale, shift = th.chunk(emb_out, 2, dim=1)
 
-            print(h[:, :self.out_channels-self.normals_channels, ...].shape)
-            print(h[:, self.out_channels-self.normals_channels:, ...].shape)
+            # print(h[:, :self.out_channels-self.normals_channels, ...].shape)
+            # print(h[:, self.out_channels-self.normals_channels:, ...].shape)
 
             h = th.cat((
                 out_norm(h[:, :self.out_channels-self.normals_channels, ...]), 
                 normals_norm(h[:, self.out_channels-self.normals_channels:, ...])
             ), dim=1)
             h = (h * (1 + scale) + shift) * cond[..., None, None].type(h.dtype)
-            print("b4 rest", h.shape)
+            # print("b4 rest", h.shape)
             h = out_rest(h)
-            print("after rest", h.shape)
+            # print("after rest", h.shape)
         else:
             h = h + emb_out
             h = self.out_layers(h)
-        print("DONE")
+        # print("DONE")
         return self.skip_connection(x) + h
 
 class UNetNormals(nn.Module):
@@ -357,7 +355,6 @@ class UNetNormals(nn.Module):
                             condition_dim=condition_dim,
                             condition_proj_dim=condition_proj_dim,
                             normals_channels=normals_channels
-
                         )
                     ]
                     ch = int(model_channels * mult) + normals_channels
