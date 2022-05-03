@@ -18,13 +18,13 @@ class Renderer():
     def add_SHlight(self, normal_images, sh_coeff, reduce=True):
         """
         Apply the SH to normals(features map)
-        :param h: normals(features map) in B x #C_Normals x H xW
-        :param sh_coeff: SH lighting condition in B x 27
-        :param reduce: reducing the added SH in to shading image
-
+        :param h: normals(features map) in [B x #C_Normals x H xW]
+        :param sh_coeff: SH lighting condition in [B x 27]
+        :param reduce: 
+            - True : reducing the added SH in to shaded image [B x 3 x H x W]
+            - False : Non-reducing into shaded image [B x 27 x H x W]
         """
         N = normal_images
-        print(sh_coeff.shape)
         assert sh_coeff.shape == (N.shape[0], 27)
         sh_coeff = sh_coeff.reshape(N.shape[0], 9, 3)
         sh = th.stack([
@@ -42,11 +42,8 @@ class Renderer():
         sh = sh.type_as(N) * self.constant_factor[None, :, None, None].type_as(N)
         if reduce:
             shading = th.sum(sh_coeff[:, :, :, None, None] * sh[:, :, None, :, :], 1)
-            print((sh_coeff[:, :, :, None, None] * sh[:, :, None, :, :]).shape)
-            print(shading.shape)
-            return shading
         else:
             shading = sh_coeff[:, :, :, None, None] * sh[:, :, None, :, :]
-            print(shading.shape)
             shading = th.flatten(shading, start_dim=1, end_dim=2)
-            print(shading.shape)
+
+        return shading
