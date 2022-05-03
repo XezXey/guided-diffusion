@@ -8,6 +8,7 @@ import numpy as np
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
+from .renderer import Renderer
 
 from ..trainer_util import convert_module_to_f16, convert_module_to_f32
 from .nn import (
@@ -88,6 +89,7 @@ class ResBlockNormalCond(ResBlockCondition):
         self.condition_proj_dim = condition_proj_dim
         self.use_checkpoint = use_checkpoint
         self.use_scale_shift_norm = use_scale_shift_norm
+        self.renderer = Renderer()
 
         self.out_layers = nn.Sequential(
             normalization(self.out_channels - self.normals_channels),
@@ -121,32 +123,33 @@ class ResBlockNormalCond(ResBlockCondition):
         else:
             h = self.in_layers(x)
         emb_out = self.emb_layers(emb).type(h.dtype)
-        cond = self.cond_proj_layers(cond.type(h.dtype))
+        cond_proj = self.cond_proj_layers(cond.type(h.dtype))
 
         while len(emb_out.shape) < len(h.shape):
             emb_out = emb_out[..., None]
         if self.use_scale_shift_norm:
             out_norm, normals_norm = self.out_layers[0], self.out_layers[1]
             out_rest = self.out_layers[2:]
-            # print(out_rest)
             scale, shift = th.chunk(emb_out, 2, dim=1)
-
-            # print(h[:, :self.out_channels-self.normals_channels, ...].shape)
-            # print(h[:, self.out_channels-self.normals_channels:, ...].shape)
-
             h = th.cat((
                 out_norm(h[:, :self.out_channels-self.normals_channels, ...]), 
                 normals_norm(h[:, self.out_channels-self.normals_channels:, ...])
             ), dim=1)
-            h = (h * (1 + scale) + shift) * cond[..., None, None].type(h.dtype)
+            # Apply scale_shift_norm
+            h = (h * (1 + scale) + shift)
+            # Apply condition
+            h_cond = h[:, :self.out_channels-self.normals_channels] * cond_proj[:, :self.out_channels-self.normals_channels, None, None].type(h.dtype)
+            # Apply relighting
+            h_normals = self.renderer.add_SHlight(normal_images=h[:, self.out_channels-self.normals_channels:, ...], sh_coeff=cond, reduce=True)
+
             # print("b4 rest", h.shape)
             h = out_rest(h)
             # print("after rest", h.shape)
         else:
             h = h + emb_out
             h = self.out_layers(h)
-        # print("DONE")
         return self.skip_connection(x) + h
+
 
 class UNetNormals(nn.Module):
     """
@@ -224,6 +227,7 @@ class UNetNormals(nn.Module):
         self.conditioning = conditioning
         self.condition_dim = condition_dim
         self.condition_proj_dim = condition_proj_dim
+        self.renderer = Renderer()
 
         time_embed_dim = model_channels * 4
         self.time_embed = nn.Sequential(
