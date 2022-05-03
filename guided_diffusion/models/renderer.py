@@ -44,10 +44,9 @@ class Renderer():
             shading = th.sum(sh_coeff[:, :, :, None, None] * sh[:, :, None, :, :], 1)
             print((sh_coeff[:, :, :, None, None] * sh[:, :, None, :, :]).shape)
             print(shading.shape)
+            return shading
         else:
             shading = sh_coeff[:, :, :, None, None] * sh[:, :, None, :, :]
             print(shading.shape)
             shading = th.flatten(shading, start_dim=1, end_dim=2)
             print(shading.shape)
-
-        exit()

@@ -141,6 +141,9 @@ class ResBlockNormalCond(ResBlockCondition):
             h_cond = h[:, :self.out_channels-self.normals_channels] * cond_proj[:, :self.out_channels-self.normals_channels, None, None].type(h.dtype)
             # Apply relighting
             h_normals = self.renderer.add_SHlight(normal_images=h[:, self.out_channels-self.normals_channels:, ...], sh_coeff=cond, reduce=True)
+            print(h_cond.shape, h_normals.shape)
+            # exit()
+            h = th.cat((h_cond, h_normals, h_normals, h_normals), dim=1).float()
 
             # print("b4 rest", h.shape)
             h = out_rest(h)
