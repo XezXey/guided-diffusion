@@ -2,7 +2,7 @@ import numpy as np
 import torch as th
 
 class Renderer():
-    def __init__(self):
+    def __init__(self, num_SH, reduce_shading):
         ## SH factors for lighting
         pi = np.pi
         self.constant_factor = th.tensor([1/np.sqrt(4*pi), 
@@ -14,8 +14,14 @@ class Renderer():
                                         (pi/4)*(3)*(np.sqrt(5/(12*pi))), 
                                         (pi/4)*(3/2)*(np.sqrt(5/(12*pi))), 
                                         (pi/4)*(1/2)*(np.sqrt(5/(4*pi)))]).float()
+        self.reduce_shading = reduce_shading
+        self.num_SH = num_SH
+        if self.reduce_shading:
+            self.shading_channels = 3
+        else:
+            self.shading_channels = int(self.num_SH * 3)
 
-    def add_SHlight(self, normal_images, sh_coeff, reduce=True):
+    def add_SHlight(self, normal_images, sh_coeff):
         """
         Apply the SH to normals(features map)
         :param h: normals(features map) in [B x #C_Normals x H xW]
@@ -40,7 +46,7 @@ class Renderer():
                 ], 
                 1) # [bz, 9, h, w]
         sh = sh.type_as(N) * self.constant_factor[None, :, None, None].type_as(N)
-        if reduce:
+        if self.reduce_shading:
             shading = th.sum(sh_coeff[:, :, :, None, None] * sh[:, :, None, :, :], 1)
         else:
             shading = sh_coeff[:, :, :, None, None] * sh[:, :, None, :, :]

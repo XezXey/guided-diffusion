@@ -24,7 +24,7 @@ def create_deca_and_diffusion(cfg):
     return param_model, diffusion
 
 def create_img_and_diffusion(cfg):
-    img_model = create_model(cfg.img_model)
+    img_model = create_model(cfg.img_model, all_cfg=cfg)
     if cfg.img_cond_model.apply:
         img_cond_model = create_model(cfg.img_cond_model)
     else: img_cond_model = None
@@ -62,7 +62,7 @@ def create_param_model(cfg, cfg_cond=None):
             )
         else: raise NotImplementedError
 
-def create_model(cfg):
+def create_model(cfg, all_cfg=None):
     if cfg.channel_mult == "":
         if cfg.image_size == 512:
             channel_mult = (0.5, 1, 1, 2, 2, 4, 4)
@@ -119,6 +119,7 @@ def create_model(cfg):
             condition_dim=cfg.condition_dim,
             condition_proj_dim=cfg.condition_proj_dim,
             conditioning=cfg.conditioning,
+            all_cfg=all_cfg,
         )
 
     elif cfg.arch == 'UNetCond':

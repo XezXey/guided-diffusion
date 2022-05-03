@@ -96,7 +96,6 @@ def normalization(channels, n_group=32):
     :param channels: number of input channels.
     :return: an nn.Module for normalization.
     """
-    print(channels, n_group)
     return GroupNorm(n_group, channels)
 
 

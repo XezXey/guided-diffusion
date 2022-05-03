@@ -313,11 +313,16 @@ class TrainLoop(LightningModule):
         tb = self.tb_logger.experiment
         H = W = self.cfg.img_model.image_size
         n = self.cfg.train.n_sampling
+
+        dat, cond = batch
+
+        if n > dat.shape[0]:
+            n = dat.shape[0]
+
         r_idx = np.random.choice(a=np.arange(0, self.batch_size), size=n, replace=False,)
 
         noise = th.randn((n, 3, H, W)).cuda()
 
-        dat, cond = batch
 
         if self.cfg.img_cond_model.apply:
             self.forward_cond_network(dat=dat, cond=cond)

@@ -1153,7 +1153,7 @@ class ResBlockCondition(TimestepBlockCond):
             # print("[#] h : ", h.shape)
             # print("[#] emb_out : ", emb_out.shape)
             # print("[#] cond : ", cond.shape)
-            cond = self.cond_proj_layers(cond.type(h.dtype))
+            cond_proj = self.cond_proj_layers(cond['cond_params'].type(h.dtype))
             # print("[#] proj_cond : ", cond.shape)
 
             while len(emb_out.shape) < len(h.shape):
@@ -1165,7 +1165,7 @@ class ResBlockCondition(TimestepBlockCond):
                 # print((out_norm(h) * (1 + scale) + shift).shape)
                 # h = (out_norm(h) * (1 + scale) + shift) * cond.view(cond.shape[0], cond.shape[1], 1, 1).type(h.dtype)
                 # print(cond[..., None, None].shape)
-                h = (out_norm(h) * (1 + scale) + shift) * cond[..., None, None].type(h.dtype)
+                h = (out_norm(h) * (1 + scale) + shift) * cond_proj[..., None, None].type(h.dtype)
                 h = out_rest(h)
                 # print("[#] OUT SCALE FROM SHIFT NORM : ", h.shape)
                 # print("##")

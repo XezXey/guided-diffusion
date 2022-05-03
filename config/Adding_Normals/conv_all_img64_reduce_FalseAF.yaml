@@ -9,7 +9,13 @@ img_model:
   condition_proj_dim: 512
 
 param_model:
-  params_selector: ['light']
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
+  rmv_params: ['light']
+
+relighting:
+  reduce_shading: True
+  arch: 'use_conv_all'
+  apply_first: False
 
 dataset:
   deca_dir: "/data/mint/ffhq_256_with_anno"

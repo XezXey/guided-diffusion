@@ -56,7 +56,7 @@ class ResBlockNormalCond(TimestepBlockCond):
         dropout,
         condition_dim,
         condition_proj_dim,
-        normals_channels,
+        renderer,
         out_channels=None,
         use_conv=False,
         use_scale_shift_norm=False,
@@ -64,24 +64,25 @@ class ResBlockNormalCond(TimestepBlockCond):
         use_checkpoint=False,
         up=False,
         down=False,
+        **kwargs,
     ):
         super().__init__()
         self.channels = channels
         self.emb_channels = emb_channels
         self.dropout = dropout
         self.out_channels = out_channels or channels
-        self.normals_channels = normals_channels
         self.use_conv = use_conv
         self.condition_dim = condition_dim
         self.condition_proj_dim = condition_proj_dim
         self.use_checkpoint = use_checkpoint
         self.use_scale_shift_norm = use_scale_shift_norm
-        self.renderer = Renderer()
+        self.renderer = renderer
+        self.num_SH = self.renderer.num_SH 
 
         self.in_layers = nn.Sequential(
             normalization(channels),
             nn.SiLU(),
-            conv_nd(dims, channels, self.out_channels + self.normals_channels, 3, padding=1),
+            conv_nd(dims, channels, self.out_channels + self.num_SH, 3, padding=1),
         )
 
         self.cond_proj_layers = nn.Sequential(
@@ -108,32 +109,30 @@ class ResBlockNormalCond(TimestepBlockCond):
             nn.SiLU(),
             linear(
                 emb_channels,
-                2 * (self.out_channels + self.normals_channels) if use_scale_shift_norm else self.out_channels,
+                2 * (self.out_channels + self.num_SH) if use_scale_shift_norm else self.out_channels,
             ),
         )
 
+        shading_channels = self.renderer.shading_channels
         self.out_layers = nn.Sequential(
             normalization(self.out_channels),
-            normalization(self.normals_channels, n_group=self.normals_channels),
+            normalization(self.num_SH, n_group=self.num_SH),
             nn.SiLU(),
             nn.Dropout(p=dropout),
             zero_module(
-                conv_nd(dims, self.out_channels + 3, self.out_channels + 3, 3, padding=1)
+                conv_nd(dims, self.out_channels + shading_channels, self.out_channels + shading_channels, 3, padding=1)
             ),
         )
 
-        print(self.out_channels, channels)
         if self.out_channels == channels:
-            print("IDEN")
             self.skip_connection = nn.Identity()
-        elif not use_conv:
-            print("use_conv")
+        elif use_conv:
             self.skip_connection = conv_nd(
-                dims, channels, self.out_channels + 3, 3, padding=1
+                dims, channels, self.out_channels + shading_channels, 3, padding=1
             )
         else:
-            print("no use_conv")
-            self.skip_connection = conv_nd(dims, channels, self.out_channels + 3, 1)
+            self.skip_connection = conv_nd(dims, channels, self.out_channels + shading_channels, 1)
+
 
     def forward(self, x, emb, cond):
         """
@@ -158,9 +157,9 @@ class ResBlockNormalCond(TimestepBlockCond):
             h = self.in_layers(x)
         emb_out = self.emb_layers(emb).type(h.dtype)
 
-        print("cond", cond.shape)
-        cond_proj = self.cond_proj_layers(cond.type(h.dtype))
-        print("cond_proj", cond_proj.shape)
+        # print("cond", cond['cond_params'].shape)
+        cond_proj = self.cond_proj_layers(cond['cond_params'].type(h.dtype))
+        # print("cond_proj", cond_proj.shape)
 
         while len(emb_out.shape) < len(h.shape):
             emb_out = emb_out[..., None]
@@ -168,20 +167,179 @@ class ResBlockNormalCond(TimestepBlockCond):
             out_norm, normals_norm = self.out_layers[0], self.out_layers[1]
             out_rest = self.out_layers[2:]
             scale, shift = th.chunk(emb_out, 2, dim=1)
-            print(h.shape)
-            print(out_norm(h[:, :self.out_channels, ...]).shape)
-            print(normals_norm(h[:, self.out_channels:, ...]).shape)
+            # print(h.shape)
+            # print(out_norm(h[:, :self.out_channels, ...]).shape)
+            # print(normals_norm(h[:, self.out_channels:, ...]).shape)
             h = th.cat((
                 out_norm(h[:, :self.out_channels, ...]), 
                 normals_norm(h[:, self.out_channels:, ...])
             ), dim=1)
             # Apply scale_shift_norm
-            print(scale.shape, shift.shape)
             h = (h * (1 + scale) + shift)
             # Apply condition
             h_cond = h[:, :self.out_channels] * cond_proj[:, :, None, None].type_as(h)
             # Apply relighting
-            h_normals = self.renderer.add_SHlight(normal_images=h[:, self.out_channels:, ...], sh_coeff=cond, reduce=True)
+            h_normals = self.renderer.add_SHlight(normal_images=h[:, self.out_channels:, ...], sh_coeff=cond['light'])
+
+            h = th.cat((h_cond, h_normals), dim=1).float()
+            h = out_rest(h)
+        else:
+            h = h + emb_out
+            h = self.out_layers(h)
+        return self.skip_connection(x) + h
+
+class ResBlockNormalCondConv(TimestepBlockCond):
+    """
+    A residual block that can optionally change the number of channels.
+
+    :param channels: the number of input channels.
+    :param emb_channels: the number of timestep embedding channels.
+    :param dropout: the rate of dropout.
+    :param out_channels: if specified, the number of out channels.
+    :param use_conv: if True and out_channels is specified, use a spatial
+        convolution instead of a smaller 1x1 convolution to change the
+        channels in the skip connection.
+    :param dims: determines if the signal is 1D, 2D, or 3D.
+    :param use_checkpoint: if True, use gradient checkpointing on this module.
+    :param up: if True, use this block for upsampling.
+    :param down: if True, use this block for downsampling.
+    """
+
+    def __init__(
+        self,
+        channels,
+        emb_channels,
+        dropout,
+        condition_dim,
+        condition_proj_dim,
+        renderer,
+        apply_first,
+        out_channels=None,
+        use_conv=False,
+        use_scale_shift_norm=False,
+        dims=2,
+        use_checkpoint=False,
+        up=False,
+        down=False,
+    ):
+        super().__init__()
+        self.channels = channels
+        self.emb_channels = emb_channels
+        self.dropout = dropout
+        self.out_channels = out_channels or channels
+        self.use_conv = use_conv
+        self.condition_dim = condition_dim
+        self.condition_proj_dim = condition_proj_dim
+        self.use_checkpoint = use_checkpoint
+        self.use_scale_shift_norm = use_scale_shift_norm
+        self.renderer = renderer
+        self.num_SH = self.renderer.num_SH 
+        self.apply_first = apply_first
+
+        self.in_layers = nn.Sequential(
+            normalization(channels),
+            nn.SiLU(),
+            conv_nd(dims, channels, self.out_channels, 3, padding=1),
+        )
+
+        self.cond_proj_layers = nn.Sequential(
+            nn.Linear(self.condition_dim, self.condition_proj_dim),
+            nn.SiLU(),
+            nn.Linear(self.condition_proj_dim, self.condition_proj_dim),
+            nn.SiLU(),
+            nn.Linear(self.condition_proj_dim, self.out_channels),
+            nn.SiLU(),
+        )
+
+        self.updown = up or down
+
+        if up:
+            self.h_upd = Upsample(channels, False, dims)
+            self.x_upd = Upsample(channels, False, dims)
+        elif down:
+            self.h_upd = Downsample(channels, False, dims)
+            self.x_upd = Downsample(channels, False, dims)
+        else:
+            self.h_upd = self.x_upd = nn.Identity()
+
+        self.emb_layers = nn.Sequential(
+            nn.SiLU(),
+            linear(
+                emb_channels,
+                2 * (self.out_channels) if use_scale_shift_norm else self.out_channels,
+            ),
+        )
+
+        shading_channels = self.renderer.shading_channels
+        self.conv_normals = conv_nd(dims, self.out_channels, self.num_SH, 3, padding=1)
+        self.out_layers = nn.Sequential(
+            normalization(self.out_channels),
+            normalization(self.num_SH, n_group=self.num_SH),
+            nn.SiLU(),
+            nn.Dropout(p=dropout),
+            zero_module(
+                conv_nd(dims, self.out_channels + shading_channels, self.out_channels + shading_channels, 3, padding=1)
+            ),
+        )
+
+        if self.out_channels == channels:
+            self.skip_connection = nn.Identity()
+        elif use_conv:
+            self.skip_connection = conv_nd(
+                dims, channels, self.out_channels + shading_channels, 3, padding=1
+            )
+        else:
+            self.skip_connection = conv_nd(dims, channels, self.out_channels + shading_channels, 1)
+
+
+    def forward(self, x, emb, cond):
+        """
+        Apply the block to a Tensor, conditioned on a timestep embedding.
+
+        :param x: an [N x C x ...] Tensor of features.
+        :param emb: an [N x emb_channels] Tensor of timestep embeddings.
+        :return: an [N x C x ...] Tensor of outputs.
+        """
+        return checkpoint(
+            self._forward, (x, emb, cond), self.parameters(), self.use_checkpoint
+        )
+
+    def _forward(self, x, emb, cond):
+        if self.updown:
+            in_rest, in_conv = self.in_layers[:-1], self.in_layers[-1]
+            h = in_rest(x)
+            h = self.h_upd(h)
+            x = self.x_upd(x)
+            h = in_conv(h)
+        else:
+            h = self.in_layers(x)
+        emb_out = self.emb_layers(emb).type(h.dtype)
+
+        # print("cond", cond['cond_params'].shape)
+        cond_proj = self.cond_proj_layers(cond['cond_params'].type(h.dtype))
+        # print("cond_proj", cond_proj.shape)
+
+        while len(emb_out.shape) < len(h.shape):
+            emb_out = emb_out[..., None]
+        if self.use_scale_shift_norm:
+            out_norm, normals_norm = self.out_layers[0], self.out_layers[1]
+            out_rest = self.out_layers[2:]
+            scale, shift = th.chunk(emb_out, 2, dim=1)
+            # print(h.shape)
+            # print(out_norm(h[:, :self.out_channels, ...]).shape)
+            # print(normals_norm(h[:, self.out_channels:, ...]).shape)
+            h = out_norm(h)
+            # Apply scale_shift_norm
+            h = (h * (1 + scale) + shift)
+            # Apply condition
+            h_cond = h * cond_proj[:, :, None, None].type_as(h)
+            # Apply relighting
+            if self.apply_first:
+                h_normals = self.conv_normals(h_cond)
+            else:
+                h_normals = self.conv_normals(h)
+            h_normals = normals_norm(h_normals)
+            h_normals = self.renderer.add_SHlight(normal_images=h_normals, sh_coeff=cond['light'])
 
             h = th.cat((h_cond, h_normals), dim=1).float()
             h = out_rest(h)
@@ -244,6 +402,7 @@ class UNetNormals(nn.Module):
         conditioning=False,
         condition_dim=0,
         condition_proj_dim=0,
+        all_cfg=None,
     ):
         super().__init__()
 
@@ -267,7 +426,11 @@ class UNetNormals(nn.Module):
         self.conditioning = conditioning
         self.condition_dim = condition_dim
         self.condition_proj_dim = condition_proj_dim
-        self.renderer = Renderer()
+
+        # Relighting
+        self.num_SH = all_cfg.relighting.num_SH
+        self.reduce_shading = all_cfg.relighting.reduce_shading
+        self.renderer = Renderer(num_SH=self.num_SH, reduce_shading=self.reduce_shading)
 
         time_embed_dim = model_channels * 4
         self.time_embed = nn.Sequential(
@@ -276,7 +439,11 @@ class UNetNormals(nn.Module):
             linear(time_embed_dim, time_embed_dim),
         )
         resblock_module = ResBlock if not self.conditioning else ResBlockCondition
-        time_embed_seq_module = TimestepEmbedSequential if not self.conditioning else TimestepEmbedSequentialCond 
+        time_embed_seq_module = TimestepEmbedSequential if not self.conditioning else TimestepEmbedSequentialCond
+        if all_cfg.relighting.arch == 'add_channels':
+            resblock_normals_module = ResBlockNormalCond
+        elif all_cfg.relighting.arch == 'use_conv_all':
+            resblock_normals_module = ResBlockNormalCondConv
 
         ch = input_ch = int(channel_mult[0] * model_channels)
         self.input_blocks = nn.ModuleList(
@@ -372,7 +539,6 @@ class UNetNormals(nn.Module):
         )
         self._feature_size += ch
 
-        normals_channels = 9
         self.output_blocks = nn.ModuleList([])
         for level, mult in list(enumerate(channel_mult))[::-1]:
             for i in range(num_res_blocks + 1):
@@ -386,9 +552,9 @@ class UNetNormals(nn.Module):
                 
                 if level == 0 and i == num_res_blocks:
                     # Add the normals to last layers
-                    print("ADD normal")
+                    # print("ADD normal")
                     layers = [
-                        ResBlockNormalCond(
+                        resblock_normals_module(
                             ch + ich,
                             time_embed_dim,
                             dropout,
@@ -398,10 +564,12 @@ class UNetNormals(nn.Module):
                             use_scale_shift_norm=use_scale_shift_norm,
                             condition_dim=condition_dim,
                             condition_proj_dim=condition_proj_dim,
-                            normals_channels=normals_channels
+                            renderer=self.renderer,
+                            apply_first=all_cfg.relighting.apply_first,
+                            use_conv=True,
                         )
                     ]
-                    ch = int(model_channels * mult) + normals_channels
+                    ch = int(model_channels * mult) + self.num_SH 
                     if ds in attention_resolutions:
                         layers.append(
                             AttentionBlock(
@@ -468,20 +636,18 @@ class UNetNormals(nn.Module):
                 print("*"*100)
                 self._feature_size += ch
 
-        reduce = True
-        if reduce:
-            normals = int(normals_channels/3)
+        shading_channels = self.renderer.shading_channels
         self.out = nn.Sequential(
             normalization(channels=input_ch),
-            normalization(channels=normals, n_group=normals),
+            normalization(channels=shading_channels, n_group=shading_channels),
             nn.SiLU(),
-            zero_module(conv_nd(dims, input_ch + normals, out_channels, 3, padding=1)),
+            zero_module(conv_nd(dims, input_ch + shading_channels, out_channels, 3, padding=1)),
         )
 
         # print(self.input_blocks)
         # print(self.middle_block)
         # print(self.output_blocks)
-        print(self.out)
+        # print(self.out)
         
 
     def convert_to_fp16(self):
@@ -511,20 +677,18 @@ class UNetNormals(nn.Module):
         hs = []
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
 
-
         h = x.type(self.dtype)
         for module in self.input_blocks:
-            h = module(h, emb, condition=kwargs['cond_params'])
+            h = module(h, emb, condition=kwargs)
             hs.append(h)
-        h = self.middle_block(h, emb, condition=kwargs['cond_params'])
+        h = self.middle_block(h, emb, condition=kwargs)
         for module in self.output_blocks:
             h = th.cat([h, hs.pop()], dim=1)
-            h = module(h, emb, condition=kwargs['cond_params'])
-        h = h.type(x.dtype)\
+            h = module(h, emb, condition=kwargs)
+        h = h.type(x.dtype)
         
-        print("final : ", h.shape)
-
-        h_norm, normals_norm = self.out[0](h[:, 0:128, ...]), self.out[1](h[:, 128:, ...])
+        ch = int(self.channel_mult[0] * self.model_channels)
+        h_norm, normals_norm = self.out[0](h[:, :ch, ...]), self.out[1](h[:, ch:, ...])
         out = self.out[2:](th.cat((h_norm, normals_norm), dim=1))
 
         return {'output':out}

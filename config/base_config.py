@@ -26,6 +26,7 @@ cfg.device_id = '0'
 cfg.param_model = CN()
 cfg.param_model.name = "Deca"
 cfg.param_model.params_selector = ['shape', 'pose', 'exp', 'cam']
+cfg.param_model.rmv_params = []
 cfg.param_model.n_shape = 100
 cfg.param_model.n_pose = 6
 cfg.param_model.n_exp = 50
@@ -105,6 +106,15 @@ cfg.img_cond_model.resblock_updown = True
 cfg.img_cond_model.use_new_attention_order = False
 cfg.img_cond_model.pool = 'attention'
 
+# ---------------------------------------------------------------------------- #
+# Options for relighting
+# ---------------------------------------------------------------------------- #
+cfg.relighting = CN()
+cfg.relighting.reduce_shading = True
+cfg.relighting.num_SH = 9
+cfg.relighting.apply_first = True
+cfg.relighting.arch = 'add_channels'
+
 
 
 # ---------------------------------------------------------------------------- #
@@ -139,8 +149,6 @@ cfg.train.deterministic = True
 cfg.inference = CN()
 cfg.inference.exc_params = [None]
 
-
-
 # ---------------------------------------------------------------------------- #
 # Options for diffusion 
 # ---------------------------------------------------------------------------- #
@@ -156,7 +164,6 @@ cfg.diffusion.rescale_timesteps = False
 cfg.diffusion.rescale_learned_sigmas = False
 cfg.diffusion.timestep_respacing = ""
 cfg.diffusion.clip_denoised = True
-
 
 
 def get_cfg_defaults():
@@ -214,7 +221,10 @@ def update_params(cfg):
         params_dict.update(latent_dict)
 
     for param in cfg.param_model.params_selector:
-        cfg.param_model.n_params.append(params_dict[param])
+        if param in cfg.param_model.rmv_params:
+            continue
+        else:
+            cfg.param_model.n_params.append(params_dict[param])
 
     # Replace with updated n_params from params_selector
     cfg.param_model.in_channels = sum(cfg.param_model.n_params)

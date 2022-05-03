@@ -51,13 +51,6 @@ def load_deca_params(deca_dir):
     
     deca_params = swap_key(deca_params)
 
-    # deca uv_detail_normals
-    uv_detail_normals_path = glob.glob(f'{deca_dir}/uv_detail_normals/train/*.png')
-    for path in tqdm.tqdm(uv_detail_normals_path, desc="Loading uv_detail_normals"):
-        img_name = path.split('/')[-1].split('_')[-1]
-        img_name_ext = img_name.replace('.png', '.jpg')
-        deca_params[img_name_ext]['uv_detail_normals'] = path
-
     return deca_params
 
 def load_data_img_deca(
@@ -67,6 +60,7 @@ def load_data_img_deca(
     batch_size,
     image_size,
     params_selector,
+    rmv_params,
     deterministic=False,
     resize_mode="resize",
     augment_mode=None,
@@ -104,6 +98,7 @@ def load_data_img_deca(
         deca_params=deca_params,
         in_image=in_image,
         params_selector=params_selector,
+        rmv_params=rmv_params
     )
 
     if deterministic:
@@ -119,19 +114,6 @@ def load_data_img_deca(
     while True:
         return loader
 
-def bbox2point(left, right, top, bottom, type='bbox'):
-    ''' bbox from detector and landmarks are different
-    '''
-    if type=='kpt68':
-        old_size = (right - left + bottom - top)/2*1.1
-        center = np.array([right - (right - left) / 2.0, bottom - (bottom - top) / 2.0 ])
-    elif type=='bbox':
-        old_size = (right - left + bottom - top)/2
-        center = np.array([right - (right - left) / 2.0, bottom - (bottom - top) / 2.0  + old_size*0.12])
-    else:
-        raise NotImplementedError
-    return old_size, center
-
 def _list_image_files_recursively(data_dir):
     results = []
     for entry in sorted(bf.listdir(data_dir)):
@@ -143,7 +125,6 @@ def _list_image_files_recursively(data_dir):
             results.extend(_list_image_files_recursively(full_path))
     return results
 
-
 class DECADataset(Dataset):
     def __init__(
         self,
@@ -153,6 +134,7 @@ class DECADataset(Dataset):
         augment_mode,
         deca_params,
         params_selector,
+        rmv_params,
         in_image='raw',
     ):
         super().__init__()
@@ -163,6 +145,7 @@ class DECADataset(Dataset):
         self.deca_params = deca_params
         self.in_image = in_image
         self.params_selector = params_selector
+        self.rmv_params = rmv_params
 
     def __len__(self):
         return len(self.local_images)
@@ -180,10 +163,12 @@ class DECADataset(Dataset):
 
         # Deca params of img-path
         out_dict = {}
-        precomp_params_key = without(src=self.params_selector, rmv=['img_latent'])
+        precomp_params_key = without(src=self.params_selector, rmv=['img_latent'] + self.rmv_params)
 
         img_name = path.split('/')[-1]
         out_dict["cond_params"] = np.concatenate([self.deca_params[img_name][k] for k in precomp_params_key])
+        for k in self.params_selector:
+            out_dict[k] = self.deca_params[img_name][k]
 
         # Input to model
         if self.in_image == 'raw':

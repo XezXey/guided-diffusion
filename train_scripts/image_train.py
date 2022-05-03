@@ -42,6 +42,7 @@ def main():
         resize_mode=cfg.img_model.resize_mode,
         in_image=cfg.img_model.in_image,
         params_selector=cfg.param_model.params_selector,
+        rmv_params=cfg.param_model.rmv_params,
     )
 
     logger.log("training...")
