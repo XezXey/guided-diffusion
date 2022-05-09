@@ -64,7 +64,7 @@ class TrainLoop(LightningModule):
             logger=self.tb_logger,
             log_every_n_steps=self.cfg.train.log_interval,
             max_epochs=1e6,
-            accelerator='gpu',
+            accelerator=cfg.train.accelerator,
             profiler='simple',
             strategy=DDPStrategy(find_unused_parameters=False)
             )

@@ -811,89 +811,6 @@ class GaussianDiffusion:
         output = th.where((t == 0), decoder_nll, kl)
         return {"output": output, "pred_xstart": out["pred_xstart"]}
 
-    def training_losses(self, model, x_start, t, model_kwargs=None, noise=None):
-        """
-        Compute training losses for a single timestep.
-
-        :param model: the model to evaluate loss on.
-        :param x_start: the [N x C x ...] tensor of inputs.
-        :param t: a batch of timestep indices.
-        :param model_kwargs: if not None, a dict of extra keyword arguments to
-            pass to the model. This can be used for conditioning.
-        :param noise: if specified, the specific Gaussian noise to try to remove.
-        :return: a dict with the key "loss" containing a tensor of shape [N].
-                 Some mean or variance settings may also have other keys.
-        """
-        if model_kwargs is None:
-            model_kwargs = {}
-        if noise is None:
-            noise = th.randn_like(x_start)
-
-        x_t = self.q_sample(x_start, t, noise=noise)
-
-        # print(x_t.device, t.device, noise.device, self._scale_timesteps(t).device)
-        terms = {}
-
-        if self.loss_type == LossType.KL or self.loss_type == LossType.RESCALED_KL:
-            terms["loss"] = self._vb_terms_bpd(
-                model=model,
-                x_start=x_start,
-                x_t=x_t,
-                t=t,
-                clip_denoised=False,
-                model_kwargs=model_kwargs,
-            )["output"]
-            if self.loss_type == LossType.RESCALED_KL:
-                terms["loss"] *= self.num_timesteps
-        elif self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
-            model_kwargs.update()
-            model_output = model(x_t.type(th.cuda.FloatTensor), self._scale_timesteps(t).type(th.cuda.LongTensor), **model_kwargs)
-
-            if self.model_var_type in [
-                ModelVarType.LEARNED,
-                ModelVarType.LEARNED_RANGE,
-            ]:
-                B, C = x_t.shape[:2]
-                assert model_output.shape == (B, C * 2, *x_t.shape[2:])
-                model_output, model_var_values = th.split(model_output, C, dim=1)
-                # Learn the variance using the variational bound, but don't let
-                # it affect our mean prediction.
-                frozen_out = th.cat([model_output.detach(), model_var_values], dim=1)
-                terms["vb"] = self._vb_terms_bpd(
-                    model=lambda *args, r=frozen_out: r,
-                    x_start=x_start,
-                    x_t=x_t,
-                    t=t,
-                    clip_denoised=False,
-                )["output"]
-                if self.loss_type == LossType.RESCALED_MSE:
-                    # Divide by 1000 for equivalence with initial implementation.
-                    # Without a factor of 1/1000, the VB term hurts the MSE term.
-                    terms["vb"] *= self.num_timesteps / 1000.0
-
-            target = {
-                ModelMeanType.PREVIOUS_X: self.q_posterior_mean_variance(
-                    x_start=x_start, x_t=x_t, t=t
-                )[0],
-                ModelMeanType.START_X: x_start,
-                ModelMeanType.EPSILON: noise,
-            }[self.model_mean_type]
-            assert model_output.shape == target.shape == x_start.shape
-            # Test
-            # print(target.shape, model_output.shape)
-            # x = th.cat((target, model_output), dim=2)
-            # plt.imshow(np.transpose(x.detach().cpu().numpy()[0], [1, 2, 0]))
-            # plt.show()
-            terms["mse"] = mean_flat((target.type_as(model_output) - model_output) ** 2)
-            if "vb" in terms:
-                terms["loss"] = terms["mse"] + terms["vb"]
-            else:
-                terms["loss"] = terms["mse"]
-        else:
-            raise NotImplementedError(self.loss_type)
-
-        return terms
-
     def training_losses_deca(self, model, x_start, t, model_kwargs=None, noise=None):
         """
         Compute training losses for a single timestep.
@@ -917,7 +834,8 @@ class GaussianDiffusion:
         terms = {}
         if self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
             model_kwargs.update()
-            output = model(x_t.type(th.cuda.FloatTensor), self._scale_timesteps(t).type(th.cuda.LongTensor), **model_kwargs)
+            # output = model(x_t.type(th.cuda.FloatTensor), self._scale_timesteps(t).type(th.cuda.LongTensor), **model_kwargs)
+            output = model(x_t.float(), self._scale_timesteps(t).long(), **model_kwargs)
             model_output = output['output']
             target = {
                 ModelMeanType.PREVIOUS_X: self.q_posterior_mean_variance(
@@ -1026,4 +944,7 @@ def _extract_into_tensor(arr, timesteps, broadcast_shape):
     res = th.from_numpy(arr)[timesteps]
     while len(res.shape) < len(broadcast_shape):
         res = res[..., None]
-    return res.expand(broadcast_shape).cuda()
+    if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0:
+        return res.expand(broadcast_shape).cuda()
+    else :
+        return res.expand(broadcast_shape)
