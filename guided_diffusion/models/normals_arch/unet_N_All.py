@@ -537,7 +537,6 @@ class UNetNormalsAll(nn.Module):
         h = h.type(x.dtype)
         
         out = self.out(h)
-        print(out.shape)
 
         if self.all_cfg.relighting.mult_shaded:
             out = out[:, :3, :, :] * out[:, 3:, :, :]
