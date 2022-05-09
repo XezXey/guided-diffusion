@@ -3,7 +3,8 @@ import argparse
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
 from .models.unet import EncoderUNetModelNoTime, UNetModelCondition, UNetModel
-from .models.unet_normals_2 import UNetNormals
+from .models.normals_arch.unet_N_Last import UNetNormalsLastLayer
+from .models.normals_arch.unet_N_All import UNetNormalsAll
 from .models.dense import DenseDDPM, AutoEncoderDPM, DenseDDPMCond
 
 NUM_CLASSES = 1000
@@ -99,8 +100,31 @@ def create_model(cfg, all_cfg=None):
             resblock_updown=cfg.resblock_updown,
             use_new_attention_order=cfg.use_new_attention_order,
         )
-    elif cfg.arch == 'UNetNormals':
-        return UNetNormals(
+    elif cfg.arch == 'UNetNormalsLastLayer':
+        return UNetNormalsLastLayer(
+            image_size=cfg.image_size,
+            in_channels=cfg.in_channels,
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=cfg.num_res_blocks,
+            attention_resolutions=tuple(attention_ds),
+            dropout=cfg.dropout,
+            channel_mult=channel_mult,
+            use_checkpoint=cfg.use_checkpoint,
+            num_heads=cfg.num_heads,
+            num_head_channels=cfg.num_head_channels,
+            num_heads_upsample=cfg.num_heads_upsample,
+            use_scale_shift_norm=cfg.use_scale_shift_norm,
+            resblock_updown=cfg.resblock_updown,
+            use_new_attention_order=cfg.use_new_attention_order,
+            condition_dim=cfg.condition_dim,
+            condition_proj_dim=cfg.condition_proj_dim,
+            conditioning=cfg.conditioning,
+            all_cfg=all_cfg,
+        )
+
+    elif cfg.arch == 'UNetNormalsAll':
+        return UNetNormalsAll(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
             model_channels=cfg.num_channels,

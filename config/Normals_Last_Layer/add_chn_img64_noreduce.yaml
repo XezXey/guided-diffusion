@@ -1,6 +1,6 @@
 img_model:
   name: "ImgCond"
-  arch: "UNetNormals"
+  arch: "UNetNormalsLastLayer"
   image_size: 64
   in_image: 'raw'
   in_channels: 3
@@ -14,8 +14,7 @@ param_model:
 
 relighting:
   reduce_shading: False
-  arch: 'use_conv_all'
-  apply_first: False
+  arch: 'add_channels'
 
 dataset:
   deca_dir: "/data/mint/ffhq_256_with_anno"

@@ -245,7 +245,7 @@ class TrainLoop(LightningModule):
     def forward_cond_network(self, dat, cond):
         if self.cfg.img_cond_model.apply:
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
-                x=dat.type(th.cuda.FloatTensor), 
+                x=dat.float(), 
                 emb=None,
             )
             cond['cond_params'] = th.cat((cond['cond_params'], img_cond), dim=-1)
@@ -321,7 +321,7 @@ class TrainLoop(LightningModule):
 
         r_idx = np.random.choice(a=np.arange(0, self.batch_size), size=n, replace=False,)
 
-        noise = th.randn((n, 3, H, W)).cuda()
+        noise = th.randn((n, 3, H, W)).type_as(dat)
 
 
         if self.cfg.img_cond_model.apply:

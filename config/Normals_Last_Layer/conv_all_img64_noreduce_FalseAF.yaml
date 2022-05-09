@@ -1,6 +1,6 @@
 img_model:
   name: "ImgCond"
-  arch: "UNetNormals"
+  arch: "UNetNormalsLastLayer"
   image_size: 64
   in_image: 'raw'
   in_channels: 3
@@ -13,7 +13,7 @@ param_model:
   rmv_params: ['light']
 
 relighting:
-  reduce_shading: True
+  reduce_shading: False
   arch: 'use_conv_all'
   apply_first: False
 

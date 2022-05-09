@@ -358,8 +358,10 @@ class AttentionBlockNormals(nn.Module):
         if norm_type == 'LayerNorm':
             self.h_norm = normalization(channels, n_group=1)
         elif norm_type == 'SepNorm':
-            self.h_norm = normalization(channels - shading_channels)
-            self.normals_norm = normalization(shading_channels)
+            self.h_norm = normalization(channels)
+            self.normals_norm = normalization(channels=shading_channels, n_group=shading_channels)
+        elif norm_type == 'GroupNorm':
+            self.h_norm = normalization(channels)
 
         self.qkv = conv_nd(1, channels, channels * 3, 1)
         if use_new_attention_order:
@@ -378,7 +380,7 @@ class AttentionBlockNormals(nn.Module):
         """
         :param x: input tensor BxCxHxW
         """
-        if self.norm_type == 'LayerNorm':
+        if self.norm_type in ['LayerNorm', 'GroupNorm']:
             return self.h_norm(x)
         elif self.norm_type == 'SepNorm':
             print(x.shape)

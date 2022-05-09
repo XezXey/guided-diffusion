@@ -1,6 +1,6 @@
 img_model:
   name: "ImgCond"
-  arch: "UNetNormals"
+  arch: "UNetNormalsLastLayer"
   image_size: 64
   in_image: 'raw'
   in_channels: 3

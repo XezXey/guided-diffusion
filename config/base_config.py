@@ -114,6 +114,7 @@ cfg.relighting.reduce_shading = True
 cfg.relighting.num_SH = 9
 cfg.relighting.apply_first = True
 cfg.relighting.arch = 'add_channels'
+cfg.relighting.mult_shaded = True
 
 
 
