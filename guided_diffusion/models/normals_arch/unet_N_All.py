@@ -405,11 +405,6 @@ class UNetNormalsAll(nn.Module):
                 Create resblock = num_res_blocks + 1
                 '''
                 ich = input_block_chans.pop()
-                # print(f"Level : {level}, Mult = {mult}")
-                # print("Input channels : ", ch + ich)
-                # print("Output channels : ", int(model_channels * mult))
-                
-                # Add the normals to last layers
                 layers = [
                     resblock_normals_module(
                         ch + ich,
