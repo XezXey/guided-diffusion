@@ -260,7 +260,7 @@ class TrainLoop(LightningModule):
         t, weights = self.schedule_sampler.sample(batch.shape[0], self.device)
         # Losses
         model_compute_losses = functools.partial(
-            self.diffusion.training_losses_deca,
+            self.diffusion.training_losses,
             self.model_dict[self.cfg.img_model.name],
             batch,
             t,

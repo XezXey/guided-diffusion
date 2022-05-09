@@ -345,6 +345,7 @@ class AttentionBlockNormals(nn.Module):
     ):
         super().__init__()
         self.channels = channels
+        self.shading_channels = shading_channels
         if num_head_channels == -1:
             self.num_heads = num_heads
         else:
@@ -353,9 +354,10 @@ class AttentionBlockNormals(nn.Module):
             ), f"q,k,v channels {channels} is not divisible by num_head_channels {num_head_channels}"
             self.num_heads = channels // num_head_channels
         self.use_checkpoint = use_checkpoint
+        self.norm_type = norm_type
         if norm_type == 'LayerNorm':
             self.h_norm = normalization(channels, n_group=1)
-        elif norm_type == 'SeparateNorm':
+        elif norm_type == 'SepNorm':
             self.h_norm = normalization(channels - shading_channels)
             self.normals_norm = normalization(shading_channels)
 
@@ -371,6 +373,25 @@ class AttentionBlockNormals(nn.Module):
 
     def forward(self, x):
         return checkpoint(self._forward, (x,), self.parameters(), True)
+
+    def norm(self, x):
+        """
+        :param x: input tensor BxCxHxW
+        """
+        if self.norm_type == 'LayerNorm':
+            return self.h_norm(x)
+        elif self.norm_type == 'SepNorm':
+            print(x.shape)
+            ch_split = self.channels-self.shading_channels
+            h = self.h_norm(x[:, :ch_split, :, :])
+            normals = self.h_norm(x[:, ch_split:, :, :])
+            print(x.shape, normals.shape)
+            x = th.cat((h, normals), dim=1)
+            print(x.shape)
+            exit()
+            return x
+
+
 
     def _forward(self, x):
         b, c, *spatial = x.shape

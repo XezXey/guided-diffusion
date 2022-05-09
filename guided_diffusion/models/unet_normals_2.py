@@ -121,7 +121,7 @@ class ResBlockNormalCond(TimestepBlockCond):
             nn.SiLU(),
             nn.Dropout(p=dropout),
             zero_module(
-                conv_nd(dims, self.out_channels + shading_channels, self.out_channels + shading_channels, 3, padding=1)
+                conv_nd(dims, self.out_channels + shading_channels, self.out_channels, 3, padding=1)
             ),
         )
 
@@ -129,10 +129,10 @@ class ResBlockNormalCond(TimestepBlockCond):
             self.skip_connection = nn.Identity()
         elif use_conv:
             self.skip_connection = conv_nd(
-                dims, channels, self.out_channels + shading_channels, 3, padding=1
+                dims, channels, self.out_channels, 3, padding=1
             )
         else:
-            self.skip_connection = conv_nd(dims, channels, self.out_channels + shading_channels, 1)
+            self.skip_connection = conv_nd(dims, channels, self.out_channels, 1)
 
 
     def forward(self, x, emb, cond):
@@ -446,6 +446,7 @@ class UNetNormalsLastLayer(nn.Module):
         elif all_cfg.relighting.arch == 'use_conv_all':
             resblock_normals_module = ResBlockNormalCondConv
 
+        shading_channels = self.renderer.shading_channels
         ch = input_ch = int(channel_mult[0] * model_channels)
         self.input_blocks = nn.ModuleList(
             [time_embed_seq_module(conv_nd(dims, in_channels, ch, 3, padding=1))]
@@ -639,7 +640,6 @@ class UNetNormalsLastLayer(nn.Module):
                 # print(i, layers)
                 # print("*"*100)
 
-        shading_channels = self.renderer.shading_channels
         self.out = nn.Sequential(
             normalization(channels=input_ch),
             normalization(channels=shading_channels, n_group=shading_channels),
@@ -814,16 +814,19 @@ class UNetNormals(nn.Module):
         for level, mult in enumerate(channel_mult):
             for _ in range(num_res_blocks):
                 layers = [
-                    resblock_module(
+                    resblock_normals_module(
                         ch,
                         time_embed_dim,
                         dropout,
-                        out_channels=int(mult * model_channels),
+                        out_channels=int(model_channels * mult),
                         dims=dims,
                         use_checkpoint=use_checkpoint,
                         use_scale_shift_norm=use_scale_shift_norm,
                         condition_dim=condition_dim,
-                        condition_proj_dim=condition_proj_dim
+                        condition_proj_dim=condition_proj_dim,
+                        renderer=self.renderer,
+                        apply_first=all_cfg.relighting.apply_first,
+                        use_conv=True,
                     )
                 ]
                 ch = int(mult * model_channels)
@@ -845,17 +848,19 @@ class UNetNormals(nn.Module):
                 out_ch = ch
                 self.input_blocks.append(
                     time_embed_seq_module(
-                        resblock_module(
-                            ch,
-                            time_embed_dim,
-                            dropout,
-                            out_channels=out_ch,
-                            dims=dims,
-                            use_checkpoint=use_checkpoint,
-                            use_scale_shift_norm=use_scale_shift_norm,
-                            down=True,
-                            condition_dim=condition_dim,
-                            condition_proj_dim=condition_proj_dim
+                        resblock_normals_module(
+                                    ch,
+                                    time_embed_dim,
+                                    dropout,
+                                    out_channels=int(model_channels * mult),
+                                    dims=dims,
+                                    use_checkpoint=use_checkpoint,
+                                    use_scale_shift_norm=use_scale_shift_norm,
+                                    condition_dim=condition_dim,
+                                    condition_proj_dim=condition_proj_dim,
+                                    renderer=self.renderer,
+                                    apply_first=all_cfg.relighting.apply_first,
+                                    use_conv=True,
                         )
                         if resblock_updown
                         else Downsample(
@@ -870,16 +875,20 @@ class UNetNormals(nn.Module):
         middle_block_ch = ch
 
         self.middle_block = time_embed_seq_module(
-            resblock_module(
-                ch,
-                time_embed_dim,
-                dropout,
-                dims=dims,
-                use_checkpoint=use_checkpoint,
-                use_scale_shift_norm=use_scale_shift_norm,
-                condition_dim=condition_dim,
-                condition_proj_dim=condition_proj_dim
-            ),
+            resblock_normals_module(
+                        ch,
+                        time_embed_dim,
+                        dropout,
+                        out_channels=int(model_channels * mult),
+                        dims=dims,
+                        use_checkpoint=use_checkpoint,
+                        use_scale_shift_norm=use_scale_shift_norm,
+                        condition_dim=condition_dim,
+                        condition_proj_dim=condition_proj_dim,
+                        renderer=self.renderer,
+                        apply_first=all_cfg.relighting.apply_first,
+                        use_conv=True,
+                    ),
             AttentionBlockNormals(
                 ch,
                 norm_type='LayerNorm',
@@ -889,16 +898,20 @@ class UNetNormals(nn.Module):
                 num_head_channels=num_head_channels,
                 use_new_attention_order=use_new_attention_order,
             ),
-            resblock_module(
-                ch,
-                time_embed_dim,
-                dropout,
-                dims=dims,
-                use_checkpoint=use_checkpoint,
-                use_scale_shift_norm=use_scale_shift_norm,
-                condition_dim=condition_dim,
-                condition_proj_dim=condition_proj_dim
-            ),
+            resblock_normals_module(
+                        ch,
+                        time_embed_dim,
+                        dropout,
+                        out_channels=int(model_channels * mult),
+                        dims=dims,
+                        use_checkpoint=use_checkpoint,
+                        use_scale_shift_norm=use_scale_shift_norm,
+                        condition_dim=condition_dim,
+                        condition_proj_dim=condition_proj_dim,
+                        renderer=self.renderer,
+                        apply_first=all_cfg.relighting.apply_first,
+                        use_conv=True,
+                    ),
         )
 
         output_block_ch = []
@@ -932,7 +945,7 @@ class UNetNormals(nn.Module):
                         use_conv=True,
                     )
                 ]
-                ch = int(model_channels * mult) + self.num_SH 
+                ch = int(model_channels * mult)
                 if ds in attention_resolutions:
                     layers.append(
                         AttentionBlockNormals(
@@ -981,9 +994,8 @@ class UNetNormals(nn.Module):
         shading_channels = self.renderer.shading_channels
         self.out = nn.Sequential(
             normalization(channels=input_ch),
-            normalization(channels=shading_channels, n_group=shading_channels),
             nn.SiLU(),
-            zero_module(conv_nd(dims, input_ch + shading_channels, out_channels, 3, padding=1)),
+            zero_module(conv_nd(dims, input_ch, out_channels, 3, padding=1)),
         )
         print("#"*100)
         print("Input blocks")
@@ -1031,17 +1043,19 @@ class UNetNormals(nn.Module):
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
 
         h = x.type(self.dtype)
-        for module in self.input_blocks:
+        for i, module in enumerate(self.input_blocks):
+            print("Input block : ", i, module)
             h = module(h, emb, condition=kwargs)
             hs.append(h)
+        print("Middle Block")
         h = self.middle_block(h, emb, condition=kwargs)
         for module in self.output_blocks:
+            print("Output block : ", i, module)
             h = th.cat([h, hs.pop()], dim=1)
             h = module(h, emb, condition=kwargs)
         h = h.type(x.dtype)
         
-        ch = int(self.channel_mult[0] * self.model_channels)
-        h_norm, normals_norm = self.out[0](h[:, :ch, ...]), self.out[1](h[:, ch:, ...])
-        out = self.out[2:](th.cat((h_norm, normals_norm), dim=1))
+        print("Last Block")
+        out = self.out(h)
 
         return {'output':out}
