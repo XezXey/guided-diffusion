@@ -105,6 +105,7 @@ cfg.img_cond_model.use_scale_shift_norm = True
 cfg.img_cond_model.resblock_updown = True
 cfg.img_cond_model.use_new_attention_order = False
 cfg.img_cond_model.pool = 'attention'
+cfg.img_cond_model.override_cond = ""
 
 # ---------------------------------------------------------------------------- #
 # Options for relighting

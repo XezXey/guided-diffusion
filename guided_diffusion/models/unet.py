@@ -394,7 +394,6 @@ class AttentionBlockNormals(nn.Module):
             return x
 
 
-
     def _forward(self, x):
         b, c, *spatial = x.shape
         x = x.reshape(b, c, -1)
@@ -1405,6 +1404,14 @@ class EncoderUNetModel(nn.Module):
                 zero_module(conv_nd(dims, ch, out_channels, 1)),
                 nn.Flatten(),
             )
+        elif pool == "adaptivenonzero":
+            self.out = nn.Sequential(
+                normalization(ch),
+                nn.SiLU(),
+                nn.AdaptiveAvgPool2d((1, 1)),
+                conv_nd(dims, ch, out_channels, 1),
+                nn.Flatten(),
+            )
         elif pool == "attention":
             assert num_head_channels != -1
             self.out = nn.Sequential(
@@ -1613,6 +1620,14 @@ class EncoderUNetModelNoTime(nn.Module):
                 nn.SiLU(),
                 nn.AdaptiveAvgPool2d((1, 1)),
                 zero_module(conv_nd(dims, ch, out_channels, 1)),
+                nn.Flatten(),
+            )
+        elif pool == "adaptivenonzero":
+            self.out = nn.Sequential(
+                normalization(ch),
+                nn.SiLU(),
+                nn.AdaptiveAvgPool2d((1, 1)),
+                conv_nd(dims, ch, out_channels, 1),
                 nn.Flatten(),
             )
         elif pool == "attention":

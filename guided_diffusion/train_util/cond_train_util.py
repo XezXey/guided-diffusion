@@ -248,7 +248,9 @@ class TrainLoop(LightningModule):
                 x=dat.float(), 
                 emb=None,
             )
-            cond['cond_params'] = th.cat((cond['cond_params'], img_cond), dim=-1)
+            if self.cfg.img_cond_model.override_cond != "":
+                cond[self.cfg.img_cond_model.override_cond] = img_cond
+            else: raise AttributeError
 
     def forward_backward(self, batch, cond):
 
