@@ -18,6 +18,17 @@ relighting:
   mult_shaded: 'SharedConv'
   num_shaded_ch: 1
 
+img_cond_model:
+  apply: True
+  arch: "EncoderUNet"
+  in_image: 'raw'
+  in_channels: 3
+  image_size: 64
+  out_channels: 27
+  condition_dim: 27
+  pool: 'adaptivenonzero'
+  override_cond: "light"
+
 dataset:
   deca_dir: "/data/mint/ffhq_256_with_anno"
   data_dir: "/data/mint/ffhq_256_with_anno/ffhq_256/train"
