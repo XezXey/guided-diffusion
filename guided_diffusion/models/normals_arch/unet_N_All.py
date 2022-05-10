@@ -446,17 +446,31 @@ class UNetNormalsAll(nn.Module):
                     '''
                     out_ch = ch
                     layers.append(
-                        resblock_module(
-                            ch,
+                        # resblock_module(
+                        #     ch,
+                        #     time_embed_dim,
+                        #     dropout,
+                        #     out_channels=out_ch,
+                        #     dims=dims,
+                        #     use_checkpoint=use_checkpoint,
+                        #     use_scale_shift_norm=use_scale_shift_norm,
+                        #     up=True,
+                        #     condition_dim=condition_dim,
+                        #     condition_proj_dim=condition_proj_dim
+                        # )
+                        resblock_normals_module(
+                            ch + ich,
                             time_embed_dim,
                             dropout,
-                            out_channels=out_ch,
+                            out_channels=int(model_channels * mult),
                             dims=dims,
                             use_checkpoint=use_checkpoint,
                             use_scale_shift_norm=use_scale_shift_norm,
-                            up=True,
                             condition_dim=condition_dim,
-                            condition_proj_dim=condition_proj_dim
+                            condition_proj_dim=condition_proj_dim,
+                            renderer=self.renderer,
+                            apply_first=all_cfg.relighting.apply_first,
+                            use_conv=True,
                         )
                         if resblock_updown
                         else Upsample(ch, conv_resample, dims=dims, out_channels=out_ch)
