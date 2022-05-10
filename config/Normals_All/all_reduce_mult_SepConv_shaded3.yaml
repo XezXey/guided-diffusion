@@ -1,0 +1,23 @@
+img_model:
+  name: "ImgCond"
+  arch: "UNetNormalsAll"
+  image_size: 64
+  in_image: 'raw'
+  in_channels: 3
+  out_channels: 3
+  conditioning: True  # Conditioning with DECA
+  condition_proj_dim: 512
+
+param_model:
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
+  rmv_params: ['light']
+
+relighting:
+  reduce_shading: True
+  arch: 'add_channels'
+  mult_shaded: 'SepConv'
+  num_shaded_ch: 3
+
+dataset:
+  deca_dir: "/data/mint/ffhq_256_with_anno"
+  data_dir: "/data/mint/ffhq_256_with_anno/ffhq_256/train"

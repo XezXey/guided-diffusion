@@ -15,7 +15,8 @@ param_model:
 relighting:
   reduce_shading: True
   arch: 'add_channels'
-  mult_shaded: True
+  mult_shaded: 'SharedConv'
+  num_shaded_ch: 3
 
 dataset:
   deca_dir: "/data/mint/ffhq_256_with_anno"

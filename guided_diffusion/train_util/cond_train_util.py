@@ -387,10 +387,14 @@ class TrainLoop(LightningModule):
     def log_loss_dict(self, diffusion, ts, losses, module):
         for key, values in losses.items():
             self.log(f"training_loss_{module}/{key}", values.mean().item())
+            if key == "loss":
+                self.log(f"{key}", values.mean().item(), prog_bar=True, logger=False)
             # log the quantiles (four quartiles, in particular).
             for sub_t, sub_loss in zip(ts.cpu().numpy(), values.detach().cpu().numpy()):
                 quartile = int(4 * sub_t / diffusion.num_timesteps)
                 self.log(f"training_loss_{module}/{key}_q{quartile}", sub_loss)
+                if key == "loss":
+                    self.log(f"{key}_q{quartile}", sub_loss, prog_bar=True, logger=False)
 
 def parse_resume_step_from_filename(filename):
     """

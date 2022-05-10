@@ -6,6 +6,7 @@ from cv2 import norm
 
 import numpy as np
 import torch as th
+th.set_printoptions(precision=5)
 import torch.nn as nn
 import torch.nn.functional as F
 from ..renderer import Renderer
@@ -467,15 +468,26 @@ class UNetNormalsAll(nn.Module):
                 # print(i, layers)
                 # print("*"*100)
         
-        if all_cfg.relighting.mult_shaded:
-            out_channels = 6
-        else: out_channels = 3
+        if all_cfg.relighting.mult_shaded == 'SharedConv':
+            self.out = nn.Sequential(
+                normalization(channels=input_ch),
+                nn.SiLU(),
+                conv_nd(dims, input_ch, out_channels+all_cfg.relighting.num_shaded_ch, 3, padding=1),
+            )
+        elif all_cfg.relighting.mult_shaded == 'SepConv':
+            self.out = nn.Sequential(
+                normalization(channels=input_ch),
+                nn.SiLU(),
+                conv_nd(dims, input_ch, out_channels, 3, padding=1),
+                conv_nd(dims, input_ch, all_cfg.relighting.num_shaded_ch, 3, padding=1),
+            )
+        else: 
+            self.out = nn.Sequential(
+                normalization(channels=input_ch),
+                nn.SiLU(),
+                zero_module(conv_nd(dims, input_ch, out_channels, 3, padding=1)),
+            )
 
-        self.out = nn.Sequential(
-            normalization(channels=input_ch),
-            nn.SiLU(),
-            zero_module(conv_nd(dims, input_ch, out_channels, 3, padding=1)),
-        )
         # print("#"*100)
         # print("Input blocks")
         # print("#"*100)
@@ -521,19 +533,34 @@ class UNetNormalsAll(nn.Module):
         hs = []
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
 
+        # Input Blocks
         h = x.type(self.dtype)
         for module in self.input_blocks:
             h = module(h, emb, condition=kwargs)
             hs.append(h)
+        # Mid Block
         h = self.middle_block(h, emb, condition=kwargs)
+        # Out Blocks
         for module in self.output_blocks:
             h = th.cat([h, hs.pop()], dim=1)
             h = module(h, emb, condition=kwargs)
         h = h.type(x.dtype)
         
-        out = self.out(h)
+        # Output Layer
+        if self.all_cfg.relighting.mult_shaded == 'SepConv':
+            out = self.out[:-2](h)
+            img_branch = self.out[-1]
+            shading_branch = self.out[-2]
+            img = img_branch(out)
+            shading_img = shading_branch(out)
+            out = img * shading_img
+        elif self.all_cfg.relighting.mult_shaded == 'SharedConv':
+            out = self.out(h)
+            img = out[:, :3, :, :]
+            shading_img = out[:, 3:, :, :]
+            out = img * shading_img
+        else:
+            out = self.out(h)
 
-        if self.all_cfg.relighting.mult_shaded:
-            out = out[:, :3, :, :] * out[:, 3:, :, :]
 
         return {'output':out}
