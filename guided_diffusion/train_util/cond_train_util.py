@@ -61,12 +61,13 @@ class TrainLoop(LightningModule):
         self.tb_logger = tb_logger
         self.pl_trainer = pl.Trainer(
             gpus=self.n_gpus,
+            accumulate_grad_batches=cfg.train.accumulate_grad_batches, 
             logger=self.tb_logger,
             log_every_n_steps=self.cfg.train.log_interval,
             max_epochs=1e6,
             accelerator=cfg.train.accelerator,
             profiler='simple',
-            strategy=DDPStrategy(find_unused_parameters=False)
+            strategy=DDPStrategy(find_unused_parameters=False),
             )
         self.automatic_optimization = False # Manual optimization flow
 
@@ -110,7 +111,7 @@ class TrainLoop(LightningModule):
 
         self.model_trainer_dict = {}
         for name, model in self.model_dict.items():
-            self.model_trainer_dict[name] = Trainer(model=model)
+            self.model_trainer_dict[name] = Trainer(name=name, model=model, pl_module=self)
 
         self.opt = AdamW(
             sum([list(self.model_trainer_dict[name].master_params) for name in self.model_trainer_dict.keys()], []),
@@ -194,7 +195,11 @@ class TrainLoop(LightningModule):
         self.forward_cond_network(dat, cond)
         self.forward_backward(dat, cond)
         took_step = self.optimize_trainer()
+        # print("OUTSIDE")
+        # print(self.model_trainer_dict['ImgEncoder'].master_params[-5:])
+        # print("*"*100)
         self.took_step = took_step
+
 
     def training_step(self, batch, batch_idx):
         dat, cond = batch
@@ -228,6 +233,16 @@ class TrainLoop(LightningModule):
             self.log_step()
         if (self.step % self.sampling_interval == 0) or (self.resume_step!=0 and self.step==1) :
             self.log_sampling(batch)
+    
+    @rank_zero_only
+    def on_exception(self, exception):
+        print("Exception : ", exception)
+        self.save_rank_zero()
+
+    @rank_zero_only
+    def on_keyboard_interrupt(self):
+        print("INTERRUPT")
+        self.save_rank_zero()
 
 
     def zero_grad_trainer(self):
@@ -236,11 +251,19 @@ class TrainLoop(LightningModule):
 
 
     def optimize_trainer(self):
-        took_step = []
+        self.opt.step()
         for name in self.model_trainer_dict.keys():
-            tk_s = self.model_trainer_dict[name].optimize(self.opt)
-            took_step.append(tk_s)
-        return all(took_step)
+            self.model_trainer_dict[name].get_norms()
+
+        return True
+
+    # def optimize_trainer(self):
+    #     # Todo : adding a different optimizer to use with this function
+    #     took_step = []
+    #     for name in self.model_trainer_dict.keys():
+    #         tk_s = self.model_trainer_dict['ImgCond'].optimize(self.opt)
+    #         # took_step.append(tk_s)
+    #     return all(took_step)
 
     def forward_cond_network(self, dat, cond):
         if self.cfg.img_cond_model.apply:
@@ -282,6 +305,7 @@ class TrainLoop(LightningModule):
             self.log_loss_dict(
                 self.diffusion, t, {k: v * weights for k, v in model_losses.items()}, module=self.cfg.img_model.name,
             )
+
 
     @rank_zero_only
     def _update_ema(self):

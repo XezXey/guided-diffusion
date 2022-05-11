@@ -125,25 +125,37 @@ def param_grad_or_zeros(param):
 
 
 class Trainer:
-    def __init__(self, *, model):
+    def __init__(self, *, name, model, pl_module):
+        self.name = name 
         self.model = model
         self.model_params = list(self.model.parameters())
         self.master_params = self.model_params
+        self.pl_module = pl_module
 
     def zero_grad(self):
         zero_grad(self.model_params)
 
     def backward(self, loss: th.Tensor):
+        # This won't be called since PL handles this
         loss.backward()
 
-    def optimize(self, opt: th.optim.Optimizer):
-        return self._optimize_normal(opt)
+    # def optimize(self, opt: th.optim.Optimizer):
+    #     # Todo : adding a different optimizer to use with this function
+    #     return self._optimize_normal(opt)
 
-    def _optimize_normal(self, opt: th.optim.Optimizer):
+    # def _optimize_normal(self, opt: th.optim.Optimizer):
+    #     grad_norm, param_norm = self._compute_norms()
+    #     self.pl_module.log(f"training_monitor/{self.name}_grad_norm", grad_norm)
+    #     self.pl_module.log(f"training_monitor/{self.name}_param_norm", param_norm)
+
+    #     opt.step()
+    #     return True
+
+    def get_norms(self):
         grad_norm, param_norm = self._compute_norms()
-        logger.logkv_mean("grad_norm", grad_norm)
-        logger.logkv_mean("param_norm", param_norm)
-        opt.step()
+        self.pl_module.log(f"training_monitor/{self.name}_grad_norm", grad_norm)
+        self.pl_module.log(f"training_monitor/{self.name}_param_norm", param_norm)
+
         return True
 
     def _compute_norms(self, grad_scale=1.0):

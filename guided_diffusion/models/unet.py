@@ -18,6 +18,7 @@ from .nn import (
     zero_module,
     normalization,
     timestep_embedding,
+    Norm,
 )
 
 class AttentionPool2d(nn.Module):
@@ -1427,6 +1428,7 @@ class EncoderUNetModel(nn.Module):
                 nn.ReLU(),
                 nn.Linear(2048, self.out_channels),
             )
+
         elif pool == "spatial_v2":
             self.out = nn.Sequential(
                 nn.Linear(self._feature_size, 2048),
@@ -1630,6 +1632,15 @@ class EncoderUNetModelNoTime(nn.Module):
                 conv_nd(dims, ch, out_channels, 1),
                 nn.Flatten(),
             )
+        elif pool == "adaptivenonzero_norm1":
+            self.out = nn.Sequential(
+                normalization(ch),
+                nn.SiLU(),
+                nn.AdaptiveAvgPool2d((1, 1)),
+                conv_nd(dims, ch, out_channels, 1),
+                nn.Flatten(),
+                Norm(ord=1),
+            )
         elif pool == "attention":
             assert num_head_channels != -1
             self.out = nn.Sequential(
@@ -1645,6 +1656,34 @@ class EncoderUNetModelNoTime(nn.Module):
                 nn.ReLU(),
                 nn.Linear(2048, self.out_channels),
             )
+
+        elif pool == "spatial_tanh":
+            self.out = nn.Sequential(
+                nn.Linear(self._feature_size, 2048),
+                nn.ReLU(),
+                nn.Linear(2048, self.out_channels),
+                nn.Tanh()
+            )
+
+        elif pool == "spatial_relu":
+            self.out = nn.Sequential(
+                nn.Linear(self._feature_size, 2048),
+                nn.ReLU(),
+                nn.Linear(2048, self.out_channels),
+                nn.ReLU()
+            )
+
+        elif pool == "spatial_mlp":
+            self.out = nn.Sequential(
+                nn.Linear(self._feature_size, 2048),
+                nn.ReLU(),
+                nn.Linear(2048, 1024),
+                nn.ReLU(),
+                nn.Linear(1024, 512),
+                nn.ReLU(),
+                nn.Linear(512, self.out_channels),
+            )
+
         elif pool == "spatial_v2":
             self.out = nn.Sequential(
                 nn.Linear(self._feature_size, 2048),
@@ -1654,6 +1693,7 @@ class EncoderUNetModelNoTime(nn.Module):
             )
         else:
             raise NotImplementedError(f"Unexpected {pool} pooling")
+        print(self.out)
 
     def convert_to_fp16(self):
         """

@@ -18,6 +18,18 @@ class GroupNorm(nn.GroupNorm):
     def forward(self, x):
         return super().forward(x.float()).type(x.dtype)
 
+class Norm(nn.Module):
+    def __init__(self, ord):
+        super(Norm, self).__init__()
+        self.ord = ord
+
+    def forward(self, x):
+        return x/th.linalg.norm(x, ord=self.ord, dim=1, keepdim=True)
+
+    def extra_repr(self) -> str:
+        return f'ord={self.ord}'
+
+
 
 def conv_nd(dims, *args, **kwargs):
     """

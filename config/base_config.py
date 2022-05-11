@@ -145,6 +145,7 @@ cfg.train.resume_checkpoint = ""
 cfg.train.log_dir = "./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_image"))
 cfg.train.n_gpus = 1
 cfg.train.accelerator = 'gpu'
+cfg.train.accumulate_grad_batches = 1
 cfg.train.deterministic = True
 
 # ---------------------------------------------------------------------------- #
