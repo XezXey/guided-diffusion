@@ -10,7 +10,9 @@ def plot_sample(img, **kwargs):
     img = img.permute(0, 2, 3, 1) # BxHxWxC
     pt = 0
     for i in range(0, img.shape[0]):
-        s_ = decolor(s=img[i], out_c='rgb')
+        # s_ = decolor(s=img[i], out_c='rgb')
+        s_ = ((img[i] + 1) * 127.5) / 255.
+
         s_ = s_.detach().cpu().numpy()
         fig.add_subplot(rows, columns, pt+1)
         plt.imshow(s_)
@@ -20,7 +22,8 @@ def plot_sample(img, **kwargs):
             # Plot other images
             for k in kwargs:
                 fig.add_subplot(rows, columns, pt+1)
-                s_ = decolor(s=kwargs[k][i].permute(1, 2, 0), out_c='rgb')
+                # s_ = decolor(s=kwargs[k][i].permute(1, 2, 0), out_c='rgb')
+                s_ = ((kwargs[k][i].permute(1, 2, 0) + 1) * 127.5) / 255.
                 s_ = s_.detach().cpu().numpy()
                 plt.imshow(s_)
                 pt += 1

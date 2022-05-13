@@ -787,7 +787,7 @@ class UNetModelCondition(UNetModel):
         condition_proj_dim=512,
         conditioning=True
     ):
-        UNetModel.__init__(self, 
+        super().__init__(
             image_size=image_size, 
             in_channels=in_channels, 
             model_channels=model_channels, 
@@ -809,7 +809,7 @@ class UNetModelCondition(UNetModel):
             use_new_attention_order=use_new_attention_order,
             condition_dim = condition_dim,
             condition_proj_dim=condition_proj_dim)
-        super().__init__
+        # super().__init__()
         self.condition_dim = condition_dim
 
     def forward(self, x, timesteps, y=None, **kwargs):
@@ -826,12 +826,12 @@ class UNetModelCondition(UNetModel):
 
         h = x.type(self.dtype)
         for module in self.input_blocks:
-            h = module(h, emb, condition=kwargs['cond_params'])
+            h = module(h, emb, condition=kwargs)
             hs.append(h)
-        h = self.middle_block(h, emb, condition=kwargs['cond_params'])
+        h = self.middle_block(h, emb, condition=kwargs)
         for module in self.output_blocks:
             h = th.cat([h, hs.pop()], dim=1)
-            h = module(h, emb, condition=kwargs['cond_params'])
+            h = module(h, emb, condition=kwargs)
         h = h.type(x.dtype)
         return {'output':self.out(h)}
 

@@ -107,9 +107,6 @@ if __name__ == '__main__':
     im_itw = inference_utils.InputManipulate(cfg=cfg, params=params_itw, batch_size=len(params_itw), images=all_itw_files, sorted=True)
     itw_kwargs = im_itw.load_condition(params=params_itw)
     itw_kwargs['cond_params'] = itw_kwargs['cond_params'].to(device)
-    print(itw_kwargs['cond_params'].shape, itw_kwargs['light'].shape)
-
-    itp_itw_kwargs = copy.deepcopy(itw_kwargs)
 
     # Reverse
     pl_reverse_sampling = inference_utils.PLReverseSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_reverse_sample_loop, cfg=cfg)
@@ -129,18 +126,19 @@ if __name__ == '__main__':
 
     bidx = range(len(all_itw_files))
     interp_idx = range(len(all_itw_files))
-    for b in bidx:
-        for itp_idx in interp_idx:
+    for itp_idx in interp_idx:
+        for b in bidx:
             print(f"INTERPOLATING SAMPLE : {b}, src={b}, dst={itp_idx}")
             # Interpolate the condition
             src_idx, dst_idx = b, itp_idx
             itp_itw_kwargs = copy.deepcopy(itw_kwargs)
-            itp_itw_kwargs['cond_params'] = th.cat([itp_itw_kwargs['cond_params'][[b]]] * args.batch_size, dim=0)
-
-            itp_itw_kwargs['light'] = inference_utils.interpolate_cond(src_cond_params=copy.deepcopy(itp_itw_kwargs['light'][[b]]), 
-                                                                        dst_cond_params=copy.deepcopy(itp_itw_kwargs['light'][[dst_idx]]), 
-                                                                        n_step=args.batch_size,
-            )
+            itp_itw_kwargs['cond_params'] = inference_utils.interpolate_cond(base_cond_params=copy.deepcopy(itp_itw_kwargs['cond_params'][[b]]), 
+                                                                        src_cond_params=copy.deepcopy(itp_itw_kwargs['cond_params'][[b]]), 
+                                                                        dst_cond_params=copy.deepcopy(itp_itw_kwargs['cond_params'][[dst_idx]]), 
+                                                                        n_step=args.batch_size, 
+                                                                        params_loc=im.cond_params_location(),
+                                                                        params_sel=im.cfg.param_model.params_selector, 
+                                                                        itp_cond=interpolate)
 
             pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
             sample_ddim = pl_sampling(noise=th.cat([reverse_ddim_sample['img_output'][[b]]] * args.batch_size, dim=0), model_kwargs=itp_itw_kwargs)

@@ -446,18 +446,6 @@ class UNetNormalsAll(nn.Module):
                     '''
                     out_ch = ch
                     layers.append(
-                        # resblock_module(
-                        #     ch,
-                        #     time_embed_dim,
-                        #     dropout,
-                        #     out_channels=out_ch,
-                        #     dims=dims,
-                        #     use_checkpoint=use_checkpoint,
-                        #     use_scale_shift_norm=use_scale_shift_norm,
-                        #     up=True,
-                        #     condition_dim=condition_dim,
-                        #     condition_proj_dim=condition_proj_dim
-                        # )
                         resblock_normals_module(
                             ch + ich,
                             time_embed_dim,
@@ -511,10 +499,11 @@ class UNetNormalsAll(nn.Module):
         # print("#"*100)
         # print(self.middle_block)
         # print("#"*100)
-        # print("Output blocks")
-        # print("#"*100)
-        # print(self.output_blocks)
-        # print("#"*100)
+        print("Output blocks")
+        print("#"*100)
+        print(self.output_blocks)
+        print("#"*100)
+        # exit()
 
         # print(input_block_ch)
         # print(middle_block_ch)

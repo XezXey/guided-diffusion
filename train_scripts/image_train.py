@@ -15,6 +15,7 @@ from guided_diffusion.script_util import (
     seed_all,
 )
 # from guided_diffusion.train_util.uncond_train_util import TrainLoop
+# from guided_diffusion.train_util.cond_train_util_auto_opt import TrainLoop
 from guided_diffusion.train_util.cond_train_util import TrainLoop
 
 def main():

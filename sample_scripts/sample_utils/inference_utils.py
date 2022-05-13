@@ -82,7 +82,7 @@ class InputManipulate():
             self.rand_idx = list(np.arange(0, len(params)))
         self.n = batch_size
         self.params_dict = dict(zip(self.cfg.param_model.params_selector, self.cfg.param_model.n_params))
-        self.exc_params = self.cfg.inference.exc_params
+        self.exc_params = self.cfg.inference.exc_params + self.cfg.param_model.rmv_params
         self.images = [images[i] for i in self.rand_idx]
 
     def set_rand_idx(self, rand_idx):
@@ -207,6 +207,41 @@ class InputManipulate():
         all = np.stack(all, axis=0)        
         return {'cond_params':th.tensor(all).cuda(), 'image_name':img_name, 'image':images, 'r_idx':self.rand_idx}
 
+    def load_condition(self, params):
+        '''
+        Load deca condition and stack all of thems into 1D-vector
+        '''
+        img_name = [list(params.keys())[i] for i in self.rand_idx]
+        images = self.load_imgs(all_path=self.images, vis=True)['image']
+
+        all = []
+        each = {}
+        # Choose only param in params_selector
+        params_selector = self.cfg.param_model.params_selector
+        for name in img_name:
+            each_param = []
+            for p_name in params_selector:
+                if p_name not in self.exc_params:
+                    each_param.append(params[name][p_name])
+            all.append(np.concatenate(each_param))
+        
+        for p_name in params_selector:
+            each[p_name] = []
+            for name in img_name:
+                each[p_name].append(params[name][p_name])
+
+        for k in each.keys():
+            each[k] = th.tensor(np.stack(each[k], axis=0)).cuda()
+
+        all = np.stack(all, axis=0)        
+        out_dict = {'cond_params':th.tensor(all).cuda(), 
+                'image_name':img_name, 
+                'image':images, 
+                'r_idx':self.rand_idx}
+        out_dict.update(each)
+
+        return out_dict
+
     def cond_params_location(self):
         '''
         Return the idx [i, j] for vector[i:j] that the given parameter is located.
@@ -291,6 +326,23 @@ def interpolate_cond(base_cond_params, src_cond_params, dst_cond_params, n_step,
 
         interp = th.cat((interp), dim=0)
         final_cond[:, i:j] = interp
+
+    return final_cond
+
+def interpolate_cond(src_cond_params, dst_cond_params, n_step, interp_fn=lerp):
+    # Fixed the based-idx image
+
+    r_interp = np.linspace(0, 1, num=n_step)
+
+    src = src_cond_params
+    dst = dst_cond_params
+    interp = []
+    for r in r_interp:
+        tmp = interp_fn(r=r, src=src, dst=dst)
+        interp.append(tmp.clone())
+
+    interp = th.cat((interp), dim=0)
+    final_cond = interp
 
     return final_cond
 
