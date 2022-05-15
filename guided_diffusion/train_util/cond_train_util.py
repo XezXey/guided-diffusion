@@ -77,7 +77,8 @@ class TrainLoop(LightningModule):
         for i, m in enumerate(model):
             self.model_dict[name[i]] = m
 
-        self.model = ModelWrapper(model_dict=self.model_dict, cfg=self.cfg)
+        # self.model = ModelWrapper(model_dict=self.model_dict, cfg=self.cfg)
+        self.model = self.model_dict["ImgCond"]
 
         # Diffusion
         self.diffusion = diffusion
@@ -203,7 +204,8 @@ class TrainLoop(LightningModule):
 
     def training_step(self, batch, batch_idx):
         dat, cond = batch
-        self.model(trainloop=self, dat=dat, cond=cond)
+        # self.model(trainloop=self, dat=dat, cond=cond)
+        self.run_step(dat, cond)
         self.step += 1
     
     @rank_zero_only
