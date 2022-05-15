@@ -241,16 +241,16 @@ class TrainLoop(LightningModule):
 
 
     def optimize_trainer(self):
-        print(self.model_trainer_dict.keys())
-        print("BEFORE OPT")
-        print(self.model_trainer_dict["ImgCond"].master_params[-1:])
+        # print(self.model_trainer_dict.keys())
+        # print("BEFORE OPT")
+        # print(self.model_trainer_dict["ImgCond"].master_params[-1:])
         self.opt.step()
         for name in self.model_trainer_dict.keys():
             self.model_trainer_dict[name].get_norms()
 
-        print("AFTER OPT")
-        print(self.model_trainer_dict["ImgCond"].master_params[-1:])
-        input()
+        # print("AFTER OPT")
+        # print(self.model_trainer_dict["ImgCond"].master_params[-1:])
+        # input()
 
         return True
 
