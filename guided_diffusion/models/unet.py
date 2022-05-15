@@ -809,7 +809,6 @@ class UNetModelCondition(UNetModel):
             use_new_attention_order=use_new_attention_order,
             condition_dim = condition_dim,
             condition_proj_dim=condition_proj_dim)
-        # super().__init__()
         self.condition_dim = condition_dim
 
     def forward(self, x, timesteps, y=None, **kwargs):
