@@ -29,3 +29,5 @@ sample_scripts/py/lighting_experiment/sampling_results/
 sample_scripts/py/ddim_reverse_experiment/sampling_results/
 sample_scripts/py/interchange_experiment/sampling_results/
 sample_scripts/py/temporal_consistency_experiment/sampling_results/
+sample_scripts/py/*/sampling_results/
+sample_scripts/py/*/*/sampling_results/
