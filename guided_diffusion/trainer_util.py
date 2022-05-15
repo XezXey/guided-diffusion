@@ -135,9 +135,15 @@ class Trainer:
     def zero_grad(self):
         zero_grad(self.model_params)
 
-    def backward(self, loss: th.Tensor):
+    # Todo.
+    # 1. Separate implement the 
+    #   - backward()
+    #   - optimize()
+    #   to support the separate trainer register to each module
+
+    # def backward(self, loss: th.Tensor):
         # This won't be called since PL handles this
-        loss.backward()
+        # loss.backward()
 
     # def optimize(self, opt: th.optim.Optimizer):
     #     # Todo : adding a different optimizer to use with this function
