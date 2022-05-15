@@ -147,6 +147,7 @@ cfg.train.n_gpus = 1
 cfg.train.accelerator = 'gpu'
 cfg.train.accumulate_grad_batches = 1
 cfg.train.deterministic = True
+cfg.train.find_unused_parameters = False
 
 # ---------------------------------------------------------------------------- #
 # Options for inference
