@@ -56,9 +56,8 @@ class TrainLoop(LightningModule):
             max_epochs=1e6,
             accelerator='gpu',
             profiler='simple',
-            strategy=DDPStrategy(find_unused_parameters=False)
+            strategy=DDPStrategy(find_unused_parameters=cfg.train.find_unused_parameters)
             )
-
         self.automatic_optimization = False # Manual optimization flow
 
         self.model = model
