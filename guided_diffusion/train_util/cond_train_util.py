@@ -113,11 +113,6 @@ class TrainLoop(LightningModule):
         for name, model in self.model_dict.items():
             self.model_trainer_dict[name] = Trainer(name=name, model=model, pl_module=self)
 
-        
-        print("After Load OPT")
-        for p in self.model_dict["ImgCond"].named_parameters():
-            print(p)
-
         self.opt = AdamW(
             sum([list(self.model_trainer_dict[name].master_params) for name in self.model_trainer_dict.keys()], []),
             lr=self.lr, weight_decay=self.weight_decay
@@ -199,19 +194,11 @@ class TrainLoop(LightningModule):
         self.forward_cond_network(dat, cond)
         self.forward_backward(dat, cond)
         took_step = self.optimize_trainer()
-        # print("OUTSIDE")
-        # print(self.model_trainer_dict['ImgEncoder'].master_params[-5:])
-        # print("*"*100)
         self.took_step = took_step
 
 
     def training_step(self, batch, batch_idx):
         dat, cond = batch
-
-        # f = self.cfg.train.log_dir.split('/')[-1]
-        # th.save(self.model_dict['ImgCond'].state_dict(), f=f"/data/mint/model_logs/ckpt_for_compare/{f}_{self.step+self.resume_step}_saved.pt")
-        # self.log_rank_zero(batch)
-        # exit()
         self.model(trainloop=self, dat=dat, cond=cond)
         self.step += 1
     
@@ -250,15 +237,9 @@ class TrainLoop(LightningModule):
 
 
     def optimize_trainer(self):
-        # print(self.model_trainer_dict.keys())
-        # print("BEFORE OPT")
-        # print(self.model_trainer_dict["ImgCond"].master_params[-1:])
         self.opt.step()
         for name in self.model_trainer_dict.keys():
             self.model_trainer_dict[name].get_norms()
-        # print("AFTER OPT")
-        # print(self.model_trainer_dict["ImgCond"].master_params[-1:])
-        # input()
         return True
 
     # def optimize_trainer(self):
@@ -280,7 +261,6 @@ class TrainLoop(LightningModule):
             else: raise AttributeError
 
     def forward_backward(self, batch, cond):
-
         cond = {
             k: v
             for k, v in cond.items()
@@ -337,52 +317,42 @@ class TrainLoop(LightningModule):
 
     @rank_zero_only
     def eval_mode(self):
-        for m in self.model_dict:
-            m.eval()
+        for _, v in self.model_dict.items():
+            v.eval()
 
     @rank_zero_only
     def train_mode(self):
-        for m in self.model_dict:
-            m.train()
+        for _, v in self.model_dict.items():
+            v.train()
         
 
     @rank_zero_only
     def log_sampling(self, batch):
         print("Sampling...")
+        self.eval_mode()
+
 
         step_ = float(self.step + self.resume_step)
         tb = self.tb_logger.experiment
         H = W = self.cfg.img_model.image_size
         n = self.cfg.train.n_sampling
 
-        seed_all(47)
-        dat, cond = iter(self.data).next()
-
-        print(cond['image_name'])
-        cond = {}
-        for k, v in cond.items():
-            if k != 'image_name':
-                cond[k] = v.cuda()
-            else:
-                cond[k] = v
-        cond['image'] = dat.cuda()
-        print(dat['image_name'])
-        # dat, cond = batch
+        dat, cond = batch
 
         if n > dat.shape[0]:
             n = dat.shape[0]
 
         r_idx = np.random.choice(a=np.arange(0, self.batch_size), size=n, replace=False,)
 
-        noise = th.randn((n, 3, H, W)).cuda()#.type_as(dat)
+        noise = th.randn((n, 3, H, W)).type_as(dat)
 
-
+        # Any Encoder/Conditioned Network to be applied before a main UNet
         if self.cfg.img_cond_model.apply:
             self.forward_cond_network(dat=dat, cond=cond)
 
-        tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat[r_idx] + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        # tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat[r_idx] + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
 
-        seed_all(47)
         sample_from_ddim = self.diffusion.ddim_sample_loop(
             model=self.model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
@@ -403,8 +373,7 @@ class TrainLoop(LightningModule):
         sample_from_ps = ((sample_from_ps + 1) * 127.5) / 255.
         tb.add_image(tag=f'p_sample', img_tensor=make_grid(sample_from_ps, nrow=4), global_step=(step_ + 1) * self.n_gpus)
 
-
-        self.model_dict['ImgCond'].train()
+        self.train_mode()
 
     @rank_zero_only
     def save(self):

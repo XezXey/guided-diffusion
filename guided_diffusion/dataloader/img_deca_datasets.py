@@ -146,6 +146,7 @@ class DECADataset(Dataset):
         self.in_image = in_image
         self.params_selector = params_selector
         self.rmv_params = rmv_params
+        self.precomp_params_key = without(src=self.params_selector, rmv=['img_latent'] + self.rmv_params)
 
     def __len__(self):
         return len(self.local_images)
@@ -163,15 +164,12 @@ class DECADataset(Dataset):
 
         # Deca params of img-path
         out_dict = {}
-        precomp_params_key = without(src=self.params_selector, rmv=['img_latent'] + self.rmv_params)
-        print("B4", self.params_selector)
-        print("AFTER : ", precomp_params_key)
 
         img_name = path.split('/')[-1]
-        out_dict["cond_params"] = np.concatenate([self.deca_params[img_name][k] for k in precomp_params_key])
+
+        out_dict["cond_params"] = np.concatenate([self.deca_params[img_name][k] for k in self.precomp_params_key])
         for k in self.params_selector:
             out_dict[k] = self.deca_params[img_name][k]
-
         out_dict['image_name'] = img_name
 
         # Input to model
@@ -203,4 +201,11 @@ class DECADataset(Dataset):
         return arr
     
 def without(src, rmv):
-    return list(set(src).difference(rmv))
+    '''
+    Remove element in rmv-list out of src-list by preserving the order
+    '''
+    out = []
+    for s in src:
+        if s not in rmv:
+            out.append(s)
+    return out
