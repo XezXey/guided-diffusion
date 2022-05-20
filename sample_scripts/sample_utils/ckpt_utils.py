@@ -46,16 +46,22 @@ class CkptLoader():
 
         self.available_model()
 
-
         model_dict, diffusion = create_img_and_diffusion(self.cfg)
         model_dict = {k: v for k, v in model_dict.items() if v is not None}
-
         for m_name in model_dict.keys():
             model_path = f"{self.model_path}/{m_name}_{ckpt}.pt"
             print(f"[#] Loading...{model_path}")
+
+            # for p in model_dict['ImgCond'].named_parameters():
+            #     print(p)
+            # input()
             model_dict[m_name].load_state_dict(
                 th.load(model_path, map_location="cpu")
             )
+            # print("#"*100)
+            # for p in model_dict['ImgCond'].named_parameters():
+            #     print(p)
+            # input()
             model_dict[m_name].to('cuda')
             model_dict[m_name].eval()
 

@@ -164,11 +164,15 @@ class DECADataset(Dataset):
         # Deca params of img-path
         out_dict = {}
         precomp_params_key = without(src=self.params_selector, rmv=['img_latent'] + self.rmv_params)
+        print("B4", self.params_selector)
+        print("AFTER : ", precomp_params_key)
 
         img_name = path.split('/')[-1]
         out_dict["cond_params"] = np.concatenate([self.deca_params[img_name][k] for k in precomp_params_key])
         for k in self.params_selector:
             out_dict[k] = self.deca_params[img_name][k]
+
+        out_dict['image_name'] = img_name
 
         # Input to model
         if self.in_image == 'raw':

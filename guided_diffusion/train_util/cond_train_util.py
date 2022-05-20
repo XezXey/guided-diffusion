@@ -77,8 +77,7 @@ class TrainLoop(LightningModule):
         for i, m in enumerate(model):
             self.model_dict[name[i]] = m
 
-        # self.model = ModelWrapper(model_dict=self.model_dict, cfg=self.cfg)
-        self.model = self.model_dict["ImgCond"]
+        self.model = ModelWrapper(model_dict=self.model_dict, cfg=self.cfg)
 
         # Diffusion
         self.diffusion = diffusion
@@ -114,6 +113,11 @@ class TrainLoop(LightningModule):
         for name, model in self.model_dict.items():
             self.model_trainer_dict[name] = Trainer(name=name, model=model, pl_module=self)
 
+        
+        print("After Load OPT")
+        for p in self.model_dict["ImgCond"].named_parameters():
+            print(p)
+
         self.opt = AdamW(
             sum([list(self.model_trainer_dict[name].master_params) for name in self.model_trainer_dict.keys()], []),
             lr=self.lr, weight_decay=self.weight_decay
@@ -136,7 +140,6 @@ class TrainLoop(LightningModule):
                 self.model_ema_params_dict[name] = [
                     copy.deepcopy(self.model_trainer_dict[name].master_params) for _ in range(len(self.ema_rate))
                 ]
-
     def load_ckpt(self):
         '''
         Load model checkpoint from filename = model{step}.pt
@@ -160,7 +163,7 @@ class TrainLoop(LightningModule):
         )
         print("OPT: " , main_checkpoint, opt_checkpoint)
         if bf.exists(opt_checkpoint):
-            logger.log(f"Loading optimizer state from checkpoint: {opt_checkpoint}")
+            print(f"Loading optimizer state from checkpoint: {opt_checkpoint}")
             self.opt.load_state_dict(
                 th.load(opt_checkpoint, map_location='cpu'),
             )
@@ -171,7 +174,7 @@ class TrainLoop(LightningModule):
         ema_checkpoint = find_ema_checkpoint(main_checkpoint, self.resume_step, rate, name)
         print("EMA : ", ema_checkpoint, main_checkpoint)
         if ema_checkpoint:
-            logger.log(f"Loading EMA from checkpoint: {ema_checkpoint}...")
+            print(f"Loading EMA from checkpoint: {ema_checkpoint}...")
             state_dict = th.load(ema_checkpoint, map_location='cpu')
             for name in self.model_trainer_dict.keys():
                 ema_params = self.model_trainer_dict[name].state_dict_to_master_params(state_dict)
@@ -204,8 +207,12 @@ class TrainLoop(LightningModule):
 
     def training_step(self, batch, batch_idx):
         dat, cond = batch
-        # self.model(trainloop=self, dat=dat, cond=cond)
-        self.run_step(dat, cond)
+
+        # f = self.cfg.train.log_dir.split('/')[-1]
+        # th.save(self.model_dict['ImgCond'].state_dict(), f=f"/data/mint/model_logs/ckpt_for_compare/{f}_{self.step+self.resume_step}_saved.pt")
+        # self.log_rank_zero(batch)
+        # exit()
+        self.model(trainloop=self, dat=dat, cond=cond)
         self.step += 1
     
     @rank_zero_only
@@ -249,11 +256,9 @@ class TrainLoop(LightningModule):
         self.opt.step()
         for name in self.model_trainer_dict.keys():
             self.model_trainer_dict[name].get_norms()
-
         # print("AFTER OPT")
         # print(self.model_trainer_dict["ImgCond"].master_params[-1:])
         # input()
-
         return True
 
     # def optimize_trainer(self):
@@ -331,6 +336,17 @@ class TrainLoop(LightningModule):
         self.log("training_progress/global_samples", (step_ + 1) * self.global_batch)
 
     @rank_zero_only
+    def eval_mode(self):
+        for m in self.model_dict:
+            m.eval()
+
+    @rank_zero_only
+    def train_mode(self):
+        for m in self.model_dict:
+            m.train()
+        
+
+    @rank_zero_only
     def log_sampling(self, batch):
         print("Sampling...")
 
@@ -339,24 +355,44 @@ class TrainLoop(LightningModule):
         H = W = self.cfg.img_model.image_size
         n = self.cfg.train.n_sampling
 
-        dat, cond = batch
+        seed_all(47)
+        dat, cond = iter(self.data).next()
+
+        print(cond['image_name'])
+        cond = {}
+        for k, v in cond.items():
+            if k != 'image_name':
+                cond[k] = v.cuda()
+            else:
+                cond[k] = v
+        cond['image'] = dat.cuda()
+        print(dat['image_name'])
+        # dat, cond = batch
 
         if n > dat.shape[0]:
             n = dat.shape[0]
 
         r_idx = np.random.choice(a=np.arange(0, self.batch_size), size=n, replace=False,)
 
-        noise = th.randn((n, 3, H, W)).type_as(dat)
+        noise = th.randn((n, 3, H, W)).cuda()#.type_as(dat)
 
 
         if self.cfg.img_cond_model.apply:
             self.forward_cond_network(dat=dat, cond=cond)
 
-        cond = {
-            k: v[r_idx]
-            for k, v in cond.items()
-        }
         tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat[r_idx] + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
+
+        seed_all(47)
+        sample_from_ddim = self.diffusion.ddim_sample_loop(
+            model=self.model_dict[self.cfg.img_model.name],
+            shape=(n, 3, H, W),
+            clip_denoised=True,
+            model_kwargs=cond,
+            noise=noise,
+        )
+        sample_from_ddim = ((sample_from_ddim + 1) * 127.5) / 255.
+
+        tb.add_image(tag=f'ddim_sample', img_tensor=make_grid(sample_from_ddim, nrow=4), global_step=(step_ + 1) * self.n_gpus)
         sample_from_ps = self.diffusion.p_sample_loop(
             model=self.model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
@@ -367,15 +403,8 @@ class TrainLoop(LightningModule):
         sample_from_ps = ((sample_from_ps + 1) * 127.5) / 255.
         tb.add_image(tag=f'p_sample', img_tensor=make_grid(sample_from_ps, nrow=4), global_step=(step_ + 1) * self.n_gpus)
 
-        sample_from_ddim = self.diffusion.ddim_sample_loop(
-            model=self.model_dict[self.cfg.img_model.name],
-            shape=(n, 3, H, W),
-            clip_denoised=True,
-            model_kwargs=cond,
-            noise=noise,
-        )
-        sample_from_ddim = ((sample_from_ddim + 1) * 127.5) / 255.
-        tb.add_image(tag=f'ddim_sample', img_tensor=make_grid(sample_from_ddim, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+
+        self.model_dict['ImgCond'].train()
 
     @rank_zero_only
     def save(self):

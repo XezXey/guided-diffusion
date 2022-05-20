@@ -82,6 +82,14 @@ def denormalize(arr_norm, min_val, max_val, a=-1, b=1):
     return arr_denorm
 
 def load_params(path, params_key):
+    '''
+    Load & Return the params
+    Input : 
+    :params path: path of the pre-computed parameters
+    :params params_key: list of parameters name e.g. ['pose', 'light']
+    Return :
+    :params params_s: the dict-like of {'0.jpg':}
+    '''
 
     anno_path = glob.glob(f'{path}/*.txt')
     params = {}
@@ -93,14 +101,21 @@ def load_params(path, params_key):
                 params[k] = read_params(path=p)
 
     params_s = swap_key(params)
+    # print(params_s['25097.jpg'])
 
     all_params = []
     for img_name in params_s:
         each_img = []
         for k in params_key:
             each_img.append(params_s[img_name][k])
+        # if img_name =='25097.jpg':
+        #     print(each_img)
         all_params.append(np.concatenate(each_img))
-    all_params = np.stack(all_params)
-
+        # if img_name =='25097.jpg':
+        #     print(img_name)
+        #     print(all_params[-1])
+    all_params = np.stack(all_params, axis=0)
+    # print(all_params.shape)
+    # exit()
     return params_s, all_params
     

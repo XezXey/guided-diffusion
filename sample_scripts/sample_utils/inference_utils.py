@@ -1,4 +1,3 @@
-from typing import final
 import pytorch_lightning as pl
 import torch as th
 import numpy as np
@@ -63,7 +62,6 @@ class PLSampling(pl.LightningModule):
         return model_kwargs['cond_params']
 
     def forward(self, model_kwargs, noise):
-            
         sample = self.sample_fn(
             model=self.model_dict[self.cfg.img_model.name],
             shape=noise.shape,
@@ -84,6 +82,13 @@ class InputManipulate():
         self.params_dict = dict(zip(self.cfg.param_model.params_selector, self.cfg.param_model.n_params))
         self.exc_params = self.cfg.inference.exc_params + self.cfg.param_model.rmv_params
         self.images = [images[i] for i in self.rand_idx]
+
+        img_name = ['0.jpg', '1.jpg', '10.jpg', '100.jpg', '1000.jpg', '10000.jpg', '10001.jpg', '10002.jpg', '10003.jpg', '10004.jpg', '10005.jpg', '10006.jpg', '10007.jpg', '10008.jpg', '10009.jpg', '1001.jpg', '10010.jpg', '10011.jpg', '10012.jpg', '10013.jpg', '10014.jpg', '10015.jpg', '10016.jpg', '10017.jpg', '10018.jpg', '10019.jpg', '1002.jpg', '10020.jpg', '10021.jpg', '10022.jpg']
+        self.images = []
+        for i in img_name:
+            txt = '/data/mint/ffhq_256_with_anno/ffhq_256/train/' + i
+            self.images.append(txt)
+
 
     def set_rand_idx(self, rand_idx):
         self.rand_idx = rand_idx
@@ -190,7 +195,8 @@ class InputManipulate():
         '''
         Load deca condition and stack all of thems into 1D-vector
         '''
-        img_name = [list(params.keys())[i] for i in self.rand_idx]
+        # img_name = [list(params.keys())[i] for i in self.rand_idx]
+        img_name = ['0.jpg', '1.jpg', '10.jpg', '100.jpg', '1000.jpg', '10000.jpg', '10001.jpg', '10002.jpg', '10003.jpg', '10004.jpg', '10005.jpg', '10006.jpg', '10007.jpg', '10008.jpg', '10009.jpg', '1001.jpg', '10010.jpg', '10011.jpg', '10012.jpg', '10013.jpg', '10014.jpg', '10015.jpg', '10016.jpg', '10017.jpg', '10018.jpg', '10019.jpg', '1002.jpg', '10020.jpg', '10021.jpg', '10022.jpg']
         images = self.load_imgs(all_path=self.images, vis=True)['image']
 
         all = []
@@ -207,40 +213,40 @@ class InputManipulate():
         all = np.stack(all, axis=0)        
         return {'cond_params':th.tensor(all).cuda(), 'image_name':img_name, 'image':images, 'r_idx':self.rand_idx}
 
-    def load_condition(self, params):
-        '''
-        Load deca condition and stack all of thems into 1D-vector
-        '''
-        img_name = [list(params.keys())[i] for i in self.rand_idx]
-        images = self.load_imgs(all_path=self.images, vis=True)['image']
+    # def load_condition(self, params):
+    #     '''
+    #     Load deca condition and stack all of thems into 1D-vector
+    #     '''
+    #     img_name = [list(params.keys())[i] for i in self.rand_idx]
+    #     images = self.load_imgs(all_path=self.images, vis=True)['image']
 
-        all = []
-        each = {}
-        # Choose only param in params_selector
-        params_selector = self.cfg.param_model.params_selector
-        for name in img_name:
-            each_param = []
-            for p_name in params_selector:
-                if p_name not in self.exc_params:
-                    each_param.append(params[name][p_name])
-            all.append(np.concatenate(each_param))
+    #     all = []
+    #     each = {}
+    #     # Choose only param in params_selector
+    #     params_selector = self.cfg.param_model.params_selector
+    #     for name in img_name:
+    #         each_param = []
+    #         for p_name in params_selector:
+    #             if p_name not in self.exc_params:
+    #                 each_param.append(params[name][p_name])
+    #         all.append(np.concatenate(each_param))
         
-        for p_name in params_selector:
-            each[p_name] = []
-            for name in img_name:
-                each[p_name].append(params[name][p_name])
+    #     for p_name in params_selector:
+    #         each[p_name] = []
+    #         for name in img_name:
+    #             each[p_name].append(params[name][p_name])
 
-        for k in each.keys():
-            each[k] = th.tensor(np.stack(each[k], axis=0)).cuda()
+    #     for k in each.keys():
+    #         each[k] = th.tensor(np.stack(each[k], axis=0)).cuda()
 
-        all = np.stack(all, axis=0)        
-        out_dict = {'cond_params':th.tensor(all).cuda(), 
-                'image_name':img_name, 
-                'image':images, 
-                'r_idx':self.rand_idx}
-        out_dict.update(each)
+    #     all = np.stack(all, axis=0)        
+    #     out_dict = {'cond_params':th.tensor(all).cuda(), 
+    #             'image_name':img_name, 
+    #             'image':images, 
+    #             'r_idx':self.rand_idx}
+    #     out_dict.update(each)
 
-        return out_dict
+    #     return out_dict
 
     def cond_params_location(self):
         '''

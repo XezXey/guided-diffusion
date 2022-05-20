@@ -28,6 +28,7 @@ def main():
     # Filtered out the None model
     img_model = {k: v for k, v in img_model.items() if v is not None}
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
+    print(cfg.param_model.params_selector)
 
     logger.log("creating data loader...")
     data = load_data_img_deca(
@@ -44,7 +45,6 @@ def main():
     )
 
     logger.log("training...")
-
     tb_logger = TensorBoardLogger("tb_logs", name="diffusion", version=cfg.train.log_dir.split('/')[-1])
 
     train_loop = TrainLoop(

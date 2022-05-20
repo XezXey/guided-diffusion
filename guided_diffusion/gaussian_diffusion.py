@@ -710,7 +710,19 @@ class GaussianDiffusion:
 
         Same usage as p_sample_loop().
         """
+        # for p in model.named_parameters():
+        #     print(p)
+        #     input()
+        # exit()
         final = None
+        print(clip_denoised)
+        print(th.min(noise), th.max(noise))
+        print(th.mean(noise), th.std(noise))
+        print(denoised_fn)
+        noise = th.randn(*shape).cuda()
+        print(th.min(noise), th.max(noise))
+        print(th.mean(noise), th.std(noise))
+        input()
         for sample in self.ddim_sample_loop_progressive(
             model,
             shape,
@@ -834,7 +846,6 @@ class GaussianDiffusion:
         terms = {}
         if self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
             model_kwargs.update()
-            # output = model(x_t.type(th.cuda.FloatTensor), self._scale_timesteps(t).type(th.cuda.LongTensor), **model_kwargs)
             output = model(x_t.float(), self._scale_timesteps(t).long(), **model_kwargs)
             model_output = output['output']
             target = {
