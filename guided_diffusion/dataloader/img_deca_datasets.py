@@ -111,6 +111,8 @@ def load_data_img_deca(
             img_dataset, batch_size=batch_size, shuffle=True, num_workers=24, drop_last=True, pin_memory=True,
             persistent_workers=True
         )
+
+    print("Params keys order : ", loader.precomp_params_key)
     while True:
         return loader
 

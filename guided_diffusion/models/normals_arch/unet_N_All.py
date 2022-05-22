@@ -471,12 +471,14 @@ class UNetNormalsAll(nn.Module):
                 # print("*"*100)
         
         if all_cfg.relighting.mult_shaded == 'SharedConv':
+            # Use same Conv layers to produce Img and shading
             self.out = nn.Sequential(
                 normalization(channels=input_ch),
                 nn.SiLU(),
                 conv_nd(dims, input_ch, out_channels+all_cfg.relighting.num_shaded_ch, 3, padding=1),
             )
         elif all_cfg.relighting.mult_shaded == 'SepConv':
+            # Use individual Conv layers to produce Img and shading
             self.out = nn.Sequential(
                 normalization(channels=input_ch),
                 nn.SiLU(),
@@ -499,10 +501,10 @@ class UNetNormalsAll(nn.Module):
         # print("#"*100)
         # print(self.middle_block)
         # print("#"*100)
-        print("Output blocks")
-        print("#"*100)
-        print(self.output_blocks)
-        print("#"*100)
+        # print("Output blocks")
+        # print("#"*100)
+        # print(self.output_blocks)
+        # print("#"*100)
         # exit()
 
         # print(input_block_ch)
