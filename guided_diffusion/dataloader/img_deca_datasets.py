@@ -101,6 +101,8 @@ def load_data_img_deca(
         rmv_params=rmv_params
     )
 
+    print("Params keys order : ", image_dataset.precomp_params_key)
+
     if deterministic:
         loader = DataLoader(
             img_dataset, batch_size=batch_size, shuffle=False, num_workers=24, drop_last=True, 
@@ -112,7 +114,6 @@ def load_data_img_deca(
             persistent_workers=True
         )
 
-    print("Params keys order : ", loader.precomp_params_key)
     while True:
         return loader
 
