@@ -331,7 +331,6 @@ class TrainLoop(LightningModule):
         print("Sampling...")
         self.eval_mode()
 
-
         step_ = float(self.step + self.resume_step)
         tb = self.tb_logger.experiment
         H = W = self.cfg.img_model.image_size
@@ -339,11 +338,9 @@ class TrainLoop(LightningModule):
 
         dat, cond = batch
 
-        if n > dat.shape[0]:
+        if n != dat.shape[0]:
             n = dat.shape[0]
-
-        r_idx = np.random.choice(a=np.arange(0, self.batch_size), size=n, replace=False,)
-
+        
         noise = th.randn((n, 3, H, W)).type_as(dat)
 
         # Any Encoder/Conditioned Network to be applied before a main UNet
@@ -351,7 +348,6 @@ class TrainLoop(LightningModule):
             self.forward_cond_network(dat=dat, cond=cond)
 
         tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
-        # tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat[r_idx] + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
 
         sample_from_ddim = self.diffusion.ddim_sample_loop(
             model=self.model_dict[self.cfg.img_model.name],
