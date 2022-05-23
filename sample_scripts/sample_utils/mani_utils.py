@@ -29,7 +29,7 @@ def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn=lerp)
     :return interp_cond: interpolated between src->dst in dict-like 
         e.g. {'light': tensor of [n_step x ...], 'shape': tensor of [n_step x ...]}
     '''
-    interp_cond = {}
+    out_interp = {}
 
     for itp in interp_set:
         assert itp in cond.keys()
@@ -39,9 +39,9 @@ def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn=lerp)
                              dst_cond=cond[itp][[dst_idx]],
                              n_step=n_step,
                              interp_fn=interp_fn)
-        interp_cond[itp] = interp
+        out_interp[itp] = interp
 
-    return interp_cond
+    return out_interp 
 
 def interchange_cond(cond, interchange, base_idx, n):
     '''
@@ -79,9 +79,9 @@ def interp_cond(src_cond, dst_cond, n_step, interp_fn=lerp):
     interp = []
     for r in r_interp:
         tmp = interp_fn(r=r, src=src, dst=dst)
-        interp.append(tmp.clone())
+        interp.append(tmp.copy())
 
-    interp = th.cat((interp), dim=0)
+    interp = np.concatenate((interp), axis=0)
 
     return interp 
 
@@ -112,7 +112,7 @@ def interp_noise(src_noise, dst_noise, n_step, interp_fn=lerp):
 def repeat_cond_params(cond, base_idx, n, key):
     repeat = {}
     for p in key:
-        repeat[p] = cond[p][base_idx].repeat(n, 1)
+        repeat[p] = np.repeat(cond[p][[base_idx]], repeats=n, axis=0)
     
     return repeat
 
@@ -197,6 +197,16 @@ def load_image(all_path, cfg, vis=False):
     if vis:
         vis_utils.plot_sample(th.tensor(imgs))
     return {'image':th.tensor(imgs)}
+
+def without(src, rmv):
+    '''
+    Remove element in rmv-list out of src-list by preserving the order
+    '''
+    out = []
+    for s in src:
+        if s not in rmv:
+            out.append(s)
+    return out
 
 if __name__ == '__main__':
     import params_utils
