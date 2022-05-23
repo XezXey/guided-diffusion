@@ -111,7 +111,6 @@ class InputManipulate():
         
         return {'cond_params':cond_params, 'image_name':image_name, 'image':image}
 
-    
 
     def get_init_noise(self, mode, img_size):
         '''
@@ -223,7 +222,7 @@ class InputManipulate():
         return src_img_list, render_img_list
 
 
-def get_init_noise(n, mode, img_size):
+def get_init_noise(n, mode, img_size, device):
     '''
     Return the init_noise used as input.
     :params mode: mode for sampling noise => 'vary_noise', 'fixed_noise'
@@ -234,9 +233,11 @@ def get_init_noise(n, mode, img_size):
         init_noise = th.cat([th.randn((1, 3, img_size, img_size))] * n, dim=0)
     else: raise NotImplementedError
 
-    return init_noise
+    return init_noise.to(device)
 
 def to_tensor(cond, key, device):
+    print(device)
+    exit()
     for k in key:
         cond[k] = th.tensor(cond[k]).to(device)
     return cond

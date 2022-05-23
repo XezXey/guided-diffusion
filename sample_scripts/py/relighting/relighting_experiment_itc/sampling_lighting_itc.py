@@ -85,7 +85,7 @@ if __name__ == '__main__':
     os.makedirs(out_folder_reconstruction, exist_ok=True)
 
     # Input
-    init_noise = inference_utils.get_init_noise(n=args.batch_size, mode='fixed_noise', img_size=cfg.img_model.image_size)
+    init_noise = inference_utils.get_init_noise(n=args.batch_size, mode='fixed_noise', img_size=cfg.img_model.image_size, device=ckpt_loader.device)
     cond = model_kwargs.copy()
     
     # Interpolate/Interchange/etc.
