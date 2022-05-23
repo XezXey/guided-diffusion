@@ -47,8 +47,6 @@ from sample_utils import (
 if __name__ == '__main__':
     # Load ckpt
     ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
-    print(ckpt_loader.device)
-    exit()
     cfg = ckpt_loader.cfg
     seed_all(47)
     
