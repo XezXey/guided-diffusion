@@ -1,4 +1,3 @@
-from pickle import PickleError
 import numpy as np
 import pandas as pd
 import torch as th
@@ -6,15 +5,16 @@ import torch.nn.functional as F
 import glob, os
 import PIL
 import matplotlib.pyplot as plt
-from model_3d.FLAME import FLAME
-from model_3d.FLAME.config import cfg as flame_cfg
 from collections import defaultdict
-from model_3d.FLAME.utils.renderer import SRenderY
-import model_3d.FLAME.utils.util as util
-
-flame = FLAME.FLAME(flame_cfg.model).cuda()
 
 def params_to_model(shape, exp, pose, cam, i, uvdn=None):
+
+    from model_3d.FLAME import FLAME
+    from model_3d.FLAME.config import cfg as flame_cfg
+    from model_3d.FLAME.utils.renderer import SRenderY
+    import model_3d.FLAME.utils.util as util
+
+    flame = FLAME.FLAME(flame_cfg.model).cuda()
     verts, landmarks2d, landmarks3d = flame(shape_params=shape, 
             expression_params=exp, 
             pose_params=pose)
@@ -28,8 +28,7 @@ def params_to_model(shape, exp, pose, cam, i, uvdn=None):
     ## rendering
     shape_images = renderer.render_shape(verts, trans_verts)
 
-    opdict = {'verts' : verts,}
-
+    # opdict = {'verts' : verts,}
     # os.makedirs('./rendered_obj', exist_ok=True)
     # save_obj(renderer=renderer, filename=(f'./rendered_obj/{i}.obj'), opdict=opdict)
     
@@ -40,6 +39,7 @@ def save_obj(renderer, filename, opdict):
     vertices: [nv, 3], tensor
     texture: [3, h, w], tensor
     '''
+    import model_3d.FLAME.utils.util as util
     i = 0
     vertices = opdict['verts'][i].cpu().numpy()
     faces = renderer.faces[0].cpu().numpy()
@@ -101,21 +101,13 @@ def load_params(path, params_key):
                 params[k] = read_params(path=p)
 
     params_s = swap_key(params)
-    # print(params_s['25097.jpg'])
 
     all_params = []
     for img_name in params_s:
         each_img = []
         for k in params_key:
             each_img.append(params_s[img_name][k])
-        # if img_name =='25097.jpg':
-        #     print(each_img)
         all_params.append(np.concatenate(each_img))
-        # if img_name =='25097.jpg':
-        #     print(img_name)
-        #     print(all_params[-1])
     all_params = np.stack(all_params, axis=0)
-    # print(all_params.shape)
-    # exit()
     return params_s, all_params
     

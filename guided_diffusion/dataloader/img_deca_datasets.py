@@ -23,7 +23,6 @@ from .img_util import (
     random_crop_arr
 )
 
-
 def read_params(path):
     params = pd.read_csv(path, header=None, sep=" ", index_col=False, lineterminator='\n')
     params.rename(columns={0:'img_name'}, inplace=True)
@@ -181,7 +180,7 @@ class DECADataset(Dataset):
         else : raise NotImplementedError
 
         return np.transpose(arr, [2, 0, 1]), out_dict
-
+    
     def augmentation(self, pil_image):
         # Resize image by resizing/cropping to match the resolution
         if self.resize_mode == 'random_crop':
