@@ -15,7 +15,7 @@ class CkptLoader():
         self.model_path = self.get_model_path()
         self.cfg = self.get_cfg()
         self.name = self.cfg.img_model.name
-        if device is None:
+        if device is not None:
             self.device = device
         else:
             if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0:
