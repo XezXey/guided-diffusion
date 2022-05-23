@@ -90,8 +90,11 @@ if __name__ == '__main__':
     
     # Interpolate/Interchange/etc.
     interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=0, dst_idx=3, n_step=args.batch_size)
+    print(interp_cond.keys())
     cond = mani_utils.repeat_cond_params(cond, base_idx=0, n=args.batch_size, key=mani_utils.without(['shape', 'pose', 'exp', 'cam', 'light', 'faceemb'], ['light']))
+    print(cond.keys())
     cond.update(interp_cond)
+    print(cond.keys())
     
     # Finalize the cond_params
     cond = mani_utils.create_cond_params(cond=cond, key=cfg.param_model.params_selector)
