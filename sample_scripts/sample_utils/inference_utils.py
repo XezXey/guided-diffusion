@@ -111,26 +111,7 @@ class InputManipulate():
         
         return {'cond_params':cond_params, 'image_name':image_name, 'image':image}
 
-    def interchange_condition(self, cond_params, interchange, base_idx):
-        '''
-        Condition parameters interchange
-        :params cond_params: condition parameters in BxD, e.g. D = #shape + #pose
-        :params interchange: list of parameters e.g. ['pose'], ['pose', 'shape']
-        :params base_idx: base_idx that repeat itself and make change a condition from another sample.
-        '''
-        # Fixed the based-idx image
-        params_selector = self.cfg.param_model.params_selector
-        params_selected_loc = self.cond_params_location()
-        cond_params_itc = cond_params[[base_idx]].clone().repeat(self.n, 1)
-        for itc in interchange:
-            assert itc in params_selector
-            i, j = params_selected_loc[itc]
-            cond_params_itc[1:, i:j] = cond_params[1:, i:j]
-
-        cond_params = cond_params_itc
-
-        return cond_params
-
+    
 
     def get_init_noise(self, mode, img_size):
         '''
@@ -163,50 +144,8 @@ class InputManipulate():
             model_kwargs['cond_params'] = self.interchange_condition(cond_params=model_kwargs['cond_params'], interchange=interchange, base_idx=base_idx)
         return init_noise, model_kwargs
 
-    def load_imgs(self, all_path, vis=False):
+  
 
-        '''
-        Load image and stack all of thems into BxCxHxW
-        '''
-
-        imgs = []
-        for path in all_path:
-            with bf.BlobFile(path, "rb") as f:
-                pil_image = PIL.Image.open(f)
-                pil_image.load()
-            pil_image = pil_image.convert("RGB")
-
-            raw_img = img_utils.augmentation(pil_image=pil_image, cfg=self.cfg)
-
-            raw_img = (raw_img / 127.5) - 1
-
-            imgs.append(np.transpose(raw_img, (2, 0, 1)))
-        imgs = np.stack(imgs)
-        if vis:
-            vis_utils.plot_sample(th.tensor(imgs))
-        return {'image':th.tensor(imgs).cuda()}
-
-    def load_condition(self, params):
-        '''
-        Load deca condition and stack all of thems into 1D-vector
-        '''
-        # img_name = [list(params.keys())[i] for i in self.rand_idx]
-        img_name = ['0.jpg', '1.jpg', '10.jpg', '100.jpg', '1000.jpg', '10000.jpg', '10001.jpg', '10002.jpg', '10003.jpg', '10004.jpg', '10005.jpg', '10006.jpg', '10007.jpg', '10008.jpg', '10009.jpg', '1001.jpg', '10010.jpg', '10011.jpg', '10012.jpg', '10013.jpg', '10014.jpg', '10015.jpg', '10016.jpg', '10017.jpg', '10018.jpg', '10019.jpg', '1002.jpg', '10020.jpg', '10021.jpg', '10022.jpg']
-        images = self.load_imgs(all_path=self.images, vis=True)['image']
-
-        all = []
-
-        # Choose only param in params_selector
-        params_selector = self.cfg.param_model.params_selector
-        for name in img_name:
-            each_param = []
-            for p_name in params_selector:
-                if p_name not in self.exc_params:
-                    each_param.append(params[name][p_name])
-            all.append(np.concatenate(each_param))
-
-        all = np.stack(all, axis=0)        
-        return {'cond_params':th.tensor(all).cuda(), 'image_name':img_name, 'image':images, 'r_idx':self.rand_idx}
 
     # def load_condition(self, params):
     #     '''
@@ -281,111 +220,24 @@ class InputManipulate():
             render_img = params_utils.params_to_model(shape=shape, exp=exp, pose=pose, cam=cam, i=img_name)
             render_img_list.append(render_img["shape_images"])
 
-        return src_img_list, render_img_list 
+        return src_img_list, render_img_list
 
 
-def merge_cond(src_cond_params, dst_cond_params):
+def get_init_noise(n, mode, img_size):
     '''
-    :params src_cond_params: src condition to merged in Bx
-    :params dst_cond_params: dst condition to merged with in BxD
+    Return the init_noise used as input.
+    :params mode: mode for sampling noise => 'vary_noise', 'fixed_noise'
     '''
-    merged = th.cat((src_cond_params.clone(), dst_cond_params.clone()), dim=0)
-    return merged
+    if mode == 'vary_noise':
+        init_noise = th.randn((n, 3, img_size, img_size))
+    elif mode == 'fixed_noise':
+        init_noise = th.cat([th.randn((1, 3, img_size, img_size))] * n, dim=0)
+    else: raise NotImplementedError
 
-def lerp(r, src, dst):
-    return ((1-r) * src) + (r * dst)
+    return init_noise
 
-def slerp(r, src, dst):
-    low = src.cpu().numpy()
-    high = dst.cpu().numpy()
-    val = r
-    omega = np.arccos(np.clip(np.dot(low/np.linalg.norm(low), high/np.linalg.norm(high)), -1, 1))
-    so = np.sin(omega)
-    if so == 0:
-        return th.tensor((1.0-val) * low + val * high) # L'Hopital's rule/LERP
-    return th.tensor(np.sin((1.0-val)*omega) / so * low + np.sin(val*omega) / so * high)
-
-def interpolate_cond(base_cond_params, src_cond_params, dst_cond_params, n_step, params_loc, params_sel, itp_cond, interp_fn=lerp):
-    # Fixed the based-idx image
-
-    r_interp = np.linspace(0, 1, num=n_step)
-    params_selected_loc = params_loc
-    params_selector = params_sel
-
-    final_cond = base_cond_params.clone().repeat(n_step, 1)
-
-    for itp in itp_cond:
-        assert itp in params_selector
-        i, j = params_selected_loc[itp]
-
-        src = src_cond_params[:, i:j]
-        dst = dst_cond_params[:, i:j]
-        interp = []
-        for r in r_interp:
-            tmp = interp_fn(r=r, src=src, dst=dst)
-            interp.append(tmp.clone())
-
-        interp = th.cat((interp), dim=0)
-        final_cond[:, i:j] = interp
-
-    return final_cond
-
-def interpolate_cond(src_cond_params, dst_cond_params, n_step, interp_fn=lerp):
-    # Fixed the based-idx image
-
-    r_interp = np.linspace(0, 1, num=n_step)
-
-    src = src_cond_params
-    dst = dst_cond_params
-    interp = []
-    for r in r_interp:
-        tmp = interp_fn(r=r, src=src, dst=dst)
-        interp.append(tmp.clone())
-
-    interp = th.cat((interp), dim=0)
-    final_cond = interp
-
-    return final_cond
-
-def interpolate_noise(src_noise, dst_noise, n_step, interp_fn=lerp):
-    # Fixed the based-idx noise
-
-    r_interp = np.linspace(0, 1, num=n_step)
-
-    src = src_noise
-    dst = dst_noise
-    interp = []
-    for r in r_interp:
-        tmp = interp_fn(r=r, src=src, dst=dst)
-        interp.append(tmp.clone())
-
-    interp = th.cat((interp), dim=0)
-    final_cond = interp
-
-    return final_cond
-
-def modify_cond(mod_idx, cond_params, params_loc, params_sel, n_step, bound, mod_cond, force_zero=False):
-    '''
-    Manually change/scale the condition parameters at i-th index e.g. [c1, c2, c3, ..., cN] => [c1 * 2.0, c2, c3, ..., cN]
-    :params offset: offset to +- from condition
-
-    '''
-    # Fixed the based-idx image
-    mod_interp = np.linspace(-bound, bound, num=n_step)
-    mod_interp = np.stack([mod_interp]*len(mod_idx), axis=-1)
-    mod_interp = th.tensor(mod_interp).cuda()
-    params_selected_loc = params_loc
-    params_selector = params_sel
-
-    final_cond = cond_params.clone().repeat(n_step, 1)
-
-    for itp in mod_cond:
-        assert itp in params_selector
-        i, j = params_selected_loc[itp]
-        mod_idx = np.arange(i, j)[mod_idx]
-        if force_zero:
-            mod = (cond_params[:, mod_idx] * 0) + mod_interp
-        else:
-            mod = cond_params[:, mod_idx] + mod_interp
-        final_cond[:, mod_idx] = mod.float()
-    return final_cond
+def to_tensor(cond, key, device):
+    for k in key:
+        cond[k] = th.tensor(cond[k]).to(device)
+    return cond
+    

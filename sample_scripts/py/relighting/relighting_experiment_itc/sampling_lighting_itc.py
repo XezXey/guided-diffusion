@@ -34,30 +34,26 @@ from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
 
 # Sample utils
 sys.path.insert(0, '../../')
-from sample_utils import ckpt_utils, params_utils, vis_utils, file_utils, img_utils, inference_utils
-
+from sample_utils import (
+    ckpt_utils, 
+    params_utils, 
+    vis_utils, 
+    file_utils, 
+    img_utils, 
+    inference_utils, 
+    mani_utils
+)
 
 if __name__ == '__main__':
     # Load ckpt
     ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
     cfg = ckpt_loader.cfg
-
-    data = load_data_img_deca(
-        data_dir=cfg.dataset.data_dir,
-        deca_dir=cfg.dataset.deca_dir,
-        batch_size=cfg.train.batch_size,
-        image_size=cfg.img_model.image_size,
-        deterministic=cfg.train.deterministic,
-        augment_mode=cfg.img_model.augment_mode,
-        resize_mode=cfg.img_model.resize_mode,
-        in_image=cfg.img_model.in_image,
-        params_selector=cfg.param_model.params_selector,
-        rmv_params=cfg.param_model.rmv_params,
-    )
+    seed_all(47)
+    
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
 
     # Load params
-    params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
+    params_key = cfg.param_model.params_selector
     if args.set == 'train':
         params_train, params_train_arr = params_utils.load_params(path="/data/mint/ffhq_256_with_anno/params/train/", params_key=params_key)
         params_set = params_train
@@ -67,10 +63,16 @@ if __name__ == '__main__':
     else:
         raise NotImplementedError
 
-    # Load image for condition (if needed)
+    # Load image & condition
+    rand_idx = np.random.choice(a=range(len(list(params_set.keys()))), replace=False, size=args.batch_size)
     img_dataset_path = f"/data/mint/ffhq_256_with_anno/ffhq_256/{args.set}/"
-    all_files = file_utils._list_image_files_recursively(img_dataset_path)
-
+    img_path = file_utils._list_image_files_recursively(img_dataset_path)
+    img_path = [img_path[r] for r in rand_idx]
+    img_name = [path.split('/')[-1] for path in img_path]
+    
+    model_kwargs = mani_utils.load_condition(params_set, img_name)
+    images = mani_utils.load_image(all_path=img_path, cfg=cfg, vis=True)['image']
+    model_kwargs.update({'image_name':img_name, 'image':images})
 
     batch_size = args.batch_size
     base_idx = args.base_idx
@@ -82,26 +84,21 @@ if __name__ == '__main__':
     os.makedirs(out_folder_interpolate, exist_ok=True)
     os.makedirs(out_folder_reconstruction, exist_ok=True)
 
-    im = inference_utils.InputManipulate(cfg=cfg, params=params_set, batch_size=batch_size, images=all_files)
-    init_noise, model_kwargs = im.prep_model_input(params_set=params_set, mode=mode, interchange=None, base_idx=base_idx)
-    # model_kwargs = im.load_condition(params=params_set)
-
-
+    # Input
+    init_noise = inference_utils.get_init_noise(n=args.batch_size, mode='fixed_noise', img_size=cfg.img_model.image_size)
+    cond = model_kwargs.copy()
+    
+    # Interpolate/Interchange/etc.
+    cond = mani_utils.interchange_cond(cond, interchange=['pose'], base_idx=args.base_idx, n=args.batch_size)
+    
+    # Finalize the cond_params
+    cond = mani_utils.create_cond_params(cond=cond, key=cfg.param_model.params_selector)
+    cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
+    
     # Forward
     pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
-    # sample_ddim = pl_sampling(noise=init_noise, model_kwargs=model_kwargs)
-    seed_all(47)
-    sample_from_ddim = diffusion.ddim_sample_loop(
-                model=model_dict[cfg.img_model.name],
-                shape=(args.batch_size, 3, 64, 64),
-                clip_denoised=True,
-                model_kwargs=model_kwargs,
-                noise=init_noise,
-            )
-    sample_ddim = sample_from_ddim
-    # print(sample_ddim)
-    # print(sample_ddim.shape)
-    fig = vis_utils.plot_sample(img=model_kwargs['image'], sampling_img=sample_ddim)
+    sample_ddim = pl_sampling(noise=init_noise, model_kwargs=cond)
+    fig = vis_utils.plot_sample(img=model_kwargs['image'], sampling_img=sample_ddim['img_output'])
     # Save a visualization
     fig.suptitle(f"""Reverse Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
                     model={args.log_dir}, seed={args.seed}, interpolate={interpolate}, base_idx={args.base_idx}
