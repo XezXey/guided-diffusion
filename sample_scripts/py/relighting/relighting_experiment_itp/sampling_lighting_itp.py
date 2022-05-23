@@ -89,7 +89,7 @@ if __name__ == '__main__':
     cond = model_kwargs.copy()
     
     # Interpolate/Interchange/etc.
-    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['pose'], src_idx=0, dst_idx=3, n_step=args.batch_size)
+    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=0, dst_idx=3, n_step=args.batch_size)
     cond = mani_utils.repeat_cond_params(cond, base_idx=0, n=args.batch_size, key=mani_utils.without(['shape', 'pose', 'exp', 'cam', 'light', 'faceemb'], ['pose']))
     cond.update(interp_cond)
     
