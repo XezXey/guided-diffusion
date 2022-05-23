@@ -236,8 +236,6 @@ def get_init_noise(n, mode, img_size, device):
     return init_noise.to(device)
 
 def to_tensor(cond, key, device):
-    print(device)
-    exit()
     for k in key:
         cond[k] = th.tensor(cond[k]).to(device)
     return cond
