@@ -6,7 +6,7 @@ from guided_diffusion.script_util import (
 )
 
 class CkptLoader():
-    def __init__(self, log_dir, cfg_name) -> None:
+    def __init__(self, log_dir, cfg_name, device=None) -> None:
         self.sshfs_mount_path = "/data/mint/model_logs_mount/"
         self.sshfs_path = "/data/mint/model_logs/"
 
@@ -15,6 +15,13 @@ class CkptLoader():
         self.model_path = self.get_model_path()
         self.cfg = self.get_cfg()
         self.name = self.cfg.img_model.name
+        if device is None:
+            self.device = device
+        else:
+            if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0:
+               self.device = 'cuda' 
+            else : self.device = 'cpu'
+                
 
     # Config file
     def get_cfg(self,):
@@ -32,8 +39,7 @@ class CkptLoader():
         model_logs_path = glob.glob(f"{self.sshfs_mount_path}/*/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/", recursive=True)
         model_path = [m_log for m_log in model_logs_path if f"/{self.log_dir}/" in m_log]    # Add /{}/ to achieve a case-sensitive of folder
         print("[#] Model Path : ", model_path)
-        assert len(model_path) <= 1 
-        assert len(model_path) > 0
+        assert (len(model_path) <= 1 or len(model_path) > 0)
         return model_path[0]
 
     # Load model
@@ -52,17 +58,10 @@ class CkptLoader():
             model_path = f"{self.model_path}/{m_name}_{ckpt}.pt"
             print(f"[#] Loading...{model_path}")
 
-            # for p in model_dict['ImgCond'].named_parameters():
-            #     print(p)
-            # input()
             model_dict[m_name].load_state_dict(
                 th.load(model_path, map_location="cpu")
             )
-            # print("#"*100)
-            # for p in model_dict['ImgCond'].named_parameters():
-            #     print(p)
-            # input()
-            model_dict[m_name].to('cuda')
+            model_dict[m_name].to(self.device)
             model_dict[m_name].eval()
 
         return model_dict, diffusion

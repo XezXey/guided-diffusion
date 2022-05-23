@@ -25,7 +25,7 @@ cfg.device_id = '0'
 # ---------------------------------------------------------------------------- #
 cfg.param_model = CN()
 cfg.param_model.name = "Deca"
-cfg.param_model.params_selector = ['shape', 'pose', 'exp', 'cam']
+cfg.param_model.params_selector = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
 cfg.param_model.rmv_params = []
 cfg.param_model.n_shape = 100
 cfg.param_model.n_pose = 6

@@ -51,15 +51,17 @@ class PLSampling(pl.LightningModule):
         self.diffusion = diffusion
         self.cfg = cfg
 
-    def forward_cond_network(self, model_kwargs):
+    def forward_cond_network(self, dat, cond):
         if self.cfg.img_cond_model.apply:
-            dat = model_kwargs['image']
+            dat = cond['image']
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
-                x=dat.type(th.cuda.FloatTensor), 
+                x=dat.float(), 
                 emb=None,
             )
-            model_kwargs['cond_params'] = th.cat((model_kwargs['cond_params'], img_cond), dim=-1)
-        return model_kwargs['cond_params']
+            if self.cfg.img_cond_model.override_cond != "":
+                cond[self.cfg.img_cond_model.override_cond] = img_cond
+            else: raise AttributeError
+        return cond
 
     def forward(self, model_kwargs, noise):
         sample = self.sample_fn(
@@ -82,13 +84,6 @@ class InputManipulate():
         self.params_dict = dict(zip(self.cfg.param_model.params_selector, self.cfg.param_model.n_params))
         self.exc_params = self.cfg.inference.exc_params + self.cfg.param_model.rmv_params
         self.images = [images[i] for i in self.rand_idx]
-
-        img_name = ['0.jpg', '1.jpg', '10.jpg', '100.jpg', '1000.jpg', '10000.jpg', '10001.jpg', '10002.jpg', '10003.jpg', '10004.jpg', '10005.jpg', '10006.jpg', '10007.jpg', '10008.jpg', '10009.jpg', '1001.jpg', '10010.jpg', '10011.jpg', '10012.jpg', '10013.jpg', '10014.jpg', '10015.jpg', '10016.jpg', '10017.jpg', '10018.jpg', '10019.jpg', '1002.jpg', '10020.jpg', '10021.jpg', '10022.jpg']
-        self.images = []
-        for i in img_name:
-            txt = '/data/mint/ffhq_256_with_anno/ffhq_256/train/' + i
-            self.images.append(txt)
-
 
     def set_rand_idx(self, rand_idx):
         self.rand_idx = rand_idx

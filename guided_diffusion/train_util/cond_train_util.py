@@ -243,7 +243,7 @@ class TrainLoop(LightningModule):
         return True
 
     # def optimize_trainer(self):
-    #     # Todo : adding a different optimizer to use with this function
+    # TODO: Adding a different optimizer to use with this function
     #     took_step = []
     #     for name in self.model_trainer_dict.keys():
     #         tk_s = self.model_trainer_dict['ImgCond'].optimize(self.opt)
