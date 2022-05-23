@@ -12,6 +12,7 @@ parser.add_argument('--src_idx', type=int, default=2)
 parser.add_argument('--dst_idx', type=int, default=10)
 parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--out_dir', type=str, required=True)
+parser.add_argument('--interpolate', nargs='+', default=None)
 parser.add_argument('--gpu', type=str, default='0')
 args = parser.parse_args()
 
@@ -76,9 +77,9 @@ if __name__ == '__main__':
 
     batch_size = args.batch_size
     base_idx = args.base_idx
+    print(args.interpolate)
     mode = {'init_noise':'fixed_noise', 'cond_params':'vary_cond'}
-    interpolate = ["None"]
-    interpolate_str = '_'.join(interpolate)
+    interpolate_str = '_'.join(args.interpolate)
     out_folder_interpolate = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/"
     out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/"
     os.makedirs(out_folder_interpolate, exist_ok=True)
@@ -89,12 +90,9 @@ if __name__ == '__main__':
     cond = model_kwargs.copy()
     
     # Interpolate/Interchange/etc.
-    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=0, dst_idx=3, n_step=args.batch_size)
-    print(interp_cond.keys())
-    cond = mani_utils.repeat_cond_params(cond, base_idx=0, n=args.batch_size, key=mani_utils.without(['shape', 'pose', 'exp', 'cam', 'light', 'faceemb'], ['light']))
-    print(cond.keys())
+    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=args.interpolate, src_idx=args.src_idx, dst_idx=args.dst_idx, n_step=args.batch_size)
+    cond = mani_utils.repeat_cond_params(cond, base_idx=args.base_idx, n=args.batch_size, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate))
     cond.update(interp_cond)
-    print(cond.keys())
     
     # Finalize the cond_params
     cond = mani_utils.create_cond_params(cond=cond, key=cfg.param_model.params_selector)
@@ -106,7 +104,7 @@ if __name__ == '__main__':
     fig = vis_utils.plot_sample(img=model_kwargs['image'], sampling_img=sample_ddim['img_output'])
     # Save a visualization
     fig.suptitle(f"""Reverse Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
-                    model={args.log_dir}, seed={args.seed}, interpolate={interpolate}, base_idx={args.base_idx}
+                    model={args.log_dir}, seed={args.seed}, interpolate={args.interpolate}, base_idx={args.base_idx}
                 """, x=0.1, y=0.95, horizontalalignment='left', verticalalignment='top',)
 
-    plt.savefig(f"{out_folder_reconstruction}/seed={args.seed}_bidx={args.base_idx}_itc={interpolate_str}_reconstruction.png", bbox_inches='tight')
+    plt.savefig(f"{out_folder_reconstruction}/seed={args.seed}_bidx={args.base_idx}_itp={interpolate_str}_reconstruction.png", bbox_inches='tight')
