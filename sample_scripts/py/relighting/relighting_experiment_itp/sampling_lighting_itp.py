@@ -101,6 +101,11 @@ if __name__ == '__main__':
     # Forward
     pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
     sample_ddim = pl_sampling(noise=init_noise, model_kwargs=cond)
+    
+    # Save result
+    tc_frames = sample_ddim['img_output'].detach().cpu().numpy()
+    tc_frames = list(tc_frames)
+    img_utils.sequence2video(imgs=tc_frames, img_size=cfg.img_model.image_size, save_path=out_folder_interpolate, save_fn=f'seed={args.seed}_bidx={b}_itp={interpolate_str}_src={src_idx}_dst={dst_idx}')
     fig = vis_utils.plot_sample(img=model_kwargs['image'], sampling_img=sample_ddim['img_output'])
     # Save a visualization
     fig.suptitle(f"""Reverse Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
