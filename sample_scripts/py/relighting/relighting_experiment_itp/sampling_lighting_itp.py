@@ -17,8 +17,6 @@ parser.add_argument('--gpu', type=str, default='0')
 args = parser.parse_args()
 
 import os, sys, glob
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu
 
 import numpy as np
 import pandas as pd
@@ -77,7 +75,6 @@ if __name__ == '__main__':
 
     batch_size = args.batch_size
     base_idx = args.base_idx
-    print(args.interpolate)
     mode = {'init_noise':'fixed_noise', 'cond_params':'vary_cond'}
     interpolate_str = '_'.join(args.interpolate)
     out_folder_interpolate = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/"

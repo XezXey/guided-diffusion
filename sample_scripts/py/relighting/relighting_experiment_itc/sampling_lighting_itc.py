@@ -11,13 +11,12 @@ parser.add_argument('--base_idx', type=int, default=2)
 parser.add_argument('--src_idx', type=int, default=2)
 parser.add_argument('--dst_idx', type=int, default=10)
 parser.add_argument('--seed', type=int, default=23)
+parser.add_argument('--interchange', nargs='+', default=None)
 parser.add_argument('--out_dir', type=str, required=True)
 parser.add_argument('--gpu', type=str, default='0')
 args = parser.parse_args()
 
 import os, sys, glob
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu
 
 import numpy as np
 import pandas as pd
@@ -77,11 +76,10 @@ if __name__ == '__main__':
     batch_size = args.batch_size
     base_idx = args.base_idx
     mode = {'init_noise':'fixed_noise', 'cond_params':'vary_cond'}
-    interpolate = ["None"]
-    interpolate_str = '_'.join(interpolate)
-    out_folder_interpolate = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/"
-    out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/"
-    os.makedirs(out_folder_interpolate, exist_ok=True)
+    interchange_str = '_'.join(args.interchange)
+    out_folder_interchange = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interchange_str}/"
+    out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interchange_str}/"
+    os.makedirs(out_folder_interchange, exist_ok=True)
     os.makedirs(out_folder_reconstruction, exist_ok=True)
 
     # Input
@@ -89,7 +87,7 @@ if __name__ == '__main__':
     cond = model_kwargs.copy()
     
     # Interpolate/Interchange/etc.
-    cond = mani_utils.interchange_cond(cond, interchange=['pose'], base_idx=args.base_idx, n=args.batch_size)
+    cond = mani_utils.interchange_cond(cond, interchange=args.interchange, base_idx=args.base_idx, n=args.batch_size)
     
     # Finalize the cond_params
     cond = mani_utils.create_cond_params(cond=cond, key=cfg.param_model.params_selector)
@@ -101,7 +99,7 @@ if __name__ == '__main__':
     fig = vis_utils.plot_sample(img=model_kwargs['image'], sampling_img=sample_ddim['img_output'])
     # Save a visualization
     fig.suptitle(f"""Reverse Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
-                    model={args.log_dir}, seed={args.seed}, interpolate={interpolate}, base_idx={args.base_idx}
+                    model={args.log_dir}, seed={args.seed}, interchange={args.interchange}, base_idx={args.base_idx}
                 """, x=0.1, y=0.95, horizontalalignment='left', verticalalignment='top',)
 
-    plt.savefig(f"{out_folder_reconstruction}/seed={args.seed}_bidx={args.base_idx}_itc={interpolate_str}_reconstruction.png", bbox_inches='tight')
+    plt.savefig(f"{out_folder_reconstruction}/seed={args.seed}_bidx={args.base_idx}_itc={interchange_str}_reconstruction.png", bbox_inches='tight')

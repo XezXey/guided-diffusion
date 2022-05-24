@@ -57,7 +57,7 @@ def interchange_cond(cond, interchange, base_idx, n):
             pass
         else:
             # Keep the base-idx of condition
-            cond[p][[base_idx]].copy().repeat(n, 1)
+            cond[p] = np.repeat(cond[p][[base_idx]], repeats=n, axis=0)
 
     return cond
 
