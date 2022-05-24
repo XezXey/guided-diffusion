@@ -105,7 +105,8 @@ if __name__ == '__main__':
     # Save result
     tc_frames = sample_ddim['img_output'].detach().cpu().numpy()
     tc_frames = list(tc_frames)
-    img_utils.sequence2video(imgs=tc_frames, img_size=cfg.img_model.image_size, save_path=out_folder_interpolate, save_fn=f'seed={args.seed}_bidx={b}_itp={interpolate_str}_src={src_idx}_dst={dst_idx}')
+    img_utils.sequence2video(imgs=tc_frames, img_size=cfg.img_model.image_size, save_path=out_folder_interpolate, save_fn=f'seed={args.seed}_bidx={args.base_idx}_itp={interpolate_str}_src={args.src_idx}_dst={args.dst_idx}')
+    
     fig = vis_utils.plot_sample(img=model_kwargs['image'], sampling_img=sample_ddim['img_output'])
     # Save a visualization
     fig.suptitle(f"""Reverse Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
