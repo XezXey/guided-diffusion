@@ -51,20 +51,16 @@ if __name__ == '__main__':
     
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
 
-    # Load params
-    params_key = cfg.param_model.params_selector
-    if args.set == 'train':
-        params_train, params_train_arr = params_utils.load_params(path="/data/mint/ffhq_256_with_anno/params/train/", params_key=params_key)
-        params_set = params_train
-    elif args.set == 'valid':
-        params_valid, params_valid_arr = params_utils.load_params(path="/data/mint/ffhq_256_with_anno/params/valid/", params_key=params_key)
-        params_set = params_valid
-    else:
-        raise NotImplementedError
-
+    params_set = params_utils.get_params_set(set=args.set, cfg=cfg)
+    
+    if args.set == 'itw':
+        img_dataset_path = "../../itw_images/aligned/"
+    elif args.set == 'train' or args.set == 'valid':
+        img_dataset_path = f"/data/mint/ffhq_256_with_anno/ffhq_256/{args.set}/"
+    else: raise NotImplementedError
+        
     # Load image & condition
     rand_idx = np.random.choice(a=range(len(list(params_set.keys()))), replace=False, size=args.batch_size)
-    img_dataset_path = f"/data/mint/ffhq_256_with_anno/ffhq_256/{args.set}/"
     img_path = file_utils._list_image_files_recursively(img_dataset_path)
     img_path = [img_path[r] for r in rand_idx]
     img_name = [path.split('/')[-1] for path in img_path]

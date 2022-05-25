@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 import torch as th
 import numpy as np
 from . import params_utils
+import cv2
 
-def plot_sample(img, **kwargs):
+def plot_sample(img, highlight=None, **kwargs):
     columns = 6
     rows = 17
     fig = plt.figure(figsize=(20, 20), dpi=100)
@@ -13,6 +14,17 @@ def plot_sample(img, **kwargs):
     for i in range(0, img.shape[0]):
         s_ = decolor(s=img[i], out_c='rgb')
         s_ = s_.detach().cpu().numpy()
+        
+        if highlight is not None:
+            top, bottom, left, right = [10]*4
+
+            if i == highlight['base_idx']:
+                s_ = cv2.copyMakeBorder(s_, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(0, 255, 0))
+            elif i == highlight['src_idx']:
+                s_ = cv2.copyMakeBorder(s_, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(0, 0, 255))
+            elif i == highlight['dst_idx']:
+                s_ = cv2.copyMakeBorder(s_, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(255, 0, 0))
+            
         fig.add_subplot(rows, columns, pt+1)
         plt.imshow(s_)
         pt += 1

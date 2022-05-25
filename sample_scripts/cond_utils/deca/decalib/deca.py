@@ -24,9 +24,7 @@ from time import time
 from skimage.io import imread
 import cv2
 import pickle
-from .utils.renderer import SRenderY
 from .models.encoders import ResnetEncoder
-from .models.FLAME import FLAME, FLAMETex
 from .models.decoders import Generator
 from .utils import util
 from .utils.rotation_converter import batch_euler2axis
@@ -46,9 +44,11 @@ class DECA(nn.Module):
         self.uv_size = self.cfg.model.uv_size
 
         self._create_model(self.cfg.model)
-        self._setup_renderer(self.cfg.model)
+        # self._setup_renderer(self.cfg.model)
 
     def _setup_renderer(self, model_cfg):
+        
+        from .utils.renderer import SRenderY
         self.render = SRenderY(self.image_size, obj_filename=model_cfg.topology_path, uv_size=model_cfg.uv_size).to(self.device)
         # face mask for rendering details
         mask = imread(model_cfg.face_eye_mask_path).astype(np.float32)/255.; mask = torch.from_numpy(mask[:,:,0])[None,None,:,:].contiguous()
@@ -65,6 +65,8 @@ class DECA(nn.Module):
         self.dense_template = np.load(model_cfg.dense_template_path, allow_pickle=True, encoding='latin1').item()
 
     def _create_model(self, model_cfg):
+        
+        from .models.FLAME import FLAME, FLAMETex
         # set up parameters
         self.n_param = model_cfg.n_shape+model_cfg.n_tex+model_cfg.n_exp+model_cfg.n_pose+model_cfg.n_cam+model_cfg.n_light
         self.n_detail = model_cfg.n_detail

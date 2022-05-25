@@ -1,11 +1,9 @@
 import numpy as np
 import pandas as pd
 import torch as th
-import torch.nn.functional as F
-import glob, os
-import PIL
-import matplotlib.pyplot as plt
+import glob, os, sys
 from collections import defaultdict
+from . import file_utils
 
 def params_to_model(shape, exp, pose, cam, i, uvdn=None):
 
@@ -111,3 +109,43 @@ def load_params(path, params_key):
     all_params = np.stack(all_params, axis=0)
     return params_s, all_params
     
+def get_params_set(set, cfg):
+    if set == 'itw':
+        # In-the-wild
+        sys.path.insert(0, '../../cond_utils/arcface/')
+        sys.path.insert(0, '../../cond_utils/arcface/detector/')
+        sys.path.insert(0, '../../cond_utils/deca/')
+        from cond_utils.arcface import get_arcface_emb
+        from cond_utils.deca import get_deca_emb
+
+        itw_path = "../../itw_images/aligned/"
+        device = 'cuda:0'
+        # ArcFace
+        faceemb_itw, emb = get_arcface_emb.get_arcface_emb(img_path=itw_path, device=device)
+
+        # DECA
+        deca_itw = get_deca_emb.get_deca_emb(img_path=itw_path, device=device)
+
+        assert deca_itw.keys() == faceemb_itw.keys()
+        params_itw = {}
+        for img_name in deca_itw.keys():
+            params_itw[img_name] = deca_itw[img_name]
+            params_itw[img_name].update(faceemb_itw[img_name])
+            
+        params_set = params_itw
+            
+    elif set == 'valid' or set == 'train':
+        # Load params
+        params_key = cfg.param_model.params_selector
+        if set == 'train':
+            params_train, params_train_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/train/", params_key=params_key)
+            params_set = params_train
+        elif set == 'valid':
+            params_valid, params_valid_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/valid/", params_key=params_key)
+            params_set = params_valid
+        else:
+            raise NotImplementedError
+
+    else: raise NotImplementedError
+
+    return params_set
