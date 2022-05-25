@@ -90,8 +90,9 @@ if __name__ == '__main__':
     cond.update(interp_cond)
     
     # Finalize the cond_params
-    cond = mani_utils.create_cond_params(cond=cond, key=cfg.param_model.params_selector)
-    cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
+    key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
+    cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
+    cond = inference_utils.to_tensor(cond, key=['cond_params', 'light'], device=ckpt_loader.device)
     
     # Forward
     pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)

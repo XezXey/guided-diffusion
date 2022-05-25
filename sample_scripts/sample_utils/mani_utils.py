@@ -79,6 +79,8 @@ def interp_cond(src_cond, dst_cond, n_step, interp_fn=lerp):
     interp = []
     for r in r_interp:
         tmp = interp_fn(r=r, src=src, dst=dst)
+        if th.is_tensor(tmp):
+            tmp = tmp.detach().cpu().numpy()
         interp.append(tmp.copy())
 
     interp = np.concatenate((interp), axis=0)
@@ -127,7 +129,10 @@ def create_cond_params(cond, key):
     print("[#] Condition build from parameters in ", key)
     tmp = []
     for p in key:
-        tmp.append(cond[p])
+        if th.is_tensor(cond[p]):
+            tmp.append(cond[p].cpu())
+        else:
+            tmp.append(cond[p])
     print(np.concatenate(tmp, axis=1).shape)
     cond['cond_params'] = np.concatenate(tmp, axis=1)
     return cond

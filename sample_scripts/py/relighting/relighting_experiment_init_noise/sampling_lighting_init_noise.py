@@ -16,8 +16,6 @@ parser.add_argument('--gpu', type=str, default='0')
 args = parser.parse_args()
 
 import os, sys, glob
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu
 
 import numpy as np
 import pandas as pd
@@ -52,21 +50,17 @@ if __name__ == '__main__':
     seed_all(47)
     
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
-
-    # Load params
-    params_key = cfg.param_model.params_selector
-    if args.set == 'train':
-        params_train, params_train_arr = params_utils.load_params(path="/data/mint/ffhq_256_with_anno/params/train/", params_key=params_key)
-        params_set = params_train
-    elif args.set == 'valid':
-        params_valid, params_valid_arr = params_utils.load_params(path="/data/mint/ffhq_256_with_anno/params/valid/", params_key=params_key)
-        params_set = params_valid
-    else:
-        raise NotImplementedError
+    
+    params_set = params_utils.get_params_set(set=args.set, cfg=cfg)
+    
+    if args.set == 'itw':
+        img_dataset_path = "../../itw_images/aligned/"
+    elif args.set == 'train' or args.set == 'valid':
+        img_dataset_path = f"/data/mint/ffhq_256_with_anno/ffhq_256/{args.set}/"
+    else: raise NotImplementedError
 
     # Load image & condition
     rand_idx = np.random.choice(a=range(len(list(params_set.keys()))), replace=False, size=args.batch_size)
-    img_dataset_path = f"/data/mint/ffhq_256_with_anno/ffhq_256/{args.set}/"
     img_path = file_utils._list_image_files_recursively(img_dataset_path)
     img_path = [img_path[r] for r in rand_idx]
     img_name = [path.split('/')[-1] for path in img_path]
@@ -86,10 +80,11 @@ if __name__ == '__main__':
     os.makedirs(out_folder_reconstruction, exist_ok=True)
 
     # Input
-    init_noise = inference_utils.get_init_noise(n=args.batch_size, mode='fixed_noise', img_size=cfg.img_model.image_size)
+    init_noise = inference_utils.get_init_noise(n=args.batch_size, mode='fixed_noise', img_size=cfg.img_model.image_size, device=ckpt_loader.device)
     cond = model_kwargs.copy()
-    cond = mani_utils.create_cond_params(cond=cond, key=cfg.param_model.params_selector)
-    cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
+    key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
+    cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
+    cond = inference_utils.to_tensor(cond, key=['cond_params', 'light'], device=ckpt_loader.device)
     
     # Forward
     pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)

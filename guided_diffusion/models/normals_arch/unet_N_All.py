@@ -182,11 +182,8 @@ class ResBlockNormalCond(TimestepBlockCond):
             h_cond = h[:, :self.out_channels] * cond_proj[:, :, None, None].type_as(h)
             # Apply relighting
             h_normals = self.renderer.add_SHlight(normal_images=h[:, self.out_channels:, ...], sh_coeff=cond['light'])
-            print(h_cond.shape, h_normals.shape)
 
             h = th.cat((h_cond, h_normals), dim=1).float()
-            print(h_cond.shape, h_normals.shape)
-            exit()
             h = out_rest(h)
         else:
             h = h + emb_out

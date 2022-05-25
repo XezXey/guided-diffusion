@@ -631,8 +631,8 @@ class UNetNormalsLastLayer(nn.Module):
                     )
                     ds //= 2
                 self.output_blocks.append(time_embed_seq_module(*layers))
-                print(i, layers)
-                print("*"*100)
+                # print(i, layers)
+                # print("*"*100)
                 self._feature_size += ch
 
         shading_channels = self.renderer.shading_channels

@@ -85,20 +85,32 @@ if __name__ == '__main__':
     cond = model_kwargs.copy()
     
     # Finalize the cond_params
-    cond = mani_utils.create_cond_params(cond=cond, key=cfg.param_model.params_selector)
-    cond = inference_utils.to_tensor(cond, key=['cond_params', 'image'], device=ckpt_loader.device)
+    key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
+    cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
+    cond = inference_utils.to_tensor(cond, key=['cond_params', 'light', 'image'], device=ckpt_loader.device)
+    img_tmp = cond['image'].clone()
     
     # Reverse
     pl_reverse_sampling = inference_utils.PLReverseSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_reverse_sample_loop, cfg=cfg)
     reverse_ddim_sample = pl_reverse_sampling(x=cond['image'], model_kwargs=cond)
     
+    interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=args.interpolate, src_idx=args.src_idx, dst_idx=args.dst_idx, n_step=args.batch_size)
+    cond = mani_utils.repeat_cond_params(cond, base_idx=args.base_idx, n=args.batch_size, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate))
+    cond.update(interp_cond)
+    
+    # Finalize the cond_params
+    key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
+    cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
+    cond = inference_utils.to_tensor(cond, key=['cond_params', 'light'], device=ckpt_loader.device)
+    
     # Forward
     pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
-    sample_ddim = pl_sampling(noise=reverse_ddim_sample['img_output'], model_kwargs=cond)
-    fig = vis_utils.plot_sample(img=cond['image'], reverse_sampling_images=reverse_ddim_sample['img_output'], sampling_img=sample_ddim['img_output'])
+    sample_ddim = pl_sampling(noise=th.cat([reverse_ddim_sample['img_output'][[args.base_idx]]] * args.batch_size), model_kwargs=cond)
+    # fig = vis_utils.plot_sample(img=cond['image'], reverse_sampling_images=reverse_ddim_sample['img_output'], sampling_img=sample_ddim['img_output'])
+    fig = vis_utils.plot_sample(img=img_tmp, reverse_sampling_images=reverse_ddim_sample['img_output'], sampling_img=sample_ddim['img_output'])
     # Save a visualization
     fig.suptitle(f"""Reverse Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
-                    model={args.log_dir}, seed={args.seed}, base_idx={args.base_idx}
+                    model={args.log_dir}, seed={args.seed}, interchange={args.interpolate}, base_idx={args.base_idx}
                 """, x=0.1, y=0.95, horizontalalignment='left', verticalalignment='top',)
 
-    plt.savefig(f"{out_folder_reconstruction}/seed={args.seed}_bidx={args.base_idx}_reconstruction.png", bbox_inches='tight')
+    plt.savefig(f"{out_folder_reconstruction}/seed={args.seed}_bidx={args.base_idx}_itc={interpolate_str}_reconstruction.png", bbox_inches='tight')
