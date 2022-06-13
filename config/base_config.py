@@ -149,6 +149,11 @@ cfg.train.accumulate_grad_batches = 1
 cfg.train.deterministic = True
 cfg.train.find_unused_parameters = False
 
+cfg.train_misc = CN()
+cfg.train_misc.exp_name = ""
+cfg.train_misc.cfg_name = ""
+
+
 # ---------------------------------------------------------------------------- #
 # Options for inference
 # ---------------------------------------------------------------------------- #

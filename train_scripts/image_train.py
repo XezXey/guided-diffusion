@@ -2,7 +2,6 @@
 Train a diffusion model on images.
 """
 
-import argparse, datetime
 from cmath import exp
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -44,7 +43,7 @@ def main():
     )
 
     logger.log("training...")
-    tb_logger = TensorBoardLogger("tb_logs", name="diffusion", version=cfg.train.log_dir.split('/')[-1])
+    tb_logger = TensorBoardLogger("tb_logs", name="diffusion", version=cfg.train_misc.exp_name, sub_dir=cfg.train_misc.cfg_name)
 
     train_loop = TrainLoop(
         model=list(img_model.values()),
