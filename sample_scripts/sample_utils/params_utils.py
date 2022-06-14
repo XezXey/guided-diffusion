@@ -109,7 +109,7 @@ def load_params(path, params_key):
     all_params = np.stack(all_params, axis=0)
     return params_s, all_params
     
-def get_params_set(set, cfg):
+def get_params_set(set, cfg=None):
     if set == 'itw':
         # In-the-wild
         sys.path.insert(0, '../../cond_utils/arcface/')
@@ -137,6 +137,7 @@ def get_params_set(set, cfg):
     elif set == 'valid' or set == 'train':
         # Load params
         params_key = cfg.param_model.params_selector
+
         if set == 'train':
             params_train, params_train_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/train/", params_key=params_key)
             params_set = params_train
