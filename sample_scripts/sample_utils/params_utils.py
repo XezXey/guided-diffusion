@@ -136,7 +136,8 @@ def get_params_set(set, cfg=None):
             
     elif set == 'valid' or set == 'train':
         # Load params
-        params_key = cfg.param_model.params_selector
+        # params_key = cfg.param_model.params_selector
+        params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
 
         if set == 'train':
             params_train, params_train_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/train/", params_key=params_key)
