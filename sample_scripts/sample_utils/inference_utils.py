@@ -4,7 +4,7 @@ import torch as th
 import numpy as np
 import blobfile as bf
 import PIL
-from . import vis_utils, img_utils, params_utils
+from . import params_utils
 
 class PLReverseSampling(pl.LightningModule):
     def __init__(self, model_dict, diffusion, sample_fn, cfg):
@@ -68,7 +68,7 @@ class PLSampling(pl.LightningModule):
         return cond
 
     def forward(self, model_kwargs, noise):
-        model_kwargs = self.forward_cond_network(cond=model_kwargs)
+        # model_kwargs = self.forward_cond_network(cond=model_kwargs)
         sample = self.sample_fn(
             model=self.model_dict[self.cfg.img_model.name],
             shape=noise.shape,

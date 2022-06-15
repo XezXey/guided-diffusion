@@ -87,6 +87,21 @@ def interp_cond(src_cond, dst_cond, n_step, interp_fn=lerp):
 
     return interp 
 
+def interp_by_dir(cond, src_idx, itp_name, direction, n_step):
+    step = np.linspace(0, 2, num=n_step)
+    src_cond = cond[itp_name][[src_idx]]
+    if th.is_tensor(src_cond):
+        src_cond = src_cond.detach().cpu().numpy()
+    else:
+        src_cond = np.array(cond[itp_name][[0]])
+    itp = []
+    for i in range(n_step):
+        tmp = src_cond + step[i] * direction
+        itp.append(tmp)
+
+    return {itp_name:np.concatenate(itp, axis=0)}
+
+
 def interp_noise(src_noise, dst_noise, n_step, interp_fn=lerp):
     '''
     Interpolate the noise
@@ -188,6 +203,29 @@ def load_image(all_path, cfg, vis=False):
 
     imgs = []
     for path in all_path:
+        with bf.BlobFile(path, "rb") as f:
+            pil_image = PIL.Image.open(f)
+            pil_image.load()
+        pil_image = pil_image.convert("RGB")
+
+        raw_img = img_utils.augmentation(pil_image=pil_image, cfg=cfg)
+
+        raw_img = (raw_img / 127.5) - 1
+
+        imgs.append(np.transpose(raw_img, (2, 0, 1)))
+    imgs = np.stack(imgs)
+    if vis:
+        vis_utils.plot_sample(th.tensor(imgs))
+    return {'image':th.tensor(imgs)}
+
+def load_image_by_name(img_name, img_dataset_path, cfg, vis=False):
+    '''
+    Load image and stack all of thems into BxCxHxW
+    '''
+
+    imgs = []
+    for name in img_name:
+        path = f"{img_dataset_path}/{name}"
         with bf.BlobFile(path, "rb") as f:
             pil_image = PIL.Image.open(f)
             pil_image.load()
