@@ -215,7 +215,10 @@ def load_image(all_path, cfg, vis=False):
         imgs.append(np.transpose(raw_img, (2, 0, 1)))
     imgs = np.stack(imgs)
     if vis:
-        vis_utils.plot_sample(th.tensor(imgs))
+        if imgs.shape[0] > 30:
+            vis_utils.plot_sample(th.tensor(imgs[:30]))
+        else:
+            vis_utils.plot_sample(th.tensor(imgs))
     return {'image':th.tensor(imgs)}
 
 def load_image_by_name(img_name, img_dataset_path, cfg, vis=False):
