@@ -763,7 +763,7 @@ class UNetModel(nn.Module):
         h = h.type(x.dtype)
         return {'output':self.out(h)}
 
-class UNetModelCondition(UNetModel):
+class UNetModelConditionDuplicate(UNetModel):
     def __init__(self, 
         image_size, 
         in_channels, 
@@ -788,7 +788,9 @@ class UNetModelCondition(UNetModel):
         conditioning=True
     ):
         self.condition_dim = condition_dim
-        print(self.condition_dim)
+        print("DUPLICATE")
+        exit()
+        
         super().__init__(
             image_size=image_size, 
             in_channels=in_channels, 
@@ -811,7 +813,6 @@ class UNetModelCondition(UNetModel):
             use_new_attention_order=use_new_attention_order,
             condition_dim = condition_dim,
             condition_proj_dim=condition_proj_dim)
-        
 
     def forward(self, x, timesteps, y=None, **kwargs):
         """

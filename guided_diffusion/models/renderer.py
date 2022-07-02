@@ -5,6 +5,8 @@ class Renderer():
     def __init__(self, num_SH, reduce_shading):
         ## SH factors for lighting
         pi = np.pi
+        self.reduce_shading = reduce_shading
+        self.num_SH = num_SH
         self.constant_factor = th.tensor([1/np.sqrt(4*pi), 
                                         ((2*pi)/3)*(np.sqrt(3/(4*pi))), 
                                         ((2*pi)/3)*(np.sqrt(3/(4*pi))),
@@ -14,8 +16,7 @@ class Renderer():
                                         (pi/4)*(3)*(np.sqrt(5/(12*pi))), 
                                         (pi/4)*(3/2)*(np.sqrt(5/(12*pi))), 
                                         (pi/4)*(1/2)*(np.sqrt(5/(4*pi)))]).float()
-        self.reduce_shading = reduce_shading
-        self.num_SH = num_SH
+        self.constant_factor = self.constant_factor[:self.num_SH]
         if self.reduce_shading:
             self.shading_channels = 3
         else:
@@ -31,8 +32,8 @@ class Renderer():
             - False : Non-reducing into shaded image [B x 27 x H x W]
         """
         N = normal_images
-        assert sh_coeff.shape == (N.shape[0], 27)
-        sh_coeff = sh_coeff.reshape(N.shape[0], 9, 3)
+        assert sh_coeff.shape == (N.shape[0], self.num_SH * 3)
+        sh_coeff = sh_coeff.reshape(N.shape[0], self.num_SH, 3)
         sh = th.stack([
                 N[:,0]*0.+1.,   # 1
                 N[:,0],         # X
@@ -45,6 +46,8 @@ class Renderer():
                 3*(N[:,2]**2) - 1,      # 3(Z**2) - 1
                 ], 
                 1) # [bz, 9, h, w]
+        
+        sh = sh[:, :self.num_SH, :, :]
         sh = sh.type_as(N) * self.constant_factor[None, :, None, None].type_as(N)
         if self.reduce_shading:
             shading = th.sum(sh_coeff[:, :, :, None, None] * sh[:, :, None, :, :], 1)

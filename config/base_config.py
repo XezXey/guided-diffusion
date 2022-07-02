@@ -235,7 +235,11 @@ def update_params(cfg):
         if param in cfg.param_model.rmv_params:
             continue
         else:
-            cfg.param_model.n_params.append(params_dict[param])
+            if param == 'light':
+                param_light = cfg.relighting.num_SH * 3
+                cfg.param_model.n_params.append(param_light)
+            else:
+                cfg.param_model.n_params.append(params_dict[param])
 
     # Replace with updated n_params from params_selector
     cfg.param_model.in_channels = sum(cfg.param_model.n_params)

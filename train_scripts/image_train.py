@@ -21,14 +21,14 @@ def main():
     seed_all(47)    # Seeding the model - Independent training
 
     logger.configure(dir=cfg.train.log_dir)
-    logger.log("creating model and diffusion...")
+    logger.log("[#] Creating model and diffusion...")
 
     img_model, diffusion = create_img_and_diffusion(cfg)
     # Filtered out the None model
     img_model = {k: v for k, v in img_model.items() if v is not None}
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
 
-    logger.log("creating data loader...")
+    logger.log("[#] Creating data loader...")
     data = load_data_img_deca(
         data_dir=cfg.dataset.data_dir,
         deca_dir=cfg.dataset.deca_dir,
@@ -43,7 +43,7 @@ def main():
         cfg=cfg,
     )
 
-    logger.log("training...")
+    logger.log("[#] Training...")
     tb_logger = TensorBoardLogger("tb_logs", name="diffusion", version=cfg.train_misc.exp_name, sub_dir=cfg.train_misc.cfg_name)
 
     train_loop = TrainLoop(

@@ -61,6 +61,7 @@ def preprocess_cond(deca_params, k, cfg):
             params = np.array(deca_params[img_name])
             params = params.reshape(9, 3)
             params = params[:num_SH]
+            params = params.flatten()
             deca_params[img_name] = params
         return deca_params
 
