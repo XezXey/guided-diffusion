@@ -13,7 +13,7 @@ param_model:
   rmv_params: ['light']
 
 relighting:
-  num_SH: 4
+  num_SH: 9
 
 dataset:
   deca_dir: "/data/mint/ffhq_256_with_anno"

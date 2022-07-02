@@ -778,7 +778,8 @@ class UNetModelConditionDuplicate(nn.Module):
         use_new_attention_order=False, 
         condition_dim=159, 
         condition_proj_dim=512,
-        conditioning=True
+        conditioning=True,
+        num_SH=9
     ):
         super().__init__()
         self.condition_dim = condition_dim
@@ -841,7 +842,7 @@ class UNetModelConditionDuplicate(nn.Module):
             use_scale_shift_norm=use_scale_shift_norm, 
             resblock_updown=resblock_updown, 
             use_new_attention_order=use_new_attention_order,
-            condition_dim = 12,
+            condition_dim = num_SH * 3,
             condition_proj_dim=condition_proj_dim
         )
         
