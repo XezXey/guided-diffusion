@@ -868,13 +868,14 @@ class UNetModelConditionDuplicate(nn.Module):
         # Shared First layer
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
         h_first = self.first_conv(h, emb, condition=kwargs, condition_name=None)
-        hs_img_branch = [h_first]
-        hs_light_branch = [h_first]
+        hs_img_branch = [h_first.clone()]
+        hs_light_branch = [h_first.clone()]
         
         # Image branch
         for i, module in enumerate(self.img_branch.input_blocks):
             if i==0:
-                h = module(h_first, emb, condition=kwargs, condition_name='cond_params')
+                # h = module(h_first, emb, condition=kwargs, condition_name='cond_params')
+                h = module(hs_img_branch[0], emb, condition=kwargs, condition_name='cond_params')
             else:
                 h = module(h, emb, condition=kwargs, condition_name='cond_params')
             hs_img_branch.append(h)
@@ -888,7 +889,8 @@ class UNetModelConditionDuplicate(nn.Module):
         # Lighting branch
         for i, module in enumerate(self.lighting_branch.input_blocks):
             if i==0:
-                h = module(h_first, emb, condition=kwargs, condition_name='light')
+                # h = module(h_first, emb, condition=kwargs, condition_name='light')
+                h = module(hs_light_branch[0], emb, condition=kwargs, condition_name='light')
             else:
                 h = module(h, emb, condition=kwargs, condition_name='light')
             hs_light_branch.append(h)
