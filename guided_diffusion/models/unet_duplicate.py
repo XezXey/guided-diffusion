@@ -809,7 +809,6 @@ class UNetModelConditionDuplicate(nn.Module):
             condition_proj_dim=condition_proj_dim
         )
         
-        
         # First Conv
         time_embed_dim = model_channels * 4
         self.time_embed = nn.Sequential(
@@ -843,11 +842,16 @@ class UNetModelConditionDuplicate(nn.Module):
             resblock_updown=resblock_updown, 
             use_new_attention_order=use_new_attention_order,
             condition_dim = 12,
-            condition_proj_dim=condition_proj_dim//2
+            condition_proj_dim=condition_proj_dim
         )
         
         self.dtype = th.float16 if use_fp16 else th.float32
         self.model_channels = model_channels
+        
+        self.out = nn.Sequential(
+            nn.SiLU(),
+            zero_module(conv_nd(dims, in_channels, out_channels, 3, padding=1)),
+        )
         
 
     def forward(self, x, timesteps, y=None, **kwargs):
@@ -896,7 +900,7 @@ class UNetModelConditionDuplicate(nn.Module):
         h_lighting_branch_out = self.lighting_branch.out(h)
         
         out = h_lighting_branch_out * h_img_branch_out
-        return {'output':out}
+        return {'output':self.out(out)}
 
 class ResBlockCondition(TimestepBlockCond):
     """
