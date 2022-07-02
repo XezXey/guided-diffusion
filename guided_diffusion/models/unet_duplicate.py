@@ -825,7 +825,7 @@ class UNetModelConditionDuplicate(nn.Module):
         self.lighting_branch = UNetModel(
             image_size=image_size, 
             in_channels=in_channels, 
-            model_channels=model_channels, 
+            model_channels=model_channels//2, 
             out_channels=out_channels, 
             num_res_blocks=num_res_blocks, 
             attention_resolutions=attention_resolutions, 
@@ -843,7 +843,7 @@ class UNetModelConditionDuplicate(nn.Module):
             resblock_updown=resblock_updown, 
             use_new_attention_order=use_new_attention_order,
             condition_dim = 12,
-            condition_proj_dim=condition_proj_dim
+            condition_proj_dim=condition_proj_dim//2
         )
         
         self.dtype = th.float16 if use_fp16 else th.float32
