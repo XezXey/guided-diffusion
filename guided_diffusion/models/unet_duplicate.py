@@ -825,7 +825,7 @@ class UNetModelConditionDuplicate(nn.Module):
         self.lighting_branch = UNetModel(
             image_size=image_size, 
             in_channels=in_channels, 
-            model_channels=model_channels//2, 
+            model_channels=model_channels, 
             out_channels=out_channels, 
             num_res_blocks=num_res_blocks, 
             attention_resolutions=attention_resolutions, 
