@@ -1,3 +1,4 @@
+from distutils.errors import PreprocessError
 import math
 import random
 
@@ -37,7 +38,7 @@ def swap_key(params):
 
     return params_s
 
-def load_deca_params(deca_dir):
+def load_deca_params(deca_dir, cfg):
     deca_params = {}
 
     # face params 
@@ -46,11 +47,22 @@ def load_deca_params(deca_dir):
         params_path = glob.glob(f"{deca_dir}/params/train/*{k}-anno.txt")
         for path in params_path:
             deca_params[k] = read_params(path=path)
-
+        deca_params[k] = preprocess_cond(deca_params[k], k, cfg)
     
     deca_params = swap_key(deca_params)
-
     return deca_params
+
+def preprocess_cond(deca_params, k, cfg):
+    if k != 'light':
+        return deca_params
+    else:
+        num_SH = cfg.relighting.num_SH
+        for img_name in deca_params.keys():
+            params = np.array(deca_params[img_name])
+            params = params.reshape(9, 3)
+            params = params[:num_SH]
+            deca_params[img_name] = params
+        return deca_params
 
 def load_data_img_deca(
     *,
@@ -60,6 +72,7 @@ def load_data_img_deca(
     image_size,
     params_selector,
     rmv_params,
+    cfg,
     deterministic=False,
     resize_mode="resize",
     augment_mode=None,
@@ -87,7 +100,7 @@ def load_data_img_deca(
         raise ValueError("unspecified data directory")
     all_files = _list_image_files_recursively(data_dir)
 
-    deca_params = load_deca_params(deca_dir)
+    deca_params = load_deca_params(deca_dir, cfg)
 
     img_dataset = DECADataset(
         image_size,

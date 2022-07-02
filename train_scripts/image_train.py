@@ -40,6 +40,7 @@ def main():
         in_image=cfg.img_model.in_image,
         params_selector=cfg.param_model.params_selector,
         rmv_params=cfg.param_model.rmv_params,
+        cfg=cfg,
     )
 
     logger.log("training...")
