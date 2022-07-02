@@ -788,7 +788,6 @@ class UNetModelCondition(UNetModel):
         conditioning=True
     ):
         self.condition_dim = condition_dim
-        print(self.condition_dim)
         super().__init__(
             image_size=image_size, 
             in_channels=in_channels, 

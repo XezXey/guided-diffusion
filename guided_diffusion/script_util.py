@@ -189,8 +189,8 @@ def create_model(cfg, all_cfg=None):
             conditioning=True,
             pool=cfg.pool
         )
-    elif cfg.arch == 'EncoderUNet':
-            return UNetCondDuplicate(
+    elif cfg.arch == 'UNetCondDuplicate':
+            return UNetModelConditionDuplicate(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
             model_channels=cfg.num_channels,
@@ -207,8 +207,8 @@ def create_model(cfg, all_cfg=None):
             resblock_updown=cfg.resblock_updown,
             use_new_attention_order=cfg.use_new_attention_order,
             condition_dim=cfg.condition_dim,
+            condition_proj_dim=cfg.condition_proj_dim,
             conditioning=True,
-            pool=cfg.pool
         )
     else: raise NotImplementedError
 

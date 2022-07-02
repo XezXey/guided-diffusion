@@ -83,7 +83,7 @@ class TimestepBlockCond(nn.Module):
     """
 
     @abstractmethod
-    def forward(self, x, emb, condition):
+    def forward(self, x, emb, condition, condition_name):
         """
         Apply the module to `x` given `emb` timestep embeddings.
         """
@@ -94,10 +94,10 @@ class TimestepEmbedSequentialCond(nn.Sequential, TimestepBlockCond):
     support it as an extra input.
     """
 
-    def forward(self, x, emb, condition):
+    def forward(self, x, emb, condition, condition_name):
         for layer in self:
             if isinstance(layer, TimestepBlockCond):
-                x = layer(x, emb, condition)
+                x = layer(x, emb, condition, condition_name)
             else:
                 x = layer(x)
         return x
@@ -566,19 +566,12 @@ class UNetModel(nn.Module):
         self.condition_proj_dim = condition_proj_dim
 
         time_embed_dim = model_channels * 4
-        self.time_embed = nn.Sequential(
-            linear(model_channels, time_embed_dim),
-            nn.SiLU(),
-            linear(time_embed_dim, time_embed_dim),
-        )
 
         resblock_module = ResBlock if not self.conditioning else ResBlockCondition
         time_embed_seq_module = TimestepEmbedSequential if not self.conditioning else TimestepEmbedSequentialCond 
 
         ch = input_ch = int(channel_mult[0] * model_channels)
-        self.input_blocks = nn.ModuleList(
-            [time_embed_seq_module(conv_nd(dims, in_channels, ch, 3, padding=1))]
-        )
+        self.input_blocks = nn.ModuleList([])
         self._feature_size = ch
         input_block_chans = [ch]
         ds = 1
@@ -763,7 +756,7 @@ class UNetModel(nn.Module):
         h = h.type(x.dtype)
         return {'output':self.out(h)}
 
-class UNetModelConditionDuplicate(UNetModel):
+class UNetModelConditionDuplicate(nn.Module):
     def __init__(self, 
         image_size, 
         in_channels, 
@@ -787,11 +780,12 @@ class UNetModelConditionDuplicate(UNetModel):
         condition_proj_dim=512,
         conditioning=True
     ):
+        super().__init__()
         self.condition_dim = condition_dim
-        print("DUPLICATE")
-        exit()
+        self.conditioning = conditioning
         
-        super().__init__(
+        # Image branch - Condition by shape, pose, ... (Without light)
+        self.img_branch = UNetModel(
             image_size=image_size, 
             in_channels=in_channels, 
             model_channels=model_channels, 
@@ -812,30 +806,91 @@ class UNetModelConditionDuplicate(UNetModel):
             resblock_updown=resblock_updown, 
             use_new_attention_order=use_new_attention_order,
             condition_dim = condition_dim,
-            condition_proj_dim=condition_proj_dim)
+            condition_proj_dim=condition_proj_dim
+        )
+        
+        
+        # First Conv
+        time_embed_dim = model_channels * 4
+        self.time_embed = nn.Sequential(
+            linear(model_channels, time_embed_dim),
+            nn.SiLU(),
+            linear(time_embed_dim, time_embed_dim),
+        )
+        ch = int(channel_mult[0] * model_channels)
+        time_embed_seq_module = TimestepEmbedSequential if not self.conditioning else TimestepEmbedSequentialCond 
+        self.first_conv = time_embed_seq_module(conv_nd(dims, in_channels, ch, 3, padding=1))
+        
+        # Lighting branch - Condition by light
+        self.lighting_branch = UNetModel(
+            image_size=image_size, 
+            in_channels=in_channels, 
+            model_channels=model_channels, 
+            out_channels=out_channels, 
+            num_res_blocks=num_res_blocks, 
+            attention_resolutions=attention_resolutions, 
+            conditioning=conditioning, 
+            dropout=dropout, 
+            channel_mult=channel_mult, 
+            conv_resample=conv_resample, 
+            dims=dims, 
+            use_checkpoint=use_checkpoint, 
+            use_fp16=use_fp16, 
+            num_heads=num_heads, 
+            num_head_channels=num_head_channels, 
+            num_heads_upsample=num_heads_upsample, 
+            use_scale_shift_norm=use_scale_shift_norm, 
+            resblock_updown=resblock_updown, 
+            use_new_attention_order=use_new_attention_order,
+            condition_dim = 12,
+            condition_proj_dim=condition_proj_dim
+        )
+        
+        self.dtype = th.float16 if use_fp16 else th.float32
+        self.model_channels = model_channels
+        
 
     def forward(self, x, timesteps, y=None, **kwargs):
         """
-        Apply the model to an input batch.
+        Apply the model to an input batch. (Already override the UNetModel's forward() function)
         :param x: an [N x C x ...] Tensor of inputs.
         :param timesteps: a 1-D batch of timesteps.
         :param y: an [N] Tensor of labels, if class-conditional.
         :return: an [N x C x ...] Tensor of outputs.
         """
-        hs = []
-        emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
-
-
+        
         h = x.type(self.dtype)
-        for module in self.input_blocks:
-            h = module(h, emb, condition=kwargs)
-            hs.append(h)
-        h = self.middle_block(h, emb, condition=kwargs)
-        for module in self.output_blocks:
-            h = th.cat([h, hs.pop()], dim=1)
-            h = module(h, emb, condition=kwargs)
+        
+        # Shared First layer
+        emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
+        h = self.first_conv(h, emb, condition=kwargs, condition_name=None)
+        hs_img_branch = [h]
+        hs_light_branch = [h]
+        # Image branch
+        for module in self.img_branch.input_blocks:
+            h = module(h, emb, condition=kwargs, condition_name='cond_params')
+            hs_img_branch.append(h)
+        h = self.img_branch.middle_block(h, emb, condition=kwargs, condition_name='cond_params')
+        for module in self.img_branch.output_blocks:
+            h = th.cat([h, hs_img_branch.pop()], dim=1)
+            h = module(h, emb, condition=kwargs, condition_name='cond_params')
         h = h.type(x.dtype)
-        return {'output':self.out(h)}
+        h_img_branch_out = self.img_branch.out(h)
+        
+        
+        # Lighting branch
+        for module in self.lighting_branch.input_blocks:
+            h = module(h, emb, condition=kwargs, condition_name='light')
+            hs_light_branch.append(h)
+        h = self.lighting_branch.middle_block(h, emb, condition=kwargs, condition_name='light')
+        for module in self.lighting_branch.output_blocks:
+            h = th.cat([h, hs_light_branch.pop()], dim=1)
+            h = module(h, emb, condition=kwargs, condition_name='light')
+        h = h.type(x.dtype)
+        h_lighting_branch_out = self.lighting_branch.out(h)
+        
+        out = h_lighting_branch_out * h_img_branch_out
+        return {'output':out}
 
 class ResBlockCondition(TimestepBlockCond):
     """
@@ -931,7 +986,7 @@ class ResBlockCondition(TimestepBlockCond):
         else:
             self.skip_connection = conv_nd(dims, channels, self.out_channels, 1)
 
-    def forward(self, x, emb, cond):
+    def forward(self, x, emb, condition, condition_name):
         """
         Apply the block to a Tensor, conditioned on a timestep embedding.
 
@@ -940,45 +995,45 @@ class ResBlockCondition(TimestepBlockCond):
         :return: an [N x C x ...] Tensor of outputs.
         """
         return checkpoint(
-            self._forward, (x, emb, cond), self.parameters(), self.use_checkpoint
+            self._forward, (x, emb, condition, condition_name), self.parameters(), self.use_checkpoint
         )
 
-    def _forward(self, x, emb, cond):
-            # print("COND : ", cond)
-            # print("[#] X (input) : ", x.shape)
-            # print("[#] Time-Embeddning ", emb.shape)
-            if self.updown:
-                in_rest, in_conv = self.in_layers[:-1], self.in_layers[-1]
-                h = in_rest(x)
-                h = self.h_upd(h)
-                x = self.x_upd(x)
-                h = in_conv(h)
-            else:
-                h = self.in_layers(x)
-            emb_out = self.emb_layers(emb).type(h.dtype)
-            # print("[#] h : ", h.shape)
-            # print("[#] emb_out : ", emb_out.shape)
-            # print("[#] cond : ", cond.shape)
-            cond_proj = self.cond_proj_layers(cond['cond_params'].type(h.dtype))
-            # print("[#] proj_cond : ", cond.shape)
+    def _forward(self, x, emb, condition, condition_name):
+        # print("COND : ", cond)
+        # print("[#] X (input) : ", x.shape)
+        # print("[#] Time-Embeddning ", emb.shape)
+        if self.updown:
+            in_rest, in_conv = self.in_layers[:-1], self.in_layers[-1]
+            h = in_rest(x)
+            h = self.h_upd(h)
+            x = self.x_upd(x)
+            h = in_conv(h)
+        else:
+            h = self.in_layers(x)
+        emb_out = self.emb_layers(emb).type(h.dtype)
+        # print("[#] h : ", h.shape)
+        # print("[#] emb_out : ", emb_out.shape)
+        # print("[#] cond : ", cond.shape)
+        cond_proj = self.cond_proj_layers(condition[condition_name].type(h.dtype))
+        # print("[#] proj_cond : ", cond.shape)
 
-            while len(emb_out.shape) < len(h.shape):
-                emb_out = emb_out[..., None]
-            if self.use_scale_shift_norm:
-                # print("[#] USE SCALE SHIFT NORM")
-                out_norm, out_rest = self.out_layers[0], self.out_layers[1:]
-                scale, shift = th.chunk(emb_out, 2, dim=1)
-                # print((out_norm(h) * (1 + scale) + shift).shape)
-                # h = (out_norm(h) * (1 + scale) + shift) * cond.view(cond.shape[0], cond.shape[1], 1, 1).type(h.dtype)
-                # print(cond[..., None, None].shape)
-                h = (out_norm(h) * (1 + scale) + shift) * cond_proj[..., None, None].type(h.dtype)
-                h = out_rest(h)
-                # print("[#] OUT SCALE FROM SHIFT NORM : ", h.shape)
-                # print("##")
-            else:
-                h = h + emb_out
-                h = self.out_layers(h)
-            return self.skip_connection(x) + h
+        while len(emb_out.shape) < len(h.shape):
+            emb_out = emb_out[..., None]
+        if self.use_scale_shift_norm:
+            # print("[#] USE SCALE SHIFT NORM")
+            out_norm, out_rest = self.out_layers[0], self.out_layers[1:]
+            scale, shift = th.chunk(emb_out, 2, dim=1)
+            # print((out_norm(h) * (1 + scale) + shift).shape)
+            # h = (out_norm(h) * (1 + scale) + shift) * cond.view(cond.shape[0], cond.shape[1], 1, 1).type(h.dtype)
+            # print(cond[..., None, None].shape)
+            h = (out_norm(h) * (1 + scale) + shift) * cond_proj[..., None, None].type(h.dtype)
+            h = out_rest(h)
+            # print("[#] OUT SCALE FROM SHIFT NORM : ", h.shape)
+            # print("##")
+        else:
+            h = h + emb_out
+            h = self.out_layers(h)
+        return self.skip_connection(x) + h
 
 class EncoderUNetModel(nn.Module):
     """
