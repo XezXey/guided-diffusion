@@ -22,4 +22,4 @@ dataset:
 
 train_misc:
   exp_name: "Duplicate_UNet"
-  cfg_name: "DuplicateUNetCond"
+  cfg_name: "DuplicateUNetCond_lastconv=False"
