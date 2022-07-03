@@ -81,6 +81,7 @@ cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
 cfg.img_model.condition_proj_dim = 512
 cfg.img_model.pool = 'attention'
 cfg.img_model.conditioning = False
+cfg.img_model.last_conv = False    # For Duplicate UNetModel
 
 # Additional Encoder Network
 cfg.img_cond_model = CN()

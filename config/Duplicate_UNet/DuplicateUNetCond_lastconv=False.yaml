@@ -1,0 +1,25 @@
+img_model:
+  name: "ImgCond"
+  arch: "UNetCondDuplicate"
+  image_size: 64
+  in_image: 'raw'
+  in_channels: 3
+  out_channels: 3
+  conditioning: True  # Conditioning with DECA
+  condition_proj_dim: 512
+  last_conv: False
+
+param_model:
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
+  rmv_params: ['light']
+
+relighting:
+  num_SH: 9
+
+dataset:
+  deca_dir: "/data/mint/ffhq_256_with_anno"
+  data_dir: "/data/mint/ffhq_256_with_anno/ffhq_256/train"
+
+train_misc:
+  exp_name: "Duplicate_UNet"
+  cfg_name: "DuplicateUNetCond"

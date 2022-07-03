@@ -7,6 +7,7 @@ img_model:
   out_channels: 3
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
+  last_conv: True
 
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']

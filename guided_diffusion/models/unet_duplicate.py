@@ -715,7 +715,7 @@ class UNetModel(nn.Module):
         self.out = nn.Sequential(
             normalization(ch),
             nn.SiLU(),
-            zero_module(conv_nd(dims, input_ch, out_channels, 3, padding=1)),
+            conv_nd(dims, input_ch, out_channels, 3, padding=1),
         )
 
     def convert_to_fp16(self):
@@ -764,6 +764,7 @@ class UNetModelConditionDuplicate(nn.Module):
         out_channels, 
         num_res_blocks, 
         attention_resolutions, 
+        last_conv,
         dropout=0,
         channel_mult=(1, 2, 4, 8), 
         conv_resample=True, 
@@ -779,7 +780,7 @@ class UNetModelConditionDuplicate(nn.Module):
         condition_dim=159, 
         condition_proj_dim=512,
         conditioning=True,
-        num_SH=9
+        num_SH=9,
     ):
         super().__init__()
         self.condition_dim = condition_dim
@@ -849,10 +850,13 @@ class UNetModelConditionDuplicate(nn.Module):
         self.dtype = th.float16 if use_fp16 else th.float32
         self.model_channels = model_channels
         
-        self.out = nn.Sequential(
-            nn.SiLU(),
-            zero_module(conv_nd(dims, in_channels, out_channels, 3, padding=1)),
-        )
+        self.last_conv = last_conv
+        if self.last_conv:
+            self.out = nn.Sequential(
+                nn.SiLU(),
+                zero_module(conv_nd(dims, in_channels, out_channels, 3, padding=1)),
+            )
+            print(self.out)
         
 
     def forward(self, x, timesteps, y=None, **kwargs):
@@ -863,7 +867,10 @@ class UNetModelConditionDuplicate(nn.Module):
         :param y: an [N] Tensor of labels, if class-conditional.
         :return: an [N x C x ...] Tensor of outputs.
         """
-        
+        # for name, param in self.named_parameters():
+        #     if name == "lighting_branch.output_blocks.11.0.emb_layers.1.weight":
+        #         print(name, param)
+           
         h = x.type(self.dtype)
         
         # Shared First layer
@@ -903,7 +910,11 @@ class UNetModelConditionDuplicate(nn.Module):
         h_lighting_branch_out = self.lighting_branch.out(h)
         
         out = h_lighting_branch_out * h_img_branch_out
-        return {'output':self.out(out)}
+        
+        if self.last_conv:
+            return {'output':self.out(out)}
+        else:
+            return {'output':out}
 
 class ResBlockCondition(TimestepBlockCond):
     """

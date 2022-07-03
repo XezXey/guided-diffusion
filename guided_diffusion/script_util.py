@@ -210,6 +210,7 @@ def create_model(cfg, all_cfg=None):
             condition_proj_dim=cfg.condition_proj_dim,
             conditioning=True,
             num_SH=all_cfg.relighting.num_SH,
+            last_conv=cfg.last_conv
         )
     else: raise NotImplementedError
 
