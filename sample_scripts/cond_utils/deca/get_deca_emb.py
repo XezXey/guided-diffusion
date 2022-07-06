@@ -79,7 +79,11 @@ def get_deca_emb(device, data, dat_type, vis=True):
         images = data[i]['image'].to(device)[None,...]
         with th.no_grad():
             codedict = deca.encode(images)
-            # opdict, visdict = deca.decode(codedict) #tensor
+            opdict, visdict = deca.decode(codedict) #tensor
+            print(codedict.keys())
+            print(opdict.keys())
+            print(visdict.keys())
+            assert False
             # if vis:
             #     plt.title(f"Imgage name : {name}")
             #     plt.imshow(deca.visualize(visdict)[..., ::-1])

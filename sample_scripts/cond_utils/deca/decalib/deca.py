@@ -44,7 +44,7 @@ class DECA(nn.Module):
         self.uv_size = self.cfg.model.uv_size
 
         self._create_model(self.cfg.model)
-        # self._setup_renderer(self.cfg.model)
+        self._setup_renderer(self.cfg.model)
 
     def _setup_renderer(self, model_cfg):
         
