@@ -73,6 +73,7 @@ def get_deca_emb(device, data, dat_type, vis=True):
     deca = DECA(config = deca_cfg, device=device)
 
     deca_params = {}
+    deca_images = {}
 
     for i in tqdm(range(len(data))):
         name = data[i]['imagename']
@@ -83,12 +84,10 @@ def get_deca_emb(device, data, dat_type, vis=True):
             print(codedict.keys())
             print(opdict.keys())
             print(visdict.keys())
-            assert False
-            # if vis:
-            #     plt.title(f"Imgage name : {name}")
-            #     plt.imshow(deca.visualize(visdict)[..., ::-1])
-            #     plt.show()
-
+            if vis:
+                plt.title(f"Imgage name : {name}")
+                plt.imshow(deca.visualize(visdict)[..., ::-1])
+                plt.show()
 
         '''
         if args.saveDepth or args.saveKpt or args.saveObj or args.saveMat or args.saveImages:
@@ -133,4 +132,11 @@ def get_deca_emb(device, data, dat_type, vis=True):
             'cam':codedict['cam'].flatten().detach().cpu().numpy(),
             'light':codedict['light'].flatten().detach().cpu().numpy(),
         }
-    return deca_params
+
+        deca_images[name] = {
+            'rendered_images' : opdict['rendered_images'], 
+            'alpha_images' : opdict['alpha_images'], 
+            'normal_images' : opdict['normals_images'], 
+            'normals' : opdict['normals']
+        }
+    return deca_params, deca_images
