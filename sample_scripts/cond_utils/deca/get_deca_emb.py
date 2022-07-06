@@ -41,7 +41,7 @@ def str2bool(v):
         raise argparse.ArgumentTypeError("boolean value expected")
 
 
-def get_deca_emb(img_path, device, vis=True):
+def get_deca_emb(device, data, dat_type, vis=True):
     defaults = dict(
         input_path="",
         savefolder="./",
@@ -61,7 +61,12 @@ def get_deca_emb(img_path, device, vis=True):
     add_dict_to_argparser(parser, defaults)
     args = parser.parse_args(args=[])
     
-    data = datasets.TestData(img_path, iscrop=args.iscrop, face_detector=args.detector, device=device)
+    # if dat_type == 'img':
+    #     data = datasets.TestDataFromPath(img_path, iscrop=args.iscrop, face_detector=args.detector, device=device)
+    # elif img_list is not None:
+    data = datasets.TestData(data_list=data, dat_type=dat_type, iscrop=args.iscrop, face_detector=args.detector, device=device)
+
+
 
     # run DECA
     deca_cfg.model.use_tex = args.useTex
