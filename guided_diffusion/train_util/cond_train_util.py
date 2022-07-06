@@ -345,6 +345,7 @@ class TrainLoop(LightningModule):
 
         # Any Encoder/Conditioned Network to be applied before a main UNet
         if self.cfg.img_cond_model.apply:
+            print("GG")
             self.forward_cond_network(dat=dat, cond=cond)
 
         tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
@@ -357,8 +358,8 @@ class TrainLoop(LightningModule):
             noise=noise,
         )
         sample_from_ddim = ((sample_from_ddim + 1) * 127.5) / 255.
-
         tb.add_image(tag=f'ddim_sample', img_tensor=make_grid(sample_from_ddim, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        
         sample_from_ps = self.diffusion.p_sample_loop(
             model=self.model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
