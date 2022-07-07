@@ -79,7 +79,7 @@ def denormalize(arr_norm, min_val, max_val, a=-1, b=1):
     arr_denorm = (((arr_norm - a) * (max_val - min_val)) / (b - a)) + min_val
     return arr_denorm
 
-def load_params(path, params_key):
+def load_params(path, params_key, cfg):
     '''
     Load & Return the params
     Input : 
@@ -97,6 +97,8 @@ def load_params(path, params_key):
             if k in p:
                 print(f'Key=> {k} : Filename=>{p}')
                 params[k] = read_params(path=p)
+                print(params[k].shape, k)
+                params[k] = preprocess_cond(params[k], k, cfg)
 
     params_s = swap_key(params)
 
@@ -140,10 +142,10 @@ def get_params_set(set, cfg=None):
         params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
 
         if set == 'train':
-            params_train, params_train_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/train/", params_key=params_key)
+            params_train, params_train_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/train/", params_key=params_key, cfg=cfg)
             params_set = params_train
         elif set == 'valid':
-            params_valid, params_valid_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/valid/", params_key=params_key)
+            params_valid, params_valid_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/valid/", params_key=params_key, cfg=cfg)
             params_set = params_valid
         else:
             raise NotImplementedError
@@ -151,3 +153,16 @@ def get_params_set(set, cfg=None):
     else: raise NotImplementedError
 
     return params_set
+
+def preprocess_cond(deca_params, k, cfg):
+    if k != 'light':
+        return deca_params
+    else:
+        num_SH = cfg.relighting.num_SH
+        for img_name in deca_params.keys():
+            params = np.array(deca_params[img_name])
+            params = params.reshape(9, 3)
+            params = params[:num_SH]
+            params = params.flatten()
+            deca_params[img_name] = params
+        return deca_params
