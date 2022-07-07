@@ -137,6 +137,7 @@ def get_deca_emb(device, data, dat_type, vis=True):
             'rendered_images' : opdict['rendered_images'], 
             'alpha_images' : opdict['alpha_images'], 
             'normal_images' : opdict['normal_images'], 
-            'normals' : opdict['normals']
+            'normals' : opdict['normals'],
+            'input' : visdict['inputs']
         }
     return deca_params, deca_images

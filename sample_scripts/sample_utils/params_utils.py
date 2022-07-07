@@ -97,6 +97,7 @@ def load_params(path, params_key, cfg):
             if k in p:
                 print(f'Key=> {k} : Filename=>{p}')
                 params[k] = read_params(path=p)
+                print(params)
                 print(params[k].shape, k)
                 params[k] = preprocess_cond(params[k], k, cfg)
 
