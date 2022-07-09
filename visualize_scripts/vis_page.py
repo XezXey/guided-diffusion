@@ -1,22 +1,38 @@
+from email.policy import default
 from pickletools import optimize
 import pprint
 from tabnanny import check
 from turtle import onclick
 from click import option
 import numpy as np
-import streamlit as st
-
-
-st.set_page_config(layout="wide")
-
 import argparse
-import glob, os
-import json
-
-
+from skimage import io
+import cv2
 parser = argparse.ArgumentParser()
 parser.add_argument('--experiment_folder', type=str)
 args = parser.parse_args()
+
+import streamlit as st
+st.set_page_config(layout="wide")
+if 'model_counter' not in st.session_state:
+    st.session_state['model_counter'] = 0
+if 'model_selector' not in st.session_state:
+    st.session_state['model_selector'] = []
+
+import glob, os
+import json
+import torchvision
+import torch as th
+
+
+def np_video(frames):
+    print("Creating the video...", end='')
+    torchvision.io.write_video('./temp_mint.mp4', video_array=frames, fps=5)
+    video_file = open('./temp_mint.mp4', 'rb')
+    video_bytes = video_file.read()
+    st.video(data=video_bytes)
+    os.remove('temp_mint.mp4')
+
 
 def check_leaf_dir(path):
     file = os.listdir(path)
@@ -39,92 +55,125 @@ def path_to_dict(path, d):
         d[name] = [os.path.join(path, f) for f in file]
     return d
 
+def get_frames(path):
+
+    frames = []
+    #TODO: Sorting frames by filename
+    print(path)
+    for p in path:
+        im = io.imread(p)
+        frames.append(im)
+    return np.stack(frames)
+
+
 if __name__ == '__main__':
     sample_folder = os.listdir(f'{args.experiment_folder}/sampling_results/')
     mydict = path_to_dict(path=f'{args.experiment_folder}/sampling_results/', d = {})
-    if 'model_counter' not in st.session_state:
-        st.session_state['model_counter'] = 0
-    if 'model_selector' not in st.session_state:
-        st.session_state['model_selector'] = []
-    # Folder picker button
-    # st.title('DPM Sampling Visualizer')
-    # selected = st.selectbox('Select a Sampling Folder?', sample_folder)
-    # model_log = os.listdir(f'{args.experiment_folder}/sampling_results/{selected}')
-    # model = {m : None for m in model_log}
 
+    st.title('DPM Sampling Visualizer')
 
-
-    # with st.expander("Choosing model to compare"):
-    col1, col2 = st.columns([.5,1])
-    with col1:
-        add_button = st.button("Add model")
-    with col2:
-        rem_button = st.button("Remove model")
-    
-    if add_button:
-        st.session_state.model_counter += 1
-        st.experimental_rerun()
-    if rem_button:
-        if st.session_state.model_counter > 1:
+    with st.sidebar:
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            add_button = st.button("Add model")
+        with col2:
+            rem_button = st.button("Remove model")
+        
+        if add_button:
+            #TODO: #N of Max model to add
+            st.session_state.model_counter += 1
+            st.experimental_rerun()
+        if rem_button and st.session_state.model_counter > 1:
             st.session_state.model_counter -= 1
-        st.experimental_rerun()
+            st.experimental_rerun()
 
-    print(mydict.keys())
-    print(mydict['sampling_results'].keys())
-    print(mydict['sampling_results']['ddim_reverse'].keys())
-
+    print(mydict)
+    print("#"*100)
     model_selector = {}
-    with st.container():
+    with st.sidebar:
         for i in range(st.session_state.model_counter):
-            model_selector[i] = {
-                'model_name': st.selectbox(
-                    label = f"Model #{i + 1}", 
-                    options=mydict['sampling_results']['ddim_reverse'].keys()
-                )
-            }
-            model_selector[i].update({
-                'ckpt': st.selectbox(
-                    label = f"Checkpoint #{i + 1}", 
-                    options=mydict['sampling_results']['ddim_reverse'][model_selector[i]['model_name']].keys()
-                )
-            })
-            model_selector[i].update({
-                'dataset': st.selectbox(
-                    label = f"Dataset #{i + 1}", 
-                    options=mydict['sampling_results']['ddim_reverse'][model_selector[i]['model_name']][model_selector[i]['ckpt']].keys()
-                )
-            })
-            model_selector[i].update({
-                'cond': st.selectbox(
-                    label = f"Condition #{i + 1}", 
-                    options=mydict['sampling_results']['ddim_reverse'][model_selector[i]['model_name']][model_selector[i]['ckpt']][model_selector[i]['dataset']].keys()
-                )
-            })
+            with st.expander(label=f"Model #{i+1}"):
+                model_selector[i] = {
+                    'sampling_folder': st.selectbox(
+                        label = f"Sampling Folder #{i+1}", 
+                        options=mydict['sampling_results'].keys()
+                    )
+                }
 
-    col_layout = st.columns(st.session_state.model_counter)
-    with st.container():
-        for i in range(st.session_state.model_counter):
-            with col_layout[i]:
-                image = mydict['sampling_results']['ddim_reverse'][model_selector[i]['model_name']][model_selector[i]['ckpt']][model_selector[i]['dataset']][model_selector[i]['cond']]
-                for j in range(len(image)):
-                    st.image(image=image[j], caption=f"Image path = {image[j]}", use_column_width=True)
+                model_selector[i].update({
+                    'model_name': st.selectbox(
+                        label = f"Model name #{i+1}", 
+                        options=mydict['sampling_results'][model_selector[i]['sampling_folder']].keys(),
+                        index=i
+                    )
+                })
 
-# first_level_choice =  st.sidebar.selectbox('', ('Cars', 'Food', 'Electronics'))
-# b1 = st.sidebar.button('submit level 1 choice')
+                model_selector[i].update({
+                    'ckpt': st.selectbox(
+                        label = f"Checkpoint #{i+1}", 
+                        options=mydict['sampling_results'][model_selector[i]['sampling_folder']][model_selector[i]['model_name']].keys()
+                    )
+                })
+                model_selector[i].update({
+                    'dataset': st.selectbox(
+                        label = f"Dataset #{i+1}", 
+                        options=mydict['sampling_results'][model_selector[i]['sampling_folder']][model_selector[i]['model_name']][model_selector[i]['ckpt']].keys()
+                    )
+                })
+                model_selector[i].update({
+                    'cond': st.selectbox(
+                        label = f"Condition #{i+1}", 
+                        options=mydict['sampling_results'][model_selector[i]['sampling_folder']][model_selector[i]['model_name']][model_selector[i]['ckpt']][model_selector[i]['dataset']].keys()
+                    )
+                })
 
-# if b1: 
-#     if first_level_choice == 'Cars':
-#               second_level_choice_car = st.sidebar.selectbox('', ('Honda', 'Opel', 'Tesla'))
-#               b21 = st.sidebar.button('submit car choice')
-#               if b21: 
-#                   st.write('your car choice is ' + second_level_choice_car)
-#     if first_level_choice == 'Food':
-#               second_level_choice_food = st.sidebar.selectbox('', ("Egg", "Pizza", "Spinach"))
-#               b22 = st.sidebar.button('submit food choice')
-#               if b22: 
-#                   st.write('your food choice is ' + second_level_choice_food)
-#     if first_level_choice == 'Electronics':
-#               second_level_choice_elec = st.sidebar.selectbox('', ("Headphones", "Laptop", "Phone"))
-#               b23 = st.sidebar.button('submit elec choice')
-#               if b23: 
-#                   st.write('your electronics choice is ' + second_level_choice_elec)
+                # model_selector[i].update({
+                #     'src': list(mydict['sampling_results'][model_selector[i]['sampling_folder']][model_selector[i]['model_name']][model_selector[i]['ckpt']][model_selector[i]['dataset']][model_selector[i]['cond']].keys()),
+                # })
+
+                # for each_src in list(mydict['sampling_results'][model_selector[i]['sampling_folder']][model_selector[i]['model_name']][model_selector[i]['ckpt']][model_selector[i]['dataset']][model_selector[i]['cond']].keys()):
+                #     model_selector[i].update({
+                #         'subject' : {each_src : {}}
+                #     })
+                #     # model_selector[i][each_src] = list(mydict['sampling_results'][model_selector[i]['sampling_folder']][model_selector[i]['model_name']][model_selector[i]['ckpt']][model_selector[i]['dataset']][model_selector[i]['cond']][each_src].keys())
+                #     for each_dst in list(mydict['sampling_results'][model_selector[i]['sampling_folder']][model_selector[i]['model_name']][model_selector[i]['ckpt']][model_selector[i]['dataset']][model_selector[i]['cond']]['subject'][each_src].keys()):
+                #         model_selector[i][each_src].update({
+                #             each_dst : mydict['sampling_results'][model_selector[i]['sampling_folder']][model_selector[i]['model_name']][model_selector[i]['ckpt']][model_selector[i]['dataset']][model_selector[i]['cond']]['subject'][each_src].keys()
+                #         })
+
+                # model_selector[i].update({
+                #     'dst': mydict['sampling_results'][model_selector[i]['sampling_folder']][model_selector[i]['model_name']][model_selector[i]['ckpt']][model_selector[i]['dataset']][model_selector[i]['cond']][model_selector[i]['src']].keys()
+                # })
+
+                # print(model_selector[i]['src'])
+                # print(mydict['sampling_results'][model_selector[i]['sampling_folder']][model_selector[i]['model_name']][model_selector[i]['ckpt']][model_selector[i]['dataset']][model_selector[i]['cond']].keys())
+                # print(mydict['sampling_results'][model_selector[i]['sampling_folder']][model_selector[i]['model_name']][model_selector[i]['ckpt']][model_selector[i]['dataset']][model_selector[i]['cond']][model_selector[i]['src']].keys())
+                info = f'''
+                    name = {model_selector[i]['model_name'].split('=')[1]}\n
+                    cfg = {model_selector[i]['model_name'].split('=')[2]}
+                    '''
+                    # ckpt = {model_selector[i]['ckpt']}
+                    # dataset = {model_selector[i]['dataset']}
+                    # cond = {model_selector[i]['cond']}'''
+                st.success(info)
+
+    toggle_view = [None]
+    if st.session_state.model_counter >= 1:
+        col_layout = st.columns(st.session_state.model_counter)
+        with st.container():
+            for i in range(st.session_state.model_counter):
+                with col_layout[i]:
+                    st.text(f"Model #{i+1} : {model_selector[i]['model_name'].split('=')[1]}")
+                    subject = mydict['sampling_results'][model_selector[i]['sampling_folder']][model_selector[i]['model_name']][model_selector[i]['ckpt']][model_selector[i]['dataset']][model_selector[i]['cond']]
+                    src = st.selectbox(label="Select Source sample : ", options=subject.keys(), key=f"{model_selector[i]['model_name'].split('=')[1]}")
+                    dst = st.selectbox(label="Select Destination sample : ", options=subject[src].keys(), key=f"{model_selector[i]['model_name'].split('=')[1]}")
+                    frames = get_frames(subject[src][dst])
+                    with st.expander(label=f"{src}, {dst}"):
+                        np_video(frames)
+                        if (st.checkbox(label=f'toggle view #{i+1}', key=f'toggle view #{i+1}')):
+                            grid_image = torchvision.utils.make_grid(th.tensor(frames).permute(0, 3, 1, 2), nrow=6).numpy()
+                            grid_image = np.transpose(grid_image, axes=(1, 2, 0))
+                            st.image(image=grid_image, width=None)#, use_column_width=True)
+                        else:
+                            for f in frames:
+                                st.image(image=f, width=None, use_column_width=True)
