@@ -97,9 +97,6 @@ def load_params(path, params_key, cfg):
             if k in p:
                 print(f'Key=> {k} : Filename=>{p}')
                 params[k] = read_params(path=p)
-                print(params)
-                print(params[k].shape, k)
-                params[k] = preprocess_cond(params[k], k, cfg)
 
     params_s = swap_key(params)
 
@@ -155,15 +152,29 @@ def get_params_set(set, cfg=None):
 
     return params_set
 
+# def preprocess_cond(deca_params, k, cfg):
+#     if k != 'light':
+#         return deca_params
+#     else:
+#         num_SH = cfg.relighting.num_SH
+#         for img_name in deca_params.keys():
+#             params = np.array(deca_params[img_name])
+#             params = params.reshape(9, 3)
+#             params = params[:num_SH]
+#             params = params.flatten()
+#             deca_params[img_name] = params
+#         return deca_params
+
+
 def preprocess_cond(deca_params, k, cfg):
     if k != 'light':
         return deca_params
     else:
         num_SH = cfg.relighting.num_SH
-        for img_name in deca_params.keys():
-            params = np.array(deca_params[img_name])
-            params = params.reshape(9, 3)
-            params = params[:num_SH]
-            params = params.flatten()
-            deca_params[img_name] = params
+        params = deca_params[k]
+        params = params.reshape(params.shape[0], 9, 3)
+        params = params[:, :num_SH, :]
+        # params = params.flatten(start_dim=1)
+        params = params.reshape(params.shape[0], -1)
+        deca_params = params
         return deca_params
