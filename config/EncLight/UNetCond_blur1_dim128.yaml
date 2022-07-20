@@ -1,0 +1,31 @@
+img_model:
+  name: "ImgCond"
+  arch: "UNetCond"
+  image_size: 64
+  in_image: 'raw'
+  in_channels: 3
+  out_channels: 3
+  conditioning: True  # Conditioning with DECA
+  condition_proj_dim: 512
+
+param_model:
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
+
+img_cond_model:
+  apply: True
+  arch: "EncoderUNet"
+  in_image: 'raw'
+  in_channels: 3
+  image_size: 64
+  out_channels: 128
+  condition_dim: 128
+  pool: 'adaptivenonzero'
+  override_cond: "light"
+  prep_image: ['blur', 1]
+
+relighting:
+  use_SH: False
+
+dataset:
+  deca_dir: "/data/mint/ffhq_256_with_anno"
+  data_dir: "/data/mint/ffhq_256_with_anno/ffhq_256/train"

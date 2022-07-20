@@ -113,6 +113,7 @@ cfg.img_cond_model.prep_image = [None]
 # Options for relighting
 # ---------------------------------------------------------------------------- #
 cfg.relighting = CN()
+cfg.relighting.use_SH = True
 cfg.relighting.reduce_shading = True
 cfg.relighting.num_SH = 9
 cfg.relighting.apply_first = True
@@ -230,14 +231,17 @@ def update_params(cfg):
     cfg.param_model.n_params = []
 
     if cfg.img_cond_model.apply:
-        latent_dict = {'img_latent':cfg.img_cond_model.condition_dim}
-        params_dict.update(latent_dict)
+        if cfg.img_cond_model.override_cond == 'light':
+            params_dict['light'] = cfg.img_cond_model.condition_dim
+        else:
+            latent_dict = {'img_latent':cfg.img_cond_model.condition_dim}
+            params_dict.update(latent_dict)
 
     for param in cfg.param_model.params_selector:
         if param in cfg.param_model.rmv_params:
             continue
         else:
-            if param == 'light':
+            if param == 'light' and cfg.relighting.use_SH:
                 param_light = cfg.relighting.num_SH * 3
                 cfg.param_model.n_params.append(param_light)
             else:

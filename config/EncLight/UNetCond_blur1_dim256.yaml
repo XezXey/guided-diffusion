@@ -17,11 +17,14 @@ img_cond_model:
   in_image: 'raw'
   in_channels: 3
   image_size: 64
-  out_channels: 27
-  condition_dim: 27
+  out_channels: 256
+  condition_dim: 256
   pool: 'adaptivenonzero'
   override_cond: "light"
-  prep_image: ['blur', 0.5]
+  prep_image: ['blur', 1]
+
+relighting:
+  use_SH: False
 
 dataset:
   deca_dir: "/data/mint/ffhq_256_with_anno"

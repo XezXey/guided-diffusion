@@ -165,7 +165,7 @@ class DECADataset(Dataset):
         self.params_selector = params_selector
         self.rmv_params = rmv_params
         self.cfg = cfg
-        self.precomp_params_key = without(src=self.params_selector, rmv=['img_latent'] + self.rmv_params)
+        self.precomp_params_key = without(src=self.cfg.param_model.params_selector, rmv=['img_latent'] + self.rmv_params)
 
     def __len__(self):
         return len(self.local_images)
@@ -191,7 +191,7 @@ class DECADataset(Dataset):
         img_name = path.split('/')[-1]
 
         out_dict["cond_params"] = np.concatenate([self.deca_params[img_name][k] for k in self.precomp_params_key])
-        for k in self.params_selector:
+        for k in self.cfg.param_model.params_selector:
             out_dict[k] = self.deca_params[img_name][k]
         out_dict['image_name'] = img_name
         out_dict['blur_img'] = (blur_img / 127.5) - 1
