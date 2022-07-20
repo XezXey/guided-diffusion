@@ -110,7 +110,8 @@ def load_data_img_deca(
         deca_params=deca_params,
         in_image=in_image,
         params_selector=params_selector,
-        rmv_params=rmv_params
+        rmv_params=rmv_params,
+        cfg=cfg
     )
     print("[#] Parameters Conditioning")
     print("Params keys order : ", img_dataset.precomp_params_key)
@@ -151,6 +152,7 @@ class DECADataset(Dataset):
         deca_params,
         params_selector,
         rmv_params,
+        cfg,
         in_image='raw',
     ):
         super().__init__()
@@ -162,6 +164,7 @@ class DECADataset(Dataset):
         self.in_image = in_image
         self.params_selector = params_selector
         self.rmv_params = rmv_params
+        self.cfg = cfg
         self.precomp_params_key = without(src=self.params_selector, rmv=['img_latent'] + self.rmv_params)
 
     def __len__(self):
@@ -176,7 +179,10 @@ class DECADataset(Dataset):
         pil_image = pil_image.convert("RGB")
 
         raw_img = self.augmentation(pil_image=pil_image)
-        blur_img = self.blur(th.tensor(raw_img))
+        if self.cfg.img_cond_model.prep_image[0] == 'blur':
+            blur_img = self.blur(th.tensor(raw_img), sigma=self.cfg.img_cond_model.prep_image[1])
+        else:
+            pass
         norm_img = (raw_img / 127.5) - 1
 
         # Deca params of img-path
@@ -188,7 +194,7 @@ class DECADataset(Dataset):
         for k in self.params_selector:
             out_dict[k] = self.deca_params[img_name][k]
         out_dict['image_name'] = img_name
-        out_dict['blur_img'] = blur_img
+        out_dict['blur_img'] = (blur_img / 127.5) - 1
 
         # Input to model
         if self.in_image == 'raw':
@@ -197,12 +203,11 @@ class DECADataset(Dataset):
 
         return np.transpose(arr, [2, 0, 1]), out_dict
     
-    def blur(self, raw_img):
+    def blur(self, raw_img, sigma):
         ksize = int(raw_img.shape[0] * 0.1)
         ksize = ksize if ksize % 2 != 0 else ksize+1
-        blur_kernel = torchvision.transforms.GaussianBlur(kernel_size=ksize, sigma=5)
-        print(raw_img.shape)
-        raw_img = th.transpose(raw_img, dim=(2, 0, 1))
+        blur_kernel = torchvision.transforms.GaussianBlur(kernel_size=ksize, sigma=sigma)
+        raw_img = raw_img.permute(dims=(2, 0, 1))
         blur_img = blur_kernel(raw_img)
         return blur_img
         

@@ -254,22 +254,33 @@ class TrainLoop(LightningModule):
         print(dat.shape)
         print(cond.keys())
         print(cond['blur_img'].shape)
-        print(self.cfg.img_cond_model)
+        print(th.max(cond['blur_img']))
+        print(th.min(cond['blur_img']))
         import matplotlib.pyplot as plt
         import torchvision
         from guided_diffusion.dataloader.img_util import show
-        grid = torchvision.utils.make_grid(cond['blur_img'])
+        grid = torchvision.utils.make_grid(((cond['blur_img'] + 1) * 127.5).type(th.ByteTensor))
         show(grid)
         plt.savefig('./temp.png')
-        exit()
+        
+        if self.cfg.img_cond_model.prep_image == 'blur':
+            dat = cond['blur_img']
+        else:
+            dat = dat
         
         if self.cfg.img_cond_model.apply:
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
                 x=dat.float(), 
                 emb=None,
             )
+            # Override the condition and re-create cond_params
             if self.cfg.img_cond_model.override_cond != "":
                 cond[self.cfg.img_cond_model.override_cond] = img_cond
+                print(cond[self.cfg.param_model.params_selector])
+                for p in self.cfg.param_model.params_selector:
+                    print(p, cond[p].shape)
+                # cond['conda_params'] = 
+                print(cond.keys())
             else: raise AttributeError
 
     def forward_backward(self, batch, cond):
