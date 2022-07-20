@@ -1418,7 +1418,7 @@ class EncoderUNetModelNoTime(nn.Module):
             )
         else:
             raise NotImplementedError(f"Unexpected {pool} pooling")
-        print(self.out)
+        # print(self.out)
 
     def convert_to_fp16(self):
         """

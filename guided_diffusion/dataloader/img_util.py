@@ -3,6 +3,9 @@ import math
 import PIL
 import random
 import torch as th
+import matplotlib.pyplot as plt
+import torchvision.transforms.functional as F
+
 
 def resize_arr(pil_image, image_size):
     img = pil_image.resize((image_size, image_size), PIL.Image.ANTIALIAS)
@@ -81,3 +84,13 @@ def augmentation(pil_image, cfg):
     else: raise NotImplemented
 
     return arr
+
+def show(imgs):
+    if not isinstance(imgs, list):
+        imgs = [imgs]
+    fig, axs = plt.subplots(ncols=len(imgs), squeeze=False, figsize=(30, 30))
+    for i, img in enumerate(imgs):
+        img = img.detach()
+        img = F.to_pil_image(img)
+        axs[0, i].imshow(np.asarray(img))
+        axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])

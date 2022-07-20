@@ -10,13 +10,12 @@ import numpy as np
 import tqdm
 import os
 import glob
+import torchvision
+import torch as th
 from torch.utils.data import DataLoader, Dataset
 from ..recolor_util import recolor as recolor
 import matplotlib.pyplot as plt
 from collections import defaultdict
-import model_3d.FLAME.utils.detectors as detectors
-from skimage.io import imread, imsave
-from skimage.transform import estimate_transform, warp, resize, rescale
 
 from .img_util import (
     resize_arr,
@@ -113,8 +112,9 @@ def load_data_img_deca(
         params_selector=params_selector,
         rmv_params=rmv_params
     )
-
+    print("[#] Parameters Conditioning")
     print("Params keys order : ", img_dataset.precomp_params_key)
+    print("Remove keys : ", cfg.param_model.rmv_params)
 
     if deterministic:
         loader = DataLoader(
@@ -176,7 +176,8 @@ class DECADataset(Dataset):
         pil_image = pil_image.convert("RGB")
 
         raw_img = self.augmentation(pil_image=pil_image)
-        raw_img = (raw_img / 127.5) - 1
+        blur_img = self.blur(th.tensor(raw_img))
+        norm_img = (raw_img / 127.5) - 1
 
         # Deca params of img-path
         out_dict = {}
@@ -187,14 +188,24 @@ class DECADataset(Dataset):
         for k in self.params_selector:
             out_dict[k] = self.deca_params[img_name][k]
         out_dict['image_name'] = img_name
+        out_dict['blur_img'] = blur_img
 
         # Input to model
         if self.in_image == 'raw':
-            arr = raw_img
+            arr = norm_img
         else : raise NotImplementedError
 
         return np.transpose(arr, [2, 0, 1]), out_dict
     
+    def blur(self, raw_img):
+        ksize = int(raw_img.shape[0] * 0.1)
+        ksize = ksize if ksize % 2 != 0 else ksize+1
+        blur_kernel = torchvision.transforms.GaussianBlur(kernel_size=ksize, sigma=5)
+        print(raw_img.shape)
+        raw_img = th.transpose(raw_img, dim=(2, 0, 1))
+        blur_img = blur_kernel(raw_img)
+        return blur_img
+        
     def augmentation(self, pil_image):
         # Resize image by resizing/cropping to match the resolution
         if self.resize_mode == 'random_crop':

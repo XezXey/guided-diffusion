@@ -252,7 +252,17 @@ class TrainLoop(LightningModule):
 
     def forward_cond_network(self, dat, cond):
         print(dat.shape)
+        print(cond.keys())
+        print(cond['blur_img'].shape)
+        print(self.cfg.img_cond_model)
+        import matplotlib.pyplot as plt
+        import torchvision
+        from guided_diffusion.dataloader.img_util import show
+        grid = torchvision.utils.make_grid(cond['blur_img'])
+        show(grid)
+        plt.savefig('./temp.png')
         exit()
+        
         if self.cfg.img_cond_model.apply:
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
                 x=dat.float(), 
