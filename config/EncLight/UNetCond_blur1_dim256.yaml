@@ -29,3 +29,8 @@ relighting:
 dataset:
   deca_dir: "/data/mint/ffhq_256_with_anno"
   data_dir: "/data/mint/ffhq_256_with_anno/ffhq_256/train"
+
+
+train_misc:
+  exp_name: "EncLight_Blurry"
+  cfg_name: "UNetCond_blur1_dim256"
