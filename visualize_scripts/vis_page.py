@@ -58,16 +58,18 @@ def path_to_dict(path, d):
 def get_frames(path):
 
     frames = []
-    #TODO: Sorting frames by filename
-    print(path)
+    frame_anno = []
     for p in path:
+        frame_idx = os.path.splitext(p.split('_')[-1])[0][5:]   # 0-4 is "frame", so we used [5:] here
+        frame_anno.append(int(frame_idx))
         im = io.imread(p)
         frames.append(im)
-    return np.stack(frames)
+    sorted_idx = np.argsort(frame_anno)
+    sorted_frames = np.stack(frames)[sorted_idx]
+    return sorted_frames
 
 
 if __name__ == '__main__':
-    sample_folder = os.listdir(f'{args.experiment_folder}/sampling_results/')
     mydict = path_to_dict(path=f'{args.experiment_folder}/sampling_results/', d = {})
 
     st.title('DPM Sampling Visualizer')
@@ -79,7 +81,7 @@ if __name__ == '__main__':
         with col2:
             rem_button = st.button("Remove model")
         
-        if add_button:
+        if add_button and st.session_state.model_counter < 4:
             #TODO: #N of Max model to add
             st.session_state.model_counter += 1
             st.experimental_rerun()
@@ -87,8 +89,6 @@ if __name__ == '__main__':
             st.session_state.model_counter -= 1
             st.experimental_rerun()
 
-    print(mydict)
-    print("#"*100)
     model_selector = {}
     with st.sidebar:
         for i in range(st.session_state.model_counter):
@@ -99,7 +99,6 @@ if __name__ == '__main__':
                         options=mydict['sampling_results'].keys()
                     )
                 }
-
                 model_selector[i].update({
                     'model_name': st.selectbox(
                         label = f"Model name #{i+1}", 
@@ -152,9 +151,6 @@ if __name__ == '__main__':
                     name = {model_selector[i]['model_name'].split('=')[1]}\n
                     cfg = {model_selector[i]['model_name'].split('=')[2]}
                     '''
-                    # ckpt = {model_selector[i]['ckpt']}
-                    # dataset = {model_selector[i]['dataset']}
-                    # cond = {model_selector[i]['cond']}'''
                 st.success(info)
 
     toggle_view = [None]
@@ -165,8 +161,8 @@ if __name__ == '__main__':
                 with col_layout[i]:
                     st.text(f"Model #{i+1} : {model_selector[i]['model_name'].split('=')[1]}")
                     subject = mydict['sampling_results'][model_selector[i]['sampling_folder']][model_selector[i]['model_name']][model_selector[i]['ckpt']][model_selector[i]['dataset']][model_selector[i]['cond']]
-                    src = st.selectbox(label="Select Source sample : ", options=subject.keys(), key=f"{model_selector[i]['model_name'].split('=')[1]}")
-                    dst = st.selectbox(label="Select Destination sample : ", options=subject[src].keys(), key=f"{model_selector[i]['model_name'].split('=')[1]}")
+                    src = st.selectbox(label="Select Source sample : ", options=sorted(subject.keys()), key=f"{model_selector[i]['model_name'].split('=')[1]}")
+                    dst = st.selectbox(label="Select Destination sample : ", options=sorted(subject[src].keys()), key=f"{model_selector[i]['model_name'].split('=')[1]}")
                     frames = get_frames(subject[src][dst])
                     with st.expander(label=f"{src}, {dst}"):
                         np_video(frames)

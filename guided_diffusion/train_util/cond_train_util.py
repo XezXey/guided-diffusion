@@ -251,6 +251,8 @@ class TrainLoop(LightningModule):
     #     return all(took_step)
 
     def forward_cond_network(self, dat, cond):
+        print(dat.shape)
+        exit()
         if self.cfg.img_cond_model.apply:
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
                 x=dat.float(), 
