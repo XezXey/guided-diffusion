@@ -17,8 +17,8 @@ img_cond_model:
   in_image: 'raw'
   in_channels: 3
   image_size: 64
-  out_channels: 128
-  condition_dim: 128
+  out_channels: 27
+  condition_dim: 27
   pool: 'adaptivenonzero'
   override_cond: "light"
   prep_image: ['blur', 1]
