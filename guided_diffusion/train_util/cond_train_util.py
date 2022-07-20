@@ -263,10 +263,12 @@ class TrainLoop(LightningModule):
         # show(grid)
         # plt.savefig('./temp.png')
         
-        if self.cfg.img_cond_model.prep_image == 'blur':
+        if self.cfg.img_cond_model.prep_image[0] == 'blur':
+            # print("Use blur")
             dat = cond['blur_img']
-        else:
+        elif self.cfg.img_cond_model.prep_image[0] == None:
             dat = dat
+        else: raise NotImplementedError
         
         if self.cfg.img_cond_model.apply:
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
