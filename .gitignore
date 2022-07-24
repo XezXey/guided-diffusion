@@ -34,3 +34,5 @@ sample_scripts/ipynb/Lighting_stuff/fgr_bgr_effect/org/
 sample_scripts/ipynb/Lighting_stuff/fgr_bgr_effect/fgr/
 sample_scripts/ipynb/Lighting_stuff/fgr_bgr_effect/bgr/
 sample_scripts/ipynb/Lighting_stuff/fgr_bgr_effect/gs.png
+
+sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/samples/

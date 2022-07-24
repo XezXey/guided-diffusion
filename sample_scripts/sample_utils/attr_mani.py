@@ -60,7 +60,7 @@ def get_weighted_average(dist_arr, sigma):
     # plt.show()
     return weighted_term
 
-def retrieve_topk_params(params_set, ref_params, cfg, img_dataset_path, dist_type='l2', k=30):
+def retrieve_topk_params(params_set, ref_params, cfg, img_dataset_path, sigma, k, dist_type='l2'):
     '''
     Return images and params of top-k nearest parameters
     :param params_set: parameters in dict-like e.g. {'0.jpg':{'light' : ..., 'pose' : ..., ...}}
@@ -79,7 +79,7 @@ def retrieve_topk_params(params_set, ref_params, cfg, img_dataset_path, dist_typ
 
 
     min_idx = np.argsort(light_dist)[:k]
-    weighted_term = get_weighted_average(np.array(light_dist)[min_idx], sigma=1)
+    weighted_term = get_weighted_average(np.array(light_dist)[min_idx], sigma=sigma)
 
     img_path = file_utils._list_image_files_recursively(img_dataset_path)
     img_path = [img_path[i] for i in min_idx]

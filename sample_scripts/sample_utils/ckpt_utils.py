@@ -51,7 +51,7 @@ class CkptLoader():
         else: raise NotImplementedError
 
         self.available_model()
-
+        # self.cfg.diffusion.diffusion_steps = 25
         model_dict, diffusion = create_img_and_diffusion(self.cfg)
         model_dict = {k: v for k, v in model_dict.items() if v is not None}
         for m_name in model_dict.keys():
