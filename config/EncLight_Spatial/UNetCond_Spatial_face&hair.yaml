@@ -38,4 +38,4 @@ dataset:
 
 train_misc:
   exp_name: "EncLight_SpatialCondition"
-  cfg_name: "UNetCond_SpatialCondition"
+  cfg_name: "UNetCond_Spatial_face&hair"
