@@ -282,8 +282,8 @@ class TrainLoop(LightningModule):
                 for p in self.cfg.param_model.params_selector:
                     tmp.append(cond[p])
                 cond['cond_params'] = th.cat(tmp, dim=-1)
-                    
-            else: raise AttributeError
+            else: raise NotImplementedError
+
 
     def forward_backward(self, batch, cond):
         cond = {

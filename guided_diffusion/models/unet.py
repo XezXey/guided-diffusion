@@ -638,6 +638,7 @@ class UNetModel(nn.Module):
                 ds *= 2
                 self._feature_size += ch
 
+        # print("CHANS : ", input_block_chans)
         self.middle_block = time_embed_seq_module(
             resblock_module(
                 ch,
@@ -724,6 +725,9 @@ class UNetModel(nn.Module):
             nn.SiLU(),
             zero_module(conv_nd(dims, input_ch, out_channels, 3, padding=1)),
         )
+        # print(self.middle_block)
+        # print(self.output_blocks)
+        # exit()
 
     def convert_to_fp16(self):
         """
@@ -810,8 +814,10 @@ class UNetModelCondition(UNetModel):
             use_new_attention_order=use_new_attention_order,
             condition_dim = condition_dim,
             condition_proj_dim=condition_proj_dim)
-        
 
+        # print(self.input_blocks)
+        # exit()
+        
     def forward(self, x, timesteps, y=None, **kwargs):
         """
         Apply the model to an input batch.

@@ -83,7 +83,6 @@ def create_model(cfg, all_cfg=None):
     attention_ds = []
     for res in cfg.attention_resolutions.split(","):
         attention_ds.append(cfg.image_size // int(res))
-
     if cfg.arch == 'UNet':
         return UNetModel(
             image_size=cfg.image_size,

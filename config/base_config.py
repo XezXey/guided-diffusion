@@ -54,18 +54,18 @@ cfg.param_model.use_checkpoint = ""
 # ---------------------------------------------------------------------------- #
 # Options for Image model (e.g. raw image, uv_displacement_normal, depth, etc.) 
 # ---------------------------------------------------------------------------- #
+img_model_img_type = {'raw':3, 'uvdn':3}
 cfg.img_model = CN()
 cfg.img_model.name = "Img"
-img_type = {'raw':3, 'uvdn':3}
-cfg.img_model.in_image = '+'.join(img_type.keys())
+cfg.img_model.in_image = '+'.join(img_model_img_type.keys())
 cfg.img_model.resize_mode = 'resize'
 cfg.img_model.augment_mode = None
 # Network
 cfg.img_model.arch = 'UNet'
 cfg.img_model.image_size = 128
 cfg.img_model.num_channels = 128
-cfg.img_model.in_channels = sum(img_type.values())
-cfg.img_model.out_channels = sum(img_type.values())
+cfg.img_model.in_channels = sum(img_model_img_type.values())
+cfg.img_model.out_channels = sum(img_model_img_type.values())
 cfg.img_model.num_res_blocks = 2
 cfg.img_model.num_heads = 4
 cfg.img_model.num_heads_upsample = -1
@@ -84,14 +84,16 @@ cfg.img_model.conditioning = False
 cfg.img_model.last_conv = False    # For Duplicate UNetModel
 
 # Additional Encoder Network
+img_cond_model_img_type = {'raw':3, 'deca':3, 'face':3, 'face&hair':3, 'normals':3}
 cfg.img_cond_model = CN()
 cfg.img_cond_model.name = "ImgEncoder"
 cfg.img_cond_model.apply = False
 cfg.img_cond_model.arch = 'EncoderUNet'
-cfg.img_cond_model.in_image = '+'.join(img_type.keys())
+# cfg.img_cond_model.in_image = '+'.join(img_cond_model_img_type.keys())
+cfg.img_cond_model.in_image = ['raw'] 
 cfg.img_cond_model.image_size = 128
 cfg.img_cond_model.num_channels = 128
-cfg.img_cond_model.in_channels = sum(img_type.values())
+cfg.img_cond_model.in_channels = sum(img_cond_model_img_type[in_img] for in_img in cfg.img_cond_model.in_image)
 cfg.img_cond_model.out_channels = 32
 cfg.img_cond_model.condition_dim = 32
 cfg.img_cond_model.num_res_blocks = 2
@@ -130,6 +132,8 @@ cfg.dataset = CN()
 cfg.dataset.training_data = ['ffhq_256_with_anno']
 cfg.dataset.deca_dir = '/data/mint/ffhq_256_with_anno'
 cfg.dataset.data_dir = '/data/mint/ffhq_256_with_anno/ffhq_256/train'
+cfg.dataset.face_segment_dir = "/data/mint/ffhq_256_with_anno/face_segment/train/anno/"
+cfg.dataset.deca_shading_dir = "/data/mint/ffhq_256_with_anno/shading_images/train/"
 
 # ---------------------------------------------------------------------------- #
 # Options for training
@@ -252,6 +256,8 @@ def update_params(cfg):
     cfg.param_model.out_channels = sum(cfg.param_model.n_params)
     cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
 
+    # Update conditioning image type for img_cond_model
+    cfg.img_cond_model.in_channels = sum(img_cond_model_img_type[in_img] for in_img in cfg.img_cond_model.in_image)
     return cfg
 
 
