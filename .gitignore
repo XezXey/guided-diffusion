@@ -22,6 +22,8 @@ sample_scripts/itw_images/
 sample_scripts/itw_videos/
 sample_scripts/rendered_obj/
 rendered_obj/
+
+# Graveyard
 sample_scripts/py/Graveyard_script/lighting_experiment_mod_cond/sampling_results/
 sample_scripts/py/Graveyard_script/lighting_experiment_self_itp/sampling_results/
 sample_scripts/py/Graveyard_script/lighting_experiment_slerp/sampling_results/
