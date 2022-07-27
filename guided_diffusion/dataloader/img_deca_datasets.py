@@ -108,9 +108,12 @@ def load_data_img_deca(
         else:
             continue
         in_image_for_cond[in_image_type] = image_path_list_to_dict(in_image_for_cond[in_image_type])
+        # print(in_image_for_cond['deca'])
+        # exit()
 
 
     raw_img_paths = image_path_list_to_dict(raw_img_files)
+    # print(raw_img_paths)
     deca_params = load_deca_params(deca_dir, cfg)
 
     img_dataset = DECADataset(
@@ -190,30 +193,45 @@ class DECADataset(Dataset):
         self.cfg = cfg
         self.precomp_params_key = without(src=self.cfg.param_model.params_selector, rmv=['img_latent'] + self.rmv_params)
         self.kwargs = kwargs
-        print(self.kwargs.keys())
 
     def __len__(self):
         return len(self.local_images)
 
     def __getitem__(self, idx):
+        out_dict = {}
+
         # Raw Images in dataset
         query_img_name = list(self.local_images.keys())[idx]
         # print(query_img_name, self.local_images[query_img_name])
         raw_pil_image = self.load_image(self.local_images[query_img_name])
         raw_img = self.augmentation(pil_image=raw_pil_image)
 
-        if self.cfg.img_cond_model.in_image
-
+        condition_image = self.load_condition_image(raw_pil_image, query_img_name)
+            
         if self.cfg.img_cond_model.prep_image[0] == 'blur':
             blur_img = self.blur(th.tensor(raw_img), sigma=self.cfg.img_cond_model.prep_image[1])
             out_dict['blur_img'] = (blur_img / 127.5) - 1
-        else:
-            pass
+        elif (self.cfg.img_cond_model.prep_image[0] == None) and ('face' in self.cfg.img_cond_model.in_image):
+            out_dict['cond_img'] = self.augmentation(PIL.Image.fromarray(condition_image['face']))
+            out_dict['cond_img'] = (out_dict['cond_img'] / 127.5) - 1
+            out_dict['cond_img'] = np.transpose(out_dict['cond_img'], [2, 0, 1])
+            out_dict['face_img'] = out_dict['cond_img']
+        elif (self.cfg.img_cond_model.prep_image[0] == None) and ('face&hair' in self.cfg.img_cond_model.in_image):
+            out_dict['cond_img'] = self.augmentation(PIL.Image.fromarray(condition_image['face&hair']))
+            out_dict['cond_img'] = np.transpose(out_dict['cond_img'], [2, 0, 1])
+            out_dict['cond_img'] = (out_dict['cond_img'] / 127.5) - 1
+            out_dict['face&hair_img'] = out_dict['cond_img']
+        elif (self.cfg.img_cond_model.prep_image[0] == None) and ('deca' in self.cfg.img_cond_model.in_image):
+            out_dict['cond_img'] = self.augmentation(condition_image['deca'])
+            out_dict['cond_img'] = np.transpose(out_dict['cond_img'], [2, 0, 1])
+            out_dict['deca_img'] = out_dict['cond_img']
+
+        # plt.imshow(out_dict['cond_img'])
+        # plt.savefig('after_dec.png')
+
         norm_img = (raw_img / 127.5) - 1
 
         # Deca params of img-path
-        out_dict = {}
-        # img_name = path.split('/')[-1]
 
         out_dict["cond_params"] = np.concatenate([self.deca_params[query_img_name][k] for k in self.precomp_params_key])
         for k in self.cfg.param_model.params_selector:
@@ -226,6 +244,45 @@ class DECADataset(Dataset):
         else : raise NotImplementedError
 
         return np.transpose(arr, [2, 0, 1]), out_dict
+
+    def load_condition_image(self, raw_pil_image, query_img_name):
+        condition_image = {}
+        if 'face' in self.cfg.img_cond_model.in_image:
+            condition_image['face'] = self.face_segment(raw_pil_image, 'face', query_img_name)
+        if 'face&hair' in self.cfg.img_cond_model.in_image:
+            condition_image['face&hair'] = self.face_segment(raw_pil_image, 'face&hair', query_img_name)
+        if 'deca' in self.cfg.img_cond_model.in_image:
+            condition_image['deca'] = self.load_image(self.kwargs['in_image_for_cond']['deca'][query_img_name])
+
+        return condition_image
+
+    def face_segment(self, raw_pil_image, segment_part, query_img_name):
+        face_segment_anno = self.load_image(self.kwargs['in_image_for_cond'][segment_part][query_img_name.replace('.jpg', '.png')])
+
+        face_segment_anno = np.array(face_segment_anno)
+        bg = (face_segment_anno == 0)
+        skin = (face_segment_anno == 1)
+        l_brow = (face_segment_anno == 2)
+        r_brow = (face_segment_anno == 3)
+        l_eye = (face_segment_anno == 4)
+        r_eye = (face_segment_anno == 5)
+        eye_g = (face_segment_anno == 6)
+        l_ear = (face_segment_anno == 7)
+        r_ear = (face_segment_anno == 8)
+        ear_r = (face_segment_anno == 9)
+        nose = (face_segment_anno == 10)
+        mouth = (face_segment_anno == 11)
+        u_lip = (face_segment_anno == 12)
+        l_lip = (face_segment_anno == 13)
+        neck = (face_segment_anno == 14)
+        neck_l = (face_segment_anno == 15)
+        face = np.logical_or.reduce((skin, l_brow, r_brow, l_eye, r_eye, eye_g, l_ear, r_ear, ear_r, nose, mouth, u_lip, l_lip, neck, neck_l))
+
+        if segment_part == 'face':
+            return face * np.array(raw_pil_image)
+        elif segment_part == 'face&hair':
+            return ~bg * np.array(raw_pil_image)
+
 
     def load_image(self, path):
         with bf.BlobFile(path, "rb") as f:

@@ -266,10 +266,21 @@ class TrainLoop(LightningModule):
         if self.cfg.img_cond_model.prep_image[0] == 'blur':
             # print("Use blur")
             dat = cond['blur_img']
-        elif self.cfg.img_cond_model.prep_image[0] == None:
+        elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'deca'):
+            dat = cond['deca_img']                                                                   
+        elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'face'):
+            dat = cond['face_img']                                                              
+        elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'face&hair'):
+            dat = cond['face&hair_img']                                                           
+        elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'raw'):
             dat = dat
         else: raise NotImplementedError
         
+        # print(dat.shape)
+        # import matplotlib.pyplot as plt
+        # plt.imshow(np.transpose(dat[0].cpu().numpy(), (1, 2, 0)))
+        # plt.savefig('temps.png')
+
         if self.cfg.img_cond_model.apply:
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
                 x=dat.float(), 
