@@ -2070,7 +2070,7 @@ class EncoderUNet_SpatialCondition(nn.Module):
         """
         results = []
         h = x.type(self.dtype)
-        for idx, module in enumerate(self.input_blocks):
+        for i, module in enumerate(self.input_blocks):
             print(h.shape)
             print(self.input_blocks[i].named_modules)
             h = module(h, emb)
