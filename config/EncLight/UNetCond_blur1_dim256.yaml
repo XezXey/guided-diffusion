@@ -14,7 +14,7 @@ param_model:
 img_cond_model:
   apply: True
   arch: "EncoderUNet"
-  in_image: 'raw'
+  in_image: ['raw']
   in_channels: 3
   image_size: 64
   out_channels: 256

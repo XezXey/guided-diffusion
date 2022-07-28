@@ -5,6 +5,7 @@ import random
 import torch as th
 import blobfile as bf
 import os
+import torchvision
 
 from sample_scripts.cond_utils.arcface.config_arcface import IMG_DIR
 
@@ -157,3 +158,11 @@ def sequence2video(imgs, img_size, save_path='./animated_results/', save_fn=''):
         video.write(img[..., ::-1])
       
     video.release()  # releasing the video generated
+
+def blur(raw_img, sigma):
+    ksize = int(raw_img.shape[0] * 0.1)
+    ksize = ksize if ksize % 2 != 0 else ksize+1
+    blur_kernel = torchvision.transforms.GaussianBlur(kernel_size=ksize, sigma=sigma)
+    raw_img = raw_img.permute(dims=(2, 0, 1))
+    blur_img = blur_kernel(raw_img)
+    return blur_img

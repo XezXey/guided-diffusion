@@ -17,7 +17,6 @@ parser.add_argument('--n_subject', type=int, required=True)
 parser.add_argument('--sigma', type=int, default=1)
 parser.add_argument('--cls', action='store_true', default=False)
 parser.add_argument('--lerp', action='store_true', default=False)
-parser.add_argument('--diffusion_steps', type=int, default=1000)
 
 args = parser.parse_args()
 
@@ -94,6 +93,7 @@ def with_classifier():
         fp = f"{save_frames_path}/cls_seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_frame{i}.png"
         torchvision.utils.save_image(tensor=(frame), fp=fp)
 
+
 def without_classifier():
     # Forward the interpolation from reverse noise map
     # Interpolate
@@ -109,7 +109,6 @@ def without_classifier():
     cond = inference_utils.to_tensor(cond, key=['cond_params', 'light'], device=ckpt_loader.device)
     
     # Forward
-    diffusion.num_timesteps = args.diffusion_steps
     pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
     sample_ddim = pl_sampling(noise=th.cat([reverse_ddim_sample['img_output'][[b_idx]]] * n_step), model_kwargs=cond)
     fig = vis_utils.plot_sample(img=th.cat([reverse_ddim_sample['img_output'][[b_idx]]] * n_step), sampling_img=sample_ddim['img_output'])
@@ -120,7 +119,7 @@ def without_classifier():
     plt.savefig(f"{save_preview_path}/seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_allframes.png", bbox_inches='tight')
     
     # Save result
-    save_frames_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Lerp_{args.diffusion_steps}/"
+    save_frames_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Lerp/"
     os.makedirs(save_frames_path, exist_ok=True)
     tc_frames = sample_ddim['img_output']
     for i in range(tc_frames.shape[0]):
@@ -173,6 +172,7 @@ if __name__ == '__main__':
     # Load Ckpt
     if args.cfg_name is None:
         args.cfg_name = args.log_dir + '.yaml'
+        
     ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
     cfg = ckpt_loader.cfg
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
@@ -211,13 +211,6 @@ if __name__ == '__main__':
 
         model_kwargs = mani_utils.load_condition(params_set, img_name)
         images = mani_utils.load_image(all_path=img_path, cfg=cfg, vis=True)['image']
-        
-        print(images.shpae)
-        exit()
-        if cfg.img_cond_model.prep_image[0] == 'blur':
-            blur_img = img_utils.blur(th.tensor(raw_img), sigma=cfg.img_cond_model.prep_image[1])
-            out_dict['blur_img'] = (blur_img / 127.5) - 1
-        
         model_kwargs.update({'image_name':img_name, 'image':images})
         
         interpolate_str = '_'.join(args.interpolate)
@@ -234,8 +227,6 @@ if __name__ == '__main__':
         cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
         cond = inference_utils.to_tensor(cond, key=['cond_params', 'light', 'image'], device=ckpt_loader.device)
         img_tmp = cond['image'].clone()
-
-        diffusion.num_timesteps = args.diffusion_steps
         pl_reverse_sampling = inference_utils.PLReverseSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_reverse_sample_loop, cfg=cfg)
         reverse_ddim_sample = pl_reverse_sampling(x=cond['image'], model_kwargs=cond)
         
@@ -243,8 +234,6 @@ if __name__ == '__main__':
         key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
         cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
         cond = inference_utils.to_tensor(cond, key=['cond_params', 'light'], device=ckpt_loader.device)
-
-        diffusion.num_timesteps = args.diffusion_steps
         pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
         sample_ddim = pl_sampling(noise=reverse_ddim_sample['img_output'], model_kwargs=cond)
         fig = vis_utils.plot_sample(img=img_tmp, reverse_sampling_images=reverse_ddim_sample['img_output'], sampling_img=sample_ddim['img_output'])

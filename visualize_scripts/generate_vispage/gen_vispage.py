@@ -31,6 +31,8 @@ def root():
   out += "<a href=\"http://10.204.100.126:4747/Lerp/\">Lerp</a> <br>"
   out += "<a href=\"http://10.204.100.126:4747/CLS/sigma=1/\">Linear Classifier (Sigma=1)</a> <br>"
   out += "<a href=\"http://10.204.100.126:4747/CLS/sigma=10/\">Linear Classifier (Sigma=10)</a> <br>"
+  out += "<a href=\"http://10.204.100.126:4747/best_diffusion_steps/\">Best diffusion steps</a> <br>"
+  
   return out
 
 @app.route('/Lerp/')
@@ -89,3 +91,59 @@ def cls(sigma):
 
       out += "<br> <hr>"
   return out
+
+@app.route('/best_diffusion_steps/')
+def best_diff_steps():
+  out = ""
+  folder = "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/best_num_step_diffusion/samples/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_300000/valid/light/"
+  for i, src_path in enumerate(glob.glob(f"{folder}/src=*")):
+    src_id = src_path.split('/')[-1]
+    for d in glob.glob(f"{folder}/{src_id}/dst=*"):
+      if not os.path.isdir(d): continue
+      src_id = d.split('/')[-2]
+      dst_id = d.split('/')[-1]
+      out += f"{i} {src_id} : <img src=/files/{data_path}/{src_id.split('=')[-1]} width=\"64\" height=\"64\">, {dst_id} : <img src=/files/{data_path}/{dst_id.split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
+
+      img_path = glob.glob(d + "/Lerp/*.png")
+      img_path = sort_by_frame(img_path)
+      out += "LERP <br>"
+      for f in img_path:
+        out += "<img src=/files/" + f + ">"
+
+      diffusion_steps = [200, 250, 300, 350, 400, 500, 600, 700]
+      for step in diffusion_steps:
+        img_path = glob.glob(d + f"/Lerp_{step}/*.png")
+        img_path = sort_by_frame(img_path)
+        out += f"<br> LERP {step}<br>"
+        for f in img_path:
+          out += "<img src=/files/" + f + ">"
+
+      img_path = glob.glob(d + "/Lerp/*.png")
+      img_path = sort_by_frame(img_path)
+      out += "<br> LERP <br>"
+      for f in img_path:
+        out += "<img src=/files/" + f + ">"
+
+
+
+      out += "<br> CLS-SIGMA1 <br>"
+      for sub in glob.glob(d + f"/LinearClassifier/sigma=1"):
+        img_path = glob.glob(sub + "/*.png")
+        img_path = sort_by_frame(img_path)
+        for f in img_path:
+          out += "<img src=/files/" + f + ">"
+
+      out += "<br> CLS-SIGMA10 <br>"
+      for sub in glob.glob(d + f"/LinearClassifier/sigma=10"):
+        img_path = glob.glob(sub + "/*.png")
+        img_path = sort_by_frame(img_path)
+        for f in img_path:
+          out += "<img src=/files/" + f + ">"
+
+
+      out += "<br> <hr>"
+  return out
+
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=4747, debug=True)

@@ -1,4 +1,3 @@
-from jinja2 import ModuleLoader
 import pytorch_lightning as pl
 import torch as th
 import numpy as np
@@ -16,6 +15,7 @@ class PLReverseSampling(pl.LightningModule):
         
     def forward_cond_network(self, dat, cond):
         if self.cfg.img_cond_model.apply:
+
             dat = cond['image']
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
                 x=dat.float(), 

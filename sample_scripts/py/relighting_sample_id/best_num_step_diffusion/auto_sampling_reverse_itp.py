@@ -173,6 +173,7 @@ if __name__ == '__main__':
     # Load Ckpt
     if args.cfg_name is None:
         args.cfg_name = args.log_dir + '.yaml'
+        
     ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
     cfg = ckpt_loader.cfg
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
@@ -211,13 +212,6 @@ if __name__ == '__main__':
 
         model_kwargs = mani_utils.load_condition(params_set, img_name)
         images = mani_utils.load_image(all_path=img_path, cfg=cfg, vis=True)['image']
-        
-        print(images.shpae)
-        exit()
-        if cfg.img_cond_model.prep_image[0] == 'blur':
-            blur_img = img_utils.blur(th.tensor(raw_img), sigma=cfg.img_cond_model.prep_image[1])
-            out_dict['blur_img'] = (blur_img / 127.5) - 1
-        
         model_kwargs.update({'image_name':img_name, 'image':images})
         
         interpolate_str = '_'.join(args.interpolate)
@@ -235,7 +229,7 @@ if __name__ == '__main__':
         cond = inference_utils.to_tensor(cond, key=['cond_params', 'light', 'image'], device=ckpt_loader.device)
         img_tmp = cond['image'].clone()
 
-        diffusion.num_timesteps = args.diffusion_steps
+        diffusion.num_timesteps = 1000
         pl_reverse_sampling = inference_utils.PLReverseSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_reverse_sample_loop, cfg=cfg)
         reverse_ddim_sample = pl_reverse_sampling(x=cond['image'], model_kwargs=cond)
         
