@@ -96,29 +96,32 @@ def load_data_img_deca(
     :param random_crop: if True, randomly crop the images for augmentation.
     :param random_flip: if True, randomly flip the images for augmentation.
     """
+
     if not data_dir and not deca_dir:
         raise ValueError("unspecified data directory")
-    raw_img_files = _list_image_files_recursively(data_dir)
-    in_image_for_cond = {}
+    in_image = {}
     for in_image_type in cfg.img_cond_model.in_image:
-        if 'deca' in in_image_type:
-            in_image_for_cond[in_image_type] = _list_image_files_recursively(cfg.dataset.deca_shading_dir)
-        elif 'face' in in_image_type:
-            in_image_for_cond[in_image_type] = _list_image_files_recursively(cfg.dataset.face_segment_dir)
+        if 'raw' in in_image_type:
+            in_image[in_image_type] = _list_image_files_recursively(data_dir)
+            in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
+
+        elif 'deca' in in_image_type:
+            in_image[in_image_type] = _list_image_files_recursively(cfg.dataset.deca_shading_dir)
+            in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
+        elif 'faceseg' in in_image_type:
+            in_image['faceseg'] = _list_image_files_recursively(cfg.dataset.face_segment_dir)
+            in_image['faceseg'] = image_path_list_to_dict(in_image['faceseg'])
         else:
+            # for now = 'raw'
             continue
-        in_image_for_cond[in_image_type] = image_path_list_to_dict(in_image_for_cond[in_image_type])
-        # print(in_image_for_cond['deca'])
-        # exit()
-
-
-    raw_img_paths = image_path_list_to_dict(raw_img_files)
+        # Change path list to dict with the image name as a key
+    
     # print(raw_img_paths)
     deca_params = load_deca_params(deca_dir, cfg)
 
     img_dataset = DECADataset(
         image_size,
-        raw_img_paths,
+        in_image['raw'],
         resize_mode=resize_mode,
         augment_mode=augment_mode,
         deca_params=deca_params,
@@ -126,7 +129,7 @@ def load_data_img_deca(
         params_selector=params_selector,
         rmv_params=rmv_params,
         cfg=cfg,
-        in_image_for_cond=in_image_for_cond
+        in_image_for_cond=in_image
     )
     print("[#] Parameters Conditioning")
     print("Params keys order : ", img_dataset.precomp_params_key)
@@ -193,6 +196,7 @@ class DECADataset(Dataset):
         self.cfg = cfg
         self.precomp_params_key = without(src=self.cfg.param_model.params_selector, rmv=['img_latent'] + self.rmv_params)
         self.kwargs = kwargs
+        print(self.kwargs)
 
     def __len__(self):
         return len(self.local_images)
@@ -206,40 +210,57 @@ class DECADataset(Dataset):
         raw_pil_image = self.load_image(self.local_images[query_img_name])
         raw_img = self.augmentation(pil_image=raw_pil_image)
 
-        condition_image = self.load_condition_image(raw_pil_image, query_img_name)
+        if self.cfg.img_cond_model.apply:
+            cond_img = self.load_condition_image(raw_pil_image, query_img_name)
+            out_dict['cond_img'] = []
+            for i, k in enumerate(cond_img.keys()):
+                print(k)
+                print(cond_img[k].shape)
+                each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
+                print("AFTER AUGMENT : ", each_cond_img.shape)
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                each_cond_img = (each_cond_img / 127.5) - 1
+                out_dict[f'{k}_img'] = each_cond_img
+                out_dict['cond_img'].append(each_cond_img)
+            print(out_dict['cond_img'])
+            print(np.concatenate(out_dict['cond_img'], axis=0).shape)
+            out_dict['cond_img'] = np.concatenate(out_dict['cond_img'], axis=0)
+            print(out_dict['cond_img'].shape)
             
-        if self.cfg.img_cond_model.prep_image[0] == 'blur':
-            blur_img = self.blur(th.tensor(raw_img), sigma=self.cfg.img_cond_model.prep_image[1])
-            out_dict['blur_img'] = (blur_img / 127.5) - 1
-        elif (self.cfg.img_cond_model.prep_image[0] == None) and ('face' in self.cfg.img_cond_model.in_image):
-            out_dict['cond_img'] = self.augmentation(PIL.Image.fromarray(condition_image['face']))
-            out_dict['cond_img'] = (out_dict['cond_img'] / 127.5) - 1
-            out_dict['cond_img'] = np.transpose(out_dict['cond_img'], [2, 0, 1])
-            out_dict['face_img'] = out_dict['cond_img']
-        elif (self.cfg.img_cond_model.prep_image[0] == None) and ('face&hair' in self.cfg.img_cond_model.in_image):
-            out_dict['cond_img'] = self.augmentation(PIL.Image.fromarray(condition_image['face&hair']))
-            out_dict['cond_img'] = np.transpose(out_dict['cond_img'], [2, 0, 1])
-            out_dict['cond_img'] = (out_dict['cond_img'] / 127.5) - 1
-            out_dict['face&hair_img'] = out_dict['cond_img']
-        elif (self.cfg.img_cond_model.prep_image[0] == None) and ('deca' in self.cfg.img_cond_model.in_image):
-            out_dict['cond_img'] = self.augmentation(condition_image['deca'])
-            out_dict['cond_img'] = np.transpose(out_dict['cond_img'], [2, 0, 1])
-            out_dict['deca_img'] = out_dict['cond_img']
+            
+
+            
+        # if self.cfg.img_cond_model.prep_image[0] == 'blur':
+        #     blur_img = self.blur(th.tensor(raw_img), sigma=self.cfg.img_cond_model.prep_image[1])
+        #     out_dict['blur_img'] = (blur_img / 127.5) - 1
+        # elif (self.cfg.img_cond_model.prep_image[0] == None) and ('face' in self.cfg.img_cond_model.in_image):
+        #     out_dict['cond_img'] = self.augmentation(PIL.Image.fromarray(condition_image['face']))
+        #     out_dict['cond_img'] = (out_dict['cond_img'] / 127.5) - 1
+        #     out_dict['cond_img'] = np.transpose(out_dict['cond_img'], [2, 0, 1])
+        #     out_dict['face_img'] = out_dict['cond_img']
+        # elif (self.cfg.img_cond_model.prep_image[0] == None) and ('face&hair' in self.cfg.img_cond_model.in_image):
+        #     out_dict['cond_img'] = self.augmentation(PIL.Image.fromarray(condition_image['face&hair']))
+        #     out_dict['cond_img'] = np.transpose(out_dict['cond_img'], [2, 0, 1])
+        #     out_dict['cond_img'] = (out_dict['cond_img'] / 127.5) - 1
+        #     out_dict['face&hair_img'] = out_dict['cond_img']
+        # elif (self.cfg.img_cond_model.prep_image[0] == None) and ('deca' in self.cfg.img_cond_model.in_image):
+        #     out_dict['cond_img'] = self.augmentation(condition_image['deca'])
+        #     out_dict['cond_img'] = np.transpose(out_dict['cond_img'], [2, 0, 1])
+        #     out_dict['deca_img'] = out_dict['cond_img']
 
         # plt.imshow(out_dict['cond_img'])
         # plt.savefig('after_dec.png')
 
-        norm_img = (raw_img / 127.5) - 1
 
         # Deca params of img-path
-
         out_dict["cond_params"] = np.concatenate([self.deca_params[query_img_name][k] for k in self.precomp_params_key])
         for k in self.cfg.param_model.params_selector:
             out_dict[k] = self.deca_params[query_img_name][k]
         out_dict['image_name'] = query_img_name
 
-        # Input to model
+        # Input to UNet-model
         if self.in_image == 'raw':
+            norm_img = (raw_img / 127.5) - 1
             arr = norm_img
         else : raise NotImplementedError
 

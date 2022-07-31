@@ -263,18 +263,18 @@ class TrainLoop(LightningModule):
         # show(grid)
         # plt.savefig('./temp.png')
         
-        if self.cfg.img_cond_model.prep_image[0] == 'blur':
-            # print("Use blur")
-            dat = cond['blur_img']
-        elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'deca'):
-            dat = cond['deca_img']                                                                   
-        elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'face'):
-            dat = cond['face_img']                                                              
-        elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'face&hair'):
-            dat = cond['face&hair_img']                                                           
-        elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'raw'):
-            dat = dat
-        else: raise NotImplementedError
+        # if self.cfg.img_cond_model.prep_image[0] == 'blur':
+        #     dat = cond['blur_img']
+        # elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'deca'):
+        #     dat = cond['deca_img']                                                                   
+        # elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'face'):
+        #     dat = cond['face_img']                                                              
+        # elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'face&hair'):
+        #     dat = cond['face&hair_img']                                                           
+        # elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'raw'):
+        #     dat = dat
+        # else: raise NotImplementedError
+        dat = cond['cond_img']
         
         # print(dat.shape)
         # import matplotlib.pyplot as plt

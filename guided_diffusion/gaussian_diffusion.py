@@ -654,6 +654,8 @@ class GaussianDiffusion:
             indices = tqdm(indices)
 
         for i in indices:
+            # Deep copy to prevent sth that used .pop()
+            model_kwargs_copy = make_deepcopyable(model_kwargs, keys=['spatial_latent'])
             t = th.tensor([i] * x.shape[0], device=device)
             with th.no_grad():
                 out = self.ddim_reverse_sample(
@@ -661,7 +663,7 @@ class GaussianDiffusion:
                     x = x,
                     t = t,
                     clip_denoised=clip_denoised,
-                    model_kwargs=model_kwargs,
+                    model_kwargs=model_kwargs_copy,
                     eta=eta
                 )
                 yield out
@@ -693,7 +695,6 @@ class GaussianDiffusion:
         ):
             final = sample
         return final["sample"]
-
 
 
     def ddim_sample_loop(

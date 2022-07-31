@@ -27,7 +27,6 @@ class PLReverseSampling(pl.LightningModule):
                 emb=None,
             )
             if self.cfg.img_cond_model.override_cond != "":
-                print(img_cond.shape)
                 img_cond = img_cond.detach().cpu().numpy()
                 model_kwargs[self.cfg.img_cond_model.override_cond] = img_cond
             else: raise AttributeError

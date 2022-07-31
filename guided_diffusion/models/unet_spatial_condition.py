@@ -1408,6 +1408,7 @@ class UNetModel_SpatialCondition(nn.Module):
         # print("INPUT BLOCKS")
         # for i in range(len(self.input_blocks)):
         #     print(i, self.input_blocks[i])
+        # exit()
         
         self.middle_block = time_embed_seq_module(
             resblock_module(

@@ -84,12 +84,11 @@ cfg.img_model.conditioning = False
 cfg.img_model.last_conv = False    # For Duplicate UNetModel
 
 # Additional Encoder Network
-img_cond_model_img_type = {'raw':3, 'deca':3, 'face':3, 'face&hair':3, 'normals':3}
+img_cond_model_img_type = {'raw':3, 'deca':3, 'faceseg_face':3, 'faceseg_face&hair':3, 'normals':3}
 cfg.img_cond_model = CN()
 cfg.img_cond_model.name = "ImgEncoder"
 cfg.img_cond_model.apply = False
 cfg.img_cond_model.arch = 'EncoderUNet'
-# cfg.img_cond_model.in_image = '+'.join(img_cond_model_img_type.keys())
 cfg.img_cond_model.in_image = ['raw'] 
 cfg.img_cond_model.image_size = 128
 cfg.img_cond_model.num_channels = 128
