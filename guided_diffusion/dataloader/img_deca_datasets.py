@@ -76,7 +76,7 @@ def load_data_img_deca(
     deterministic=False,
     resize_mode="resize",
     augment_mode=None,
-    in_image="raw",
+    in_image_UNet="raw",
 ):
     """
     For a dataset, create a generator over (images, kwargs) pairs.
@@ -100,32 +100,31 @@ def load_data_img_deca(
     if not data_dir and not deca_dir:
         raise ValueError("unspecified data directory")
     in_image = {}
+    # For conditioning images
     for in_image_type in cfg.img_cond_model.in_image:
-        if 'raw' in in_image_type:
-            in_image[in_image_type] = _list_image_files_recursively(data_dir)
-            in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
-
-        elif 'deca' in in_image_type:
+        if 'deca' in in_image_type:
             in_image[in_image_type] = _list_image_files_recursively(cfg.dataset.deca_shading_dir)
-            in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
         elif 'faceseg' in in_image_type:
-            in_image['faceseg'] = _list_image_files_recursively(cfg.dataset.face_segment_dir)
-            in_image['faceseg'] = image_path_list_to_dict(in_image['faceseg'])
+            in_image[in_image_type] = _list_image_files_recursively(cfg.dataset.face_segment_dir)
+        elif 'raw' in in_image_type: continue
         else:
-            # for now = 'raw'
-            continue
-        # Change path list to dict with the image name as a key
+            raise NotImplementedError(f"The {in_image_type}-image type not found.")
+
+        in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
     
-    # print(raw_img_paths)
     deca_params = load_deca_params(deca_dir, cfg)
 
+    # For raw image
+    in_image['raw'] = _list_image_files_recursively(data_dir)
+    in_image['raw'] = image_path_list_to_dict(in_image['raw'])
+
     img_dataset = DECADataset(
-        image_size,
-        in_image['raw'],
+        resolution=image_size,
+        image_paths=in_image['raw'],
         resize_mode=resize_mode,
         augment_mode=augment_mode,
         deca_params=deca_params,
-        in_image=in_image,
+        in_image_UNet=in_image_UNet,
         params_selector=params_selector,
         rmv_params=rmv_params,
         cfg=cfg,
@@ -181,7 +180,7 @@ class DECADataset(Dataset):
         params_selector,
         rmv_params,
         cfg,
-        in_image='raw',
+        in_image_UNet='raw',
         **kwargs
     ):
         super().__init__()
@@ -190,13 +189,12 @@ class DECADataset(Dataset):
         self.resize_mode = resize_mode
         self.augment_mode = augment_mode
         self.deca_params = deca_params
-        self.in_image = in_image
+        self.in_image_UNet = in_image_UNet
         self.params_selector = params_selector
         self.rmv_params = rmv_params
         self.cfg = cfg
         self.precomp_params_key = without(src=self.cfg.param_model.params_selector, rmv=['img_latent'] + self.rmv_params)
         self.kwargs = kwargs
-        print(self.kwargs)
 
     def __len__(self):
         return len(self.local_images)
@@ -212,22 +210,20 @@ class DECADataset(Dataset):
 
         if self.cfg.img_cond_model.apply:
             cond_img = self.load_condition_image(raw_pil_image, query_img_name)
+
             out_dict['cond_img'] = []
-            for i, k in enumerate(cond_img.keys()):
-                print(k)
-                print(cond_img[k].shape)
-                each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
-                print("AFTER AUGMENT : ", each_cond_img.shape)
-                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                each_cond_img = (each_cond_img / 127.5) - 1
-                out_dict[f'{k}_img'] = each_cond_img
-                out_dict['cond_img'].append(each_cond_img)
-            print(out_dict['cond_img'])
-            print(np.concatenate(out_dict['cond_img'], axis=0).shape)
+            for k in self.cfg.img_cond_model.in_image:
+                if k == 'raw':
+                    each_cond_img = (raw_img / 127.5) - 1
+                    each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                    out_dict['cond_img'].append(each_cond_img)
+                else:
+                    each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
+                    each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                    each_cond_img = (each_cond_img / 127.5) - 1
+                    out_dict[f'{k}_img'] = each_cond_img
+                    out_dict['cond_img'].append(each_cond_img)
             out_dict['cond_img'] = np.concatenate(out_dict['cond_img'], axis=0)
-            print(out_dict['cond_img'].shape)
-            
-            
 
             
         # if self.cfg.img_cond_model.prep_image[0] == 'blur':
@@ -259,7 +255,7 @@ class DECADataset(Dataset):
         out_dict['image_name'] = query_img_name
 
         # Input to UNet-model
-        if self.in_image == 'raw':
+        if self.in_image_UNet == 'raw':
             norm_img = (raw_img / 127.5) - 1
             arr = norm_img
         else : raise NotImplementedError
@@ -268,12 +264,13 @@ class DECADataset(Dataset):
 
     def load_condition_image(self, raw_pil_image, query_img_name):
         condition_image = {}
-        if 'face' in self.cfg.img_cond_model.in_image:
-            condition_image['face'] = self.face_segment(raw_pil_image, 'face', query_img_name)
-        if 'face&hair' in self.cfg.img_cond_model.in_image:
-            condition_image['face&hair'] = self.face_segment(raw_pil_image, 'face&hair', query_img_name)
-        if 'deca' in self.cfg.img_cond_model.in_image:
-            condition_image['deca'] = self.load_image(self.kwargs['in_image_for_cond']['deca'][query_img_name])
+        for in_image_type in self.cfg.img_cond_model.in_image:
+            if in_image_type == 'faceseg_face':
+                condition_image['faceseg_face'] = self.face_segment(raw_pil_image, 'faceseg_face', query_img_name)
+            if in_image_type == 'faceseg_face&hair':
+                condition_image['faceseg_face&hair'] = self.face_segment(raw_pil_image, 'faceseg_face&hair', query_img_name)
+            if in_image_type == 'deca':
+                condition_image['deca'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['deca'][query_img_name]))
 
         return condition_image
 
@@ -299,9 +296,9 @@ class DECADataset(Dataset):
         neck_l = (face_segment_anno == 15)
         face = np.logical_or.reduce((skin, l_brow, r_brow, l_eye, r_eye, eye_g, l_ear, r_ear, ear_r, nose, mouth, u_lip, l_lip, neck, neck_l))
 
-        if segment_part == 'face':
+        if segment_part == 'faceseg_face':
             return face * np.array(raw_pil_image)
-        elif segment_part == 'face&hair':
+        elif segment_part == 'faceseg_face&hair':
             return ~bg * np.array(raw_pil_image)
 
 

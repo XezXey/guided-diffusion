@@ -37,7 +37,7 @@ def main():
         deterministic=cfg.train.deterministic,
         augment_mode=cfg.img_model.augment_mode,
         resize_mode=cfg.img_model.resize_mode,
-        in_image=cfg.img_model.in_image,
+        in_image_UNet=cfg.img_model.in_image,
         params_selector=cfg.param_model.params_selector,
         rmv_params=cfg.param_model.rmv_params,
         cfg=cfg,

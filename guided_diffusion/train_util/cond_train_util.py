@@ -276,11 +276,31 @@ class TrainLoop(LightningModule):
         # else: raise NotImplementedError
         dat = cond['cond_img']
         
+        # print("FW COND")
         # print(dat.shape)
         # import matplotlib.pyplot as plt
-        # plt.imshow(np.transpose(dat[0].cpu().numpy(), (1, 2, 0)))
-        # plt.savefig('temps.png')
-
+        # for i in range(dat.shape[0]):
+        #     n_ch = dat[i].shape[0] // 3
+        #     for j in range(1, n_ch+1):
+        #         print(j)
+        #         if j == 1:
+        #             end = j * 3
+        #             print(end)
+        #             print(dat[i][0:end, :, :].shape)
+        #             img = np.transpose(dat[i][0:end, :, :].cpu().numpy(), (1, 2, 0))
+        #             img = (img + 1) * 127.5
+        #             plt.imshow(img.astype(np.uint8))
+        #             plt.savefig(f'temps_{j}.png')
+        #         else:
+        #             start = (j-1) * 3
+        #             end = j * 3
+        #             print(start, end)
+        #             print(dat[i][start:end, ...].shape)
+        #             img = np.transpose(dat[i][start:end, :, :].cpu().numpy(), (1, 2, 0))
+        #             img = (img + 1) * 127.5
+        #             plt.imshow(img.astype(np.uint8))
+        #             plt.savefig(f'temps_{j}.png')
+        # exit()
         if self.cfg.img_cond_model.apply:
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
                 x=dat.float(), 
