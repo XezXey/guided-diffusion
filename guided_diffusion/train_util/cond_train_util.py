@@ -382,6 +382,10 @@ class TrainLoop(LightningModule):
         # Any Encoder/Conditioned Network to be applied before a main UNet
         if self.cfg.img_cond_model.apply:
             self.forward_cond_network(dat=dat, cond=cond)
+            print(cond.keys())
+            for i in range(len(cond['spatial_latent'])):
+                print(cond['spatial_latent'][i].shape)
+            input()
 
         tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
 
@@ -399,7 +403,7 @@ class TrainLoop(LightningModule):
             model=self.model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
             clip_denoised=True,
-            model_kwargs=cond,
+            model_kwargs=copy.deepcopy(cond),
             noise=noise,
         )
         sample_from_ps = ((sample_from_ps + 1) * 127.5) / 255.

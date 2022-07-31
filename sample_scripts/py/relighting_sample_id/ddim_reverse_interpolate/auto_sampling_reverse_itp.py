@@ -49,6 +49,7 @@ from sample_utils import (
     mani_utils,
     attr_mani,
 )
+device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
 
 # def with_classifier(model_dict, 
 #     cls_model, 
@@ -98,7 +99,9 @@ def without_classifier():
     # Forward the interpolation from reverse noise map
     # Interpolate
     cond = model_kwargs.copy()
-    img_tmp = cond['image'].clone()
+
+    if cfg.img_cond_model.apply:
+        cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
     interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step)
     cond = mani_utils.repeat_cond_params(cond, base_idx=b_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate))
     cond.update(interp_cond)
@@ -153,7 +156,6 @@ def train_linear_classifier():
     gt = th.cat((src_label, dst_label))[..., None]
     weighted_loss = th.cat((src_weight, dst_weight))[..., None]
 
-    device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
     cls_model = attr_mani.LinearClassifier(cfg).to(device)
     cls_model.train(gt=gt.to(device), input=input.float().to(device), n_iters=10000, weighted_loss=weighted_loss.to(device), progress=True)
 
@@ -212,11 +214,16 @@ if __name__ == '__main__':
         model_kwargs = mani_utils.load_condition(params_set, img_name)
         images = mani_utils.load_image(all_path=img_path, cfg=cfg, vis=True)['image']
         
-        print(images.shpae)
-        exit()
         if cfg.img_cond_model.prep_image[0] == 'blur':
-            blur_img = img_utils.blur(th.tensor(raw_img), sigma=cfg.img_cond_model.prep_image[1])
-            out_dict['blur_img'] = (blur_img / 127.5) - 1
+            img_cond = []
+            for img_tmp in images:
+                img_tmp = (img_tmp + 1) * 127.5
+                img_tmp = np.transpose(img_tmp, (1, 2, 0))
+                blur_img = img_utils.blur(img_tmp, sigma=cfg.img_cond_model.prep_image[1])
+                img_cond.append((blur_img / 127.5) - 1)
+            
+            model_kwargs['blur_img'] = th.stack(img_cond, dim=0).to(device)
+            # print(model_kwargs['blur_img'].shape)
         
         model_kwargs.update({'image_name':img_name, 'image':images})
         
@@ -230,13 +237,17 @@ if __name__ == '__main__':
         cond = model_kwargs.copy()
         
         # Reverse
+
+        diffusion.num_timesteps = args.diffusion_steps
+        pl_reverse_sampling = inference_utils.PLReverseSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_reverse_sample_loop, cfg=cfg)
+        if cfg.img_cond_model.apply:
+            cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
+
         key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
         cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
         cond = inference_utils.to_tensor(cond, key=['cond_params', 'light', 'image'], device=ckpt_loader.device)
         img_tmp = cond['image'].clone()
 
-        diffusion.num_timesteps = args.diffusion_steps
-        pl_reverse_sampling = inference_utils.PLReverseSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_reverse_sample_loop, cfg=cfg)
         reverse_ddim_sample = pl_reverse_sampling(x=cond['image'], model_kwargs=cond)
         
         # Forward from reverse noise map

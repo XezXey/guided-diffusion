@@ -13,18 +13,25 @@ class PLReverseSampling(pl.LightningModule):
         self.diffusion = diffusion
         self.cfg = cfg
         
-    def forward_cond_network(self, dat, cond):
+    def forward_cond_network(self, model_kwargs):
         if self.cfg.img_cond_model.apply:
+            
+            if self.cfg.img_cond_model.prep_image[0] == 'blur':
+                print("Use blur")
+                dat = model_kwargs['blur_img']
+            else:
+                dat = model_kwargs['image']
 
-            dat = cond['image']
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
                 x=dat.float(), 
                 emb=None,
             )
             if self.cfg.img_cond_model.override_cond != "":
-                cond[self.cfg.img_cond_model.override_cond] = img_cond
+                print(img_cond.shape)
+                img_cond = img_cond.detach().cpu().numpy()
+                model_kwargs[self.cfg.img_cond_model.override_cond] = img_cond
             else: raise AttributeError
-        return cond
+        return model_kwargs
 
     def forward(self, x, model_kwargs, progress=True):
         # Mimic the ddim_sample_loop or p_sample_loop

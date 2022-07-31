@@ -13,6 +13,7 @@ import torch as th
 
 from .models.nn import mean_flat
 from .losses import normal_kl, discretized_gaussian_log_likelihood
+from .tensor_util import make_deepcopyable
 
 
 def get_named_beta_schedule(schedule_name, num_diffusion_timesteps):
@@ -527,6 +528,9 @@ class GaussianDiffusion:
 
         for i in indices:
             t = th.tensor([i] * shape[0], device=device)
+
+            # Deep copy to prevent sth that used .pop()
+            model_kwargs_copy = make_deepcopyable(model_kwargs, keys=['spatial_latent'])
             with th.no_grad():
                 out = self.p_sample(
                     model,
@@ -535,7 +539,7 @@ class GaussianDiffusion:
                     clip_denoised=clip_denoised,
                     denoised_fn=denoised_fn,
                     cond_fn=cond_fn,
-                    model_kwargs=model_kwargs,
+                    model_kwargs=model_kwargs_copy,
                 )
                 yield out
                 img = out["sample"]
@@ -761,6 +765,9 @@ class GaussianDiffusion:
             indices = tqdm(indices)
 
         for i in indices:
+            # Deep copy to prevent sth that used .pop()
+            model_kwargs_copy = make_deepcopyable(model_kwargs, keys=['spatial_latent'])
+
             t = th.tensor([i] * shape[0], device=device)
             with th.no_grad():
                 out = self.ddim_sample(
@@ -770,7 +777,7 @@ class GaussianDiffusion:
                     clip_denoised=clip_denoised,
                     denoised_fn=denoised_fn,
                     cond_fn=cond_fn,
-                    model_kwargs=model_kwargs,
+                    model_kwargs=model_kwargs_copy,
                     eta=eta,
                 )
                 yield out

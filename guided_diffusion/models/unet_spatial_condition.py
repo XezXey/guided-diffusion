@@ -1528,9 +1528,11 @@ class UNetModel_SpatialCondition(nn.Module):
         """
         hs = []
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
-
+        # print("IN UNET")
+        # print(len(kwargs['spatial_latent']))
         # for i in range(len(kwargs['spatial_latent'])):
         #     print(kwargs['spatial_latent'][i].shape)
+        # print("AXAXAXA")
         # First layer - input_blocks
         h = x.type(self.dtype)
         h = self.input_blocks[0](h, emb, condition=kwargs)
