@@ -1,6 +1,6 @@
 img_model:
   name: "ImgCond"
-  arch: "UNetCond_SpatialCondition"
+  arch: "UNetCond_SpatialCondition_Hadamart_Activation"
   image_size: 64
   in_image: 'raw'
   in_channels: 3
@@ -14,14 +14,14 @@ param_model:
 img_cond_model:
   apply: True
   arch: "EncoderUNet_SpatialCondition"
-  in_image: ['faceseg_face&hair']
+  in_image: ['faceseg_face&hair', 'deca', 'faceseg_face']
   in_channels: 3
   image_size: 64
   out_channels: 128
   condition_dim: 256
   override_cond: "spatial_latent"
   pool: 'adaptivenonzero'
-  prep_image: [Null, 'face&hair']
+  prep_image: [Null]
   # resblock_updown: True
   resblock_updown: False
   num_head_channels: -1
@@ -37,5 +37,5 @@ dataset:
 
 
 train_misc:
-  exp_name: "EncLight_SpatialCondition"
-  cfg_name: "UNetCond_Spatial_face&hair"
+  exp_name: "EncLight_SpatialCondition_Hadamart_Activation"
+  cfg_name: "UNetCond_Spatial_Hadamart_activation_face&hair_deca_face"

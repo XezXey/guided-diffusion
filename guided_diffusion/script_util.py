@@ -1,13 +1,16 @@
 import argparse
 
+
 from . import gaussian_diffusion as gd
-from .respace import SpacedDiffusion, space_timesteps
-from .models.unet import EncoderUNetModelNoTime, UNetModelCondition, UNetModel
-from .models.unet_spatial_condition import EncoderUNet_SpatialCondition, UNetModel_SpatialCondition
-from .models.unet_duplicate import UNetModelConditionDuplicate
-from .models.normals_arch.unet_N_Last import UNetNormalsLastLayer
-from .models.normals_arch.unet_N_All import UNetNormalsAll
-from .models.dense import DenseDDPM, AutoEncoderDPM, DenseDDPMCond
+from guided_diffusion.respace import SpacedDiffusion, space_timesteps
+from guided_diffusion.models.unet import EncoderUNetModelNoTime, UNetModelCondition, UNetModel
+from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_concat import EncoderUNet_SpatialCondition, UNetModel_SpatialCondition_Concat
+from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart import UNetModel_SpatialCondition_Hadamart
+from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_activation import UNetModel_SpatialCondition_Hadamart_Activation
+from guided_diffusion.models.unet_duplicate import UNetModelConditionDuplicate
+from guided_diffusion.models.normals_arch.unet_N_Last import UNetNormalsLastLayer
+from guided_diffusion.models.normals_arch.unet_N_All import UNetNormalsAll
+from guided_diffusion.models.dense import DenseDDPM, AutoEncoderDPM, DenseDDPMCond
 
 NUM_CLASSES = 1000
 
@@ -210,8 +213,51 @@ def create_model(cfg, all_cfg=None):
             num_SH=all_cfg.relighting.num_SH,
             last_conv=cfg.last_conv
         )
-    elif cfg.arch == 'UNetCond_SpatialCondition':
-        return UNetModel_SpatialCondition(
+    elif cfg.arch == 'UNetCond_SpatialCondition_Hadamart':
+        return UNetModel_SpatialCondition_Hadamart(
+            image_size=cfg.image_size,
+            in_channels=cfg.in_channels,
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=cfg.num_res_blocks,
+            attention_resolutions=tuple(attention_ds),
+            dropout=cfg.dropout,
+            channel_mult=channel_mult,
+            use_checkpoint=cfg.use_checkpoint,
+            num_heads=cfg.num_heads,
+            num_head_channels=cfg.num_head_channels,
+            num_heads_upsample=cfg.num_heads_upsample,
+            use_scale_shift_norm=cfg.use_scale_shift_norm,
+            resblock_updown=cfg.resblock_updown,
+            use_new_attention_order=cfg.use_new_attention_order,
+            condition_dim=cfg.condition_dim,
+            condition_proj_dim=cfg.condition_proj_dim,
+            conditioning=True,
+        )
+    elif cfg.arch == 'UNetCond_SpatialCondition_Hadamart_Activation':
+        print("Hadamart w/ activation")
+        return UNetModel_SpatialCondition_Hadamart_Activation(
+            image_size=cfg.image_size,
+            in_channels=cfg.in_channels,
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=cfg.num_res_blocks,
+            attention_resolutions=tuple(attention_ds),
+            dropout=cfg.dropout,
+            channel_mult=channel_mult,
+            use_checkpoint=cfg.use_checkpoint,
+            num_heads=cfg.num_heads,
+            num_head_channels=cfg.num_head_channels,
+            num_heads_upsample=cfg.num_heads_upsample,
+            use_scale_shift_norm=cfg.use_scale_shift_norm,
+            resblock_updown=cfg.resblock_updown,
+            use_new_attention_order=cfg.use_new_attention_order,
+            condition_dim=cfg.condition_dim,
+            condition_proj_dim=cfg.condition_proj_dim,
+            conditioning=True,
+        )
+    elif cfg.arch == 'UNetCond_SpatialCondition_Concat':
+        return UNetModel_SpatialCondition_Concat(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
             model_channels=cfg.num_channels,

@@ -1,6 +1,6 @@
 img_model:
   name: "ImgCond"
-  arch: "UNetCond_SpatialCondition"
+  arch: "UNetCond_SpatialCondition_Concat"
   image_size: 64
   in_image: 'raw'
   in_channels: 3

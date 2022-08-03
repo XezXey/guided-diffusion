@@ -530,7 +530,7 @@ class GaussianDiffusion:
             t = th.tensor([i] * shape[0], device=device)
 
             # Deep copy to prevent sth that used .pop()
-            model_kwargs_copy = make_deepcopyable(model_kwargs, keys=['spatial_latent'])
+            model_kwargs_copy = make_deepcopyable(model_kwargs, keys=list(model_kwargs.keys()))
             with th.no_grad():
                 out = self.p_sample(
                     model,
@@ -655,7 +655,7 @@ class GaussianDiffusion:
 
         for i in indices:
             # Deep copy to prevent sth that used .pop()
-            model_kwargs_copy = make_deepcopyable(model_kwargs, keys=['spatial_latent'])
+            model_kwargs_copy = make_deepcopyable(model_kwargs, keys=list(model_kwargs.keys()))
             t = th.tensor([i] * x.shape[0], device=device)
             with th.no_grad():
                 out = self.ddim_reverse_sample(
@@ -767,7 +767,7 @@ class GaussianDiffusion:
 
         for i in indices:
             # Deep copy to prevent sth that used .pop()
-            model_kwargs_copy = make_deepcopyable(model_kwargs, keys=['spatial_latent'])
+            model_kwargs_copy = make_deepcopyable(model_kwargs, keys=list(model_kwargs.keys()))
 
             t = th.tensor([i] * shape[0], device=device)
             with th.no_grad():

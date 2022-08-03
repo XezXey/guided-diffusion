@@ -274,8 +274,6 @@ class TrainLoop(LightningModule):
         # elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'raw'):
         #     dat = dat
         # else: raise NotImplementedError
-        dat = cond['cond_img']
-        
         # print("FW COND")
         # print(dat.shape)
         # import matplotlib.pyplot as plt
@@ -302,6 +300,7 @@ class TrainLoop(LightningModule):
         #             plt.savefig(f'temps_{j}.png')
         # exit()
         if self.cfg.img_cond_model.apply:
+            dat = cond['cond_img']
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
                 x=dat.float(), 
                 emb=None,
@@ -402,10 +401,10 @@ class TrainLoop(LightningModule):
         # Any Encoder/Conditioned Network to be applied before a main UNet
         if self.cfg.img_cond_model.apply:
             self.forward_cond_network(dat=dat, cond=cond)
-            print(cond.keys())
-            for i in range(len(cond['spatial_latent'])):
-                print(cond['spatial_latent'][i].shape)
-            input()
+            # print(cond.keys())
+            # for i in range(len(cond['spatial_latent'])):
+            #     print(cond['spatial_latent'][i].shape)
+            # input()
 
         tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
 

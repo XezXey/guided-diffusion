@@ -39,3 +39,5 @@ sample_scripts/ipynb/Lighting_stuff/fgr_bgr_effect/gs.png
 
 sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/samples/
 sample_scripts/py/relighting_sample_id/best_num_step_diffusion/samples/
+experiment_scripts/blur/*.jpg
+
