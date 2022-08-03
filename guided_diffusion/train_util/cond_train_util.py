@@ -259,9 +259,22 @@ class TrainLoop(LightningModule):
         # import matplotlib.pyplot as plt
         # import torchvision
         # from guided_diffusion.dataloader.img_util import show
-        # grid = torchvision.utils.make_grid(((cond['blur_img'] + 1) * 127.5).type(th.ByteTensor))
+        # grid = torchvision.utils.make_grid(((cond['faceseg_faceskin&nose_img'] + 1) * 127.5).type(th.ByteTensor))
         # show(grid)
-        # plt.savefig('./temp.png')
+        # plt.savefig('./temp_1.png')
+
+        # grid = torchvision.utils.make_grid(((cond['faceseg_bg&noface_img'] + 1) * 127.5).type(th.ByteTensor))
+        # show(grid)
+        # plt.savefig('./temp_2.png')
+
+        # grid = torchvision.utils.make_grid(((cond['cond_img'][:, 0:1, ...] + 1) * 127.5).type(th.ByteTensor))
+        # show(grid)
+        # plt.savefig('./temp_3.png')
+
+        # grid = torchvision.utils.make_grid(((cond['cond_img'][:, 1:, ...] + 1) * 127.5).type(th.ByteTensor))
+        # show(grid)
+        # plt.savefig('./temp_4.png')
+        # exit()
         
         # if self.cfg.img_cond_model.prep_image[0] == 'blur':
         #     dat = cond['blur_img']
@@ -344,7 +357,6 @@ class TrainLoop(LightningModule):
             self.log_loss_dict(
                 self.diffusion, t, {k: v * weights for k, v in model_losses.items()}, module=self.cfg.img_model.name,
             )
-
 
     @rank_zero_only
     def _update_ema(self):

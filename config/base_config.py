@@ -84,7 +84,14 @@ cfg.img_model.conditioning = False
 cfg.img_model.last_conv = False    # For Duplicate UNetModel
 
 # Additional Encoder Network
-img_cond_model_img_type = {'raw':3, 'deca':3, 'faceseg_face':3, 'faceseg_face&hair':3, 'normals':3}
+img_cond_model_img_type = {'raw':3, 
+                            'deca':3, 
+                            'faceseg_face':3, 
+                            'faceseg_faceskin&nose':3, 
+                            'faceseg_bg&noface':3,
+                            'faceseg_face&hair':3, 
+                            'normals':3
+}
 cfg.img_cond_model = CN()
 cfg.img_cond_model.name = "ImgEncoder"
 cfg.img_cond_model.apply = False
@@ -256,7 +263,18 @@ def update_params(cfg):
     cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
 
     # Update conditioning image type for img_cond_model
-    cfg.img_cond_model.in_channels = sum(img_cond_model_img_type[in_img] for in_img in cfg.img_cond_model.in_image)
+    cfg.img_cond_model.in_channels = 0
+    # print(img_cond_model_img_type)
+    for prep, in_img in zip(cfg.img_cond_model.prep_image, cfg.img_cond_model.in_image):
+        # print(prep, in_img)
+        in_channels = 0
+        if prep is None:
+            in_channels = img_cond_model_img_type[in_img]
+        elif 'color=YUV' in prep:
+            in_channels = img_cond_model_img_type[in_img] - 2
+        else:  
+            in_channels = img_cond_model_img_type[in_img]
+        cfg.img_cond_model.in_channels += in_channels
     return cfg
 
 
