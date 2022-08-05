@@ -17,6 +17,8 @@ parser.add_argument('--n_subject', type=int, required=True)
 parser.add_argument('--sigma', type=int, default=1)
 parser.add_argument('--cls', action='store_true', default=False)
 parser.add_argument('--lerp', action='store_true', default=False)
+parser.add_argument('--diffusion_steps', type=int, default=1000)
+parser.add_argument('--interpolate_noise', action='store_true', default=False)
 
 args = parser.parse_args()
 
@@ -34,7 +36,6 @@ sys.path.insert(0, '../../../')
 from guided_diffusion.script_util import (
     seed_all,
 )
-from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
 
 # Sample utils
 sys.path.insert(0, '../../')
@@ -47,7 +48,9 @@ from sample_utils import (
     inference_utils, 
     mani_utils,
     attr_mani,
+    dataloader,
 )
+device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
 
 # def with_classifier(model_dict, 
 #     cls_model, 
@@ -93,12 +96,13 @@ def with_classifier():
         fp = f"{save_frames_path}/cls_seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_frame{i}.png"
         torchvision.utils.save_image(tensor=(frame), fp=fp)
 
-
 def without_classifier():
     # Forward the interpolation from reverse noise map
     # Interpolate
     cond = model_kwargs.copy()
-    img_tmp = cond['image'].clone()
+
+    if cfg.img_cond_model.apply:
+        cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
     interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step)
     cond = mani_utils.repeat_cond_params(cond, base_idx=b_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate))
     cond.update(interp_cond)
@@ -109,9 +113,17 @@ def without_classifier():
     cond = inference_utils.to_tensor(cond, key=['cond_params', 'light'], device=ckpt_loader.device)
     
     # Forward
+    diffusion.num_timesteps = args.diffusion_steps
     pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
-    sample_ddim = pl_sampling(noise=th.cat([reverse_ddim_sample['img_output'][[b_idx]]] * n_step), model_kwargs=cond)
-    fig = vis_utils.plot_sample(img=th.cat([reverse_ddim_sample['img_output'][[b_idx]]] * n_step), sampling_img=sample_ddim['img_output'])
+    if args.interpolate_noise:
+        assert src_idx == b_idx
+        src_noise = reverse_ddim_sample['img_output'][[src_idx]]
+        dst_noise = reverse_ddim_sample['img_output'][[dst_idx]]
+        noise_map = mani_utils.interp_noise(src_noise, dst_noise, n_step)
+    else: 
+        noise_map = th.cat([reverse_ddim_sample['img_output'][[b_idx]]] * n_step)
+    sample_ddim = pl_sampling(noise=noise_map, model_kwargs=cond)
+    fig = vis_utils.plot_sample(img=noise_map, sampling_img=sample_ddim['img_output'])
     # Save a visualization
     fig.suptitle(f"""Reverse Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
                     model={args.log_dir}, seed={args.seed}, interpolate={args.interpolate}, b_idx={b_idx}, src_idx={b_idx}, dst_idx={dst_idx},
@@ -119,7 +131,7 @@ def without_classifier():
     plt.savefig(f"{save_preview_path}/seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_allframes.png", bbox_inches='tight')
     
     # Save result
-    save_frames_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Lerp/"
+    save_frames_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Lerp_{args.diffusion_steps}/"
     os.makedirs(save_frames_path, exist_ok=True)
     tc_frames = sample_ddim['img_output']
     for i in range(tc_frames.shape[0]):
@@ -152,7 +164,6 @@ def train_linear_classifier():
     gt = th.cat((src_label, dst_label))[..., None]
     weighted_loss = th.cat((src_weight, dst_weight))[..., None]
 
-    device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
     cls_model = attr_mani.LinearClassifier(cfg).to(device)
     cls_model.train(gt=gt.to(device), input=input.float().to(device), n_iters=10000, weighted_loss=weighted_loss.to(device), progress=True)
 
@@ -172,7 +183,6 @@ if __name__ == '__main__':
     # Load Ckpt
     if args.cfg_name is None:
         args.cfg_name = args.log_dir + '.yaml'
-        
     ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
     cfg = ckpt_loader.cfg
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
@@ -187,8 +197,24 @@ if __name__ == '__main__':
         img_dataset_path = f"/data/mint/ffhq_256_with_anno/ffhq_256/{args.set}/"
     else: raise NotImplementedError
 
+    loader, dataset = dataloader.load_data_img_deca(
+        data_dir=img_dataset_path,
+        deca_dir=f"/data/mint/ffhq_256_with_anno/params/{args.set}",
+        batch_size=10000,
+        image_size=cfg.img_model.image_size,
+        deterministic=cfg.train.deterministic,
+        augment_mode=cfg.img_model.augment_mode,
+        resize_mode=cfg.img_model.resize_mode,
+        in_image_UNet=cfg.img_model.in_image,
+        params_selector=cfg.param_model.params_selector,
+        rmv_params=cfg.param_model.rmv_params,
+        cfg=cfg,
+        set_ = args.set
+    )
+
     prevent_dup = []
     for _ in range(args.n_subject):
+        
         # Load image & condition
         rand_idx = np.random.choice(a=range(len(list(params_set.keys()))), replace=False, size=2)
         while list(rand_idx) in prevent_dup:
@@ -198,6 +224,15 @@ if __name__ == '__main__':
         img_path = file_utils._list_image_files_recursively(img_dataset_path)
         img_path = [img_path[r] for r in rand_idx]
         img_name = [path.split('/')[-1] for path in img_path]
+
+        dat = th.utils.data.Subset(dataset, indices=rand_idx)
+        subset_loader = th.utils.data.DataLoader(dat, batch_size=2,
+                                            shuffle=False, num_workers=2)
+                                   
+        _, cond_img = next(iter(subset_loader))
+        print(img_name)
+        print(cond_img['image_name'])
+        print("#"*100)
         # Indexing
         b_idx = 0
         src_idx = 0
@@ -211,6 +246,10 @@ if __name__ == '__main__':
 
         model_kwargs = mani_utils.load_condition(params_set, img_name)
         images = mani_utils.load_image(all_path=img_path, cfg=cfg, vis=True)['image']
+        
+        if cfg.img_cond_model.apply:
+            model_kwargs.update(cond_img)
+        
         model_kwargs.update({'image_name':img_name, 'image':images})
         
         interpolate_str = '_'.join(args.interpolate)
@@ -223,17 +262,28 @@ if __name__ == '__main__':
         cond = model_kwargs.copy()
         
         # Reverse
+
+        diffusion.num_timesteps = args.diffusion_steps
+        pl_reverse_sampling = inference_utils.PLReverseSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_reverse_sample_loop, cfg=cfg)
+        if cfg.img_cond_model.apply:
+            print(cond.keys())
+            cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
+            print(cond.keys())
+            exit()
+
         key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
         cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
         cond = inference_utils.to_tensor(cond, key=['cond_params', 'light', 'image'], device=ckpt_loader.device)
         img_tmp = cond['image'].clone()
-        pl_reverse_sampling = inference_utils.PLReverseSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_reverse_sample_loop, cfg=cfg)
+
         reverse_ddim_sample = pl_reverse_sampling(x=cond['image'], model_kwargs=cond)
         
         # Forward from reverse noise map
         key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
         cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
         cond = inference_utils.to_tensor(cond, key=['cond_params', 'light'], device=ckpt_loader.device)
+
+        diffusion.num_timesteps = args.diffusion_steps
         pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
         sample_ddim = pl_sampling(noise=reverse_ddim_sample['img_output'], model_kwargs=cond)
         fig = vis_utils.plot_sample(img=img_tmp, reverse_sampling_images=reverse_ddim_sample['img_output'], sampling_img=sample_ddim['img_output'])

@@ -18,6 +18,7 @@ parser.add_argument('--sigma', type=int, default=1)
 parser.add_argument('--cls', action='store_true', default=False)
 parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--diffusion_steps', type=int, default=1000)
+parser.add_argument('--interpolate_noise', action='store_true', default=False)
 
 args = parser.parse_args()
 
@@ -36,9 +37,11 @@ from guided_diffusion.script_util import (
     seed_all,
 )
 from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
+from guided_diffusion.dataloader.img_deca_datasets import DECADataset
 
 # Sample utils
 sys.path.insert(0, '../../')
+# sys.path.insert(0, "/home/mint/guided-diffusion/sample_scripts/sample_utils/")
 from sample_utils import (
     ckpt_utils, 
     params_utils, 
@@ -102,7 +105,11 @@ def without_classifier():
 
     if cfg.img_cond_model.apply:
         cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
-    interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step)
+    if args.interpolate == ['all']:
+        print("ALL")
+        interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=cfg.param_model.params_selector, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step)
+    else:
+        interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step)
     cond = mani_utils.repeat_cond_params(cond, base_idx=b_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate))
     cond.update(interp_cond)
 
@@ -114,8 +121,15 @@ def without_classifier():
     # Forward
     diffusion.num_timesteps = args.diffusion_steps
     pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
-    sample_ddim = pl_sampling(noise=th.cat([reverse_ddim_sample['img_output'][[b_idx]]] * n_step), model_kwargs=cond)
-    fig = vis_utils.plot_sample(img=th.cat([reverse_ddim_sample['img_output'][[b_idx]]] * n_step), sampling_img=sample_ddim['img_output'])
+    if args.interpolate_noise:
+        assert src_idx == b_idx
+        src_noise = reverse_ddim_sample['img_output'][[src_idx]]
+        dst_noise = reverse_ddim_sample['img_output'][[dst_idx]]
+        noise_map = mani_utils.interp_noise(src_noise, dst_noise, n_step)
+    else: 
+        noise_map = th.cat([reverse_ddim_sample['img_output'][[b_idx]]] * n_step)
+    sample_ddim = pl_sampling(noise=noise_map, model_kwargs=cond)
+    fig = vis_utils.plot_sample(img=noise_map, sampling_img=sample_ddim['img_output'])
     # Save a visualization
     fig.suptitle(f"""Reverse Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
                     model={args.log_dir}, seed={args.seed}, interpolate={args.interpolate}, b_idx={b_idx}, src_idx={b_idx}, dst_idx={dst_idx},

@@ -24,7 +24,7 @@ class CkptLoader():
                 
 
     # Config file
-    def get_cfg(self,):
+    def get_cfg(self):
         cfg_file_path = glob.glob("/home/mint/guided-diffusion/config/*/*", recursive=True)
         cfg_file_path = [cfg_path for cfg_path in cfg_file_path if f"/{self.cfg_name}" in cfg_path]    # Add /{}/ to achieve a case-sensitive of folder
         print(cfg_file_path)

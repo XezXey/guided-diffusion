@@ -1,0 +1,26 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "auto_sampling_reverse_itp.py",
+            "args": ["--set", "valid", 
+                    "--step", "300000", 
+                    "--interpolate", "all", 
+                    "--out_dir", "./samples", 
+                    "--cfg_name", "cond_img64_by_deca_arcface.yaml", 
+                    "--log_dir", "cond_img64_by_deca_arcface", 
+                    "--n_subject", "20", 
+                    "--lerp", 
+                    "--diffusion_steps", "250"],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
+            "justMyCode": true
+        }
+    ]
+}

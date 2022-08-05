@@ -24,7 +24,6 @@ app = Flask(__name__)
 def servefile(path):
   return send_from_directory('/', path)
 
-
 @app.route('/')
 def root():
   out = ""
@@ -133,6 +132,53 @@ def best_diff_steps():
         for f in img_path:
           out += "<img src=/files/" + f + ">"
 
+      out += "<br> <hr>"
+  return out
+
+@app.route('/interpolate_all/')
+def itp_all():
+  out = ""
+  # folder = "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolation/samples/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_300000/valid/all/"
+  folder = "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/samples/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_300000/valid/all"
+  folder2 = "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/samples/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_300000/valid/all_itp_noise"
+  # folder3 = "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/samples/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_300000/valid/light"
+  folder3 = "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/best_num_step_diffusion/samples/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_300000/valid/light/"
+  for i, src_path in enumerate(glob.glob(f"{folder}/src=*")):
+    src_id = src_path.split('/')[-1]
+    for d in glob.glob(f"{folder}/{src_id}/dst=*"):
+      if not os.path.isdir(d): continue
+      src_id = d.split('/')[-2]
+      dst_id = d.split('/')[-1]
+      out += f"{i} {src_id} : <img src=/files/{data_path}/{src_id.split('=')[-1]} width=\"64\" height=\"64\">, {dst_id} : <img src=/files/{data_path}/{dst_id.split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
+
+      diffusion_steps = [250]
+      for step in diffusion_steps:
+        img_path = glob.glob(d + f"/Lerp_{step}/*.png")
+        img_path = sort_by_frame(img_path)
+        out += f"<br> LERP {step} - w/o itp_noise (all)<br>"
+        for f in img_path:
+          out += "<img src=/files/" + f + ">"
+
+        img_path = glob.glob(f"{folder2}/{src_id}/{dst_id}/" + f"/Lerp_{step}/*.png")
+        img_path = sort_by_frame(img_path)
+        out += f"<br> LERP {step} - w/ itp_noise (all)<br>"
+        for f in img_path:
+          out += "<img src=/files/" + f + ">"
+
+        diffusion_steps = [250]
+        for step in diffusion_steps:
+          img_path = glob.glob(f"{folder3}/{src_id}/{dst_id}/" + f"/Lerp_{step}/*.png")
+          img_path = sort_by_frame(img_path)
+          out += f"<br> LERP {step} (only light)<br>"
+          for f in img_path:
+            out += "<img src=/files/" + f + ">"
+
+
+        img_path = glob.glob(f"{folder3}/{src_id}/{dst_id}/" + "/Lerp/*.png")
+        img_path = sort_by_frame(img_path)
+        out += "<br> LERP 1000 (only light)<br>"
+        for f in img_path:
+          out += "<img src=/files/" + f + ">"
 
       out += "<br> <hr>"
   return out
@@ -183,7 +229,6 @@ def model_comparison():
       dst_id = d.split('/')[-1]
       out += f"{i} {src_id} : <img src=/files/{data_path}/{src_id.split('=')[-1]} width=\"64\" height=\"64\">, {dst_id} : <img src=/files/{data_path}/{dst_id.split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
 
-
       for m in model:
 
         out += f"<br> {m} <br>"
@@ -209,4 +254,4 @@ def model_comparison():
   return out
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=4747, debug=True, threaded=False)
+    app.run(host='0.0.0.0', port=4750, debug=True, threaded=False)
