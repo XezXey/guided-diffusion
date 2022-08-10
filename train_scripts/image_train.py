@@ -29,7 +29,7 @@ def main():
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
 
     logger.log("[#] Creating data loader...")
-    data = load_data_img_deca(
+    dataloader, _ = load_data_img_deca(
         data_dir=cfg.dataset.data_dir,
         deca_dir=cfg.dataset.deca_dir,
         batch_size=cfg.train.batch_size,
@@ -50,7 +50,7 @@ def main():
         model=list(img_model.values()),
         name=list(img_model.keys()),
         diffusion=diffusion,
-        data=data,
+        data=dataloader,
         cfg=cfg,
         tb_logger=tb_logger,
         schedule_sampler=schedule_sampler,

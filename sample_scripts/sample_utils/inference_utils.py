@@ -252,6 +252,9 @@ def to_tensor(cond, key, device):
             for i in range(len(cond[k])):
                 cond[k][i] = th.tensor(cond[k][i]).to(device)
         else:
-            cond[k] = th.tensor(cond[k]).to(device)
+            if th.is_tensor(cond[k]):
+                cond[k] = cond[k].clone().to(device)
+            else:
+                cond[k] = th.tensor(cond[k]).to(device)
     return cond
     

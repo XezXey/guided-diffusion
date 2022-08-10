@@ -36,6 +36,8 @@ from guided_diffusion.script_util import (
     seed_all,
 )
 
+from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
+
 # Sample utils
 sys.path.insert(0, '../../')
 from sample_utils import (
@@ -47,7 +49,6 @@ from sample_utils import (
     inference_utils, 
     mani_utils,
     attr_mani,
-    dataloader,
 )
 device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
 
@@ -187,20 +188,19 @@ if __name__ == '__main__':
     cfg = ckpt_loader.cfg
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
 
-    # Load Params
-    params_set = params_utils.get_params_set(set=args.set)
-    
     # Load dataset
     if args.set == 'itw':
         img_dataset_path = "../../itw_images/aligned/"
+        deca_dataset_path = None
     elif args.set == 'train' or args.set == 'valid':
-        img_dataset_path = f"/data/mint/ffhq_256_with_anno/ffhq_256/{args.set}/"
+        img_dataset_path = f"/data/mint/ffhq_256_with_anno/ffhq_256/"
+        deca_dataset_path = f"/data/mint/ffhq_256_with_anno/params/"
     else: raise NotImplementedError
 
-    loader, dataset = dataloader.load_data_img_deca(
+    loader, dataset = load_data_img_deca(
         data_dir=img_dataset_path,
-        deca_dir=f"/data/mint/ffhq_256_with_anno/params/{args.set}",
-        batch_size=10000,
+        deca_dir=deca_dataset_path,
+        batch_size=int(1e7),
         image_size=cfg.img_model.image_size,
         deterministic=cfg.train.deterministic,
         augment_mode=cfg.img_model.augment_mode,
@@ -208,20 +208,21 @@ if __name__ == '__main__':
         in_image_UNet=cfg.img_model.in_image,
         params_selector=cfg.param_model.params_selector,
         rmv_params=cfg.param_model.rmv_params,
+        set_=args.set,
         cfg=cfg,
-        set_ = args.set
     )
 
+    data_size = dataset.__len__()
     prevent_dup = []
     for _ in range(args.n_subject):
         
         # Load image & condition
-        rand_idx = np.random.choice(a=range(len(list(params_set.keys()))), replace=False, size=2)
+        rand_idx = np.random.choice(a=range(data_size), replace=False, size=2)
         while list(rand_idx) in prevent_dup:
-            rand_idx = np.random.choice(a=range(len(list(params_set.keys()))), replace=False, size=2)
+            rand_idx = np.random.choice(a=range(data_size), replace=False, size=2)
         prevent_dup.append(list(rand_idx))
 
-        img_path = file_utils._list_image_files_recursively(img_dataset_path)
+        img_path = file_utils._list_image_files_recursively(img_dataset_path + f"{args.set}")
         img_path = [img_path[r] for r in rand_idx]
         img_name = [path.split('/')[-1] for path in img_path]
 
@@ -229,9 +230,9 @@ if __name__ == '__main__':
         subset_loader = th.utils.data.DataLoader(dat, batch_size=2,
                                             shuffle=False, num_workers=2)
                                    
-        _, cond_img = next(iter(subset_loader))
+        dat, model_kwargs = next(iter(subset_loader))
         print(img_name)
-        print(cond_img['image_name'])
+        print(model_kwargs['image_name'])
         print("#"*100)
         # Indexing
         b_idx = 0
@@ -244,14 +245,6 @@ if __name__ == '__main__':
         n_step = args.interpolate_step
         print(f"[#] Set = {args.set}, Src-id = {src_id}, Dst-id = {dst_id}")
 
-        model_kwargs = mani_utils.load_condition(params_set, img_name)
-        images = mani_utils.load_image(all_path=img_path, cfg=cfg, vis=True)['image']
-        
-        if cfg.img_cond_model.apply:
-            model_kwargs.update(cond_img)
-        
-        model_kwargs.update({'image_name':img_name, 'image':images})
-        
         interpolate_str = '_'.join(args.interpolate)
         out_folder_interpolate = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/"
         out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/"

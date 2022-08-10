@@ -38,7 +38,6 @@ from guided_diffusion.script_util import (
     seed_all,
 )
 from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
-from guided_diffusion.dataloader.img_deca_datasets import DECADataset
 
 # Sample utils
 sys.path.insert(0, '../../')
@@ -51,7 +50,6 @@ from sample_utils import (
     inference_utils, 
     mani_utils,
     attr_mani,
-    dataloader,
 )
 device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
 
@@ -194,10 +192,10 @@ if __name__ == '__main__':
         deca_dataset_path = None
     elif args.set == 'train' or args.set == 'valid':
         img_dataset_path = f"/data/mint/ffhq_256_with_anno/ffhq_256/{args.set}/"
-        deca_dataset_path = f"/data/mint/ffhq_256_with_anno/params/{args.set}"
+        deca_dataset_path = f"/data/mint/ffhq_256_with_anno/params/{args.set}/"
     else: raise NotImplementedError
 
-    loader, dataset = dataloader.load_data_img_deca(
+    loader, dataset = load_data_img_deca(
         data_dir=img_dataset_path,
         deca_dir=deca_dataset_path,
         batch_size=int(1e7),
@@ -208,8 +206,8 @@ if __name__ == '__main__':
         in_image_UNet=cfg.img_model.in_image,
         params_selector=cfg.param_model.params_selector,
         rmv_params=cfg.param_model.rmv_params,
+        set_=args.set,
         cfg=cfg,
-        set_ = args.set
     )
 
     data_size = dataset.__len__()

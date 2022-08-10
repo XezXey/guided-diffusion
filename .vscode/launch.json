@@ -10,16 +10,19 @@
             "request": "launch",
             "program": "auto_sampling_rev_itp.py",
             "args": ["--set", "valid", 
-                    "--step", "300000", 
+                    "--step", "350000", 
                     "--interpolate", "all", 
                     "--out_dir", "./samples", 
                     "--cfg_name", "cond_img64_by_deca_arcface.yaml", 
                     "--log_dir", "cond_img64_by_deca_arcface", 
                     "--n_subject", "20", 
                     "--lerp", 
-                    "--diffusion_steps", "250"],
+                    "--diffusion_steps", "250",
+                    "--interpolate_noise",
+                    ],
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
+            // "cwd": "/home/mint/mothership_v16/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
             "justMyCode": true
         },
         {
@@ -37,8 +40,8 @@
                     "--lerp", 
                     "--diffusion_steps", "50"],
             "console": "integratedTerminal",
-            // "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
-            "cwd": "/home/mint/mothership_v16/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
+            // "cwd": "/home/mint/mothership_v16/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
             "justMyCode": true
         }
     ]

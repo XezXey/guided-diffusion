@@ -44,7 +44,7 @@ def load_deca_params(deca_dir, cfg):
     # face params 
     params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
     for k in tqdm.tqdm(params_key, desc="Loading deca params..."):
-        params_path = glob.glob(f"{deca_dir}/params/train/*{k}-anno.txt")
+        params_path = glob.glob(f"{deca_dir}/*{k}-anno.txt")
         for path in params_path:
             deca_params[k] = read_params(path=path)
         deca_params[k] = preprocess_cond(deca_params[k], k, cfg)
@@ -74,6 +74,7 @@ def load_data_img_deca(
     params_selector,
     rmv_params,
     cfg,
+    set_='train',
     deterministic=False,
     resize_mode="resize",
     augment_mode=None,
@@ -104,9 +105,9 @@ def load_data_img_deca(
     # For conditioning images
     for in_image_type in cfg.img_cond_model.in_image:
         if 'deca' in in_image_type:
-            in_image[in_image_type] = _list_image_files_recursively(cfg.dataset.deca_shading_dir)
+            in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.deca_shading_dir}/{set_}/")
         elif 'faceseg' in in_image_type:
-            in_image[in_image_type] = _list_image_files_recursively(cfg.dataset.face_segment_dir)
+            in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
         elif 'raw' in in_image_type: continue
         else:
             raise NotImplementedError(f"The {in_image_type}-image type not found.")
@@ -116,7 +117,7 @@ def load_data_img_deca(
     deca_params = load_deca_params(deca_dir, cfg)
 
     # For raw image
-    in_image['raw'] = _list_image_files_recursively(data_dir)
+    in_image['raw'] = _list_image_files_recursively(f"{data_dir}")
     in_image['raw'] = image_path_list_to_dict(in_image['raw'])
 
     img_dataset = DECADataset(
@@ -147,7 +148,7 @@ def load_data_img_deca(
         )
 
     while True:
-        return loader
+        return loader, img_dataset
 
 def image_path_list_to_dict(path_list):
     img_paths_dict = {}
@@ -237,6 +238,7 @@ class DECADataset(Dataset):
         if self.in_image_UNet == 'raw':
             norm_img = (raw_img / 127.5) - 1
             arr = norm_img
+            out_dict['image'] = np.transpose(arr, [2, 0, 1])
         else : raise NotImplementedError
         return np.transpose(arr, [2, 0, 1]), out_dict
 

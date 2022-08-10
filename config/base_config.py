@@ -138,9 +138,9 @@ cfg.relighting.num_shaded_ch = 1
 cfg.dataset = CN()
 cfg.dataset.training_data = ['ffhq_256_with_anno']
 cfg.dataset.deca_dir = '/data/mint/ffhq_256_with_anno'
-cfg.dataset.data_dir = '/data/mint/ffhq_256_with_anno/ffhq_256/train'
-cfg.dataset.face_segment_dir = "/data/mint/ffhq_256_with_anno/face_segment/train/anno/"
-cfg.dataset.deca_shading_dir = "/data/mint/ffhq_256_with_anno/shading_images/train/"
+cfg.dataset.data_dir = '/data/mint/ffhq_256_with_anno/ffhq_256/'
+cfg.dataset.face_segment_dir = "/data/mint/ffhq_256_with_anno/face_segment/"
+cfg.dataset.deca_shading_dir = "/data/mint/ffhq_256_with_anno/shading_images/"
 
 # ---------------------------------------------------------------------------- #
 # Options for training
