@@ -37,7 +37,7 @@
                     "--cfg_name", "UNetCond_Spatial_Hadamart_faceskin&noseYUV_bg&noface.yaml", 
                     "--log_dir", "UNetCond_Spatial_Hadamart_faceskin&noseYUV_bg&noface", 
                     "--n_subject", "20", 
-                    "--lerp", 
+                    "--slerp", 
                     "--diffusion_steps", "50"],
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",

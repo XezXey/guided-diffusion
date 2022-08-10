@@ -16,6 +16,7 @@ parser.add_argument('--n_subject', type=int, required=True)
 parser.add_argument('--sigma', type=int, default=1)
 parser.add_argument('--cls', action='store_true', default=False)
 parser.add_argument('--lerp', action='store_true', default=False)
+parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--interpolate_noise', action='store_true', default=False)
 
@@ -193,8 +194,8 @@ if __name__ == '__main__':
         img_dataset_path = "../../itw_images/aligned/"
         deca_dataset_path = None
     elif args.set == 'train' or args.set == 'valid':
-        img_dataset_path = f"/data/mint/ffhq_256_with_anno/ffhq_256/"
-        deca_dataset_path = f"/data/mint/ffhq_256_with_anno/params/"
+        img_dataset_path = f"/data/mint/ffhq_256_with_anno/ffhq_256/{args.set}"
+        deca_dataset_path = f"/data/mint/ffhq_256_with_anno/params/{args.set}"
     else: raise NotImplementedError
 
     loader, dataset = load_data_img_deca(
@@ -222,17 +223,16 @@ if __name__ == '__main__':
             rand_idx = np.random.choice(a=range(data_size), replace=False, size=2)
         prevent_dup.append(list(rand_idx))
 
-        img_path = file_utils._list_image_files_recursively(img_dataset_path + f"{args.set}")
+        img_path = file_utils._list_image_files_recursively(img_dataset_path)
         img_path = [img_path[r] for r in rand_idx]
         img_name = [path.split('/')[-1] for path in img_path]
 
+        import time
         dat = th.utils.data.Subset(dataset, indices=rand_idx)
         subset_loader = th.utils.data.DataLoader(dat, batch_size=2,
-                                            shuffle=False, num_workers=2)
+                                            shuffle=False, num_workers=24)
                                    
         dat, model_kwargs = next(iter(subset_loader))
-        print(img_name)
-        print(model_kwargs['image_name'])
         print("#"*100)
         # Indexing
         b_idx = 0
@@ -262,7 +262,7 @@ if __name__ == '__main__':
 
         key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
         cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
-        cond = inference_utils.to_tensor(cond, key=['cond_params', 'light', 'image'], device=ckpt_loader.device)
+        cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
         img_tmp = cond['image'].clone()
 
         reverse_ddim_sample = pl_reverse_sampling(x=cond['image'], model_kwargs=cond)
@@ -270,7 +270,7 @@ if __name__ == '__main__':
         # Forward from reverse noise map
         key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
         cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
-        cond = inference_utils.to_tensor(cond, key=['cond_params', 'light'], device=ckpt_loader.device)
+        cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
 
         diffusion.num_timesteps = args.diffusion_steps
         pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
@@ -289,6 +289,6 @@ if __name__ == '__main__':
             cls_model = train_linear_classifier()
             with_classifier()
         if args.lerp:
-            without_classifier(itp_func=mani_utils.lerp())
+            without_classifier(itp_func=mani_utils.lerp)
         if args.slerp:
-            without_classifier(itp_func=mani_utils.slerp())
+            without_classifier(itp_func=mani_utils.slerp)

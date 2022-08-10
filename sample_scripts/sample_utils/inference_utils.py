@@ -38,14 +38,14 @@ class PLReverseSampling(pl.LightningModule):
         if self.sample_fn == self.diffusion.ddim_reverse_sample_loop:
             sample = self.sample_fn(
                 model=self.model_dict[self.cfg.img_model.name],
-                x=x,
+                x=x.cuda(),
                 clip_denoised=False,
                 model_kwargs=model_kwargs,
                 progress=progress
             )
         elif self.sample_fn == self.diffusion.q_sample:
             sample = self.sample_fn(
-                x_start=x,
+                x_start=x.cuda(),
                 t = self.diffusion.num_timesteps - 1
             )
         else: raise NotImplementedError
@@ -254,7 +254,9 @@ def to_tensor(cond, key, device):
         else:
             if th.is_tensor(cond[k]):
                 cond[k] = cond[k].clone().to(device)
-            else:
+            elif isinstance(cond[k], np.ndarray):
                 cond[k] = th.tensor(cond[k]).to(device)
+            else:
+                continue
     return cond
     

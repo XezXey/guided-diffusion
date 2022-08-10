@@ -8,14 +8,23 @@ def lerp(r, src, dst):
     return ((1-r) * src) + (r * dst)
 
 def slerp(r, src, dst):
-    low = src.cpu().numpy()
-    high = dst.cpu().numpy()
-    val = r
-    omega = np.arccos(np.clip(np.dot(low/np.linalg.norm(low), high/np.linalg.norm(high)), -1, 1))
-    so = np.sin(omega)
-    if so == 0:
-        return th.tensor((1.0-val) * low + val * high) # L'Hopital's rule/LERP
-    return th.tensor(np.sin((1.0-val)*omega) / so * low + np.sin(val*omega) / so * high)
+    low = src; high=dst; val=r
+    low_norm = low/th.norm(low, dim=1, keepdim=True)
+    high_norm = high/th.norm(high, dim=1, keepdim=True)
+    omega = th.acos((low_norm*high_norm).sum(1))
+    so = th.sin(omega)
+    res = (th.sin((1.0-val)*omega)/so).unsqueeze(1)*low + (th.sin(val*omega)/so).unsqueeze(1) * high
+    return res
+
+# def slerp(r, src, dst):
+#     low = src.cpu().numpy()
+#     high = dst.cpu().numpy()
+#     val = r
+#     omega = np.arccos(np.clip(np.dot(low/np.linalg.norm(low), high/np.linalg.norm(high)), -1, 1))
+#     so = np.sin(omega)
+#     if so == 0:
+#         return th.tensor((1.0-val) * low + val * high) # L'Hopital's rule/LERP
+#     return th.tensor(np.sin((1.0-val)*omega) / so * low + np.sin(val*omega) / so * high)
 
 def interchange_cond_img(cond, src_idx, dst_idx, itc_img_key, cfg):
     '''
