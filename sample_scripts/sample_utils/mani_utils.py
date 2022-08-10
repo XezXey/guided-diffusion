@@ -17,6 +17,22 @@ def slerp(r, src, dst):
         return th.tensor((1.0-val) * low + val * high) # L'Hopital's rule/LERP
     return th.tensor(np.sin((1.0-val)*omega) / so * low + np.sin(val*omega) / so * high)
 
+def interchange_cond_img(cond, src_idx, dst_idx, itc_img_key, cfg):
+    '''
+    Change the condition image with respect to the key
+    '''
+    for k in itc_img_key:
+        assert k in cfg.img_cond_model.in_image
+        cond[f'{k}_img'][dst_idx] = cond[f'{k}_img'][src_idx]
+
+    # Re-create cond_img    
+    cond_img = []
+    for k in cfg.img_cond_model.in_image:
+        cond_img.append(cond[f'{k}_img'])
+    
+    cond['cond_img'] = th.cat(cond_img, dim=1)  # BxCxHxW
+    return cond
+
 def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn=lerp):
     '''
     Interpolate the condition following the keys in interp_set
@@ -34,11 +50,21 @@ def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn=lerp)
     for itp in interp_set:
         assert itp in cond.keys()
         assert src_idx < len(cond[itp]) and dst_idx < len(cond[itp])
-
-        interp = interp_cond(src_cond=cond[itp][[src_idx]],
-                             dst_cond=cond[itp][[dst_idx]],
-                             n_step=n_step,
-                             interp_fn=interp_fn)
+        if isinstance(cond[itp], list):
+            interp = []
+            for i in range(len(cond[itp])):
+                assert cond[itp][i][[src_idx]].shape == cond[itp][i][[dst_idx]].shape
+                interp_temp = interp_cond(src_cond=cond[itp][i][[src_idx]],
+                                dst_cond=cond[itp][i][[dst_idx]],
+                                n_step=n_step,
+                                interp_fn=interp_fn)
+                interp.append(interp_temp)
+        elif th.is_tensor(cond[itp]) or isinstance(cond[itp], np.ndarray):
+            interp = interp_cond(src_cond=cond[itp][[src_idx]],
+                                dst_cond=cond[itp][[dst_idx]],
+                                n_step=n_step,
+                                interp_fn=interp_fn)
+        else: raise NotImplementedError
         out_interp[itp] = interp
 
     return out_interp 

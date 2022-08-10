@@ -1,6 +1,7 @@
 from guided_diffusion.dataloader.img_util import decolor
 import matplotlib.pyplot as plt
 import torch as th
+import torchvision
 import numpy as np
 from . import params_utils
 import cv2
@@ -61,3 +62,16 @@ def plot_deca(sample, min_value, max_value, cfg):
 
     plot_sample(th.cat(img_, dim=0))
     return th.cat(img_, dim=0)
+
+def plot_image(img, c_len=[], fn='./temp'):
+    """
+    :param img: image tensor in B x C x H x W
+    """
+    print("Image shape : ", img.shape)
+    if c_len == []:
+        c_len = list(range(0, img.shape[1], 3)) + [img.shape[1]]
+    print("Channel length : ", c_len)
+    for i, c in enumerate(c_len):
+        img_tmp = img[:, 0:c, ...]
+        img = img[:, c:, ...]   # Slide out the plotted one
+        torchvision.utils.save_image(tensor=img_tmp, fp=f"./{fn}_{i}.png")

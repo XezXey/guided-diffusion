@@ -1,7 +1,6 @@
 # from __future__ import print_function 
 import argparse
 
-from scipy.fft import dst
 parser = argparse.ArgumentParser()
 parser.add_argument('--set', type=str, required=True)
 parser.add_argument('--step', type=str, required=True)
@@ -52,15 +51,6 @@ from sample_utils import (
 )
 device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
 
-# def with_classifier(model_dict, 
-#     cls_model, 
-#     model_kwargs, 
-#     diffusion, 
-#     ckpt_loader, 
-#     cfg, 
-#     n_step, 
-#     reverse_ddim_sample,
-#     src_idx, dst_idx, src_id, dst_id):
 def with_classifier():
 
     itp_dir = th.nn.functional.normalize(cls_model.cls.weight, dim=1).detach().cpu().numpy()
@@ -96,21 +86,27 @@ def with_classifier():
         fp = f"{save_frames_path}/cls_seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_frame{i}.png"
         torchvision.utils.save_image(tensor=(frame), fp=fp)
 
-def without_classifier():
+def without_classifier(itp_func):
     # Forward the interpolation from reverse noise map
     # Interpolate
     cond = model_kwargs.copy()
 
     if cfg.img_cond_model.apply:
+        cond = mani_utils.interchange_cond_img(cond.copy(), src_idx=src_idx, dst_idx=dst_idx, itc_img_key=['faceseg_bg&noface'], cfg=cfg)
         cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
-    interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step)
+
+    if args.interpolate == ['all']:
+        interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=cfg.param_model.params_selector, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+    else:
+        interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
     cond = mani_utils.repeat_cond_params(cond, base_idx=b_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate))
     cond.update(interp_cond)
 
     # Finalize the cond_params
     key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
     cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
-    cond = inference_utils.to_tensor(cond, key=['cond_params', 'light'], device=ckpt_loader.device)
+    to_tensor_key = ['cond_params'] + cfg.param_model.params_selector + [cfg.img_cond_model.override_cond]
+    cond = inference_utils.to_tensor(cond, key=to_tensor_key, device=ckpt_loader.device)
     
     # Forward
     diffusion.num_timesteps = args.diffusion_steps
@@ -131,13 +127,17 @@ def without_classifier():
     plt.savefig(f"{save_preview_path}/seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_allframes.png", bbox_inches='tight')
     
     # Save result
-    save_frames_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Lerp_{args.diffusion_steps}/"
+    if itp_func == mani_utils.lerp:
+        itp_fn_str = 'Lerp'
+    elif itp_func == mani_utils.slerp:
+        itp_fn_str = 'Slerp'
+    save_frames_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/"
     os.makedirs(save_frames_path, exist_ok=True)
     tc_frames = sample_ddim['img_output']
     for i in range(tc_frames.shape[0]):
         frame = tc_frames[i].cpu().detach()
         frame = ((frame + 1) * 127.5)/255.0
-        fp = f"{save_frames_path}/lerp_seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_frame{i}.png"
+        fp = f"{save_frames_path}/{itp_fn_str}_seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_frame{i}.png"
         torchvision.utils.save_image(tensor=((frame)), fp=fp)
 
 def train_linear_classifier():
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
 
     # Load Params
-    params_set = params_utils.get_params_set(set=args.set, cfg=cfg)
+    params_set = params_utils.get_params_set(set=args.set)
     
     # Load dataset
     if args.set == 'itw':
@@ -262,14 +262,10 @@ if __name__ == '__main__':
         cond = model_kwargs.copy()
         
         # Reverse
-
         diffusion.num_timesteps = args.diffusion_steps
         pl_reverse_sampling = inference_utils.PLReverseSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_reverse_sample_loop, cfg=cfg)
         if cfg.img_cond_model.apply:
-            print(cond.keys())
             cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
-            print(cond.keys())
-            exit()
 
         key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
         cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
@@ -300,4 +296,6 @@ if __name__ == '__main__':
             cls_model = train_linear_classifier()
             with_classifier()
         if args.lerp:
-            without_classifier()
+            without_classifier(itp_func=mani_utils.lerp())
+        if args.slerp:
+            without_classifier(itp_func=mani_utils.slerp())

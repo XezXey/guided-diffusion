@@ -17,18 +17,20 @@ class PLReverseSampling(pl.LightningModule):
         if self.cfg.img_cond_model.apply:
             dat = model_kwargs['cond_img'].cuda()
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
-                x=dat.float(), 
+                x=dat.float(),
                 emb=None,
             )
             # Override the condition and re-create cond_params
-            # if self.cfg.img_cond_model.override_cond != "":
-            #     model_kwargs[self.cfg.img_cond_model.override_cond] = img_cond
-            #     tmp = []
-            #     for p in self.cfg.param_model.params_selector:
-            #         tmp.append(model_kwargs[p])
-            #     model_kwargs['cond_params'] = th.cat(tmp, dim=-1)
-            # else: raise NotImplementedError
-        return model_kwargs.update({'spatial_latent':img_cond})
+            if self.cfg.img_cond_model.override_cond != "":
+                model_kwargs[self.cfg.img_cond_model.override_cond] = img_cond
+                tmp = []
+                for p in self.cfg.param_model.params_selector:
+                    if not th.is_tensor(model_kwargs[p]):
+                        model_kwargs[p] = th.tensor(model_kwargs[p])
+                    tmp.append(model_kwargs[p])
+                model_kwargs['cond_params'] = th.cat(tmp, dim=-1)
+            else: raise NotImplementedError
+        return model_kwargs
 
     def forward(self, x, model_kwargs, progress=True):
         # Mimic the ddim_sample_loop or p_sample_loop
@@ -246,6 +248,10 @@ def get_init_noise(n, mode, img_size, device):
 
 def to_tensor(cond, key, device):
     for k in key:
-        cond[k] = th.tensor(cond[k]).to(device)
+        if isinstance(cond[k], list):
+            for i in range(len(cond[k])):
+                cond[k][i] = th.tensor(cond[k][i]).to(device)
+        else:
+            cond[k] = th.tensor(cond[k]).to(device)
     return cond
     

@@ -115,6 +115,7 @@ cfg.img_cond_model.resblock_updown = True
 cfg.img_cond_model.use_new_attention_order = False
 cfg.img_cond_model.pool = 'attention'
 cfg.img_cond_model.override_cond = ""
+cfg.img_cond_model.xtra_cond = ""
 cfg.img_cond_model.prep_image = [None]
 
 # ---------------------------------------------------------------------------- #

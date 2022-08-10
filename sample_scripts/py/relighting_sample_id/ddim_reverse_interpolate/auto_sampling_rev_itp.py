@@ -17,6 +17,7 @@ parser.add_argument('--n_subject', type=int, required=True)
 parser.add_argument('--sigma', type=int, default=1)
 parser.add_argument('--cls', action='store_true', default=False)
 parser.add_argument('--lerp', action='store_true', default=False)
+parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--interpolate_noise', action='store_true', default=False)
 
@@ -41,7 +42,6 @@ from guided_diffusion.dataloader.img_deca_datasets import DECADataset
 
 # Sample utils
 sys.path.insert(0, '../../')
-# sys.path.insert(0, "/home/mint/guided-diffusion/sample_scripts/sample_utils/")
 from sample_utils import (
     ckpt_utils, 
     params_utils, 
@@ -54,15 +54,6 @@ from sample_utils import (
 )
 device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
 
-# def with_classifier(model_dict, 
-#     cls_model, 
-#     model_kwargs, 
-#     diffusion, 
-#     ckpt_loader, 
-#     cfg, 
-#     n_step, 
-#     reverse_ddim_sample,
-#     src_idx, dst_idx, src_id, dst_id):
 def with_classifier():
 
     itp_dir = th.nn.functional.normalize(cls_model.cls.weight, dim=1).detach().cpu().numpy()
@@ -98,7 +89,7 @@ def with_classifier():
         fp = f"{save_frames_path}/cls_seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_frame{i}.png"
         torchvision.utils.save_image(tensor=(frame), fp=fp)
 
-def without_classifier():
+def without_classifier(itp_func):
     # Forward the interpolation from reverse noise map
     # Interpolate
     cond = model_kwargs.copy()
@@ -106,7 +97,6 @@ def without_classifier():
     if cfg.img_cond_model.apply:
         cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
     if args.interpolate == ['all']:
-        print("ALL")
         interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=cfg.param_model.params_selector, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step)
     else:
         interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step)
@@ -137,13 +127,17 @@ def without_classifier():
     plt.savefig(f"{save_preview_path}/seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_allframes.png", bbox_inches='tight')
     
     # Save result
-    save_frames_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Lerp_{args.diffusion_steps}/"
+    if itp_func == mani_utils.lerp:
+        itp_fn_str = 'Lerp'
+    elif itp_func == mani_utils.slerp:
+        itp_fn_str = 'Slerp'
+    save_frames_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/"
     os.makedirs(save_frames_path, exist_ok=True)
     tc_frames = sample_ddim['img_output']
     for i in range(tc_frames.shape[0]):
         frame = tc_frames[i].cpu().detach()
         frame = ((frame + 1) * 127.5)/255.0
-        fp = f"{save_frames_path}/lerp_seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_frame{i}.png"
+        fp = f"{save_frames_path}/{itp_fn_str}_seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_frame{i}.png"
         torchvision.utils.save_image(tensor=((frame)), fp=fp)
 
 def train_linear_classifier():
@@ -194,7 +188,7 @@ if __name__ == '__main__':
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
 
     # Load Params
-    params_set = params_utils.get_params_set(set=args.set, cfg=cfg)
+    params_set = params_utils.get_params_set(set=args.set)
     
     # Load dataset
     if args.set == 'itw':
@@ -227,17 +221,6 @@ if __name__ == '__main__':
 
         model_kwargs = mani_utils.load_condition(params_set, img_name)
         images = mani_utils.load_image(all_path=img_path, cfg=cfg, vis=True)['image']
-        
-        if cfg.img_cond_model.prep_image[0] == 'blur':
-            img_cond = []
-            for img_tmp in images:
-                img_tmp = (img_tmp + 1) * 127.5
-                img_tmp = np.transpose(img_tmp, (1, 2, 0))
-                blur_img = img_utils.blur(img_tmp, sigma=cfg.img_cond_model.prep_image[1])
-                img_cond.append((blur_img / 127.5) - 1)
-            
-            model_kwargs['blur_img'] = th.stack(img_cond, dim=0).to(device)
-            # print(model_kwargs['blur_img'].shape)
         
         model_kwargs.update({'image_name':img_name, 'image':images})
         
@@ -286,4 +269,6 @@ if __name__ == '__main__':
             cls_model = train_linear_classifier()
             with_classifier()
         if args.lerp:
-            without_classifier()
+            without_classifier(itp_func=mani_utils.lerp)
+        if args.slerp:
+            without_classifier(itp_func=mani_utils.slerp)

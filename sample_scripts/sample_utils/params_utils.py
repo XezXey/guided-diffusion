@@ -46,6 +46,14 @@ def save_obj(renderer, filename, opdict):
     # save coarse mesh
     util.write_obj(filename, vertices, faces, colors=colors)
 
+def render_deca(deca_params, render_mode):
+    '''
+    #TODO: Render the deca face image that used to condition the network
+    :param deca_params: dict of deca params = {'light': Bx27, 'shape':BX50, ...}
+    '''
+
+
+
 def read_params(path):
     params = pd.read_csv(path, header=None, sep=" ", index_col=False, lineterminator='\n')
     params.rename(columns={0:'img_name'}, inplace=True)
@@ -79,7 +87,7 @@ def denormalize(arr_norm, min_val, max_val, a=-1, b=1):
     arr_denorm = (((arr_norm - a) * (max_val - min_val)) / (b - a)) + min_val
     return arr_denorm
 
-def load_params(path, params_key, cfg):
+def load_params(path, params_key):
     '''
     Load & Return the params
     Input : 
@@ -109,7 +117,7 @@ def load_params(path, params_key, cfg):
     all_params = np.stack(all_params, axis=0)
     return params_s, all_params
     
-def get_params_set(set, cfg=None):
+def get_params_set(set):
     if set == 'itw':
         # In-the-wild
         sys.path.insert(0, '../../cond_utils/arcface/')
@@ -140,10 +148,10 @@ def get_params_set(set, cfg=None):
         params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
 
         if set == 'train':
-            params_train, params_train_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/train/", params_key=params_key, cfg=cfg)
+            params_train, params_train_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/train/", params_key=params_key)
             params_set = params_train
         elif set == 'valid':
-            params_valid, params_valid_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/valid/", params_key=params_key, cfg=cfg)
+            params_valid, params_valid_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/valid/", params_key=params_key)
             params_set = params_valid
         else:
             raise NotImplementedError

@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Python: auto_sampling_rev_itp",
             "type": "python",
             "request": "launch",
-            "program": "auto_sampling_reverse_itp.py",
+            "program": "auto_sampling_rev_itp.py",
             "args": ["--set", "valid", 
                     "--step", "300000", 
                     "--interpolate", "all", 
@@ -20,6 +20,25 @@
                     "--diffusion_steps", "250"],
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: auto_sampling_rev_itp_encoder",
+            "type": "python",
+            "request": "launch",
+            "program": "auto_sampling_rev_itp_encoder.py",
+            "args": ["--set", "valid", 
+                    "--step", "050000", 
+                    "--interpolate", "spatial_latent", 
+                    "--out_dir", "./samples", 
+                    "--cfg_name", "UNetCond_Spatial_Hadamart_faceskin&noseYUV_bg&noface.yaml", 
+                    "--log_dir", "UNetCond_Spatial_Hadamart_faceskin&noseYUV_bg&noface", 
+                    "--n_subject", "20", 
+                    "--lerp", 
+                    "--diffusion_steps", "50"],
+            "console": "integratedTerminal",
+            // "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
+            "cwd": "/home/mint/mothership_v16/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
             "justMyCode": true
         }
     ]

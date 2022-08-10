@@ -24,6 +24,7 @@ img_cond_model:
   prep_image: ['blur=5.0', Null]
   resblock_updown: False
   num_head_channels: -1
+  xtra_cond: "spatial_latent"
 
 relighting:
   use_SH: False

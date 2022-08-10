@@ -234,24 +234,12 @@ class SRenderY(nn.Module):
         shading = normals_dot_lights[:,:,:,None]*light_intensities[:,:,None,:]
         return shading.mean(1)
 
-    def render_shape(self, vertices, transformed_vertices, images=None, detail_normal_images=None, lights=None):
+    def render_shape(self, vertices, transformed_vertices, images=None, detail_normal_images=None, lights=None, light_type='point'):
         '''
         -- rendering shape with detail normal map
         '''
         batch_size = vertices.shape[0]
-        # set lighting
-        if lights is None:
-            light_positions = torch.tensor(
-                [
-                [-1,1,1],
-                [1,1,1],
-                [-1,-1,1],
-                [1,-1,1],
-                [0,0,1]
-                ]
-            )[None,:,:].expand(batch_size, -1, -1).float()
-            light_intensities = torch.ones_like(light_positions).float()*1.7
-            lights = torch.cat((light_positions, light_intensities), 2).to(vertices.device)
+
         transformed_vertices[:,:,2] = transformed_vertices[:,:,2] + 10
 
         # Attributes
@@ -281,9 +269,35 @@ class SRenderY(nn.Module):
         if detail_normal_images is not None:
             normal_images = detail_normal_images
 
-        shading = self.add_directionlight(normal_images.permute(0,2,3,1).reshape([batch_size, -1, 3]), lights)
-        shading_images = shading.reshape([batch_size, albedo_images.shape[2], albedo_images.shape[3], 3]).permute(0,3,1,2).contiguous()        
-        shaded_images = albedo_images*shading_images
+        # set lighting
+        if lights is not None:
+            if lights.shape[1] == 9:
+                shading_images = self.add_SHlight(normal_images, lights)
+            else:
+                if light_type=='point':
+                    vertice_images = rendering[:, 6:9, :, :].detach()
+                    shading = self.add_pointlight(vertice_images.permute(0,2,3,1).reshape([batch_size, -1, 3]), normal_images.permute(0,2,3,1).reshape([batch_size, -1, 3]), lights)
+                    shading_images = shading.reshape([batch_size, albedo_images.shape[2], albedo_images.shape[3], 3]).permute(0,3,1,2)
+                else:
+                    shading = self.add_directionlight(normal_images.permute(0,2,3,1).reshape([batch_size, -1, 3]), lights)
+                    shading_images = shading.reshape([batch_size, albedo_images.shape[2], albedo_images.shape[3], 3]).permute(0,3,1,2).contiguous()
+            shaded_images = albedo_images*shading_images
+        elif lights is None:
+            light_positions = torch.tensor(
+                [
+                [-1,1,1],
+                [1,1,1],
+                [-1,-1,1],
+                [1,-1,1],
+                [0,0,1]
+                ]
+            )[None,:,:].expand(batch_size, -1, -1).float()
+            light_intensities = torch.ones_like(light_positions).float()*1.7
+            lights = torch.cat((light_positions, light_intensities), 2).to(vertices.device)
+
+            shading = self.add_directionlight(normal_images.permute(0,2,3,1).reshape([batch_size, -1, 3]), lights)
+            shading_images = shading.reshape([batch_size, albedo_images.shape[2], albedo_images.shape[3], 3]).permute(0,3,1,2).contiguous()        
+            shaded_images = albedo_images*shading_images
 
         alpha_images = alpha_images*pos_mask
         if images is None:
