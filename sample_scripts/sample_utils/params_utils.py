@@ -52,8 +52,6 @@ def render_deca(deca_params, render_mode):
     :param deca_params: dict of deca params = {'light': Bx27, 'shape':BX50, ...}
     '''
 
-
-
 def read_params(path):
     params = pd.read_csv(path, header=None, sep=" ", index_col=False, lineterminator='\n')
     params.rename(columns={0:'img_name'}, inplace=True)
@@ -117,7 +115,7 @@ def load_params(path, params_key):
     all_params = np.stack(all_params, axis=0)
     return params_s, all_params
     
-def get_params_set(set):
+def get_params_set(set, params_key, path="/data/mint/ffhq_256_with_anno/params/"):
     if set == 'itw':
         # In-the-wild
         sys.path.insert(0, '../../cond_utils/arcface/')
@@ -144,14 +142,14 @@ def get_params_set(set):
             
     elif set == 'valid' or set == 'train':
         # Load params
-        # params_key = cfg.param_model.params_selector
-        params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
+        if params_key is None:
+            params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
 
         if set == 'train':
-            params_train, params_train_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/train/", params_key=params_key)
+            params_train, params_train_arr = load_params(path=path + "/train/", params_key=params_key)
             params_set = params_train
         elif set == 'valid':
-            params_valid, params_valid_arr = load_params(path="/data/mint/ffhq_256_with_anno/params/valid/", params_key=params_key)
+            params_valid, params_valid_arr = load_params(path=path + "/valid/", params_key=params_key)
             params_set = params_valid
         else:
             raise NotImplementedError

@@ -21,3 +21,19 @@ def _list_video_files_recursively(data_dir):
         elif bf.isdir(full_path):
             results.extend(_list_video_files_recursively(full_path))
     return results
+
+def list_path_to_dict(list_path, force_type=None):
+    """
+    Convert list of image path into dictionary with the {<image_name> : <image_path>}
+    e.g. {'0.jpg' : '/data/mint/ffhq_256/0.jpg'}
+    :param list_path: list of image path
+    """
+    dict_path = {}
+    for tmp in list_path:
+        key = tmp.split('/')[-1]
+        if force_type is not None:
+            dict_path[key.split('.')[0] + force_type] = tmp
+        else:
+            dict_path[key] = tmp
+    return dict_path
+        

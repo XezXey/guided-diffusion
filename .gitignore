@@ -42,4 +42,3 @@ sample_scripts/py/relighting_sample_id/best_num_step_diffusion/samples/
 experiment_scripts/blur/gen/*.jpg
 experiment_scripts/face_3d/*
 visualize_scripts/flask_vispage/node_server
-
