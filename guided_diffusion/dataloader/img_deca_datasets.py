@@ -105,7 +105,7 @@ def load_data_img_deca(
     # For conditioning images
     for in_image_type in cfg.img_cond_model.in_image:
         if 'deca' in in_image_type:
-            in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.deca_shading_dir}/{set_}/")
+            in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.deca_rendered_dir}/{in_image_type}/{set_}/")
         elif 'faceseg' in in_image_type:
             in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
         elif 'raw' in in_image_type: continue
@@ -114,7 +114,7 @@ def load_data_img_deca(
 
         in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
     
-    deca_params = load_deca_params(deca_dir, cfg)
+    deca_params = load_deca_params(deca_dir + set_, cfg)
 
     # For raw image
     in_image['raw'] = _list_image_files_recursively(f"{data_dir}")
@@ -266,8 +266,8 @@ class DECADataset(Dataset):
         for in_image_type in self.cfg.img_cond_model.in_image:
             if 'faceseg' in in_image_type:
                 condition_image[in_image_type] = self.face_segment(raw_pil_image, in_image_type, query_img_name)
-            elif in_image_type == 'deca':
-                condition_image['deca'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['deca'][query_img_name]))
+            elif 'deca' in in_image_type:
+                condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace('.jpg', '.png')]))
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
         return condition_image

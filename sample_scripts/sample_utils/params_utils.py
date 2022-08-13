@@ -146,10 +146,10 @@ def get_params_set(set, params_key, path="/data/mint/ffhq_256_with_anno/params/"
             params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
 
         if set == 'train':
-            params_train, params_train_arr = load_params(path=path + "/train/", params_key=params_key)
+            params_train, params_train_arr = load_params(path=f"{path}/{set}/", params_key=params_key)
             params_set = params_train
         elif set == 'valid':
-            params_valid, params_valid_arr = load_params(path=path + "/valid/", params_key=params_key)
+            params_valid, params_valid_arr = load_params(path=f"{path}/{set}/", params_key=params_key)
             params_set = params_valid
         else:
             raise NotImplementedError

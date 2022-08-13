@@ -85,7 +85,8 @@ cfg.img_model.last_conv = False    # For Duplicate UNetModel
 
 # Additional Encoder Network
 img_cond_model_img_type = {'raw':3, 
-                            'deca':3, 
+                            'deca_shape_images':3, 
+                            'deca_template_shape_images':3, 
                             'faceseg_face':3, 
                             'faceseg_faceskin&nose':3, 
                             'faceseg_bg&noface':3,
@@ -137,10 +138,10 @@ cfg.relighting.num_shaded_ch = 1
 # ---------------------------------------------------------------------------- #
 cfg.dataset = CN()
 cfg.dataset.training_data = ['ffhq_256_with_anno']
-cfg.dataset.deca_dir = '/data/mint/ffhq_256_with_anno'
-cfg.dataset.data_dir = '/data/mint/ffhq_256_with_anno/ffhq_256/'
+cfg.dataset.deca_dir = '/data/mint/DPM_Dataset/ffhq_256_with_anno/params/'
+cfg.dataset.data_dir = '/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/'
 cfg.dataset.face_segment_dir = "/data/mint/ffhq_256_with_anno/face_segment/"
-cfg.dataset.deca_shading_dir = "/data/mint/ffhq_256_with_anno/shading_images/"
+cfg.dataset.deca_rendered_dir = "/data/mint/ffhq_256_with_anno/rendered_images/"
 
 # ---------------------------------------------------------------------------- #
 # Options for training

@@ -43,6 +43,22 @@
             "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
             // "cwd": "/home/mint/mothership_v16/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
             "justMyCode": true
+        },
+        {
+            "name": "Python: train_deca_shape",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "1",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/EncLight_Spatial_Rendered_Face/UNetCond_Spatial_Hadamart_Shape.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "500000000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
         }
     ]
 }
