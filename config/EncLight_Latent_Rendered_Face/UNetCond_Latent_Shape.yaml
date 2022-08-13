@@ -9,7 +9,7 @@ img_model:
   condition_proj_dim: 512
 
 param_model:
-  params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb']
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
 
 img_cond_model:
   apply: True
