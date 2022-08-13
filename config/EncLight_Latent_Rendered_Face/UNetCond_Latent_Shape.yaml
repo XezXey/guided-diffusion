@@ -1,0 +1,39 @@
+img_model:
+  name: "ImgCond"
+  arch: "UNetCond"
+  image_size: 64
+  in_image: 'raw'
+  in_channels: 3
+  out_channels: 3
+  conditioning: True  # Conditioning with DECA
+  condition_proj_dim: 512
+
+param_model:
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb']
+
+img_cond_model:
+  apply: True
+  arch: "EncoderUNet"
+  in_image: ['deca_shape_images']
+  in_channels: 3
+  image_size: 64
+  out_channels: 128
+  condition_dim: 128
+  pool: 'adaptivenonzero'
+  override_cond: "light"
+  prep_image: [Null]
+  resblock_updown: False
+
+relighting:
+  use_SH: False
+
+dataset:
+  deca_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
+  data_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
+  face_segment_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment/"
+  deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
+
+
+train_misc:
+  exp_name: "EncLight_Latent_Rendered_Face"
+  cfg_name: "UNetCond_Latent_Shape"
