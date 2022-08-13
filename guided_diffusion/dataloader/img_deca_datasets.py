@@ -117,7 +117,7 @@ def load_data_img_deca(
     deca_params = load_deca_params(deca_dir + set_, cfg)
 
     # For raw image
-    in_image['raw'] = _list_image_files_recursively(f"{data_dir}")
+    in_image['raw'] = _list_image_files_recursively(f"{data_dir}/{set_}")
     in_image['raw'] = image_path_list_to_dict(in_image['raw'])
 
     img_dataset = DECADataset(
