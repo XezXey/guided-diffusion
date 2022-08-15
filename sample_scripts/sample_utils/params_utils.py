@@ -48,8 +48,15 @@ def save_obj(renderer, filename, opdict):
 
 def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractTex=True, device='cuda'):
     '''
-    #TODO: Render the deca face image that used to condition the network
+    TODO: Adding the rendering with template shape, might need to load mean of camera/tform
+    # Render the deca face image that used to condition the network
     :param deca_params: dict of deca params = {'light': Bx27, 'shape':BX50, ...}
+    :param idx: index of data in batch to render
+    :param n: n of repeated tensor (For interpolation)
+    :param render_mode: render mode = 'shape', 'template_shape'
+    :param useTex: render with texture ***Need the codedict['albedo'] data***
+    :param extractTex: for deca texture (set by default of deca decoding pipeline)
+    :param device: device for 'cuda' or 'cpu'
     '''
     print(deca_params.keys(), render_mode)
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
@@ -62,12 +69,12 @@ def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractT
     deca_cfg.model.extract_tex = extractTex
     
     testdata = datasets.TestData(deca_params['raw_image_path'][idx])
-    deca = DECA(config = deca_cfg, device=device)
+    deca = DECA(config = deca_cfg, device=device, mode='only_renderer')
     codedict = {'shape':deca_params['shape'][[idx]].repeat(n, 1).to(device).float(),
                 'pose':deca_params['pose'][[idx]].repeat(n, 1).to(device).float(),
                 'exp':deca_params['exp'][[idx]].repeat(n, 1).to(device).float(),
                 'cam':deca_params['cam'][[idx]].repeat(n, 1).to(device).float(),
-                'light':deca_params['light'][[idx]].repeat(n, 1).to(device).reshape(-1, 9, 3).float(),
+                'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
                 'tform':deca_params['tform'][[idx]].repeat(n, 1).to(device).reshape(-1, 3, 3).float(),
                 'images':testdata[0]['image'].to(device)[None,...].float().repeat(n, 1, 1, 1)
                 

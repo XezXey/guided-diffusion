@@ -57,7 +57,9 @@
                     "--log_dir", "UNetCond_Spatial_Concat_Shape", 
                     "--n_subject", "2", 
                     "--slerp", 
-                    "--diffusion_steps", "50"],
+                    "--diffusion_steps", "50",
+                    "--seed", "47",
+                ],
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
             "justMyCode": true

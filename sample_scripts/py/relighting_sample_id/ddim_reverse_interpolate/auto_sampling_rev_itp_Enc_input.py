@@ -23,6 +23,8 @@ parser.add_argument('--interpolate_noise', action='store_true', default=False)
 args = parser.parse_args()
 
 import os, sys, glob
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"]="2"
 
 import numpy as np
 import pandas as pd
@@ -95,6 +97,7 @@ def without_classifier(itp_func):
 
     if cfg.img_cond_model.apply:
         interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+        cond.update(interp_cond)
         deca_rendered_itp = params_utils.render_deca(deca_params=cond, idx=src_idx, n=n_step)
         cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
 
