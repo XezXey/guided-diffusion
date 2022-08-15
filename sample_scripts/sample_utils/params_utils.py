@@ -46,11 +46,48 @@ def save_obj(renderer, filename, opdict):
     # save coarse mesh
     util.write_obj(filename, vertices, faces, colors=colors)
 
-def render_deca(deca_params, render_mode):
+def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractTex=True, device='cuda'):
     '''
     #TODO: Render the deca face image that used to condition the network
     :param deca_params: dict of deca params = {'light': Bx27, 'shape':BX50, ...}
     '''
+    print(deca_params.keys(), render_mode)
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
+    from decalib.deca import DECA
+    from decalib.datasets import datasets 
+    from decalib.utils import util
+    from decalib.utils.config import cfg as deca_cfg
+    deca_cfg.model.use_tex = useTex
+    deca_cfg.rasterizer_type = 'standard'
+    deca_cfg.model.extract_tex = extractTex
+    
+    testdata = datasets.TestData(deca_params['raw_image_path'][idx])
+    deca = DECA(config = deca_cfg, device=device)
+    codedict = {'shape':deca_params['shape'][[idx]].repeat(n, 1).to(device).float(),
+                'pose':deca_params['pose'][[idx]].repeat(n, 1).to(device).float(),
+                'exp':deca_params['exp'][[idx]].repeat(n, 1).to(device).float(),
+                'cam':deca_params['cam'][[idx]].repeat(n, 1).to(device).float(),
+                'light':deca_params['light'][[idx]].repeat(n, 1).to(device).reshape(-1, 9, 3).float(),
+                'tform':deca_params['tform'][[idx]].repeat(n, 1).to(device).reshape(-1, 3, 3).float(),
+                'images':testdata[0]['image'].to(device)[None,...].float().repeat(n, 1, 1, 1)
+                
+    }
+    tform_inv = th.inverse(codedict['tform']).transpose(1,2)
+    original_image = deca_params['raw_image'][[idx]].to(device).float().repeat(n, 1, 1, 1)
+    if render_mode == 'shape':
+        use_template = False
+        mean_cam = None
+    _, orig_visdict = deca.decode(codedict, 
+                                  render_orig=True, 
+                                  original_image=original_image, 
+                                  tform=tform_inv, 
+                                  use_template=use_template, 
+                                  mean_cam=mean_cam, 
+                                  use_detail=False)  
+    rendered_image = orig_visdict['shape_images'].mul(255).add_(0.5).clamp_(0, 255)
+    return rendered_image
+    
+
 
 def read_params(path):
     params = pd.read_csv(path, header=None, sep=" ", index_col=False, lineterminator='\n')

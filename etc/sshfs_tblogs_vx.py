@@ -2,8 +2,8 @@ import argparse
 import os
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--vid', type=int, nargs='+')
-parser.add_argument('--folder', type=str)
+parser.add_argument('--vid', type=int, nargs='+', required=True)
+parser.add_argument('--folder', type=str, required=True)
 args = parser.parse_args()
 
 assert os.path.isabs(args.folder)

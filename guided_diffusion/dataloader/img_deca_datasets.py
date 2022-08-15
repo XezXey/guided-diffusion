@@ -42,7 +42,7 @@ def load_deca_params(deca_dir, cfg):
     deca_params = {}
 
     # face params 
-    params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
+    params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'tform']
     for k in tqdm.tqdm(params_key, desc="Loading deca params..."):
         params_path = glob.glob(f"{deca_dir}/*{k}-anno.txt")
         for path in params_path:
@@ -230,9 +230,13 @@ class DECADataset(Dataset):
 
         # Deca params of img-path
         out_dict["cond_params"] = np.concatenate([self.deca_params[query_img_name][k] for k in self.precomp_params_key])
-        for k in self.cfg.param_model.params_selector:
+        # for k in self.cfg.param_model.params_selector:
+        #     out_dict[k] = self.deca_params[query_img_name][k]
+        for k in self.deca_params[query_img_name].keys():
             out_dict[k] = self.deca_params[query_img_name][k]
         out_dict['image_name'] = query_img_name
+        out_dict['raw_image'] = np.transpose(np.array(raw_pil_image), [2, 0, 1])
+        out_dict['raw_image_path'] = self.local_images[query_img_name]
 
         # Input to UNet-model
         if self.in_image_UNet == 'raw':

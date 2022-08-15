@@ -26,7 +26,7 @@
             "justMyCode": true
         },
         {
-            "name": "Python: auto_sampling_rev_itp_encoder",
+            "name": "Python: auto_sampling_rev_itp_encoder_faceseg",
             "type": "python",
             "request": "launch",
             "program": "auto_sampling_rev_itp_encoder.py",
@@ -42,6 +42,24 @@
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
             // "cwd": "/home/mint/mothership_v16/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: auto_sampling_rev_itp_encoder_rendered",
+            "type": "python",
+            "request": "launch",
+            "program": "auto_sampling_rev_itp_Enc_input.py",
+            "args": ["--set", "valid", 
+                    "--step", "050000", 
+                    "--interpolate", "spatial_latent", 
+                    "--out_dir", "./samples", 
+                    "--cfg_name", "UNetCond_Spatial_Concat_Shape.yaml", 
+                    "--log_dir", "UNetCond_Spatial_Concat_Shape", 
+                    "--n_subject", "2", 
+                    "--slerp", 
+                    "--diffusion_steps", "50"],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
             "justMyCode": true
         },
         {

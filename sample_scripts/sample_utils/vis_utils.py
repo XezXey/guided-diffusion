@@ -63,7 +63,7 @@ def plot_deca(sample, min_value, max_value, cfg):
     plot_sample(th.cat(img_, dim=0))
     return th.cat(img_, dim=0)
 
-def plot_image(img, c_len=[], fn='./temp'):
+def plot_image(img, c_len=[], fn='./temp', range="-1to1"):
     """
     :param img: image tensor in B x C x H x W
     """
@@ -72,6 +72,8 @@ def plot_image(img, c_len=[], fn='./temp'):
         c_len = list(range(0, img.shape[1], 3)) + [img.shape[1]]
     print("Channel length : ", c_len)
     for i, c in enumerate(c_len):
-        img_tmp = img[:, 0:c, ...]
-        img = img[:, c:, ...]   # Slide out the plotted one
-        torchvision.utils.save_image(tensor=img_tmp, fp=f"./{fn}_{i}.png")
+        img_plot = img[:, 0:c, ...]
+        img = img[:, c:, ...]   # Slice out the plotted one
+        if range == "-1to1":
+            img_plot = ((img_plot + 1) * 127.5) / 255.0
+        torchvision.utils.save_image(tensor=img_plot, fp=f"./{fn}_{i}.png")
