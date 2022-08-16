@@ -37,3 +37,18 @@ def list_path_to_dict(list_path, force_type=None):
             dict_path[key] = tmp
     return dict_path
         
+def search_index_from_listpath(list_path, search):
+    """
+    Return the index form image name from search list
+    :param list_path: list of image path
+    :param search: list of image name to search in list_path
+    """
+    img_idx = [None, None]
+    list_path = [path.split('/')[-1] for path in list_path]
+    try:
+        img_idx[0] = list_path.index(search[0])
+        img_idx[1] = list_path.index(search[1])
+    except ValueError:
+        raise(f"[#] {search} cannot be found in image path list")
+    return img_idx
+    

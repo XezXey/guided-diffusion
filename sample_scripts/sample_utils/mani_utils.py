@@ -179,7 +179,7 @@ def create_cond_params(cond, key):
     tmp = []
     for p in key:
         if th.is_tensor(cond[p]):
-            tmp.append(cond[p].cpu())
+            tmp.append(cond[p].cpu().detach().numpy())
         else:
             tmp.append(cond[p])
     print(np.concatenate(tmp, axis=1).shape)
