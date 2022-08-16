@@ -248,6 +248,9 @@ class DECADataset(Dataset):
 
     def prep_cond_img(self, each_cond_img, k, i):
         """
+        # Preprocessing available:
+            - Recoloring : YCbCr
+            - Blur
         :param each_cond_img: condition image in [H x W x C]
         """
         assert k == self.cfg.img_cond_model.in_image[i]

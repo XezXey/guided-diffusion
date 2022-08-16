@@ -186,6 +186,27 @@ def create_cond_params(cond, key):
     cond['cond_params'] = np.concatenate(tmp, axis=1)
     return cond
     
+def create_cond_imgs(cond, key):
+    '''
+    Create the cond_params for conditioning the model by concat
+    :params cond: condition dict-like e.g. {'deca_shape_image':BxCxHxW, 'deca_template_shape_image':BxCxHxW}
+    :params key: key contains parameters name to be used for an input
+    
+    :return cond: condition dict-like with addition 'cond_params' key that ready to used for inference
+    '''
+    print("[#] Condition build from image(s) in ", key)
+    tmp = []
+    for p in key:
+        if th.is_tensor(cond[p]):
+            tmp.append(cond[p].cpu())
+        else:
+            tmp.append(cond[p])
+    print(np.concatenate(tmp, axis=1).shape)
+    cond['cond_img'] = np.concatenate(tmp, axis=1)
+    return cond
+    
+    
+
 def modify_cond(mod_idx, cond_params, params_loc, params_sel, n_step, bound, mod_cond, force_zero=False):
     '''
     Manually change/scale the condition parameters at i-th index e.g. [c1, c2, c3, ..., cN] => [c1 * 2.0, c2, c3, ..., cN]

@@ -98,14 +98,35 @@ def without_classifier(itp_func):
     if cfg.img_cond_model.apply:
         interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
         cond.update(interp_cond)
-        deca_rendered_itp = params_utils.render_deca(deca_params=cond, idx=src_idx, n=n_step)
+        start = time.time()
+        deca_rendered = params_utils.render_deca(deca_params=cond, idx=src_idx, n=n_step)
+        print("Rendering time : ", time.time() - start)
+        for i, cond_img_name in enumerate(cfg.img_cond_model.in_image):
+            rendered_tmp = []
+            for j in range(n_step):
+                r_tmp = np.transpose(deca_rendered[j].cpu().numpy(), (1, 2, 0))
+                r_tmp = r_tmp.astype(np.uint8)
+                r_tmp = dataset.augmentation(PIL.Image.fromarray(r_tmp))
+                r_tmp = dataset.prep_cond_img(r_tmp, cond_img_name, i)
+                r_tmp = np.transpose(r_tmp, [2, 0, 1])
+                r_tmp = (r_tmp / 127.5) - 1
+            
+                rendered_tmp.append(r_tmp)
+            rendered_tmp = np.stack(rendered_tmp, axis=0)
+            cond[f"{cond_img_name}"] = rendered_tmp
+        cond = mani_utils.create_cond_imgs(cond, key=cfg.img_cond_model.in_image)
+        cond = inference_utils.to_tensor(cond, key=['cond_img'], device=ckpt_loader.device)
         cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
 
     if args.interpolate == ['all']:
         interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=cfg.param_model.params_selector, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
     else:
-        interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
-    cond = mani_utils.repeat_cond_params(cond, base_idx=b_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate))
+        if 'spatial_latent' in args.interpolate:
+            interp_set = args.interpolate.copy()
+            interp_set.remove('spatial_latent')
+        interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+    repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=b_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate))
+    cond.update(repeated_cond)
     cond.update(interp_cond)
 
     # Finalize the cond_params

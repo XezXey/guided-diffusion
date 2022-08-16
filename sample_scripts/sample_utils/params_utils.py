@@ -58,7 +58,6 @@ def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractT
     :param extractTex: for deca texture (set by default of deca decoding pipeline)
     :param device: device for 'cuda' or 'cpu'
     '''
-    print(deca_params.keys(), render_mode)
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
     from decalib.deca import DECA
     from decalib.datasets import datasets 

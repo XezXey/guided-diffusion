@@ -232,7 +232,6 @@ class InputManipulate():
 
         return src_img_list, render_img_list
 
-
 def get_init_noise(n, mode, img_size, device):
     '''
     Return the init_noise used as input.
