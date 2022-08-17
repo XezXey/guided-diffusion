@@ -34,6 +34,7 @@ import matplotlib.pyplot as plt
 import torch as th
 import PIL
 import copy
+import time
 import torchvision
 import pytorch_lightning as pl
 sys.path.insert(0, '../../../')
@@ -225,7 +226,7 @@ if __name__ == '__main__':
         deca_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
     else: raise NotImplementedError
 
-    loader, dataset, avg_dict = load_data_img_deca(
+    loader, dataset, _ = load_data_img_deca(
         data_dir=img_dataset_path,
         deca_dir=deca_dataset_path,
         batch_size=int(1e7),
@@ -237,6 +238,21 @@ if __name__ == '__main__':
         params_selector=cfg.param_model.params_selector,
         rmv_params=cfg.param_model.rmv_params,
         set_=args.set,
+        cfg=cfg,
+    )
+    
+    _, _, avg_dict = load_data_img_deca(
+        data_dir=img_dataset_path,
+        deca_dir=deca_dataset_path,
+        batch_size=int(1e7),
+        image_size=cfg.img_model.image_size,
+        deterministic=cfg.train.deterministic,
+        augment_mode=cfg.img_model.augment_mode,
+        resize_mode=cfg.img_model.resize_mode,
+        in_image_UNet=cfg.img_model.in_image,
+        params_selector=cfg.param_model.params_selector,
+        rmv_params=cfg.param_model.rmv_params,
+        set_='train',
         cfg=cfg,
     )
     if len(args.src_dst) == 2:
@@ -261,7 +277,6 @@ if __name__ == '__main__':
             img_path = [img_path[r] for r in img_idx]
             img_name = [path.split('/')[-1] for path in img_path]
 
-        import time
         dat = th.utils.data.Subset(dataset, indices=img_idx)
         subset_loader = th.utils.data.DataLoader(dat, batch_size=2,
                                             shuffle=False, num_workers=24)

@@ -64,7 +64,6 @@ def avg_deca(deca_params):
         avg_dict[p] = np.mean(avg_dict[p], axis=0)
     return avg_dict
     
-    
 
 def preprocess_light(deca_params, k, cfg):
     """

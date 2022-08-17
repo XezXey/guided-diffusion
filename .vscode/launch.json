@@ -177,6 +177,6 @@
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/",
             "justMyCode": true
-        }
+        },
     ]
 }

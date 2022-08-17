@@ -20,6 +20,7 @@ parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--interpolate_noise', action='store_true', default=False)
+parser.add_argument('--src_dst', nargs='+', default=[])
 
 args = parser.parse_args()
 
@@ -185,17 +186,17 @@ if __name__ == '__main__':
     ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
     cfg = ckpt_loader.cfg
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
-
+    
     # Load dataset
     if args.set == 'itw':
         img_dataset_path = "../../itw_images/aligned/"
         deca_dataset_path = None
     elif args.set == 'train' or args.set == 'valid':
-        img_dataset_path = f"/data/mint/ffhq_256_with_anno/ffhq_256/{args.set}/"
-        deca_dataset_path = f"/data/mint/ffhq_256_with_anno/params/{args.set}/"
+        img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
+        deca_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
     else: raise NotImplementedError
 
-    loader, dataset = load_data_img_deca(
+    loader, dataset, avg_dict = load_data_img_deca(
         data_dir=img_dataset_path,
         deca_dir=deca_dataset_path,
         batch_size=int(1e7),
@@ -210,22 +211,31 @@ if __name__ == '__main__':
         cfg=cfg,
     )
 
+    if len(args.src_dst) == 2:
+        args.n_subject = 1
     data_size = dataset.__len__()
     prevent_dup = []
     for _ in range(args.n_subject):
         # Load image & condition
-        rand_idx = np.random.choice(a=range(data_size), replace=False, size=2)
-        while list(rand_idx) in prevent_dup:
-            rand_idx = np.random.choice(a=range(data_size), replace=False, size=2)
-        prevent_dup.append(list(rand_idx))
+        img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
+        
+        if len(args.src_dst) == 2:
+            img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=args.src_dst)
+            img_path = [img_path[r] for r in img_idx]
+            img_name = [path.split('/')[-1] for path in img_path]
+        else:
+            img_idx = np.random.choice(a=range(data_size), replace=False, size=2)
+            while list(img_idx) in prevent_dup:
+                img_idx = np.random.choice(a=range(data_size), replace=False, size=2)
+            prevent_dup.append(list(img_idx))
+            img_path = [img_path[r] for r in img_idx]
+            img_name = [path.split('/')[-1] for path in img_path]
 
-        img_path = file_utils._list_image_files_recursively(img_dataset_path)
-        img_path = [img_path[r] for r in rand_idx]
-        img_name = [path.split('/')[-1] for path in img_path]
-
-        subset_dataset = th.utils.data.Subset(dataset, indices=rand_idx)
-        subset_loader = th.utils.data.DataLoader(subset_dataset, batch_size=2,
-                                            shuffle=False, num_workers=2)
+        dat = th.utils.data.Subset(dataset, indices=img_idx)
+        subset_loader = th.utils.data.DataLoader(dat, batch_size=2,
+                                            shuffle=False, num_workers=24)
+        dat, model_kwargs = next(iter(subset_loader))
+        
         # Indexing
         b_idx = 0
         src_idx = 0
