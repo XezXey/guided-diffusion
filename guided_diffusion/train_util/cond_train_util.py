@@ -1,6 +1,6 @@
 import copy
 import functools
-import os
+import os, glob
 
 import blobfile as bf
 import torch as th
@@ -106,7 +106,7 @@ class TrainLoop(LightningModule):
         self.step = 0
         self.resume_step = 0
 
-        # Load checkpoints
+        # Load model checkpoints
         self.load_ckpt()
 
         self.model_trainer_dict = {}
@@ -139,40 +139,36 @@ class TrainLoop(LightningModule):
         '''
         Load model checkpoint from filename = model{step}.pt
         '''
-        resume_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
-        if resume_checkpoint:
-            self.resume_step = parse_resume_step_from_filename(resume_checkpoint)
-            logger.log(f"Loading model checkpoint(step={self.resume_step}): {self.resume_checkpoint}")
+        found_resume_checkpoint = find_resume_checkpoint(self.resume_checkpoint, k="model", model_name=self.model_dict.keys())
+        if found_resume_checkpoint:
+            self.resume_step = parse_resume_step_from_filename(self.resume_checkpoint)
             for name in self.model_dict.keys():
+                ckpt_path = found_resume_checkpoint[f'{name}_model']
+                logger.log(f"Loading model checkpoint (name={name}, step={self.resume_step}): {ckpt_path}")
                 self.model_dict[name].load_state_dict(
-                    th.load(self.resume_checkpoint, map_location='cpu'),
+                    th.load(ckpt_path, map_location='cpu'),
                 )
 
     def _load_optimizer_state(self):
         '''
         Load optimizer state
         '''
-        main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
-        opt_checkpoint = bf.join(
-            bf.dirname(main_checkpoint), f"opt{self.resume_step:06}.pt"
-        )
-        print("OPT: " , main_checkpoint, opt_checkpoint)
-        if bf.exists(opt_checkpoint):
-            print(f"Loading optimizer state from checkpoint: {opt_checkpoint}")
+        found_resume_opt = find_resume_checkpoint(self.resume_checkpoint, k="opt", model_name=['opt'])
+        if found_resume_opt:
+            opt_path =found_resume_opt['opt_opt']
+            print(f"Loading optimizer state from checkpoint: {opt_path}")
             self.opt.load_state_dict(
-                th.load(opt_checkpoint, map_location='cpu'),
+                th.load(opt_path, map_location='cpu'),
             )
     
     def _load_ema_parameters(self, rate, name):
 
-        main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
-        ema_checkpoint = find_ema_checkpoint(main_checkpoint, self.resume_step, rate, name)
-        print("EMA : ", ema_checkpoint, main_checkpoint)
-        if ema_checkpoint:
-            print(f"Loading EMA from checkpoint: {ema_checkpoint}...")
-            state_dict = th.load(ema_checkpoint, map_location='cpu')
-            for name in self.model_trainer_dict.keys():
-                ema_params = self.model_trainer_dict[name].state_dict_to_master_params(state_dict)
+        found_resume_checkpoint = find_resume_checkpoint(self.resume_checkpoint, k=f"ema_{rate}", model_name=[name])
+        if found_resume_checkpoint:
+            ckpt_path = found_resume_checkpoint[f'{name}_ema_{rate}']
+            print(f"Loading EMA from checkpoint: {ckpt_path}...")
+            state_dict = th.load(ckpt_path, map_location='cpu')
+            ema_params = self.model_trainer_dict[name].state_dict_to_master_params(state_dict)
 
         return ema_params
 
@@ -504,10 +500,25 @@ def get_blob_logdir():
     return logger.get_dir()
 
 
-def find_resume_checkpoint():
+def find_resume_checkpoint(ckpt_dir, k, model_name):
     # On your infrastructure, you may want to override this to automatically
     # discover the latest checkpoint on your blob storage, etc.
-    return None
+    """
+    Find resume checkpoint from {ckpt_dir} and search for {k}
+    :param ckpt_dir: checkpoint directory (Need to input with the model{...}.pt)
+    :param k: keyword to find the checkpoint e.g. 'model', 'ema', ...
+    :param step: step of checkpoint (this retrieve from the ckpt_dir)
+    """
+    step = parse_resume_step_from_filename(ckpt_dir)
+    ckpt_dir = os.path.dirname(os.path.abspath(ckpt_dir))
+    all_ckpt = glob.glob(f"{ckpt_dir}/*{step}.pt")  # List all checkpoint give step.
+    found_ckpt = {}
+    for name in model_name:
+        for c in all_ckpt:
+            if (k in c.split('/')[-1]) and (name in c.split('/')[-1]):
+                found_ckpt[f"{name}_{k}"] = c
+                assert bf.exists(found_ckpt[f"{name}_{k}"])
+    return found_ckpt
 
 
 def find_ema_checkpoint(main_checkpoint, step, rate, name):

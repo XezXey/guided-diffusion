@@ -149,12 +149,30 @@
             "type": "python",
             "request": "launch",
             "program": "./train_scripts/image_train.py",
-            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+            "args": ["--train.log_dir", "/data/mint/model_logs/UNetCond_Spatial_Concat_Template_Shape_dev",
                     "--train.batch_size", "1",
                     "--train.n_gpus", "1", 
-                    "--cfg", "./config/EncLight_Spatial_Rendered_Face/UNetCond_Spatial_Hadamart_Template_Shape.yaml",
+                    "--cfg", "./config/EncLight_Spatial_Rendered_Face/UNetCond_Spatial_Concat_Template_Shape.yaml",
                     "--train.save_interval", "5000000000",
                     "--train.sampling_interval", "500000000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: train_deca_template_shape_load_checkpoint",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/UNetCond_Spatial_Concat_Template_Shape_dev",
+                    "--train.batch_size", "1",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/EncLight_Spatial_Rendered_Face/UNetCond_Spatial_Concat_Template_Shape.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "500000000",
+                    "--train.resume_checkpoint", "/data/mint/model_logs/UNetCond_Spatial_Concat_Template_Shape_dev/ImgCond_model150000.pt"
+
             ],
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/",
