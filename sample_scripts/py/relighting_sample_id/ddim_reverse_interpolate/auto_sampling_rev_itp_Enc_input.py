@@ -20,6 +20,7 @@ parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--interpolate_noise', action='store_true', default=False)
 parser.add_argument('--src_dst', nargs='+', default=[])
+parser.add_argument('--render_mode', type=str, default="shape")
 
 args = parser.parse_args()
 
@@ -100,7 +101,7 @@ def without_classifier(itp_func):
         interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
         cond.update(interp_cond)
         start = time.time()
-        deca_rendered = params_utils.render_deca(deca_params=cond, idx=src_idx, n=n_step)
+        deca_rendered = params_utils.render_deca(deca_params=cond, idx=src_idx, n=n_step, avg_dict=avg_dict, render_mode=args.render_mode)
         print("Rendering time : ", time.time() - start)
         for i, cond_img_name in enumerate(cfg.img_cond_model.in_image):
             rendered_tmp = []
@@ -224,7 +225,7 @@ if __name__ == '__main__':
         deca_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
     else: raise NotImplementedError
 
-    loader, dataset = load_data_img_deca(
+    loader, dataset, avg_dict = load_data_img_deca(
         data_dir=img_dataset_path,
         deca_dir=deca_dataset_path,
         batch_size=int(1e7),

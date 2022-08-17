@@ -1,3 +1,4 @@
+from audioop import avg
 from distutils.errors import PreprocessError
 import math
 import random
@@ -47,12 +48,28 @@ def load_deca_params(deca_dir, cfg):
         params_path = glob.glob(f"{deca_dir}/*{k}-anno.txt")
         for path in params_path:
             deca_params[k] = read_params(path=path)
-        deca_params[k] = preprocess_cond(deca_params[k], k, cfg)
+        deca_params[k] = preprocess_light(deca_params[k], k, cfg)
+    
+    avg_dict = avg_deca(deca_params)
     
     deca_params = swap_key(deca_params)
-    return deca_params
+    return deca_params, avg_dict
 
-def preprocess_cond(deca_params, k, cfg):
+def avg_deca(deca_params):
+    
+    avg_dict = {}
+    for p in deca_params.keys():
+        avg_dict[p] = np.stack(list(deca_params[p].values()))
+        assert avg_dict[p].shape[0] == len(deca_params[p])
+        avg_dict[p] = np.mean(avg_dict[p], axis=0)
+    return avg_dict
+    
+    
+
+def preprocess_light(deca_params, k, cfg):
+    """
+    # Remove the SH component from DECA (This for reduce SH)
+    """
     if k != 'light':
         return deca_params
     else:
@@ -114,7 +131,7 @@ def load_data_img_deca(
 
         in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
     
-    deca_params = load_deca_params(deca_dir + set_, cfg)
+    deca_params, avg_dict = load_deca_params(deca_dir + set_, cfg)
 
     # For raw image
     in_image['raw'] = _list_image_files_recursively(f"{data_dir}/{set_}")
@@ -130,7 +147,7 @@ def load_data_img_deca(
         params_selector=params_selector,
         rmv_params=rmv_params,
         cfg=cfg,
-        in_image_for_cond=in_image
+        in_image_for_cond=in_image,
     )
     print("[#] Parameters Conditioning")
     print("Params keys order : ", img_dataset.precomp_params_key)
@@ -148,7 +165,7 @@ def load_data_img_deca(
         )
 
     while True:
-        return loader, img_dataset
+        return loader, img_dataset, avg_dict
 
 def image_path_list_to_dict(path_list):
     img_paths_dict = {}
@@ -229,9 +246,9 @@ class DECADataset(Dataset):
             out_dict['cond_img'] = np.concatenate(out_dict['cond_img'], axis=0)
 
         # Deca params of img-path
-        out_dict["cond_params"] = np.concatenate([self.deca_params[query_img_name][k] for k in self.precomp_params_key])
         # for k in self.cfg.param_model.params_selector:
         #     out_dict[k] = self.deca_params[query_img_name][k]
+        out_dict["cond_params"] = np.concatenate([self.deca_params[query_img_name][k] for k in self.precomp_params_key])
         for k in self.deca_params[query_img_name].keys():
             out_dict[k] = self.deca_params[query_img_name][k]
         out_dict['image_name'] = query_img_name

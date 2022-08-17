@@ -45,7 +45,7 @@
             "justMyCode": true
         },
         {
-            "name": "Python: auto_sampling_rev_itp_encoder_rendered",
+            "name": "Python: auto_sampling_rev_itp_encoder_rendered_shape",
             "type": "python",
             "request": "launch",
             "program": "auto_sampling_rev_itp_Enc_input.py",
@@ -59,6 +59,28 @@
                     "--slerp", 
                     "--diffusion_steps", "50",
                     "--seed", "47",
+                    "--render_mode", "shape"
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: auto_sampling_rev_itp_encoder_rendered_template_shape",
+            "type": "python",
+            "request": "launch",
+            "program": "auto_sampling_rev_itp_Enc_input.py",
+            "args": ["--set", "valid", 
+                    "--step", "050000", 
+                    "--interpolate", "spatial_latent", 
+                    "--out_dir", "./samples", 
+                    "--cfg_name", "UNetCond_Spatial_Concat_Template_Shape.yaml", 
+                    "--log_dir", "UNetCond_Spatial_Concat_Template_Shape", 
+                    "--n_subject", "2", 
+                    "--slerp", 
+                    "--diffusion_steps", "50",
+                    "--seed", "47",
+                    "--render_mode", "template_shape"
                 ],
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",

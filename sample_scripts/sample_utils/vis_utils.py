@@ -67,6 +67,7 @@ def plot_image(img, c_len=[], fn='./temp', range="-1to1"):
     """
     :param img: image tensor in B x C x H x W
     """
+    import torchvision
     print("Image shape : ", img.shape)
     if c_len == []:
         c_len = list(range(0, img.shape[1], 3)) + [img.shape[1]]

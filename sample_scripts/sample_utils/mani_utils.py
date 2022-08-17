@@ -163,7 +163,10 @@ def interp_noise(src_noise, dst_noise, n_step, interp_fn=lerp):
 def repeat_cond_params(cond, base_idx, n, key):
     repeat = {}
     for p in key:
-        repeat[p] = np.repeat(cond[p][[base_idx]], repeats=n, axis=0)
+        if th.is_tensor(cond[p][[base_idx]]):
+            rep = cond[p][[base_idx]].cpu().detach().numpy()
+        else: rep = cond[p][[base_idx]]
+        repeat[p] = np.repeat(rep, repeats=n, axis=0)
     
     return repeat
 

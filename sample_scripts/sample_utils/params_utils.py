@@ -46,7 +46,7 @@ def save_obj(renderer, filename, opdict):
     # save coarse mesh
     util.write_obj(filename, vertices, faces, colors=colors)
 
-def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractTex=True, device='cuda'):
+def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractTex=True, device='cuda', avg_dict=None):
     '''
     TODO: Adding the rendering with template shape, might need to load mean of camera/tform
     # Render the deca face image that used to condition the network
@@ -78,11 +78,17 @@ def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractT
                 'images':testdata[0]['image'].to(device)[None,...].float().repeat(n, 1, 1, 1)
                 
     }
-    tform_inv = th.inverse(codedict['tform']).transpose(1,2)
     original_image = deca_params['raw_image'][[idx]].to(device).float().repeat(n, 1, 1, 1)
     if render_mode == 'shape':
         use_template = False
         mean_cam = None
+        tform_inv = th.inverse(codedict['tform']).transpose(1,2)
+    elif render_mode == 'template_shape':
+        use_template = True
+        mean_cam = th.tensor(avg_dict['cam'])[None, ...].repeat(n, 1).to(device).float()
+        tform = th.tensor(avg_dict['tform'])[None, ...].repeat(n, 1).to(device).reshape(-1, 3, 3).float()
+        tform_inv = th.inverse(tform).transpose(1,2)
+    else: raise NotImplementedError
     _, orig_visdict = deca.decode(codedict, 
                                   render_orig=True, 
                                   original_image=original_image, 

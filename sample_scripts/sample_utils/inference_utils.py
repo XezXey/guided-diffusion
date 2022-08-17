@@ -22,7 +22,7 @@ class PLReverseSampling(pl.LightningModule):
             )
             # Override the condition and re-create cond_params
             if self.cfg.img_cond_model.override_cond != "":
-                model_kwargs[self.cfg.img_cond_model.override_cond] = img_cond.cpu().detach().numpy()
+                model_kwargs[self.cfg.img_cond_model.override_cond] = img_cond
             #     tmp = []
             #     for p in self.cfg.param_model.params_selector:
             #         if not th.is_tensor(model_kwargs[p]):
