@@ -21,12 +21,13 @@ parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--interpolate_noise', action='store_true', default=False)
 parser.add_argument('--src_dst', nargs='+', default=[])
 parser.add_argument('--render_mode', type=str, default="shape")
+parser.add_argument('--gpu_id', type=str)
 
 args = parser.parse_args()
 
 import os, sys, glob
-# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-# os.environ["CUDA_VISIBLE_DEVICES"]="2"
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu_id
 
 import numpy as np
 import pandas as pd

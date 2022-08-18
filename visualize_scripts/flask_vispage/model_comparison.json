@@ -1,0 +1,14 @@
+{
+     "model_comparison": {
+         "log=UNetCond_Spatial_Concat_Shape_cfg=UNetCond_Spatial_Concat_Shape.yaml": "300000",
+         "log=UNetCond_Spatial_Concat_Template_Shape_cfg=UNetCond_Spatial_Concat_Template_Shape.yaml": "100000",
+
+         "log=UNetCond_Spatial_Hadamart_Shape_cfg=UNetCond_Spatial_Hadamart_Shape.yaml": "300000",
+         "log=UNetCond_Spatial_Hadamart_Template_Shape_cfg=UNetCond_Spatial_Hadamart_Template_Shape.yaml": "100000",
+
+         "log=UNetCond_Latent_Shape_cfg=UNetCond_Latent_Shape.yaml": "300000",
+         "log=UNetCond_Latent_Template_Shape_cfg=UNetCond_Latent_Template_Shape.yaml": "300000",
+
+         "log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml": "300000"
+     }
+ }

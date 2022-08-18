@@ -22,9 +22,13 @@ parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--interpolate_noise', action='store_true', default=False)
 parser.add_argument('--src_dst', nargs='+', default=[])
 
+parser.add_argument('--gpu_id', type=str)
+
 args = parser.parse_args()
 
 import os, sys, glob
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu_id
 
 import numpy as np
 import pandas as pd
@@ -97,9 +101,9 @@ def without_classifier(itp_func):
     if cfg.img_cond_model.apply:
         cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
     if args.interpolate == ['all']:
-        interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=cfg.param_model.params_selector, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step)
+        interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=cfg.param_model.params_selector, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
     else:
-        interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step)
+        interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
     cond = mani_utils.repeat_cond_params(cond, base_idx=b_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate))
     cond.update(interp_cond)
 
@@ -178,7 +182,6 @@ def train_linear_classifier():
     return cls_model
 
 if __name__ == '__main__':
-
     seed_all(args.seed)
     # Load Ckpt
     if args.cfg_name is None:
@@ -186,7 +189,6 @@ if __name__ == '__main__':
     ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
     cfg = ckpt_loader.cfg
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
-    
     # Load dataset
     if args.set == 'itw':
         img_dataset_path = "../../itw_images/aligned/"

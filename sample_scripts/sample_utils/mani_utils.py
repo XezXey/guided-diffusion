@@ -42,7 +42,7 @@ def interchange_cond_img(cond, src_idx, dst_idx, itc_img_key, cfg):
     cond['cond_img'] = th.cat(cond_img, dim=1)  # BxCxHxW
     return cond
 
-def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn=lerp):
+def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn):
     '''
     Interpolate the condition following the keys in interp_set
     :params src_idx: the source index of condition
@@ -96,7 +96,7 @@ def interchange_cond(cond, interchange, base_idx, n):
 
     return cond
 
-def interp_cond(src_cond, dst_cond, n_step, interp_fn=lerp):
+def interp_cond(src_cond, dst_cond, n_step, interp_fn):
     '''
     Interpolate the condition
     :params src_cond: the source condition [BxC] ; C = number of condition dimension
@@ -106,7 +106,7 @@ def interp_cond(src_cond, dst_cond, n_step, interp_fn=lerp):
     
     :return interp: interpolated between src->dst with same shape of input
     '''
-
+    print(f"[#] Interpolate with {interp_fn}")
     r_interp = np.linspace(0, 1, num=n_step)
 
     src = src_cond
