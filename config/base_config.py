@@ -88,6 +88,8 @@ cfg.img_model.hadamart_clip = None    # For Spatial-Hadamart conditioning
 img_cond_model_img_type = {'raw':3, 
                             'deca_shape_images':3, 
                             'deca_template_shape_images':3, 
+                            'deca_albedo_shape_images':3, 
+                            'deca_albedo_template_shape_images':3, 
                             'faceseg_face':3, 
                             'faceseg_faceskin&nose':3, 
                             'faceseg_bg&noface':3,

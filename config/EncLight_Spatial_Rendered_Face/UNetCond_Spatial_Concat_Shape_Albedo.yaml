@@ -14,7 +14,7 @@ param_model:
 img_cond_model:
   apply: True
   arch: "EncoderUNet_SpatialCondition"
-  in_image: ['deca_shape_images']
+  in_image: ['deca_albedo_shape_images']
   in_channels: 3
   image_size: 64
   out_channels: 128

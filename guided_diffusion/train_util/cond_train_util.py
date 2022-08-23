@@ -255,10 +255,19 @@ class TrainLoop(LightningModule):
         # import matplotlib.pyplot as plt
         # import torchvision
         # from guided_diffusion.dataloader.img_util import show
-        # grid = torchvision.utils.make_grid(((cond['faceseg_faceskin&nose_img'] + 1) * 127.5).type(th.ByteTensor))
+        # grid = torchvision.utils.make_grid(((cond['deca_albedo_shape_images_img'] + 1) * 127.5).type(th.ByteTensor))
         # show(grid)
         # plt.savefig('./temp_1.png')
-
+        
+        # grid = torchvision.utils.make_grid(((cond['image'] + 1) * 127.5).type(th.ByteTensor))
+        # show(grid)
+        # plt.savefig('./temp_2.png')
+        
+        # grid = torchvision.utils.make_grid(((cond['raw_image'] + 1) * 127.5).type(th.ByteTensor))
+        # show(grid)
+        # plt.savefig('./temp_3.png')
+        
+        # exit()
         # grid = torchvision.utils.make_grid(((cond['faceseg_bg&noface_img'] + 1) * 127.5).type(th.ByteTensor))
         # show(grid)
         # plt.savefig('./temp_2.png')
