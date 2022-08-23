@@ -41,5 +41,5 @@ sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/samples/
 sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/samples_tmp/
 sample_scripts/py/relighting_sample_id/best_num_step_diffusion/samples/
 experiment_scripts/blur/gen/*.jpg
-experiment_scripts/face_3d/*
+experiment_scripts/face_3d/rendered_face
 visualize_scripts/flask_vispage/node_server

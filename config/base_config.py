@@ -82,6 +82,7 @@ cfg.img_model.condition_proj_dim = 512
 cfg.img_model.pool = 'attention'
 cfg.img_model.conditioning = False
 cfg.img_model.last_conv = False    # For Duplicate UNetModel
+cfg.img_model.hadamart_clip = None    # For Spatial-Hadamart conditioning
 
 # Additional Encoder Network
 img_cond_model_img_type = {'raw':3, 

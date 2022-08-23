@@ -12,6 +12,7 @@ import torch.nn.functional as F
 
 from ...trainer_util import convert_module_to_f16, convert_module_to_f32
 from ..nn import (
+    Hadamart,
     checkpoint,
     conv_nd,
     linear,
@@ -1305,6 +1306,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         conditioning=False,
         condition_dim=0,
         condition_proj_dim=0,
+        all_cfg=None,
     ):
         super().__init__()
 
@@ -1328,6 +1330,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         self.conditioning = conditioning
         self.condition_dim = condition_dim
         self.condition_proj_dim = condition_proj_dim
+        self.all_cfg = all_cfg
 
         time_embed_dim = model_channels * 4
         self.time_embed = nn.Sequential(
@@ -1498,7 +1501,8 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
             nn.SiLU(),
             zero_module(conv_nd(dims, input_ch, out_channels, 3, padding=1)),
         )
-        self.relu = nn.ReLU()
+        self.hadamart_prod = Hadamart(clip=self.all_cfg.img_model.hadamart_clip)
+        # self.relu = nn.ReLU()
         # print("OUT BLOCK")
         # print(self.output_blocks)
 
@@ -1539,7 +1543,8 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         hs.append(h)
         # The rest layer - input_blocks
         for i, module in enumerate(self.input_blocks[1:]):
-            h = th.mul(h, kwargs['spatial_latent'][0])
+            h = self.hadamart_prod(h, kwargs['spatial_latent'][0])
+            # h = th.mul(h, kwargs['spatial_latent'][0])
             # h = th.mul(h, self.relu(kwargs['spatial_latent'][0]))
             kwargs['spatial_latent'].pop(0)
             h = module(h, emb, condition=kwargs)
@@ -1552,7 +1557,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         #     print(kwargs['spatial_latent'][i].shape)
         
         assert len(kwargs['spatial_latent']) == 2
-        h = th.mul(h, kwargs['spatial_latent'][0])
+        h = self.hadamart_prod(h, kwargs['spatial_latent'][0])
         # h = th.mul(h, self.relu(kwargs['spatial_latent'][0]))
         kwargs['spatial_latent'].pop(0)
         h = self.middle_block(h, emb, condition=kwargs)
@@ -1560,7 +1565,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         # print("#"*100)
 
         assert len(kwargs['spatial_latent']) == 1
-        h = th.mul(h, kwargs['spatial_latent'][0])
+        h = self.hadamart_prod(h, kwargs['spatial_latent'][0])
         # h = th.mul(h, self.relu(kwargs['spatial_latent'][0]))
         kwargs['spatial_latent'].pop(0)
         for i, module in enumerate(self.output_blocks):

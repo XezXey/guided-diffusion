@@ -20,6 +20,7 @@ from ..nn import (
     normalization,
     timestep_embedding,
     Norm,
+    Hadamart
 )
 
 class AttentionPool2d(nn.Module):
@@ -1252,7 +1253,7 @@ class ResBlockNoTime(nn.Module):
         h = self.out_layers(h)
         return self.skip_connection(x) + h
  
-class UNetModel_SpatialCondition_Hadamart_Activation(nn.Module):
+class UNetModel_SpatialCondition_Hadamart_(nn.Module):
     """
     The full UNet model with attention and timestep embedding.
     :param in_channels: channels in the input Tensor.
@@ -1305,6 +1306,7 @@ class UNetModel_SpatialCondition_Hadamart_Activation(nn.Module):
         conditioning=False,
         condition_dim=0,
         condition_proj_dim=0,
+        all_cfg=None,
     ):
         super().__init__()
 
@@ -1498,7 +1500,7 @@ class UNetModel_SpatialCondition_Hadamart_Activation(nn.Module):
             nn.SiLU(),
             zero_module(conv_nd(dims, input_ch, out_channels, 3, padding=1)),
         )
-        self.silu = nn.SiLU()
+        self.hadamart_prod = Hadamart(clip=self.all_cfg.img_model.hadamart_clip)
         # print("OUT BLOCK")
         # print(self.output_blocks)
 
@@ -1539,7 +1541,7 @@ class UNetModel_SpatialCondition_Hadamart_Activation(nn.Module):
         hs.append(h)
         # The rest layer - input_blocks
         for i, module in enumerate(self.input_blocks[1:]):
-            h = th.mul(h, self.silu(kwargs['spatial_latent'][0]))
+            h = self.hadamart_prod(h, self.silu(kwargs['spatial_latent'][0]))
             kwargs['spatial_latent'].pop(0)
             h = module(h, emb, condition=kwargs)
             hs.append(h)
@@ -1551,14 +1553,14 @@ class UNetModel_SpatialCondition_Hadamart_Activation(nn.Module):
         #     print(kwargs['spatial_latent'][i].shape)
         
         assert len(kwargs['spatial_latent']) == 2
-        h = th.mul(h, self.silu(kwargs['spatial_latent'][0]))
+        h = self.hadamart_prod(h, self.silu(kwargs['spatial_latent'][0]))
         kwargs['spatial_latent'].pop(0)
         h = self.middle_block(h, emb, condition=kwargs)
         # print("Ended the middle blocks")
         # print("#"*100)
 
         assert len(kwargs['spatial_latent']) == 1
-        h = th.mul(h, self.silu(kwargs['spatial_latent'][0]))
+        h = self.hadamart_prod(h, self.silu(kwargs['spatial_latent'][0]))
         kwargs['spatial_latent'].pop(0)
         for i, module in enumerate(self.output_blocks):
             h = th.cat([h, hs.pop()], dim=1)

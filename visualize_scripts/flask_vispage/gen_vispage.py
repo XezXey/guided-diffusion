@@ -146,12 +146,13 @@ def model_comparison(ema, itp_method):
 @app.route('/model_comparison_from_json/itp_method=<itp_method>/')
 def model_comparison_from_json(itp_method):
   out = ""
-  model = glob.glob("/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/samples/*")
-  model = [m.split('/')[-1] for m in model]
+  # model = glob.glob("/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/samples/*")
+  # model = [m.split('/')[-1] for m in model]
   
   # folder = f"/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/samples/{model[0]}/ema_{ema}/valid/{itp}/"
   f = open('./model_comparison.json')
   ckpt_dict = json.load(f)['model_comparison']
+  model = list(ckpt_dict.keys())
   folder = f"/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/samples/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_{ckpt_dict['log=UNetCond_Spatial_Concat_Shape_cfg=UNetCond_Spatial_Concat_Shape.yaml']}/valid/light/"
   for i, src_path in enumerate(glob.glob(f"{folder}/src=*")):
     src_id = src_path.split('/')[-1]
@@ -160,8 +161,8 @@ def model_comparison_from_json(itp_method):
       src_id = d.split('/')[-2]
       dst_id = d.split('/')[-1]
       out += f"[#{i}] {src_id} : <img src=/files/{data_path}/{src_id.split('=')[-1]} width=\"64\" height=\"64\">, {dst_id} : <img src=/files/{data_path}/{dst_id.split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
-      for m in model:
-        out += f"<br> {m} <br>"
+      for m_index, m in enumerate(model):
+        out += f"<br> {m_index} : {m} <br>"
         if m == "log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml":
           each_model = f"/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/samples/{m}/ema_{ckpt_dict[m]}/valid/light/"
         else:
