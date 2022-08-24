@@ -145,6 +145,70 @@
             "justMyCode": true
         },
         {
+            "name": "Python: train_deca_baseline",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "1",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/Various_condition_on_Image/cond_img64_by_deca_arcface.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "500000000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: train_deca_shape_apply_cond_selector_Hadamart",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "1",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/EncLight_Spatial_Rendered_Face_LayerSelector/UNetCond_Spatial_Hadamart_Shape_LSel-last3.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "500000000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: train_deca_shape_apply_cond_selector_Concat_Last3",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "1",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/EncLight_Spatial_Rendered_Face_LayerSelector/UNetCond_Spatial_Concat_Shape_LSel-last3.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "500000000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: train_deca_shape_apply_cond_selector_Concat_all",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "1",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/EncLight_Spatial_Rendered_Face_LayerSelector/UNetCond_Spatial_Concat_Shape_LSel-all.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "500000000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
             "name": "Python: train_deca_template_shape",
             "type": "python",
             "request": "launch",

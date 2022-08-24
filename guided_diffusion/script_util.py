@@ -6,7 +6,6 @@ from guided_diffusion.respace import SpacedDiffusion, space_timesteps
 from guided_diffusion.models.unet import EncoderUNetModelNoTime, UNetModelCondition, UNetModel
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_concat import EncoderUNet_SpatialCondition, UNetModel_SpatialCondition_Concat
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart import UNetModel_SpatialCondition_Hadamart
-# from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_activation import UNetModel_SpatialCondition_Hadamart_Activation
 from guided_diffusion.models.unet_duplicate import UNetModelConditionDuplicate
 from guided_diffusion.models.normals_arch.unet_N_Last import UNetNormalsLastLayer
 from guided_diffusion.models.normals_arch.unet_N_All import UNetNormalsAll
@@ -255,6 +254,7 @@ def create_model(cfg, all_cfg=None):
             condition_dim=cfg.condition_dim,
             condition_proj_dim=cfg.condition_proj_dim,
             conditioning=True,
+            all_cfg=all_cfg,
         )
     elif cfg.arch == 'EncoderUNet_SpatialCondition':
         return EncoderUNet_SpatialCondition(

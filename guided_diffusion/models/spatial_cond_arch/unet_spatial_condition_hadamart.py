@@ -21,6 +21,7 @@ from ..nn import (
     normalization,
     timestep_embedding,
     Norm,
+    ConditionLayerSelector,
 )
 
 class AttentionPool2d(nn.Module):
@@ -1502,9 +1503,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
             zero_module(conv_nd(dims, input_ch, out_channels, 3, padding=1)),
         )
         self.hadamart_prod = Hadamart(clip=self.all_cfg.img_model.hadamart_clip)
-        # self.relu = nn.ReLU()
-        # print("OUT BLOCK")
-        # print(self.output_blocks)
+        self.cond_layer_selector = ConditionLayerSelector(cond_layer_selector=self.all_cfg.img_model.cond_layer_selector)
 
     def convert_to_fp16(self):
         """
@@ -1521,7 +1520,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         self.input_blocks.apply(convert_module_to_f32)
         self.middle_block.apply(convert_module_to_f32)
         self.output_blocks.apply(convert_module_to_f32)
-
+        
     def forward(self, x, timesteps, y=None, **kwargs):
         """
         Apply the model to an input batch.
@@ -1530,53 +1529,47 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         :param y: an [N] Tensor of labels, if class-conditional.
         :return: an [N x C x ...] Tensor of outputs.
         """
+        apply_cond_layer = self.cond_layer_selector.get_apply_cond_selector()
+        assert len(kwargs['spatial_latent']) == len(apply_cond_layer)
         hs = []
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
-        # print("IN UNET")
-        # print(len(kwargs['spatial_latent']))
-        # for i in range(len(kwargs['spatial_latent'])):
-        #     print(kwargs['spatial_latent'][i].shape)
-        # print("AXAXAXA")
         # First layer - input_blocks
         h = x.type(self.dtype)
         h = self.input_blocks[0](h, emb, condition=kwargs)
         hs.append(h)
         # The rest layer - input_blocks
         for i, module in enumerate(self.input_blocks[1:]):
-            h = self.hadamart_prod(h, kwargs['spatial_latent'][0])
-            # h = th.mul(h, kwargs['spatial_latent'][0])
-            # h = th.mul(h, self.relu(kwargs['spatial_latent'][0]))
+            if apply_cond_layer[0]:
+                h = self.hadamart_prod(h, kwargs['spatial_latent'][0])
+            else: h=h
+            
             kwargs['spatial_latent'].pop(0)
+            apply_cond_layer.pop(0)
             h = module(h, emb, condition=kwargs)
             hs.append(h)
-        # print("Ended the input blocks")
-        # exit()
-        # print(h.shape)
-        # print("HOW MANY LEFT : ")
-        # for i in range(len(kwargs['spatial_latent'])):
-        #     print(kwargs['spatial_latent'][i].shape)
         
         assert len(kwargs['spatial_latent']) == 2
-        h = self.hadamart_prod(h, kwargs['spatial_latent'][0])
-        # h = th.mul(h, self.relu(kwargs['spatial_latent'][0]))
+        assert len(apply_cond_layer) == 2
+        if apply_cond_layer[0]:
+            h = self.hadamart_prod(h, kwargs['spatial_latent'][0])
+        else: h=h
         kwargs['spatial_latent'].pop(0)
+        apply_cond_layer.pop(0)
         h = self.middle_block(h, emb, condition=kwargs)
-        # print("Ended the middle blocks")
-        # print("#"*100)
 
         assert len(kwargs['spatial_latent']) == 1
-        h = self.hadamart_prod(h, kwargs['spatial_latent'][0])
-        # h = th.mul(h, self.relu(kwargs['spatial_latent'][0]))
+        assert len(apply_cond_layer) == 1
+        if apply_cond_layer[0]:
+            h = self.hadamart_prod(h, kwargs['spatial_latent'][0])
+        else: h=h
         kwargs['spatial_latent'].pop(0)
+        apply_cond_layer.pop(0)
         for i, module in enumerate(self.output_blocks):
             h = th.cat([h, hs.pop()], dim=1)
-            # print(h.shape)
-            # print(i+1, module)
             h = module(h, emb, condition=kwargs)
-            # print("#"*100)
         h = h.type(x.dtype)
-        # print("END")
 
         assert len(kwargs['spatial_latent']) == 0
+        assert len(apply_cond_layer) == 0
         return {'output':self.out(h)}
         

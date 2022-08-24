@@ -20,6 +20,7 @@ from ..nn import (
     normalization,
     timestep_embedding,
     Norm,
+    ConditionLayerSelector,
 )
 
 class AttentionPool2d(nn.Module):
@@ -827,6 +828,7 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
         conditioning=False,
         condition_dim=0,
         condition_proj_dim=0,
+        all_cfg=None,
     ):
         super().__init__()
 
@@ -850,6 +852,9 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
         self.conditioning = conditioning
         self.condition_dim = condition_dim
         self.condition_proj_dim = condition_proj_dim
+        self.all_cfg = all_cfg
+        self.cond_layer_selector = ConditionLayerSelector(cond_layer_selector=self.all_cfg.img_model.cond_layer_selector)
+        apply_cond_layer = self.cond_layer_selector.get_apply_cond_selector()
 
         time_embed_dim = model_channels * 4
         self.time_embed = nn.Sequential(
@@ -870,9 +875,11 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
         ds = 1
         for level, mult in enumerate(channel_mult):
             for i in range(num_res_blocks):
+                print("APPLYING : ", apply_cond_layer)
                 layers = [
                     resblock_module(
-                        ch * 2 if (i == 0) and (level==0) else ch,
+                        ch * 2 if ((i == 0) and (level==0) and (apply_cond_layer[0])) 
+                            else ch,
                         time_embed_dim,
                         dropout,
                         out_channels=int(mult * model_channels),
@@ -883,6 +890,7 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
                         condition_proj_dim=condition_proj_dim
                     )
                 ]
+                apply_cond_layer.pop(0)
                 ch = int(mult * model_channels) * 2
                 if ds in attention_resolutions:
                     layers.append(
@@ -926,11 +934,11 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
                 self._feature_size += ch
         
 
-        # print("UNET")
-        # print("INPUT BLOCKS")
-        # for i in range(len(self.input_blocks)):
-        #     print(i, self.input_blocks[i])
-        # exit()
+        print("UNET")
+        print("INPUT BLOCKS")
+        for i in range(len(self.input_blocks)):
+            print(i, self.input_blocks[i])
+        exit()
         
         self.middle_block = time_embed_seq_module(
             resblock_module(
@@ -972,8 +980,8 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
                 ich = input_block_chans.pop()//2
                 layers = [
                     resblock_module(
-                        # ch + ich if ,
-                        ch + (ich * 2) if (i == 0) and (level==len(channel_mult)-1) else ch + ich,
+                        ch + (ich * 2) if ((i == 0) and (level==len(channel_mult)-1)) 
+                            else ch + ich,
                         time_embed_dim,
                         dropout,
                         out_channels=int(model_channels * mult),
@@ -1049,6 +1057,8 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
         :param y: an [N] Tensor of labels, if class-conditional.
         :return: an [N x C x ...] Tensor of outputs.
         """
+        apply_cond_layer = self.cond_layer_selector.get_apply_cond_selector()
+        assert len(kwargs['spatial_latent']) == len(apply_cond_layer)
         hs = []
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
         # print("IN UNET")
@@ -1062,9 +1072,11 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
         hs.append(h)
         # The rest layer - input_blocks
         for i, module in enumerate(self.input_blocks[1:]):
-            # h = th.cat((h, kwargs['spatial_latent'][i]), dim=1)
-            h = th.cat((h, kwargs['spatial_latent'][0]), dim=1)
+            if apply_cond_layer[0]:
+                h = th.cat((h, kwargs['spatial_latent'][0]), dim=1)
+            else: h=h
             kwargs['spatial_latent'].pop(0)
+            apply_cond_layer.pop(0)
             # print(i+1, module)
             h = module(h, emb, condition=kwargs)
             # print("#"*100)
@@ -1077,23 +1089,28 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
         #     print(kwargs['spatial_latent'][i].shape)
         
         assert len(kwargs['spatial_latent']) == 2
-        h = th.cat((h, kwargs['spatial_latent'][0]), dim=1)
+        assert len(apply_cond_layer) == 2
+        if apply_cond_layer[0]:
+            h = th.cat((h, kwargs['spatial_latent'][0]), dim=1)
+        else: h=h
+        apply_cond_layer.pop(0)
         kwargs['spatial_latent'].pop(0)
         h = self.middle_block(h, emb, condition=kwargs)
         # print("Ended the middle blocks")
         # print("#"*100)
 
         assert len(kwargs['spatial_latent']) == 1
-        h = th.cat((h, kwargs['spatial_latent'][0]), dim=1)
+        if apply_cond_layer[0]:
+            h = th.cat((h, kwargs['spatial_latent'][0]), dim=1)
+        else: h=h
+        apply_cond_layer.pop(0)
         kwargs['spatial_latent'].pop(0)
+        
+        # Output blocks
         for i, module in enumerate(self.output_blocks):
             h = th.cat([h, hs.pop()], dim=1)
-            # print(h.shape)
-            # print(i+1, module)
             h = module(h, emb, condition=kwargs)
-            # print("#"*100)
         h = h.type(x.dtype)
-        # print("END")
 
         assert len(kwargs['spatial_latent']) == 0
         return {'output':self.out(h)}

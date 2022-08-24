@@ -6,6 +6,7 @@ import math
 
 import torch as th
 import torch.nn as nn
+import copy
 
 
 # PyTorch 1.7 has SiLU, but we support PyTorch 1.5.
@@ -27,22 +28,23 @@ class Norm(nn.Module):
         return x/th.linalg.norm(x, ord=self.ord, dim=1, keepdim=True)
 
     def extra_repr(self) -> str:
-        return f'ord={self.ord}'
+        return f"ord={self.ord}"
 
 class Hadamart(nn.Module):
     def __init__(self, clip):
         super().__init__()
-        self.clip = str.lower(clip)
-        if self.clip == 'tanh':
-            print("[#] Use Hadamart-Tanh")
-            self.clip_layer = nn.Tanh()
-        elif self.clip == 'identity':
-            print("[#] Use Hadamart-Identity")
-            pass
-        elif self.clip is None:
+        self.clip = clip
+        
+        if self.clip is None:
             print("[#] Use Hadamart-Simple")
-            pass
-        else: raise NotImplementedError("[#Hadamart]The clipping method is not found")
+        else:
+            self.clip = str.lower(self.clip)
+            if self.clip == 'tanh':
+                print("[#] Use Hadamart-Tanh")
+                self.clip_layer = nn.Tanh()
+            elif self.clip == 'identity':
+                print("[#] Use Hadamart-Identity")
+            else: raise NotImplementedError("[#Hadamart]The clipping method is not found")
         
     def forward(self, x, y):
         if self.clip == 'tanh':
@@ -54,7 +56,38 @@ class Hadamart(nn.Module):
         else: raise NotImplementedError("[#Hadamart]The clipping method is not found")
             
         return out
+ 
+class ConditionLayerSelector():
+    def __init__(self, cond_layer_selector, n_cond_encoder=11, n_cond_mid=2):
+        #TODO: n_layer = 13 is for 64x64 images, it supposed to compute the n_cond_{x} automatically
+        self.cond_layer_selector = str.lower(cond_layer_selector)
+        self.n_cond_encoder = n_cond_encoder
+        self.n_cond_mid = n_cond_mid
+        self.apply_cond_encoder = [False] * n_cond_encoder
+        self.apply_cond_mid = [True] * n_cond_mid
+        self.construct_apply_cond()
+        self.apply_cond = self.apply_cond_encoder + self.apply_cond_mid
         
+    def construct_apply_cond(self):
+        if (self.cond_layer_selector is None) or (self.cond_layer_selector == 'all'):
+            self.apply_cond_encoder = [True] * self.n_cond_encoder
+        else:
+            pos, n = self.cond_layer_selector.split('_')
+            n = int(n)
+            if pos in ['first', 'last', 'both']:
+                if pos == 'first':
+                    self.apply_cond_encoder[:n] = [True] * n
+                elif pos == 'last':
+                    self.apply_cond_encoder[-n:] = [True] * n
+                    pass
+                elif pos == 'both':
+                    self.apply_cond_encoder[:n] = [True] * n
+                    self.apply_cond_encoder[-n:] = [True] * n
+                else: raise NotImplementedError("[#] Position to select the layer for applying condition is invalid")
+            else: raise NotImplementedError("[#] Condition selector is invalid")
+    
+    def get_apply_cond_selector(self):
+        return copy.deepcopy(self.apply_cond)
 
 def conv_nd(dims, *args, **kwargs):
     """

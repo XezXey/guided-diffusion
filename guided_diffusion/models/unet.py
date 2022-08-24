@@ -638,6 +638,12 @@ class UNetModel(nn.Module):
                 ds *= 2
                 self._feature_size += ch
 
+        print("UNET")
+        print("INPUT BLOCKS")
+        for i in range(len(self.input_blocks)):
+            print(i, self.input_blocks[i])
+        exit()
+        
         # print("CHANS : ", input_block_chans)
         self.middle_block = time_embed_seq_module(
             resblock_module(
