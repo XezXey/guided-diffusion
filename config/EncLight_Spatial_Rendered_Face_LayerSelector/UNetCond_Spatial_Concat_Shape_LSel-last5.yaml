@@ -1,14 +1,13 @@
 img_model:
   name: "ImgCond"
-  arch: "UNetCond_SpatialCondition_Hadamart"
+  arch: "UNetCond_SpatialCondition_Concat"
   image_size: 64
   in_image: 'raw'
   in_channels: 3
   out_channels: 3
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
-  cond_layer_selector: 'last_3'
-  hadamart_clip: Tanh
+  cond_layer_selector: 'last_5'
 
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb']
@@ -38,5 +37,5 @@ dataset:
 
 
 train_misc:
-  exp_name: "EncLight_Spatial_Rendered_Face"
-  cfg_name: "UNetCond_Spatial_Hadamart_Shape_LSel-last3"
+  exp_name: "EncLight_Spatial_Rendered_Face_LayerSelector"
+  cfg_name: "UNetCond_Spatial_Concat_Shape_LSel-last5"

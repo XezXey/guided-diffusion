@@ -866,20 +866,26 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
         resblock_module = ResBlock if not self.conditioning else ResBlockCondition
         time_embed_seq_module = TimestepEmbedSequential if not self.conditioning else TimestepEmbedSequentialCond 
 
-        ch = input_ch = int(channel_mult[0] * model_channels)
+        io_ch = int(channel_mult[0] * model_channels)   # Use for first-last block to produce out_channels
         self.input_blocks = nn.ModuleList(
-            [time_embed_seq_module(conv_nd(dims, in_channels, ch, 3, padding=1))]
+            [time_embed_seq_module(conv_nd(dims, in_channels, io_ch, 3, padding=1))]
         )
-        self._feature_size = ch * 2
-        input_block_chans = [ch * 2]
+        
+        if apply_cond_layer[0]:
+            ch = int(channel_mult[0] * model_channels) * 2
+        else:
+            ch = int(channel_mult[0] * model_channels)
+            
+        self._feature_size = ch
+        input_block_chans = [ch]
         ds = 1
+        counter = 0
         for level, mult in enumerate(channel_mult):
             for i in range(num_res_blocks):
-                print("APPLYING : ", apply_cond_layer)
+                counter += 1
                 layers = [
                     resblock_module(
-                        ch * 2 if ((i == 0) and (level==0) and (apply_cond_layer[0])) 
-                            else ch,
+                        ch,
                         time_embed_dim,
                         dropout,
                         out_channels=int(mult * model_channels),
@@ -890,12 +896,17 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
                         condition_proj_dim=condition_proj_dim
                     )
                 ]
-                apply_cond_layer.pop(0)
-                ch = int(mult * model_channels) * 2
+                if apply_cond_layer[0]:
+                    ch = int(mult * model_channels) * 2
+                    attention_ch = int(ch//2)
+                else:
+                    ch = int(mult * model_channels)
+                    attention_ch = ch
+                
                 if ds in attention_resolutions:
                     layers.append(
                         AttentionBlock(
-                            (ch//2),
+                            attention_ch,
                             use_checkpoint=use_checkpoint,
                             num_heads=num_heads,
                             num_head_channels=num_head_channels,
@@ -905,40 +916,61 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
                 self.input_blocks.append(time_embed_seq_module(*layers))
                 self._feature_size += ch
                 input_block_chans.append(ch)
-            if level != len(channel_mult) - 1:
-                out_ch = ch
-                self.input_blocks.append(
-                    time_embed_seq_module(
-                        resblock_module(
-                            ch,
-                            time_embed_dim,
-                            dropout,
-                            out_channels=out_ch,
-                            dims=dims,
-                            use_checkpoint=use_checkpoint,
-                            use_scale_shift_norm=use_scale_shift_norm,
-                            down=True,
-                            condition_dim=condition_dim,
-                            condition_proj_dim=condition_proj_dim
-                        )
-                        if resblock_updown
-                        else Downsample(
-                            # int(ch//2), conv_resample, dims=dims, out_channels=int(out_ch//2)
-                            ch, conv_resample, dims=dims, out_channels=int(out_ch//2)
+                apply_cond_layer.pop(0)
+                if apply_cond_layer[0]:
+                    ch = int(mult * model_channels) * 2
+                else:
+                    ch = int(mult * model_channels)
+                    
+            if level != len(channel_mult) - 1: # Execute here when not reach the last level of UNet(channel_mult)
+                if apply_cond_layer[0]:
+                    btw_level_in_ch = int(mult * model_channels) * 2
+                    btw_level_out_ch = int(btw_level_in_ch//2)
+                else:
+                    btw_level_in_ch = btw_level_out_ch = int(mult * model_channels)
+                
+                if resblock_updown:
+                    self.input_blocks.append(
+                        time_embed_seq_module(
+                            resblock_module(
+                                ch,
+                                time_embed_dim,
+                                dropout,
+                                out_channels=out_ch,
+                                dims=dims,
+                                use_checkpoint=use_checkpoint,
+                                use_scale_shift_norm=use_scale_shift_norm,
+                                down=True,
+                                condition_dim=condition_dim,
+                                condition_proj_dim=condition_proj_dim
+                            )
                         )
                     )
-                )
-                ch = out_ch
-                input_block_chans.append(ch)
+                else:
+                    self.input_blocks.append(
+                        time_embed_seq_module(
+                            Downsample(
+                                btw_level_in_ch, conv_resample, dims=dims, out_channels=btw_level_out_ch
+                            )
+                        )
+                    )
+                
                 ds *= 2
+                
+                apply_cond_layer.pop(0)
+                if apply_cond_layer[0]:
+                    ch = int(mult * model_channels) * 2
+                else: ch = int(mult * model_channels) 
+                
+                input_block_chans.append(ch)
                 self._feature_size += ch
-        
-
+            counter += 1   
+                
         print("UNET")
         print("INPUT BLOCKS")
         for i in range(len(self.input_blocks)):
             print(i, self.input_blocks[i])
-        exit()
+        # exit()
         
         self.middle_block = time_embed_seq_module(
             resblock_module(
@@ -1028,11 +1060,16 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
         self.out = nn.Sequential(
             normalization(ch),
             nn.SiLU(),
-            zero_module(conv_nd(dims, input_ch, out_channels, 3, padding=1)),
+            zero_module(conv_nd(dims, io_ch, out_channels, 3, padding=1)),
         )
-        # print("OUT BLOCK")
-        # print(self.output_blocks)
-
+        assert len(self.input_blocks) == len(self.output_blocks)
+        for i in range(len(self.input_blocks)):
+            print(f"[#] INPUT - {i}")
+            print(self.input_blocks[::-1][i])
+            print(f"[#] OUTPUT - {i}")
+            print(self.output_blocks[i])
+        pass
+    
     def convert_to_fp16(self):
         """
         Convert the torso of the model to float16.
@@ -1100,6 +1137,7 @@ class UNetModel_SpatialCondition_Concat(nn.Module):
         # print("#"*100)
 
         assert len(kwargs['spatial_latent']) == 1
+        assert len(apply_cond_layer) == 1
         if apply_cond_layer[0]:
             h = th.cat((h, kwargs['spatial_latent'][0]), dim=1)
         else: h=h
