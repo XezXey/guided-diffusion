@@ -58,7 +58,6 @@ class Hadamart(nn.Module):
  
 class ConditionLayerSelector():
     def __init__(self, cond_layer_selector, n_cond_encoder=11, n_cond_mid=2):
-        #TODO: n_layer = 13 is for 64x64 images, it supposed to compute the n_cond_{x} automatically
         if cond_layer_selector is not None:
             self.cond_layer_selector = str.lower(cond_layer_selector)
         else: self.cond_layer_selector = cond_layer_selector
