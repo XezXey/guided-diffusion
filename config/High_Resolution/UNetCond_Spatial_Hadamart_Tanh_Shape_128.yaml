@@ -35,4 +35,4 @@ dataset:
 
 train_misc:
   exp_name: "High_Resolution"
-  cfg_name: "UNetCond_Spatial_Hadamart_Tanh_Shape"
+  cfg_name: "UNetCond_Spatial_Hadamart_Tanh_Shape_128"
