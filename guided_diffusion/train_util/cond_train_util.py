@@ -15,6 +15,8 @@ from pytorch_lightning.utilities import rank_zero_only
 
 import pytorch_lightning as pl
 
+from guided_diffusion import tensor_util
+
 from .. import logger
 from ..trainer_util import Trainer
 from ..models.nn import update_ema
@@ -47,7 +49,7 @@ class TrainLoop(LightningModule):
         model,
         name,
         diffusion,
-        data,
+        train_loader,
         cfg,
         tb_logger,
         schedule_sampler=None,
@@ -83,7 +85,7 @@ class TrainLoop(LightningModule):
         self.diffusion = diffusion
 
         # Data
-        self.data = data
+        self.train_loader = train_loader
 
         # Other config
         self.batch_size = self.cfg.train.batch_size
@@ -177,8 +179,7 @@ class TrainLoop(LightningModule):
         # Logging for first time
         if not self.resume_checkpoint:
             self.save()
-
-        self.pl_trainer.fit(self, self.data)
+        self.pl_trainer.fit(self, train_dataloaders=self.train_loader)
 
     def run_step(self, dat, cond):
         '''
@@ -247,76 +248,6 @@ class TrainLoop(LightningModule):
     #     return all(took_step)
 
     def forward_cond_network(self, dat, cond):
-        # print(dat.shape)
-        # print(cond.keys())
-        # print(cond['blur_img'].shape)
-        # print(th.max(cond['blur_img']))
-        # print(th.min(cond['blur_img']))
-        # import matplotlib.pyplot as plt
-        # import torchvision
-        # from guided_diffusion.dataloader.img_util import show
-        # grid = torchvision.utils.make_grid(((cond['deca_albedo_shape_images_img'] + 1) * 127.5).type(th.ByteTensor))
-        # show(grid)
-        # plt.savefig('./temp_1.png')
-        
-        # grid = torchvision.utils.make_grid(((cond['image'] + 1) * 127.5).type(th.ByteTensor))
-        # show(grid)
-        # plt.savefig('./temp_2.png')
-        
-        # grid = torchvision.utils.make_grid(((cond['raw_image'] + 1) * 127.5).type(th.ByteTensor))
-        # show(grid)
-        # plt.savefig('./temp_3.png')
-        
-        # exit()
-        # grid = torchvision.utils.make_grid(((cond['faceseg_bg&noface_img'] + 1) * 127.5).type(th.ByteTensor))
-        # show(grid)
-        # plt.savefig('./temp_2.png')
-
-        # grid = torchvision.utils.make_grid(((cond['cond_img'][:, 0:1, ...] + 1) * 127.5).type(th.ByteTensor))
-        # show(grid)
-        # plt.savefig('./temp_3.png')
-
-        # grid = torchvision.utils.make_grid(((cond['cond_img'][:, 1:, ...] + 1) * 127.5).type(th.ByteTensor))
-        # show(grid)
-        # plt.savefig('./temp_4.png')
-        # exit()
-        
-        # if self.cfg.img_cond_model.prep_image[0] == 'blur':
-        #     dat = cond['blur_img']
-        # elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'deca'):
-        #     dat = cond['deca_img']                                                                   
-        # elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'face'):
-        #     dat = cond['face_img']                                                              
-        # elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'face&hair'):
-        #     dat = cond['face&hair_img']                                                           
-        # elif (self.cfg.img_cond_model.prep_image[0] == None) and (self.cfg.img_cond_model.prep_image[1] == 'raw'):
-        #     dat = dat
-        # else: raise NotImplementedError
-        # print("FW COND")
-        # print(dat.shape)
-        # import matplotlib.pyplot as plt
-        # for i in range(dat.shape[0]):
-        #     n_ch = dat[i].shape[0] // 3
-        #     for j in range(1, n_ch+1):
-        #         print(j)
-        #         if j == 1:
-        #             end = j * 3
-        #             print(end)
-        #             print(dat[i][0:end, :, :].shape)
-        #             img = np.transpose(dat[i][0:end, :, :].cpu().numpy(), (1, 2, 0))
-        #             img = (img + 1) * 127.5
-        #             plt.imshow(img.astype(np.uint8))
-        #             plt.savefig(f'temps_{j}.png')
-        #         else:
-        #             start = (j-1) * 3
-        #             end = j * 3
-        #             print(start, end)
-        #             print(dat[i][start:end, ...].shape)
-        #             img = np.transpose(dat[i][start:end, :, :].cpu().numpy(), (1, 2, 0))
-        #             img = (img + 1) * 127.5
-        #             plt.imshow(img.astype(np.uint8))
-        #             plt.savefig(f'temps_{j}.png')
-        # exit()
         if self.cfg.img_cond_model.apply:
             dat = cond['cond_img']
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
@@ -406,11 +337,16 @@ class TrainLoop(LightningModule):
         step_ = float(self.step + self.resume_step)
         tb = self.tb_logger.experiment
         H = W = self.cfg.img_model.image_size
+
+        if self.cfg.train.same_sampling:
+            dat, cond = next(iter(self.train_loader))
+            dat = dat.type_as(batch[0])
+            cond = tensor_util.dict_type_as(in_d=cond, target_d=batch[1], keys=cond.keys())
+        else:
+            dat, cond = batch
+
         n = self.cfg.train.n_sampling
-
-        dat, cond = batch
-
-        if n != dat.shape[0]:
+        if n > dat.shape[0]:
             n = dat.shape[0]
         
         noise = th.randn((n, 3, H, W)).type_as(dat)
@@ -418,13 +354,9 @@ class TrainLoop(LightningModule):
         # Any Encoder/Conditioned Network to be applied before a main UNet
         if self.cfg.img_cond_model.apply:
             self.forward_cond_network(dat=dat, cond=cond)
-            # print(cond.keys())
-            # for i in range(len(cond['spatial_latent'])):
-            #     print(cond['spatial_latent'][i].shape)
-            # input()
 
         tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
-
+        self.diffusion.num_timesteps = 50
         sample_from_ddim = self.diffusion.ddim_sample_loop(
             model=self.model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
@@ -445,6 +377,9 @@ class TrainLoop(LightningModule):
         sample_from_ps = ((sample_from_ps + 1) * 127.5) / 255.
         tb.add_image(tag=f'p_sample', img_tensor=make_grid(sample_from_ps, nrow=4), global_step=(step_ + 1) * self.n_gpus)
 
+        # Save memory!
+        dat = dat.detach()
+        cond = tensor_util.dict_detach(in_d=cond, keys=cond.keys())
         self.train_mode()
 
     @rank_zero_only

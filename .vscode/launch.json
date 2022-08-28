@@ -183,6 +183,23 @@
             "justMyCode": true
         },
         {
+            "name": "Python: train_deca_baseline_log_sampling",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"2"},
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "3",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/Various_condition_on_Image/cond_img64_by_light.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "1"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
             "name": "Python: train_128_resolution",
             "type": "python",
             "request": "launch",

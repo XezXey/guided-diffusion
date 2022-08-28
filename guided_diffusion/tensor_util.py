@@ -21,3 +21,45 @@ def make_deepcopyable(model_kwargs, keys):
 
     model_kwargs_copy = copy.deepcopy(model_kwargs)
     return model_kwargs_copy
+
+def dict_type_as(in_d, target_d, keys):
+    '''
+    Apply type_as() of the dict-like.
+    :param in_d: a dict-like with {'key1': tensor, ...}
+    :param target_d: a dict-like with {'key1': tensor, ...}
+    :param keys: a keys of tensor that need to detach() first before to use a deepcopy
+        - only 2 possible type : 1. tensor, 2. list-of-tensor
+    :return dict_tensor: the deepcopy version of input dict_tensor
+    '''
+    for key in keys:
+        if key in ['image_name', 'raw_image_path']:
+            continue
+        else:
+            if th.is_tensor(in_d[key]):
+                in_d[key] = in_d[key].type_as(target_d[key])
+            elif isinstance(in_d[key], list):
+                for i in range(len(in_d[key])):
+                    in_d[key][i] = in_d[key][i].type_as(target_d[key][i])
+                    
+    return in_d
+
+def dict_detach(in_d, keys):
+    '''
+    Apply type_as() of the dict-like.
+    :param in_d: a dict-like with {'key1': tensor, ...}
+    :param target_d: a dict-like with {'key1': tensor, ...}
+    :param keys: a keys of tensor that need to detach() first before to use a deepcopy
+        - only 2 possible type : 1. tensor, 2. list-of-tensor
+    :return dict_tensor: the deepcopy version of input dict_tensor
+    '''
+    for key in keys:
+        if key in ['image_name', 'raw_image_path']:
+            continue
+        else:
+            if th.is_tensor(in_d[key]):
+                in_d[key] = in_d[key].detach()
+            elif isinstance(in_d[key], list):
+                for i in range(len(in_d[key])):
+                    in_d[key][i] = in_d[key][i].detach()
+                    
+    return in_d

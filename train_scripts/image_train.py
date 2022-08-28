@@ -2,7 +2,6 @@
 Train a diffusion model on images.
 """
 
-from cmath import exp
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from config.base_config import parse_args
@@ -28,7 +27,7 @@ def main():
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
 
     logger.log("[#] Creating data loader...")
-    dataloader, _, _ = load_data_img_deca(
+    train_loader, _, _ = load_data_img_deca(
         data_dir=cfg.dataset.data_dir,
         deca_dir=cfg.dataset.deca_dir,
         batch_size=cfg.train.batch_size,
@@ -49,7 +48,7 @@ def main():
         model=list(img_model.values()),
         name=list(img_model.keys()),
         diffusion=diffusion,
-        data=dataloader,
+        train_loader=train_loader,
         cfg=cfg,
         tb_logger=tb_logger,
         schedule_sampler=schedule_sampler,
