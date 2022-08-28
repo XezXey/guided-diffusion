@@ -108,6 +108,28 @@
             "justMyCode": true
         },
         {
+            "name": "Python: auto_sampling_rev_itp_encoder_rendered_hard_samples",
+            "type": "python",
+            "request": "launch",
+            "program": "auto_sampling_rev_itp_Enc_input.py",
+            "args": ["--set", "valid", 
+                    "--step", "200000", 
+                    "--interpolate", "spatial_latent", 
+                    "--interpolate_step", "5", 
+                    "--out_dir", "./hard_samples", 
+                    "--cfg_name", "UNetCond_Spatial_Concat_Shape.yaml", 
+                    "--log_dir", "UNetCond_Spatial_Concat_Shape", 
+                    "--n_subject", "2", 
+                    "--slerp", 
+                    "--diffusion_steps", "1000",
+                    "--seed", "47",
+                    "--sample_pairs", "./hard_samples.json",
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
+            "justMyCode": true
+        },
+        {
             "name": "Python: auto_sampling_rev_itp_encoder_rendered_vector-latent",
             "type": "python",
             "request": "launch",
@@ -153,6 +175,38 @@
                     "--train.batch_size", "1",
                     "--train.n_gpus", "1", 
                     "--cfg", "./config/Various_condition_on_Image/cond_img64_by_deca_arcface.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "500000000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: train_128_resolution",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "1",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/High_Resolution/UNetCond_Spatial_Hadamart_Tanh_Shape_128.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "500000000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: train_deca_shape_Hadamart",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "1",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/EncLight_Spatial_Rendered_Face_Hadamart_clip/UNetCond_Spatial_Hadamart_Tanh_Shape.yaml",
                     "--train.save_interval", "5000000000",
                     "--train.sampling_interval", "500000000"
             ],

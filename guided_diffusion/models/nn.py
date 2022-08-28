@@ -34,7 +34,6 @@ class Hadamart(nn.Module):
     def __init__(self, clip):
         super().__init__()
         self.clip = clip
-        
         if self.clip is None:
             print("[#] Use Hadamart-Simple")
         else:
@@ -60,7 +59,9 @@ class Hadamart(nn.Module):
 class ConditionLayerSelector():
     def __init__(self, cond_layer_selector, n_cond_encoder=11, n_cond_mid=2):
         #TODO: n_layer = 13 is for 64x64 images, it supposed to compute the n_cond_{x} automatically
-        self.cond_layer_selector = str.lower(cond_layer_selector)
+        if cond_layer_selector is not None:
+            self.cond_layer_selector = str.lower(cond_layer_selector)
+        else: self.cond_layer_selector = cond_layer_selector
         self.n_cond_encoder = n_cond_encoder
         self.n_cond_mid = n_cond_mid
         self.apply_cond_encoder = [False] * n_cond_encoder

@@ -1,15 +1,11 @@
 import subprocess
 
 commands = [
-    "python auto_sampling_rev_itp.py --set valid --step 100000 --interpolate light --out_dir ./samples --cfg_name cond_img64_by_deca_arcface.yaml --log_dir cond_img64_by_deca_arcface --n_subject 20 --lerp --slerp --diffusion_steps 1000 --seed 23 --gpu_id 0",
-    "python auto_sampling_rev_itp.py --set valid --step 200000 --interpolate light --out_dir ./samples --cfg_name cond_img64_by_deca_arcface.yaml --log_dir cond_img64_by_deca_arcface --n_subject 20 --lerp --slerp --diffusion_steps 1000 --seed 23 --gpu_id 0",
-    "python auto_sampling_rev_itp.py --set valid --step 300000 --interpolate light --out_dir ./samples --cfg_name cond_img64_by_deca_arcface.yaml --log_dir cond_img64_by_deca_arcface --n_subject 20 --lerp --slerp --diffusion_steps 1000 --seed 23 --gpu_id 0",
-    "python auto_sampling_rev_itp_Enc_input.py --set valid --step 100000 --interpolate spatial_latent --out_dir ./samples --cfg_name UNetCond_Latent_Shape.yaml --log_dir UNetCond_Latent_Shape --n_subject 20 --lerp --slerp --diffusion_steps 1000 --seed 23 --render_mode shape --gpu_id 0",
-    "python auto_sampling_rev_itp_Enc_input.py --set valid --step 200000 --interpolate spatial_latent --out_dir ./samples --cfg_name UNetCond_Latent_Shape.yaml --log_dir UNetCond_Latent_Shape --n_subject 20 --lerp --slerp --diffusion_steps 1000 --seed 23 --render_mode shape --gpu_id 0",
-    "python auto_sampling_rev_itp_Enc_input.py --set valid --step 300000 --interpolate spatial_latent --out_dir ./samples --cfg_name UNetCond_Latent_Shape.yaml --log_dir UNetCond_Latent_Shape --n_subject 20 --lerp --slerp --diffusion_steps 1000 --seed 23 --render_mode shape --gpu_id 0",
-    "python auto_sampling_rev_itp_Enc_input.py --set valid --step 100000 --interpolate spatial_latent --out_dir ./samples --cfg_name UNetCond_Latent_Template_Shape.yaml --log_dir UNetCond_Latent_Template_Shape --n_subject 20 --lerp --slerp --diffusion_steps 1000 --seed 23 --render_mode template_shape --gpu_id 0",
-    "python auto_sampling_rev_itp_Enc_input.py --set valid --step 200000 --interpolate spatial_latent --out_dir ./samples --cfg_name UNetCond_Latent_Template_Shape.yaml --log_dir UNetCond_Latent_Template_Shape --n_subject 20 --lerp --slerp --diffusion_steps 1000 --seed 23 --render_mode template_shape --gpu_id 0",
-    "python auto_sampling_rev_itp_Enc_input.py --set valid --step 300000 --interpolate spatial_latent --out_dir ./samples --cfg_name UNetCond_Latent_Template_Shape.yaml --log_dir UNetCond_Latent_Template_Shape --n_subject 20 --lerp --slerp --diffusion_steps 1000 --seed 23 --render_mode template_shape --gpu_id 0",
+    # "python auto_sampling_rev_itp.py --set valid --step 300000 --interpolate light --interpolate_step 5 --out_dir ./hard_samples --cfg_name cond_img64_by_deca_arcface.yaml --log_dir cond_img64_by_deca_arcface --n_subject 2 --slerp --diffusion_steps 1000 --seed 23 --sample_pairs ./hard_samples.json --gpu_id 0",
+    # "python auto_sampling_rev_itp.py --set valid --step 500000 --interpolate light --interpolate_step 5 --out_dir ./hard_samples --cfg_name cond_img64_by_deca_arcface.yaml --log_dir cond_img64_by_deca_arcface --n_subject 2 --slerp --diffusion_steps 1000 --seed 23 --sample_pairs ./hard_samples.json --gpu_id 0",
+    "python auto_sampling_rev_itp_Enc_input.py --set valid --step 300000 --interpolate spatial_latent --interpolate_step 5 --out_dir ./hard_samples --cfg_name UNetCond_Spatial_Concat_Shape.yaml --log_dir UNetCond_Spatial_Concat_Shape --n_subject 2 --slerp --diffusion_steps 1000 --seed 23 --sample_pairs ./hard_samples.json --gpu_id 0",
+    "python auto_sampling_rev_itp_Enc_input.py --set valid --step 500000 --interpolate spatial_latent --interpolate_step 5 --out_dir ./hard_samples --cfg_name UNetCond_Spatial_Concat_Shape.yaml --log_dir UNetCond_Spatial_Concat_Shape --n_subject 2 --slerp --diffusion_steps 1000 --seed 23 --sample_pairs ./hard_samples.json --gpu_id 0"
+
 ]
 
 with open('./gpu_0_status.txt', mode='w') as f:

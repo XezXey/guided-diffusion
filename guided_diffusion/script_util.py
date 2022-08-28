@@ -31,7 +31,7 @@ def create_deca_and_diffusion(cfg):
 def create_img_and_diffusion(cfg):
     img_model = create_model(cfg.img_model, all_cfg=cfg)
     if cfg.img_cond_model.apply:
-        img_cond_model = create_model(cfg.img_cond_model)
+        img_cond_model = create_model(cfg.img_cond_model, all_cfg=cfg)
     else: img_cond_model = None
     diffusion = create_gaussian_diffusion(cfg.diffusion)
     

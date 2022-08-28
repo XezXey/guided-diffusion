@@ -1,0 +1,24 @@
+{
+     "hard_samples": {
+        "pair_1": {
+            "src": "60065.jpg",
+            "dst": "60182.jpg"
+        },
+        "pair_2": {
+            "src": "60084.jpg",
+            "dst": "60632.jpg"
+        },
+        "pair_3": {
+            "src": "60059.jpg",
+            "dst": "60162.jpg"
+        },
+        "pair_4": {
+            "src": "60247.jpg",
+            "dst": "60497.jpg"
+        },
+        "pair_5": {
+            "src": "60120.jpg",
+            "dst": "60392.jpg"
+        }
+     }
+ }

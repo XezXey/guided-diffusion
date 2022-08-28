@@ -19,21 +19,24 @@ parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--interpolate_noise', action='store_true', default=False)
-parser.add_argument('--src_dst', nargs='+', default=[])
 parser.add_argument('--render_mode', type=str, default="shape")
-parser.add_argument('--gpu_id', type=str)
+parser.add_argument('--gpu_id', type=str, default="0")
+
+parser.add_argument('--sample_pairs', type=str, default=None)
+parser.add_argument('--src_dst', nargs='+', default=[])
 
 args = parser.parse_args()
 
 import os, sys, glob
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu_id
+os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import torch as th
 import PIL
+import json
 import copy
 import time
 import torchvision
@@ -209,7 +212,6 @@ def train_linear_classifier():
     return cls_model
 
 if __name__ == '__main__':
-
     seed_all(args.seed)
     # Load Ckpt
     if args.cfg_name is None:
@@ -256,17 +258,30 @@ if __name__ == '__main__':
         set_='train',
         cfg=cfg,
     )
-    if len(args.src_dst) == 2:
+    
+    if args.sample_pairs is not None:
+        assert os.path.isfile(args.sample_pairs)
+        f = open(args.sample_pairs)
+        sample_pairs = json.load(f)['hard_samples']
+        args.n_subject = len(sample_pairs.keys())
+    elif len(args.src_dst) == 2:
         args.n_subject = 1
+    
     data_size = dataset.__len__()
     prevent_dup = []
-    for _ in range(args.n_subject):
+    for sj_i in range(args.n_subject):
         
         # Load image & condition
 
         img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
         
-        if len(args.src_dst) == 2:
+        if args.sample_pairs is not None:
+            pair_i = list(sample_pairs.keys())[sj_i]
+            src_dst = [sample_pairs[pair_i]['src'], sample_pairs[pair_i]['dst']]
+            img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=src_dst)
+            img_path = [img_path[r] for r in img_idx]
+            img_name = [path.split('/')[-1] for path in img_path]
+        elif len(args.src_dst) == 2:
             img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=args.src_dst)
             img_path = [img_path[r] for r in img_idx]
             img_name = [path.split('/')[-1] for path in img_path]

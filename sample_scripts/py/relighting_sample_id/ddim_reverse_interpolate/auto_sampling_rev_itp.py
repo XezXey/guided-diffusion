@@ -22,6 +22,7 @@ parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--interpolate_noise', action='store_true', default=False)
 parser.add_argument('--src_dst', nargs='+', default=[])
 
+parser.add_argument('--sample_pairs', type=str, default=None)
 parser.add_argument('--gpu_id', type=str)
 
 args = parser.parse_args()
@@ -36,6 +37,7 @@ import matplotlib.pyplot as plt
 import torch as th
 import PIL
 import copy
+import json
 import torchvision
 import pytorch_lightning as pl
 sys.path.insert(0, '../../../')
@@ -213,15 +215,27 @@ if __name__ == '__main__':
         cfg=cfg,
     )
 
-    if len(args.src_dst) == 2:
+    if args.sample_pairs is not None:
+        assert os.path.isfile(args.sample_pairs)
+        f = open(args.sample_pairs)
+        sample_pairs = json.load(f)['hard_samples']
+        args.n_subject = len(sample_pairs.keys())
+    elif len(args.src_dst) == 2:
         args.n_subject = 1
     data_size = dataset.__len__()
     prevent_dup = []
-    for _ in range(args.n_subject):
+    for sj_i in range(args.n_subject):
         # Load image & condition
         img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
         
-        if len(args.src_dst) == 2:
+        
+        if args.sample_pairs is not None:
+            pair_i = list(sample_pairs.keys())[sj_i]
+            src_dst = [sample_pairs[pair_i]['src'], sample_pairs[pair_i]['dst']]
+            img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=src_dst)
+            img_path = [img_path[r] for r in img_idx]
+            img_name = [path.split('/')[-1] for path in img_path]
+        elif len(args.src_dst) == 2:
             img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=args.src_dst)
             img_path = [img_path[r] for r in img_idx]
             img_name = [path.split('/')[-1] for path in img_path]

@@ -1503,7 +1503,9 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
             zero_module(conv_nd(dims, input_ch, out_channels, 3, padding=1)),
         )
         self.hadamart_prod = Hadamart(clip=self.all_cfg.img_model.hadamart_clip)
-        self.cond_layer_selector = ConditionLayerSelector(cond_layer_selector=self.all_cfg.img_model.cond_layer_selector)
+        self.cond_layer_selector = ConditionLayerSelector(cond_layer_selector=self.all_cfg.img_model.cond_layer_selector, 
+                                                          n_cond_encoder=len(self.input_blocks[1:])
+                                                        )
 
     def convert_to_fp16(self):
         """
@@ -1548,6 +1550,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
             h = module(h, emb, condition=kwargs)
             hs.append(h)
         
+        # Before middle blocks
         assert len(kwargs['spatial_latent']) == 2
         assert len(apply_cond_layer) == 2
         if apply_cond_layer[0]:
@@ -1557,6 +1560,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         apply_cond_layer.pop(0)
         h = self.middle_block(h, emb, condition=kwargs)
 
+        # Before output blocks
         assert len(kwargs['spatial_latent']) == 1
         assert len(apply_cond_layer) == 1
         if apply_cond_layer[0]:
