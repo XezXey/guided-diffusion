@@ -356,7 +356,6 @@ class TrainLoop(LightningModule):
             self.forward_cond_network(dat=dat, cond=cond)
 
         tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
-        self.diffusion.num_timesteps = 50
         sample_from_ddim = self.diffusion.ddim_sample_loop(
             model=self.model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
@@ -384,12 +383,13 @@ class TrainLoop(LightningModule):
 
     @rank_zero_only
     def save(self):
+        save_step = self.step + self.resume_step
         def save_checkpoint(rate, params, trainer, name=""):
             state_dict = trainer.master_params_to_state_dict(params)
             if not rate:
-                filename = f"{name}_model{(self.step+self.resume_step):06d}.pt"
+                filename = f"{name}_model{save_step:06d}.pt"
             else:
-                filename = f"{name}_ema_{rate}_{(self.step+self.resume_step):06d}.pt"
+                filename = f"{name}_ema_{rate}_{save_step:06d}.pt"
             with bf.BlobFile(bf.join(get_blob_logdir(), filename), "wb") as f:
                 th.save(state_dict, f)
 
@@ -399,7 +399,7 @@ class TrainLoop(LightningModule):
                 save_checkpoint(rate, params, self.model_trainer_dict[name], name=name)
 
         with bf.BlobFile(
-            bf.join(get_blob_logdir(), f"opt{(self.step+self.resume_step):06d}.pt"),
+            bf.join(get_blob_logdir(), f"opt{save_step:06d}.pt"),
             "wb",
         ) as f:
             th.save(self.opt.state_dict(), f)
