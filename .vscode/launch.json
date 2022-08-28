@@ -193,7 +193,7 @@
                     "--train.n_gpus", "1", 
                     "--cfg", "./config/Various_condition_on_Image/cond_img64_by_light.yaml",
                     "--train.save_interval", "5000000000",
-                    "--train.sampling_interval", "1"
+                    "--train.sampling_interval", "10"
             ],
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/",
