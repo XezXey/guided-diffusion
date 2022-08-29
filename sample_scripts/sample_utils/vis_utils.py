@@ -72,9 +72,19 @@ def plot_image(img, c_len=[], fn='./temp', range="-1to1"):
     if c_len == []:
         c_len = list(range(0, img.shape[1], 3)) + [img.shape[1]]
     print("Channel length : ", c_len)
-    for i, c in enumerate(c_len):
-        img_plot = img[:, 0:c, ...]
-        img = img[:, c:, ...]   # Slice out the plotted one
-        if range == "-1to1":
-            img_plot = ((img_plot + 1) * 127.5) / 255.0
-        torchvision.utils.save_image(tensor=img_plot, fp=f"./{fn}_{i}.png")
+    if img.shape[0] == 1:
+        img_plot = []
+        for i, c in enumerate(c_len):
+            img_plot.append(img[0, 0:c, ...])
+            img = img[:, c:, ...]   # Slice out the plotted one
+            if range == "-1to1":
+                img_plot[i] = ((img_plot[i] + 1) * 127.5) / 255.0
+        img_plot = th.stack(img_plot, dim=0)
+        torchvision.utils.save_image(tensor=img_plot, fp=f"./{fn}.png")
+    else:
+        for i, c in enumerate(c_len):
+            img_plot = img[:, 0:c, ...]
+            img = img[:, c:, ...]   # Slice out the plotted one
+            if range == "-1to1":
+                img_plot = ((img_plot + 1) * 127.5) / 255.0
+            torchvision.utils.save_image(tensor=img_plot, fp=f"./{fn}_{i}.png")

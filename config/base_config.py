@@ -96,6 +96,8 @@ img_cond_model_img_type = {'raw':3,
                             'faceseg_face':3, 
                             'faceseg_faceskin&nose':3, 
                             'faceseg_bg&noface':3,
+                            'faceseg_bg_noface&nohair':3,
+                            'faceseg_bg':3,
                             'faceseg_face&hair':3, 
                             'normals':3
 }

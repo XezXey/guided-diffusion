@@ -324,6 +324,8 @@ class DECADataset(Dataset):
             return face * np.array(raw_pil_image)
         elif segment_part == 'faceseg_face&hair':
             return ~bg * np.array(raw_pil_image)
+        elif segment_part == 'faceseg_bg_noface&nohair':
+            return (bg | hat | neck | neck_l | cloth) * np.array(raw_pil_image)
         elif segment_part == 'faceseg_bg':
             return bg * np.array(raw_pil_image)
         elif segment_part == 'faceseg_bg&noface':
