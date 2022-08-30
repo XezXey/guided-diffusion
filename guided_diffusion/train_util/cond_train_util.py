@@ -348,6 +348,9 @@ class TrainLoop(LightningModule):
         n = self.cfg.train.n_sampling
         if n > dat.shape[0]:
             n = dat.shape[0]
+            
+        dat = dat[:n]
+        cond = tensor_util.dict_slice(in_d=cond, keys=cond.keys(), n=n)
         
         noise = th.randn((n, 3, H, W)).type_as(dat)
 

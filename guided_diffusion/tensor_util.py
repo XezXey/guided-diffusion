@@ -63,3 +63,26 @@ def dict_detach(in_d, keys):
                     in_d[key][i] = in_d[key][i].detach()
                     
     return in_d
+
+
+def dict_slice(in_d, keys, n):
+    '''
+    Apply type_as() of the dict-like.
+    **** Every tensor must be in batch size (B x ...) ****
+    :param in_d: a dict-like with {'key1': tensor, ...}
+    :param target_d: a dict-like with {'key1': tensor, ...}
+    :param keys: a keys of tensor that need to detach() first before to use a deepcopy
+        - only 2 possible type : 1. tensor, 2. list-of-tensor
+    :return dict_tensor: the deepcopy version of input dict_tensor
+    '''
+    for key in keys:
+        if key in ['image_name', 'raw_image_path']:
+            continue
+        else:
+            if th.is_tensor(in_d[key]):
+                in_d[key] = in_d[key][:n].detach()
+            elif isinstance(in_d[key], list):
+                for i in range(len(in_d[key])):
+                    in_d[key][i] = in_d[key][i][:n].detach()
+                    
+    return in_d
