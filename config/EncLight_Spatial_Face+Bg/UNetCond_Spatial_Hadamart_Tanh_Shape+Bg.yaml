@@ -7,7 +7,7 @@ img_model:
   out_channels: 3
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
-  hadamart_clip: "Tanh"
+  hadamart_prep: "Tanh"
 
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb']
