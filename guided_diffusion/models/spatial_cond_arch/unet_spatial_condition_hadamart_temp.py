@@ -13,7 +13,6 @@ import torch.nn.functional as F
 from ...trainer_util import convert_module_to_f16, convert_module_to_f32
 from ..nn import (
     Hadamart,
-    HadamartLayer,
     checkpoint,
     conv_nd,
     linear,
@@ -1354,7 +1353,6 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         for level, mult in enumerate(channel_mult):
             for i in range(num_res_blocks):
                 layers = [
-                    HadamartLayer(prep=all_cfg.img_model.hadamart_prep, channels=ch),
                     resblock_module(
                         ch,
                         time_embed_dim,
@@ -1383,47 +1381,39 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
                 input_block_chans.append(ch)
             if level != len(channel_mult) - 1:
                 out_ch = ch
-                if resblock_updown:
-                    self.input_blocks.append(
-                        time_embed_seq_module(
-                            HadamartLayer(prep=all_cfg.img_model.hadamart_prep, channels=ch),
-                            resblock_module(
-                                ch,
-                                time_embed_dim,
-                                dropout,
-                                out_channels=out_ch,
-                                dims=dims,
-                                use_checkpoint=use_checkpoint,
-                                use_scale_shift_norm=use_scale_shift_norm,
-                                down=True,
-                                condition_dim=condition_dim,
-                                condition_proj_dim=condition_proj_dim
-                            )
+                self.input_blocks.append(
+                    time_embed_seq_module(
+                        resblock_module(
+                            ch,
+                            time_embed_dim,
+                            dropout,
+                            out_channels=out_ch,
+                            dims=dims,
+                            use_checkpoint=use_checkpoint,
+                            use_scale_shift_norm=use_scale_shift_norm,
+                            down=True,
+                            condition_dim=condition_dim,
+                            condition_proj_dim=condition_proj_dim
+                        )
+                        if resblock_updown
+                        else Downsample(
+                            ch, conv_resample, dims=dims, out_channels=out_ch
                         )
                     )
-                else:
-                    self.input_blocks.append(
-                        time_embed_seq_module(
-                            HadamartLayer(prep=all_cfg.img_model.hadamart_prep, channels=ch),
-                            Downsample(
-                                ch, conv_resample, dims=dims, out_channels=out_ch
-                            )
-                        )
-                    )
+                )
                 ch = out_ch
                 input_block_chans.append(ch)
                 ds *= 2
                 self._feature_size += ch
         
 
-        print("UNET")
-        print("INPUT BLOCKS")
-        for i in range(len(self.input_blocks)):
-            print(i, self.input_blocks[i])
-        exit()
+        # print("UNET")
+        # print("INPUT BLOCKS")
+        # for i in range(len(self.input_blocks)):
+        #     print(i, self.input_blocks[i])
+        # exit()
         
         self.middle_block = time_embed_seq_module(
-            
             resblock_module(
                 ch,
                 time_embed_dim,
@@ -1512,6 +1502,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
             nn.SiLU(),
             zero_module(conv_nd(dims, input_ch, out_channels, 3, padding=1)),
         )
+        self.hadamart_prod = Hadamart(clip=self.all_cfg.img_model.hadamart_clip)
         self.cond_layer_selector = ConditionLayerSelector(cond_layer_selector=self.all_cfg.img_model.cond_layer_selector, 
                                                           n_cond_encoder=len(self.input_blocks[1:])
                                                         )

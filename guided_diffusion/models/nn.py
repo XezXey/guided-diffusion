@@ -53,7 +53,44 @@ class Hadamart(nn.Module):
         elif self.clip is None:
             out = th.mul(x, y)
         else: raise NotImplementedError("[#Hadamart]The clipping method is not found")
+        return out
+    
+class HadamartLayer(nn.Module):
+    #TODO: Implement the hadamart layer by adding AdaGN
+    def __init__(self, prep, channels):
+        '''
+        :params prep: the way to preprocess the information (e.g. Tanh, Identity, AdaGN)
+        :params apply_: Apply the HadamartLayer or not?
+        '''
+        super().__init__()
+        self.prep = prep
+        if self.prep is None:
+            print("[#] Use Hadamart-Simple")
+        else:
+            self.prep = str.lower(self.prep)
+            if self.prep == 'tanh':
+                print("[#] Use Hadamart-Tanh")
+                self.prep_layer = nn.Tanh()
+            elif self.prep == 'identity':
+                print("[#] Use Hadamart-Identity")
+            elif self.prep == 'adaptive_gn':
+                self.prep_layer = nn.ModuleList([
+                    normalization(channels),
+                ])
+            else: raise NotImplementedError("[#Hadamart]The clipping method is not found")
             
+        
+    def forward(self, x, y, apply_):
+        if apply_:
+            if self.prep == 'tanh':
+                out = th.mul(x, self.prep_layer(y))
+            elif self.prep == 'identity':
+                out = th.mul(x, (1-y))
+            elif self.prep is None:
+                out = th.mul(x, y)
+            else: raise NotImplementedError("[#Hadamart]The clipping method is not found")
+        else:
+            out = x
         return out
  
 class ConditionLayerSelector():
