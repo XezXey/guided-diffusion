@@ -8,6 +8,9 @@ img_model:
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
   hadamart_prep: "Adaptive_GN"
+  hadamart_share_norm: False
+  hadamart_n_patches: 2
+  hadamart_silu_scale: True
 
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb']
@@ -37,5 +40,5 @@ dataset:
 
 
 train_misc:
-  exp_name: "EncLight_Spatial_Rendered_Face"
-  cfg_name: "UNetCond_Spatial_Hadamart_Tanh_Shape"
+  exp_name: "EncLight_Spatial_Rendered_Face_Hadamart_clip"
+  cfg_name: "Spatial_Hadamart_AdaGN_sharenorm=False_patches=2_SiLU_Shape"

@@ -118,7 +118,7 @@
             "args": ["--train.log_dir", "/data/mint/model_logs/dev",
                     "--train.batch_size", "1",
                     "--train.n_gpus", "1", 
-                    "--cfg", "./config/EncLight_Spatial_Rendered_Face_Hadamart_clip/UNetCond_Spatial_Hadamart_AdaGN_Shape.yaml",
+                    "--cfg", "./config/EncLight_Spatial_Rendered_Face_Hadamart_clip/Spatial_Hadamart_AdaGN_sharenorm=True_patches=2_SiLU_Shape.yaml",
                     "--train.save_interval", "5000000000",
                     "--train.sampling_interval", "500000000"
             ],
