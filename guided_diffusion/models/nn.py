@@ -56,23 +56,54 @@ class Hadamart(nn.Module):
         return out
     
 class AdaptiveGN_Hadamart(nn.Module):
-    def __init__(self, prep, channels, n_patches):
+    def __init__(self, prep, channels, image_size, n_patches, share_norm):
         super().__init__()
         self.prep = prep
         self.channels = channels
         self.n_patches = n_patches
-        self.layers = nn.ModuleList([
-            normalization(channels),
-            linear(255, 255),
-            nn.Tanh()
-        ])
+        self.image_size = image_size
+        self.patch_size = self.image_size // self.n_patches
+        self.share_norm = share_norm
+        self.norm = nn.ModuleList(
+            [normalization(channels)] if share_norm else ([normalization(channels)] * (self.n_patches**2))
+        )
+        self.shift = 0
         
     def forward(self, x, y):
         #TODO: Implement fw-pass
-        pass
+        assert x.shape == y.shape
+        b, c, h, w = x.shape
+        # X to patches
+        x_patches = x.unfold(2, self.patch_size, self.patch_size).unfold(3, self.patch_size, self.patch_size)
+        x_patches = th.einsum('b c i j h w -> b i j c h w', x_patches)
+        b, i, j, c, h, w = x_patches.shape
+        x_patches = x_patches.reshape(b, -1, c, h, w)
+        
+        # Y to patches
+        y_patches = y.unfold(2, self.patch_size, self.patch_size).unfold(3, self.patch_size, self.patch_size)
+        y_patches = th.einsum('b c i j h w -> b i j c h w', y_patches)
+        b, i, j, c, h, w = y_patches.shape
+        y_patches = y_patches.reshape(b, -1, c, h, w)
+        
+        print(patches.shape)
+        gg = patches.clone()
+        # Norm each patch
+        out = th.zeros_like(x_patches)
+        if self.share_norm:
+            scale = y_patches
+            out = self.norm(x_patches) * (1 + scale) + self.shift
+        else:
+            for i, norm in enumerate(self.norm):
+                x_patches[0][i] = norm(x_patches[0][[i]])
+                scale = y_patches[0][i]
+                out[0][i] = (x_patches[0][i] * (1 + scale)) + self.shift
+        
+        
+        grid = make_grid(out[0], self.n_patches)
+        show(grid)
         
 class HadamartLayer(nn.Module):
-    def __init__(self, prep, channels):
+    def __init__(self, prep, channels, image_size):
         '''
         :params prep: the way to preprocess the information (e.g. Tanh, Identity, AdaGN)
         :params apply_: Apply the HadamartLayer or not?
@@ -80,6 +111,7 @@ class HadamartLayer(nn.Module):
         super().__init__()
         self.prep = prep
         self.channels = channels
+        self.image_size = image_size
         if self.prep is None:
             print("[#] Use Hadamart-Simple")
         else:
@@ -90,7 +122,7 @@ class HadamartLayer(nn.Module):
             elif self.prep == 'identity':
                 print("[#] Use Hadamart-Identity")
             elif self.prep == 'adaptive_gn':
-                self.prep_layer = AdaptiveGN_Hadamart(self.prep, self.channels, n_patches=4)
+                self.prep_layer = AdaptiveGN_Hadamart(self.prep, self.channels, self.image_size, n_patches=4)
             else: raise NotImplementedError("[#Hadamart]The clipping method is not found")
             
     def forward(self, x, y, apply_):
