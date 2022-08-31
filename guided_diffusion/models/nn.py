@@ -55,8 +55,23 @@ class Hadamart(nn.Module):
         else: raise NotImplementedError("[#Hadamart]The clipping method is not found")
         return out
     
+class AdaptiveGN_Hadamart(nn.Module):
+    def __init__(self, prep, channels, n_patches):
+        super().__init__()
+        self.prep = prep
+        self.channels = channels
+        self.n_patches = n_patches
+        self.layers = nn.ModuleList([
+            normalization(channels),
+            linear(255, 255),
+            nn.Tanh()
+        ])
+        
+    def forward(self, x, y):
+        #TODO: Implement fw-pass
+        pass
+        
 class HadamartLayer(nn.Module):
-    #TODO: Implement the hadamart layer by adding AdaGN
     def __init__(self, prep, channels):
         '''
         :params prep: the way to preprocess the information (e.g. Tanh, Identity, AdaGN)
@@ -64,6 +79,7 @@ class HadamartLayer(nn.Module):
         '''
         super().__init__()
         self.prep = prep
+        self.channels = channels
         if self.prep is None:
             print("[#] Use Hadamart-Simple")
         else:
@@ -74,20 +90,19 @@ class HadamartLayer(nn.Module):
             elif self.prep == 'identity':
                 print("[#] Use Hadamart-Identity")
             elif self.prep == 'adaptive_gn':
-                self.prep_layer = nn.ModuleList([
-                    normalization(channels),
-                ])
+                self.prep_layer = AdaptiveGN_Hadamart(self.prep, self.channels, n_patches=4)
             else: raise NotImplementedError("[#Hadamart]The clipping method is not found")
             
-        
     def forward(self, x, y, apply_):
         if apply_:
+            if self.prep is None:
+                out = th.mul(x, y)
             if self.prep == 'tanh':
                 out = th.mul(x, self.prep_layer(y))
             elif self.prep == 'identity':
                 out = th.mul(x, (1-y))
-            elif self.prep is None:
-                out = th.mul(x, y)
+            elif self.prep == 'adaptive_gn':
+                out = self.prep_layer(x, y)
             else: raise NotImplementedError("[#Hadamart]The clipping method is not found")
         else:
             out = x
