@@ -153,7 +153,7 @@ def model_comparison_from_json(itp_method):
   f = open('./model_comparison_hard.json')
   ckpt_dict = json.load(f)['model_comparison']
   model = list(ckpt_dict.keys())
-  folder = f"/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/hard_samples/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_{ckpt_dict['log=UNetCond_Spatial_Concat_Shape_cfg=UNetCond_Spatial_Concat_Shape.yaml']}/valid/light/"
+  folder = f"/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/hard_samples/log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml/ema_{ckpt_dict['log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml']}/valid/light/"
   for i, src_path in enumerate(glob.glob(f"{folder}/src=*")):
     src_id = src_path.split('/')[-1]
     for d in glob.glob(f"{folder}/{src_id}/dst=*"):
@@ -177,4 +177,4 @@ def model_comparison_from_json(itp_method):
   return out
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=4751, debug=True, threaded=False)
+    app.run(host='0.0.0.0', port=4723, debug=True, threaded=False)

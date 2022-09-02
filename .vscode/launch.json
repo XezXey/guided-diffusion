@@ -120,7 +120,7 @@
                     "--train.n_gpus", "1", 
                     "--cfg", "./config/EncLight_Spatial_Rendered_Face_Hadamart_clip/Spatial_Hadamart_AdaGN_sharenorm=True_patches=2_SiLU_Shape.yaml",
                     "--train.save_interval", "5000000000",
-                    "--train.sampling_interval", "500000000"
+                    "--train.sampling_interval", "1"
             ],
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/",
@@ -376,6 +376,50 @@
             "justMyCode": true
         },
         {
+            "name": "Python: auto_sampling_rev_itp_encoder_rendered_hard_samples+bg",
+            "type": "python",
+            "request": "launch",
+            "program": "auto_sampling_rev_itp_Enc_input+bg.py",
+            "args": ["--set", "valid", 
+                    "--step", "100000", 
+                    "--interpolate", "spatial_latent", 
+                    "--interpolate_step", "5", 
+                    "--out_dir", "./hard_samples", 
+                    "--cfg_name", "UNetCond_Spatial_Hadamart_Tanh_Shape+Bg.yaml", 
+                    "--log_dir", "UNetCond_Spatial_Hadamart_Tanh_Shape+Bg", 
+                    "--n_subject", "2", 
+                    "--slerp", 
+                    "--diffusion_steps", "25",
+                    "--seed", "47",
+                    "--sample_pairs", "./hard_samples.json",
+                    "--gpu_id", "1",
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: auto_sampling_rev_itp_encoder_rendered_hard_samples_pairwise",
+            "type": "python",
+            "request": "launch",
+            "program": "auto_sampling_rev_itp_Enc_input_pairwise.py",
+            "args": ["--set", "valid", 
+                    "--step", "050000", 
+                    "--interpolate", "spatial_latent", 
+                    "--interpolate_step", "5", 
+                    "--out_dir", "./hard_samples_pairwise", 
+                    "--cfg_name", "UNetCond_Spatial_Hadamart_Tanh_Shape.yaml", 
+                    "--log_dir", "UNetCond_Spatial_Hadamart_Tanh_Shape", 
+                    "--slerp", 
+                    "--diffusion_steps", "25",
+                    "--seed", "47",
+                    "--sample_pairs", "./hard_samples_pairwise.json",
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
+            "justMyCode": true
+        },
+        {
             "name": "Python: auto_sampling_rev_itp_encoder_rendered_vector-latent",
             "type": "python",
             "request": "launch",
@@ -396,6 +440,15 @@
             "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
             "justMyCode": true
         },
-        
+
+        {
+            "name": "Python: vispage_hard_pairwise",
+            "type": "python",
+            "request": "launch",
+            "program": "gen_vispage_hard_pairwise.py",
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/visualize_scripts/flask_vispage/",
+            "justMyCode": true
+        },
     ]
 }
