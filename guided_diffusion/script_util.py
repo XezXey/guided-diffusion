@@ -379,7 +379,7 @@ def dump_model_params(model, fn):
     if '.txt' not in fn:
         fn += '.txt'
     for k, v in model.named_parameters():
-        txt += f"{k}, {v.cpu()}\n"
+        txt += f"{k}, {v}\n"
     with open(fn, 'w') as f:
         f.write(txt)
     f.close()

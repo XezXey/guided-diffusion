@@ -21,7 +21,7 @@ from .. import logger
 from ..trainer_util import Trainer
 from ..models.nn import update_ema
 from ..resample import LossAwareSampler, UniformSampler
-from ..script_util import seed_all, compare_models
+from ..script_util import seed_all, compare_models, dump_model_params
 
 import torch.nn as nn
 
