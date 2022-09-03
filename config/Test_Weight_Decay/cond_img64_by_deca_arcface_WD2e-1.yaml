@@ -1,0 +1,25 @@
+img_model:
+  name: "ImgCond"
+  arch: "UNetCond"
+  image_size: 64
+  in_image: 'raw'
+  in_channels: 3
+  out_channels: 3
+  conditioning: True  # Conditioning with DECA
+  condition_proj_dim: 512
+
+param_model:
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
+
+dataset:
+  deca_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
+  data_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
+
+train:
+  weight_decay: 0.2
+  sampling_interval: 25000
+  save_interval: 25000
+
+train_misc:
+  exp_name: "Test_Weight_Decay"
+  cfg_name: "cond_img64_by_deca_arcface_WD2e-1"

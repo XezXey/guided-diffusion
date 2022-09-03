@@ -13,7 +13,6 @@ import torch.nn.functional as F
 from ...trainer_util import convert_module_to_f16, convert_module_to_f32
 from ..nn import (
     Hadamart,
-    HadamartLayer,
     checkpoint,
     conv_nd,
     linear,
@@ -1350,13 +1349,10 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         )
         self._feature_size = ch
         input_block_chans = [ch]
-        input_block_reso = [image_size]
-        reso_idx = 0
         ds = 1
         for level, mult in enumerate(channel_mult):
             for i in range(num_res_blocks):
                 layers = [
-                    HadamartLayer(cfg=all_cfg, channels=ch, image_size=input_block_reso[reso_idx]),
                     resblock_module(
                         ch,
                         time_embed_dim,
@@ -1383,48 +1379,41 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
                 self.input_blocks.append(time_embed_seq_module(*layers))
                 self._feature_size += ch
                 input_block_chans.append(ch)
-                input_block_reso.append(input_block_reso[-1])
-                reso_idx += 1
             if level != len(channel_mult) - 1:
                 out_ch = ch
-                if resblock_updown:
-                    self.input_blocks.append(
-                        time_embed_seq_module(
-                            HadamartLayer(cfg=all_cfg, channels=ch, image_size=input_block_reso[reso_idx]),
-                            resblock_module(
-                                ch,
-                                time_embed_dim,
-                                dropout,
-                                out_channels=out_ch,
-                                dims=dims,
-                                use_checkpoint=use_checkpoint,
-                                use_scale_shift_norm=use_scale_shift_norm,
-                                down=True,
-                                condition_dim=condition_dim,
-                                condition_proj_dim=condition_proj_dim
-                            )
+                self.input_blocks.append(
+                    time_embed_seq_module(
+                        resblock_module(
+                            ch,
+                            time_embed_dim,
+                            dropout,
+                            out_channels=out_ch,
+                            dims=dims,
+                            use_checkpoint=use_checkpoint,
+                            use_scale_shift_norm=use_scale_shift_norm,
+                            down=True,
+                            condition_dim=condition_dim,
+                            condition_proj_dim=condition_proj_dim
+                        )
+                        if resblock_updown
+                        else Downsample(
+                            ch, conv_resample, dims=dims, out_channels=out_ch
                         )
                     )
-                else:
-                    self.input_blocks.append(
-                        time_embed_seq_module(
-                            HadamartLayer(cfg=all_cfg, channels=ch, image_size=input_block_reso[reso_idx]),
-                            Downsample(
-                                ch, conv_resample, dims=dims, out_channels=out_ch
-                            )
-                        )
-                    )
+                )
                 ch = out_ch
                 input_block_chans.append(ch)
-                input_block_reso.append(input_block_reso[-1]//2)
-                reso_idx += 1
                 ds *= 2
                 self._feature_size += ch
         
-        input_block_reso.append(input_block_reso[-1])
-        input_block_reso.append(input_block_reso[-1])
+
+        # print("UNET")
+        # print("INPUT BLOCKS")
+        # for i in range(len(self.input_blocks)):
+        #     print(i, self.input_blocks[i])
+        # exit()
+        
         self.middle_block = time_embed_seq_module(
-            HadamartLayer(cfg=all_cfg, channels=ch, image_size=input_block_reso[reso_idx]),
             resblock_module(
                 ch,
                 time_embed_dim,
@@ -1452,17 +1441,12 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
                 condition_dim=condition_dim,
                 condition_proj_dim=condition_proj_dim
             ),
-            HadamartLayer(cfg=all_cfg, channels=ch, image_size=input_block_reso[reso_idx+1]),
         )
-        reso_idx += 2
 
-        # print("INPUT BLOCKS")
-        # print(self.input_blocks)
-        
         self._feature_size += ch
         # print("MIDDLE BLOCKS")
         # print(self.middle_block)
-        # exit()
+        # print("CHANS : ", input_block_chans)
         self.output_blocks = nn.ModuleList([])
         for level, mult in list(enumerate(channel_mult))[::-1]:
             for i in range(num_res_blocks + 1):
@@ -1518,6 +1502,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
             nn.SiLU(),
             zero_module(conv_nd(dims, input_ch, out_channels, 3, padding=1)),
         )
+        self.hadamart_prod = Hadamart(clip=self.all_cfg.img_model.hadamart_prep)
         self.cond_layer_selector = ConditionLayerSelector(cond_layer_selector=self.all_cfg.img_model.cond_layer_selector, 
                                                           n_cond_encoder=len(self.input_blocks[1:])
                                                         )
@@ -1556,34 +1541,33 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         hs.append(h)
         # The rest layer - input_blocks
         for i, module in enumerate(self.input_blocks[1:]):
-            # The hadamart conditioning
-            hadamart_layer, rest_layer = module[0], module[1:]
-            h = hadamart_layer(x=h, y=kwargs['spatial_latent'][0], apply_=apply_cond_layer[0])
+            if apply_cond_layer[0]:
+                h = self.hadamart_prod(h, kwargs['spatial_latent'][0])
+            else: h=h
+            
             kwargs['spatial_latent'].pop(0)
             apply_cond_layer.pop(0)
-            # The rest layer
-            h = rest_layer(h, emb, condition=kwargs)
+            h = module(h, emb, condition=kwargs)
             hs.append(h)
         
-        # Pre - middle blocks
-        hadamart_pre_mb, middle_block, hadamart_post_mb = self.middle_block[0], self.middle_block[1:-1], self.middle_block[-1]
+        # Before middle blocks
         assert len(kwargs['spatial_latent']) == 2
         assert len(apply_cond_layer) == 2
-        h = hadamart_pre_mb(x=h, y=kwargs['spatial_latent'][0], apply_=apply_cond_layer[0])
+        if apply_cond_layer[0]:
+            h = self.hadamart_prod(h, kwargs['spatial_latent'][0])
+        else: h=h
         kwargs['spatial_latent'].pop(0)
         apply_cond_layer.pop(0)
-        
-        # Middle blocks
-        h = middle_block(h, emb, condition=kwargs)
+        h = self.middle_block(h, emb, condition=kwargs)
 
-        # Post - middle blocks
+        # Before output blocks
         assert len(kwargs['spatial_latent']) == 1
         assert len(apply_cond_layer) == 1
-        h = hadamart_post_mb(x=h, y=kwargs['spatial_latent'][0], apply_=apply_cond_layer[0])
+        if apply_cond_layer[0]:
+            h = self.hadamart_prod(h, kwargs['spatial_latent'][0])
+        else: h=h
         kwargs['spatial_latent'].pop(0)
         apply_cond_layer.pop(0)
-        
-        # Output blocks
         for i, module in enumerate(self.output_blocks):
             h = th.cat([h, hs.pop()], dim=1)
             h = module(h, emb, condition=kwargs)
