@@ -55,7 +55,7 @@ class Hadamart(nn.Module):
         else: raise NotImplementedError("[#Hadamart]The clipping method is not found")
         return out
     
-class AdaptiveGN_Hadamart(nn.Module):
+class AdaptiveGN_Patches_Hadamart(nn.Module):
     def __init__(self, prep, channels, image_size, n_patches, share_norm, silu_scale):
         super().__init__()
         self.prep = prep
@@ -105,6 +105,58 @@ class AdaptiveGN_Hadamart(nn.Module):
         out = self.patches_to_image(patches=out_patches)
             
         return out
+    
+class AdaptiveGN_Patches_Hadamart(nn.Module):
+    def __init__(self, prep, channels, image_size, n_patches, share_norm, silu_scale):
+        super().__init__()
+        self.prep = prep
+        self.channels = channels
+        self.n_patches = n_patches
+        self.image_size = image_size
+        self.patch_size = self.image_size // self.n_patches
+        self.share_norm = share_norm
+        self.silu_scale = silu_scale
+        self.norm = nn.ModuleList(
+            [normalization(channels)] if share_norm else ([normalization(channels)] * (self.n_patches**2))
+        )
+        if self.silu_scale:
+            self.silu = nn.SiLU()
+        self.shift = 0
+        
+    def forward(self, x, y):
+        assert x.shape == y.shape
+        b, c, h, w = x.shape
+        # X to patches
+        x_patches = x.unfold(2, self.patch_size, self.patch_size).unfold(3, self.patch_size, self.patch_size)
+        x_patches = th.einsum('b c i j h w -> b i j c h w', x_patches)
+        _, _, _, _, h_xp, w_xp = x_patches.shape
+        x_patches = x_patches.reshape(b, -1, c, h_xp, w_xp)
+        
+        # Y to patches
+        y_patches = y.unfold(2, self.patch_size, self.patch_size).unfold(3, self.patch_size, self.patch_size)
+        y_patches = th.einsum('b c i j h w -> b i j c h w', y_patches)
+        _, _, _, _, h_yp, w_yp = y_patches.shape
+        y_patches = y_patches.reshape(b, -1, c, h_yp, w_yp)
+        
+        # Norm each patch
+        out_patches = [[] for _ in range(b)]
+        for i in range(b):
+            for j in range(self.n_patches**2):
+                if self.share_norm:
+                    norm_patch = self.norm[0](x_patches[i][[j]])
+                else:
+                    norm_patch = self.norm[j](x_patches[i][[j]])
+                if self.silu_scale:
+                    scale = self.silu(y_patches[i][[j]])
+                else:
+                    scale = y_patches[i][[j]]
+                out_patches[i].append((norm_patch * (1 + scale)) + self.shift)
+            out_patches[i] = th.cat(out_patches[i], dim=0)
+        out_patches = th.stack(out_patches, dim=0)
+        out = self.patches_to_image(patches=out_patches)
+            
+        return out
+        
         
         
     def patches_to_image(self, patches):

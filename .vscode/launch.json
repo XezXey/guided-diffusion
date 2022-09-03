@@ -440,7 +440,28 @@
             "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
             "justMyCode": true
         },
-
+        {
+            "name": "Python: auto_sampling_rev_itp_encoder_test_video",
+            "type": "python",
+            "request": "launch",
+            "program": "auto_sampling_rev_itp_Enc_input.py",
+            "args": ["--set", "valid", 
+                    "--step", "100000", 
+                    "--interpolate", "spatial_latent", 
+                    "--interpolate_step", "60", 
+                    "--out_dir", "./test_video", 
+                    "--cfg_name", "UNetCond_Spatial_Hadamart_Tanh_Shape.yaml", 
+                    "--log_dir", "UNetCond_Spatial_Hadamart_Tanh_Shape", 
+                    "--n_subject", "2", 
+                    "--slerp", 
+                    "--diffusion_steps", "20",
+                    "--seed", "47",
+                    "--src_dst", "60065.jpg", "60182.jpg",
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/",
+            "justMyCode": true
+        },
         {
             "name": "Python: vispage_hard_pairwise",
             "type": "python",
