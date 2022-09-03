@@ -81,7 +81,7 @@ cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
 cfg.img_model.condition_proj_dim = 512
 cfg.img_model.pool = 'attention'
 cfg.img_model.conditioning = False
-cfg.img_model.last_conv = False    # For Duplicate UNetModel
+cfg.img_model.last_conv = False  # For Duplicate UNetModel
 
 # Spatial-Conditioning specific
 cfg.img_model.hadamart_prep = None    # For Spatial-Hadamart conditioning
@@ -168,6 +168,7 @@ cfg.train.save_interval = 50000
 cfg.train.sampling_interval = 25000
 cfg.train.n_sampling = 20
 cfg.train.same_sampling = True
+cfg.train.sampling_model = "ema"
 cfg.train.resume_checkpoint = ""
 cfg.train.log_dir = "./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_image"))
 cfg.train.n_gpus = 1
