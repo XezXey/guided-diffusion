@@ -248,10 +248,13 @@ class TrainLoop(LightningModule):
     #         # took_step.append(tk_s)
     #     return all(took_step)
 
-    def forward_cond_network(self, dat, cond):
+    def forward_cond_network(self, dat, cond, model_dict=None):
+        if model_dict is None:
+            model_dict = self.model_dict
+            
         if self.cfg.img_cond_model.apply:
             dat = cond['cond_img']
-            img_cond = self.model_dict[self.cfg.img_cond_model.name](
+            img_cond = model_dict[self.cfg.img_cond_model.name](
                 x=dat.float(), 
                 emb=None,
             )
@@ -320,26 +323,45 @@ class TrainLoop(LightningModule):
         self.log("training_progress/global_samples", (step_ + 1) * self.global_batch)
 
     @rank_zero_only
-    def eval_mode(self):
-        for _, v in self.model_dict.items():
+    def eval_mode(self, model):
+        for _, v in model.items():
             v.eval()
 
     @rank_zero_only
-    def train_mode(self):
-        for _, v in self.model_dict.items():
+    def train_mode(self, model):
+        for _, v in model.items():
             v.train()
         
 
     @rank_zero_only
     def log_sampling(self, batch):
+        def get_ema_model(rate):
+            rate_idx = self.ema_rate.index(rate)
+            ema_model = copy.deepcopy(self.model_dict)
+            ema_params = dict.fromkeys(self.model_ema_params_dict.keys())
+            for name in ema_params:
+                ema_params[name] = self.model_trainer_dict[name].master_params_to_state_dict(self.model_ema_params_dict[name][rate_idx])
+                ema_model[name].load_state_dict(ema_params[name])
+            
+            return ema_model
+        
         print("Sampling...")
-        self.eval_mode()
+        
+        if self.cfg.train.sampling_model == 'ema':
+            ema_model_dict = get_ema_model(rate=0.9999)
+            sampling_model = ema_model_dict
+        elif self.cfg.train.sampling_model == 'model':
+            sampling_model = self.model_dict
+        else: raise NotImplementedError("Only \"model\" or \"ema\"")
+        
+        self.eval_mode(model=sampling_model)
 
         step_ = float(self.step + self.resume_step)
         tb = self.tb_logger.experiment
         H = W = self.cfg.img_model.image_size
 
         if self.cfg.train.same_sampling:
+            # batch here is a tuple of (dat, cond); thus used batch[0], batch[1] here
             dat, cond = next(iter(self.train_loader))
             dat = dat.type_as(batch[0])
             cond = tensor_util.dict_type_as(in_d=cond, target_d=batch[1], keys=cond.keys())
@@ -355,13 +377,13 @@ class TrainLoop(LightningModule):
         
         noise = th.randn((n, 3, H, W)).type_as(dat)
 
-        # Any Encoder/Conditioned Network to be applied before a main UNet
+        # Any Encoder/Conditioned Network need to apply before a main UNet.
         if self.cfg.img_cond_model.apply:
             self.forward_cond_network(dat=dat, cond=cond)
 
         tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
         sample_from_ddim = self.diffusion.ddim_sample_loop(
-            model=self.model_dict[self.cfg.img_model.name],
+            model=sampling_model[self.cfg.img_model.name],
             shape=(n, 3, H, W),
             clip_denoised=True,
             model_kwargs=cond,
@@ -371,7 +393,7 @@ class TrainLoop(LightningModule):
         tb.add_image(tag=f'ddim_sample', img_tensor=make_grid(sample_from_ddim, nrow=4), global_step=(step_ + 1) * self.n_gpus)
         
         sample_from_ps = self.diffusion.p_sample_loop(
-            model=self.model_dict[self.cfg.img_model.name],
+            model=sampling_model[self.cfg.img_model.name],
             shape=(n, 3, H, W),
             clip_denoised=True,
             model_kwargs=copy.deepcopy(cond),
@@ -383,7 +405,7 @@ class TrainLoop(LightningModule):
         # Save memory!
         dat = dat.detach()
         cond = tensor_util.dict_detach(in_d=cond, keys=cond.keys())
-        self.train_mode()
+        self.train_mode(model=sampling_model)
 
     @rank_zero_only
     def save(self):
@@ -467,7 +489,6 @@ def find_resume_checkpoint(ckpt_dir, k, model_name):
                 found_ckpt[f"{name}_{k}"] = c
                 assert bf.exists(found_ckpt[f"{name}_{k}"])
     return found_ckpt
-
 
 def find_ema_checkpoint(main_checkpoint, step, rate, name):
     if main_checkpoint is None:
