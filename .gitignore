@@ -50,4 +50,6 @@ experiment_scripts/face_3d/rendered_face
 experiment_scripts/rotate_light/normals
 experiment_scripts/rotate_light/alpha
 experiment_scripts/rotate_light/.ipynb_checkpoints
+
+experiment_scripts/compare_model/txt_model_evid
 visualize_scripts/flask_vispage/node_server

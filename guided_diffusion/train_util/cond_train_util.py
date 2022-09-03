@@ -21,7 +21,7 @@ from .. import logger
 from ..trainer_util import Trainer
 from ..models.nn import update_ema
 from ..resample import LossAwareSampler, UniformSampler
-from ..script_util import seed_all
+from ..script_util import seed_all, compare_models
 
 import torch.nn as nn
 
@@ -138,6 +138,7 @@ class TrainLoop(LightningModule):
                 self.model_ema_params_dict[name] = [
                     copy.deepcopy(self.model_trainer_dict[name].master_params) for _ in range(len(self.ema_rate))
                 ]
+    
     def load_ckpt(self):
         '''
         Load model checkpoint from filename = model{step}.pt
@@ -349,12 +350,12 @@ class TrainLoop(LightningModule):
         
         if self.cfg.train.sampling_model == 'ema':
             ema_model_dict = get_ema_model(rate=0.9999)
-            sampling_model = ema_model_dict
+            sampling_model_dict = ema_model_dict
         elif self.cfg.train.sampling_model == 'model':
-            sampling_model = self.model_dict
+            sampling_model_dict = self.model_dict
         else: raise NotImplementedError("Only \"model\" or \"ema\"")
         
-        self.eval_mode(model=sampling_model)
+        self.eval_mode(model=sampling_model_dict)
 
         step_ = float(self.step + self.resume_step)
         tb = self.tb_logger.experiment
@@ -379,11 +380,11 @@ class TrainLoop(LightningModule):
 
         # Any Encoder/Conditioned Network need to apply before a main UNet.
         if self.cfg.img_cond_model.apply:
-            self.forward_cond_network(dat=dat, cond=cond)
+            self.forward_cond_network(dat=dat, cond=cond, model_dict=sampling_model_dict)
 
         tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
         sample_from_ddim = self.diffusion.ddim_sample_loop(
-            model=sampling_model[self.cfg.img_model.name],
+            model=sampling_model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
             clip_denoised=True,
             model_kwargs=cond,
@@ -393,7 +394,7 @@ class TrainLoop(LightningModule):
         tb.add_image(tag=f'ddim_sample', img_tensor=make_grid(sample_from_ddim, nrow=4), global_step=(step_ + 1) * self.n_gpus)
         
         sample_from_ps = self.diffusion.p_sample_loop(
-            model=sampling_model[self.cfg.img_model.name],
+            model=sampling_model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
             clip_denoised=True,
             model_kwargs=copy.deepcopy(cond),
@@ -405,7 +406,7 @@ class TrainLoop(LightningModule):
         # Save memory!
         dat = dat.detach()
         cond = tensor_util.dict_detach(in_d=cond, keys=cond.keys())
-        self.train_mode(model=sampling_model)
+        self.train_mode(model=sampling_model_dict)
 
     @rank_zero_only
     def save(self):
