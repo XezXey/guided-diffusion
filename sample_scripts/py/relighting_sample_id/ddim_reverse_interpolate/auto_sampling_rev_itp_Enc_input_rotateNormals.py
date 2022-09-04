@@ -28,8 +28,8 @@ parser.add_argument('--src_dst', nargs='+', default=[])
 args = parser.parse_args()
 
 import os, sys, glob
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
+# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+# os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
 
 import numpy as np
 import pandas as pd
@@ -68,10 +68,10 @@ def without_classifier(itp_func):
     cond = model_kwargs.copy()
 
     if cfg.img_cond_model.apply:
-        interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
-        cond.update(interp_cond)
+        cond.update(mani_utils.repeat_cond_params(cond, base_idx=b_idx, n=n_step, key=['light']))
+        cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
         start = time.time()
-        deca_rendered = params_utils.render_deca(deca_params=cond, idx=src_idx, n=n_step, avg_dict=avg_dict, render_mode=args.render_mode)
+        deca_rendered = params_utils.render_deca(deca_params=cond, idx=src_idx, n=n_step, avg_dict=avg_dict, render_mode=args.render_mode, rotate_normals=True)
         print("Rendering time : ", time.time() - start)
         for i, cond_img_name in enumerate(cfg.img_cond_model.in_image):
             if cond_img_name == 'faceseg_bg_noface&nohair':
@@ -123,27 +123,26 @@ def without_classifier(itp_func):
     else: 
         noise_map = th.cat([reverse_ddim_sample['img_output'][[b_idx]]] * n_step)
     sample_ddim = pl_sampling(noise=noise_map, model_kwargs=cond)
-    fig = vis_utils.plot_sample(img=noise_map, sampling_img=sample_ddim['img_output'])
-    # Save a visualization
-    fig.suptitle(f"""Reverse Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
-                    model={args.log_dir}, seed={args.seed}, interpolate={args.interpolate}, b_idx={b_idx}, src_idx={b_idx}, dst_idx={dst_idx},
-                """, x=0.1, y=0.95, horizontalalignment='left', verticalalignment='top',)
-    plt.savefig(f"{save_preview_path}/seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_allframes.png", bbox_inches='tight')
     
     # Save result
     if itp_func == mani_utils.lerp:
         itp_fn_str = 'Lerp'
     elif itp_func == mani_utils.slerp:
         itp_fn_str = 'Slerp'
-    save_frames_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/"
+        
+    save_frames_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
     os.makedirs(save_frames_path, exist_ok=True)
     tc_frames = sample_ddim['img_output']
     for i in range(tc_frames.shape[0]):
         frame = tc_frames[i].cpu().detach()
         frame = ((frame + 1) * 127.5)/255.0
         fp = f"{save_frames_path}/{itp_fn_str}_seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_frame{i}.png"
-        torchvision.utils.save_image(tensor=((frame)), fp=fp)
-
+        torchvision.utils.save_image(tensor=(frame), fp=fp)
+        
+    frames = sample_ddim['img_output'].permute(0, 2, 3, 1)
+    frames = (frames.detach().cpu().numpy() + 1) * 127.5
+    fp_vid = f"{save_frames_path}/cls_seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_nsteps={n_step}.mp4"
+    torchvision.io.write_video(video_array=frames, filename=fp_vid, fps=30)
 
 if __name__ == '__main__':
     seed_all(args.seed)

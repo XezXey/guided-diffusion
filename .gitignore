@@ -44,9 +44,11 @@ sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/hard_samples/
 sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/hard_samples_pairwise/
 sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/hard_samples_pairwise_mock/
 sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/test_video/
+sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/rotated_normals/
 
 experiment_scripts/blur/gen/*.jpg
 experiment_scripts/face_3d/rendered_face
+experiment_scripts/rotate_light/normals
 experiment_scripts/rotate_light/normals
 experiment_scripts/rotate_light/alpha
 experiment_scripts/rotate_light/.ipynb_checkpoints

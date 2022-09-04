@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import torch as th
 import glob, os, sys
+import cv2
 from collections import defaultdict
 from . import file_utils
 
@@ -46,7 +47,15 @@ def save_obj(renderer, filename, opdict):
     # save coarse mesh
     util.write_obj(filename, vertices, faces, colors=colors)
 
-def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractTex=True, device='cuda', avg_dict=None):
+def get_R_normals(n_step):
+    src = np.array([0, 0, 0])
+    dst = np.array([0, 0, 6.50])
+    rvec = np.linspace(src, dst, n_step)
+    R = [cv2.Rodrigues(rvec[i])[0] for i in range(rvec.shape[0])]
+    R = np.stack(R, axis=0)
+    return R
+
+def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractTex=True, device='cuda', avg_dict=None, rotate_normals=False):
     '''
     TODO: Adding the rendering with template shape, might need to load mean of camera/tform
     # Render the deca face image that used to condition the network
@@ -75,9 +84,11 @@ def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractT
                 'cam':deca_params['cam'][[idx]].repeat(n, 1).to(device).float(),
                 'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
                 'tform':deca_params['tform'][[idx]].repeat(n, 1).to(device).reshape(-1, 3, 3).float(),
-                'images':testdata[0]['image'].to(device)[None,...].float().repeat(n, 1, 1, 1)
-                
+                'images':testdata[0]['image'].to(device)[None,...].float().repeat(n, 1, 1, 1),
     }
+    if rotate_normals:
+        codedict.update({'R_normals': th.tensor(deca_params['R_normals']).to(device).float()})
+        
     original_image = deca_params['raw_image'][[idx]].to(device).float().repeat(n, 1, 1, 1)
     if render_mode == 'shape':
         use_template = False
@@ -95,7 +106,8 @@ def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractT
                                   tform=tform_inv, 
                                   use_template=use_template, 
                                   mean_cam=mean_cam, 
-                                  use_detail=False)  
+                                  use_detail=False,
+                                  rotate_normals=rotate_normals)  
     rendered_image = orig_visdict['shape_images'].mul(255).add_(0.5).clamp_(0, 255)
     return rendered_image
     
