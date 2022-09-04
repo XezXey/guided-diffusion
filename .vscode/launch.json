@@ -168,12 +168,14 @@
             "type": "python",
             "request": "launch",
             "program": "./train_scripts/image_train.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"2"},
             "args": ["--train.log_dir", "/data/mint/model_logs/dev",
-                    "--train.batch_size", "1",
+                    "--train.batch_size", "10",
                     "--train.n_gpus", "1", 
-                    "--cfg", "./config/EncLight_Spatial_Rendered_Face_Hadamart_clip/Spatial_Hadamart_AdaGN_sharenorm=True_patches=2_SiLU_Shape.yaml",
+                    // "--cfg", "./config/EncLight_Spatial_Rendered_Face_Hadamart_clip/Spatial_Hadamart_AdaGN_sharenorm=True_patches=2_SiLU_Shape.yaml",
+                    "--cfg", "./config/EncLight_Spatial_Rendered_Face_Hadamart_clip/Spatial_Hadamart_AdaGN_ReduceCh_Shape.yaml",
                     "--train.save_interval", "5000000000",
-                    "--train.sampling_interval", "1"
+                    "--train.sampling_interval", "50000000"
             ],
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/",

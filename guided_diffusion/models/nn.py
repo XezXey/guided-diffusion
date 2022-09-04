@@ -157,8 +157,6 @@ class AdaptiveGN_Patches_Hadamart(nn.Module):
             
         return out
         
-        
-        
     def patches_to_image(self, patches):
         b_p, n_p, c_p, h_p, w_p = patches.shape
         assert n_p == self.n_patches**2
@@ -166,6 +164,46 @@ class AdaptiveGN_Patches_Hadamart(nn.Module):
         final_out = th.einsum('b i j c h w -> b c i h j w', final_out)
         final_out = final_out.reshape(b_p, c_p, self.image_size, self.image_size)
         return final_out
+    
+class AdaptiveGN_ReduceCh_Hadamart(nn.Module):
+    def __init__(self, prep, channels, n_groups, use_bias, silu_scale):
+        super().__init__()
+        self.prep = prep
+        self.channels = channels
+        self.n_groups = n_groups 
+        self.sub_ch_size = self.channels // self.n_groups
+        assert self.channels % self.n_groups == 0
+        self.use_bias = use_bias 
+        self.silu_scale = silu_scale
+        self.norm = normalization(channels, n_group=self.sub_ch_size)
+        self.conv2d_scale = nn.ModuleList([
+            th.nn.Conv2d(in_channels=channels, out_channels=self.n_groups, kernel_size=1, groups=self.n_groups),
+            th.nn.SiLU() if self.silu_scale else th.nn.Identity()
+        ])
+        if self.use_bias:
+            self.conv2d_bias = nn.ModuleList([
+                th.nn.Conv2d(in_channels=channels, out_channels=self.n_groups, kernel_size=1, groups=self.n_groups),
+                th.nn.SiLU() if self.silu_scale else th.nn.Identity()
+            ])
+        
+        if self.silu_scale:
+            self.silu = nn.SiLU()
+        self.shift = 0
+        
+    def forward(self, x, y):
+        assert x.shape == y.shape
+        scale = self.conv2d_scale(y)
+        scale = th.repeat_interleave(scale, repeats=self.sub_ch_size, dim=1)
+        if self.use_bias:
+            bias = self.conv2d_bias(y)
+            bias = th.repeat_interleave(bias, repeats=self.sub_ch_size, dim=1)
+        else:
+            bias = 0.
+            
+        out = self.norm(x) * (1 + scale) + bias
+            
+        return out
+        
         
 class HadamartLayer(nn.Module):
     def __init__(self, cfg, channels, image_size):
@@ -186,9 +224,17 @@ class HadamartLayer(nn.Module):
                 self.prep_layer = nn.Tanh()
             elif self.prep == 'identity':
                 print("[#] Use Hadamart-Identity")
-            elif self.prep == 'adaptive_gn':
+            elif self.prep == 'adaptive_patches_gn':
                 print("[#] Use Hadamart-AdaptiveGN")
-                self.prep_layer = AdaptiveGN_Hadamart(prep=self.prep, 
+                self.prep_layer = AdaptiveGN_Patches_Hadamart(prep=self.prep, 
+                                                      channels=self.channels, 
+                                                      image_size=self.image_size, 
+                                                      n_patches=cfg.img_model.hadamart_n_patches, 
+                                                      share_norm=cfg.img_model.hadamart_share_norm,
+                                                      silu_scale=cfg.img_model.hadamart_silu_scale)
+            elif self.prep == 'adaptive_reducech_gn':
+                print("[#] Use Hadamart-AdaptiveGN")
+                self.prep_layer = AdaptiveGN_Patches_Hadamart(prep=self.prep, 
                                                       channels=self.channels, 
                                                       image_size=self.image_size, 
                                                       n_patches=cfg.img_model.hadamart_n_patches, 
