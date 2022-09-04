@@ -125,15 +125,15 @@ class AdaptiveGN_ReduceCh_Hadamart(nn.Module):
         self.use_bias = use_bias 
         self.silu_scale = silu_scale
         self.norm = normalization(channels, n_group=self.sub_ch_size)
-        self.conv2d_scale = nn.ModuleList([
+        self.conv2d_scale = nn.Sequential(
             th.nn.Conv2d(in_channels=channels, out_channels=self.n_groups, kernel_size=1, groups=self.n_groups),
             th.nn.SiLU() if self.silu_scale else th.nn.Identity()
-        ])
+        )
         if self.use_bias:
-            self.conv2d_bias = nn.ModuleList([
+            self.conv2d_bias = nn.Sequential(
                 th.nn.Conv2d(in_channels=channels, out_channels=self.n_groups, kernel_size=1, groups=self.n_groups),
                 th.nn.SiLU() if self.silu_scale else th.nn.Identity()
-            ])
+            )
         
         if self.silu_scale:
             self.silu = nn.SiLU()

@@ -9,7 +9,7 @@ img_model:
   condition_proj_dim: 512
   hadamart_prep: "Adaptive_ReduceCh_GN"
   hadamart_use_bias: False
-  hadamart_silu_scale: False
+  hadamart_silu_scale: True
   hadamart_n_groups: 4
 
 param_model:
@@ -24,10 +24,7 @@ img_cond_model:
   out_channels: 128
   condition_dim: 256
   override_cond: "spatial_latent"
-  pool: 'adaptivenonzero'
   prep_image: [Null]
-  resblock_updown: False
-  num_head_channels: -1
 
 relighting:
   use_SH: False
