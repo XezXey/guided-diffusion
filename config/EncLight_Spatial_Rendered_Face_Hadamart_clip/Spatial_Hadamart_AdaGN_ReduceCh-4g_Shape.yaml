@@ -35,7 +35,11 @@ dataset:
   face_segment_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment/"
   deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
 
+train:
+  weight_decay: 0.2
+  sampling_interval: 25000
+  save_interval: 25000
 
 train_misc:
   exp_name: "EncLight_Spatial_Rendered_Face_Hadamart_clip"
-  cfg_name: "Spatial_Hadamart_AdaGN_ReduceCh_Shape"
+  cfg_name: "Spatial_Hadamart_AdaGN_ReduceCh-4g_Shape"
