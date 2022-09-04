@@ -88,6 +88,7 @@ cfg.img_model.hadamart_prep = None    # For Spatial-Hadamart conditioning
 cfg.img_model.cond_layer_selector = None    # Select the block/layer to apply condition
 cfg.img_model.hadamart_n_patches = None
 cfg.img_model.hadamart_share_norm = None
+cfg.img_model.hadamart_n_groups = None
 cfg.img_model.hadamart_use_bias = None
 cfg.img_model.hadamart_silu_scale = None
 

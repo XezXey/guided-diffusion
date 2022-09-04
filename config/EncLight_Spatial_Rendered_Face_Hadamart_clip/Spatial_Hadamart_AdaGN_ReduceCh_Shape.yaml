@@ -10,6 +10,7 @@ img_model:
   hadamart_prep: "Adaptive_ReduceCh_GN"
   hadamart_use_bias: False
   hadamart_silu_scale: False
+  hadamart_n_groups: 4
 
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb']
