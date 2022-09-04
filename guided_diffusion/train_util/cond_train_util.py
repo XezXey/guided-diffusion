@@ -470,7 +470,6 @@ def get_blob_logdir():
     # a blobstore or some external drive.
     return logger.get_dir()
 
-
 def find_resume_checkpoint(ckpt_dir, k, model_name):
     # On your infrastructure, you may want to override this to automatically
     # discover the latest checkpoint on your blob storage, etc.
