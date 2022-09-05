@@ -12,7 +12,7 @@ parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--interpolate', nargs='+', default=None)
 parser.add_argument('--out_dir', type=str, required=True)
 parser.add_argument('--gpu', type=str, default='0')
-parser.add_argument('--n_subject', type=int, required=True)
+parser.add_argument('--n_subject', type=int, default=-1)
 parser.add_argument('--sigma', type=int, default=1)
 parser.add_argument('--cls', action='store_true', default=False)
 parser.add_argument('--lerp', action='store_true', default=False)
@@ -196,7 +196,8 @@ if __name__ == '__main__':
         assert os.path.isfile(args.sample_pairs)
         f = open(args.sample_pairs)
         sample_pairs = json.load(f)['hard_samples']
-        args.n_subject = len(sample_pairs.keys())
+        if args.n_subject == -1:
+            args.n_subject = len(sample_pairs.keys())
     elif len(args.src_dst) == 2:
         args.n_subject = 1
     
