@@ -6,7 +6,7 @@ import cv2
 from collections import defaultdict
 from . import file_utils
 
-def params_to_model(shape, exp, pose, cam, i, uvdn=None):
+def params_to_model(shape, exp, pose, cam, lights):
 
     from model_3d.FLAME import FLAME
     from model_3d.FLAME.config import cfg as flame_cfg
@@ -25,7 +25,7 @@ def params_to_model(shape, exp, pose, cam, i, uvdn=None):
     trans_verts = util.batch_orth_proj(verts, cam); trans_verts[:,:,1:] = -trans_verts[:,:,1:]
 
     ## rendering
-    shape_images = renderer.render_shape(verts, trans_verts)
+    shape_images = renderer.render_shape(verts, trans_verts, lights=lights)
 
     # opdict = {'verts' : verts,}
     # os.makedirs('./rendered_obj', exist_ok=True)
@@ -55,7 +55,10 @@ def get_R_normals(n_step):
     R = np.stack(R, axis=0)
     return R
 
-def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractTex=True, device='cuda', avg_dict=None, rotate_normals=False):
+def render_deca(deca_params, idx, n, render_mode='shape', 
+                useTex=False, extractTex=True, device='cuda', 
+                avg_dict=None, rotate_normals=False, use_detail=False,
+                deca_mode='only_renderer'):
     '''
     TODO: Adding the rendering with template shape, might need to load mean of camera/tform
     # Render the deca face image that used to condition the network
@@ -77,19 +80,22 @@ def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractT
     deca_cfg.model.extract_tex = extractTex
     
     testdata = datasets.TestData(deca_params['raw_image_path'][idx])
-    deca = DECA(config = deca_cfg, device=device, mode='only_renderer')
+    deca = DECA(config = deca_cfg, device=device, mode=deca_mode)
     codedict = {'shape':deca_params['shape'][[idx]].repeat(n, 1).to(device).float(),
                 'pose':deca_params['pose'][[idx]].repeat(n, 1).to(device).float(),
                 'exp':deca_params['exp'][[idx]].repeat(n, 1).to(device).float(),
                 'cam':deca_params['cam'][[idx]].repeat(n, 1).to(device).float(),
                 'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
                 'tform':deca_params['tform'][[idx]].repeat(n, 1).to(device).reshape(-1, 3, 3).float(),
-                'images':testdata[0]['image'].to(device)[None,...].float().repeat(n, 1, 1, 1),
+                # 'images':(((testdata[idx]['image'] * 255)/127.5) - 1).to(device)[None,...].float().repeat(n, 1, 1, 1),
+                'images':testdata[idx]['image'].to(device)[None,...].float().repeat(n, 1, 1, 1),
+                'tex':deca_params['albedo'][[idx]].repeat(n, 1).to(device).float(),
+                'detail':deca_params['detail'][[idx]].repeat(n, 1).to(device).float(),
     }
     if rotate_normals:
         codedict.update({'R_normals': th.tensor(deca_params['R_normals']).to(device).float()})
         
-    original_image = deca_params['raw_image'][[idx]].to(device).float().repeat(n, 1, 1, 1)
+    original_image = deca_params['raw_image'][[idx]].to(device).float().repeat(n, 1, 1, 1) / 255.0
     if render_mode == 'shape':
         use_template = False
         mean_cam = None
@@ -106,10 +112,10 @@ def render_deca(deca_params, idx, n, render_mode='shape', useTex=False, extractT
                                   tform=tform_inv, 
                                   use_template=use_template, 
                                   mean_cam=mean_cam, 
-                                  use_detail=False,
+                                  use_detail=use_detail,
                                   rotate_normals=rotate_normals)  
     rendered_image = orig_visdict['shape_images'].mul(255).add_(0.5).clamp_(0, 255)
-    return rendered_image
+    return rendered_image, orig_visdict
     
 
 

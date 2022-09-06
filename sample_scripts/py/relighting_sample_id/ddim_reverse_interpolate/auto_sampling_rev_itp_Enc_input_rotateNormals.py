@@ -20,6 +20,7 @@ parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--interpolate_noise', action='store_true', default=False)
 parser.add_argument('--render_mode', type=str, default="shape")
+parser.add_argument('--rotate_normals', action='store_true', default=False)
 parser.add_argument('--gpu_id', type=str, default="0")
 
 parser.add_argument('--sample_pairs', type=str, default=None)
@@ -68,16 +69,23 @@ def without_classifier(itp_func):
     cond = model_kwargs.copy()
 
     if cfg.img_cond_model.apply:
-        cond.update(mani_utils.repeat_cond_params(cond, base_idx=b_idx, n=n_step, key=['light']))
-        cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
+        if args.rotate_normals:
+            #NOTE: Render w/ Rotated normals
+            cond.update(mani_utils.repeat_cond_params(cond, base_idx=b_idx, n=n_step, key=['light']))
+            cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
+        else:
+            #NOTE: Render w/ interpolated normals
+            interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+            cond.update(interp_cond)
+        
         start = time.time()
-        deca_rendered = params_utils.render_deca(deca_params=cond, idx=src_idx, n=n_step, avg_dict=avg_dict, render_mode=args.render_mode, rotate_normals=True)
+        deca_rendered = params_utils.render_deca(deca_params=cond, idx=src_idx, n=n_step, avg_dict=avg_dict, render_mode=args.render_mode, rotate_normals=args.rotate_normals)
         print("Rendering time : ", time.time() - start)
         for i, cond_img_name in enumerate(cfg.img_cond_model.in_image):
-            if cond_img_name == 'faceseg_bg_noface&nohair':
+            if 'faceseg' in cond_img_name:
                 bg_tmp = [cond['faceseg_bg_noface&nohair_img'][src_idx]] * n_step
                 bg_tmp = np.stack(bg_tmp, axis=0)
-                cond[f"{cond_img_name}"] = bg_tmp 
+                cond[f"{cond_img_name}"] = bg_tmp
             else:
                 rendered_tmp = []
                 for j in range(n_step):
@@ -102,13 +110,13 @@ def without_classifier(itp_func):
             interp_set = args.interpolate.copy()
             interp_set.remove('spatial_latent')
         interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+    cond.update(interp_cond)
+        
     repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=b_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate + ['light']))
     cond.update(repeated_cond)
-    cond.update(interp_cond)
 
     # Finalize the cond_params
-    key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
-    cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
+    cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
     to_tensor_key = ['cond_params'] + cfg.param_model.params_selector + [cfg.img_cond_model.override_cond]
     cond = inference_utils.to_tensor(cond, key=to_tensor_key, device=ckpt_loader.device)
     
@@ -130,20 +138,26 @@ def without_classifier(itp_func):
     elif itp_func == mani_utils.slerp:
         itp_fn_str = 'Slerp'
         
-    save_frames_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
-    os.makedirs(save_frames_path, exist_ok=True)
-    tc_frames = sample_ddim['img_output']
+    save_res_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
+    os.makedirs(save_res_path, exist_ok=True)
+    
+    # save_frames(path=save_frames_path, frames=sample_ddim['img_output'])
+    tc_frames = ((sample_ddim['img_output'] + 1) * 127.5)/255.0
     for i in range(tc_frames.shape[0]):
         frame = tc_frames[i].cpu().detach()
-        frame = ((frame + 1) * 127.5)/255.0
-        fp = f"{save_frames_path}/{itp_fn_str}_seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_frame{i}.png"
-        torchvision.utils.save_image(tensor=(frame), fp=fp)
+        torchvision.utils.save_image(tensor=(frame), fp=f"{save_res_path}/frame{i}.png")
         
+    # save_video
     frames = sample_ddim['img_output'].permute(0, 2, 3, 1)
     frames = (frames.detach().cpu().numpy() + 1) * 127.5
-    fp_vid = f"{save_frames_path}/cls_seed={args.seed}_bidx={b_id}_src={src_id}_dst={dst_id}_itp={interpolate_str}_nsteps={n_step}.mp4"
+    fp_vid = f"{save_res_path}/video.mp4"
     torchvision.io.write_video(video_array=frames, filename=fp_vid, fps=30)
-
+    
+    with open(f'{save_res_path}/res_desc.json', 'w') as fj:
+        log_dict = {'sampling_args' : vars(args), 
+                    'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_func':itp_fn_str, 'interpolate':interpolate_str}}
+        json.dump(log_dict, fj)
+        
 if __name__ == '__main__':
     seed_all(args.seed)
     # Load Ckpt
@@ -206,7 +220,6 @@ if __name__ == '__main__':
     for sj_i in range(args.n_subject):
         
         # Load image & condition
-
         img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
         
         if args.sample_pairs is not None:
@@ -277,7 +290,7 @@ if __name__ == '__main__':
         fig = vis_utils.plot_sample(img=img_tmp, reverse_sampling_images=reverse_ddim_sample['img_output'], sampling_img=sample_ddim['img_output'])
 
         # Save a visualization
-        save_preview_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Combined/"
+        save_preview_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Reversed/"
         os.makedirs(save_preview_path, exist_ok=True)
         fig.suptitle(f"""Reverse Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
                         model={args.log_dir}, seed={args.seed}, interchange={args.interpolate},

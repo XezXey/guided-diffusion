@@ -39,7 +39,7 @@ class CkptLoader():
         model_logs_path = glob.glob(f"{self.sshfs_mount_path}/*/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/", recursive=True)
         model_path = [m_log for m_log in model_logs_path if f"/{self.log_dir}/" in m_log]    # Add /{}/ to achieve a case-sensitive of folder
         print("[#] Model Path : ", model_path)
-        assert (len(model_path) <= 1 or len(model_path) > 0)
+        assert (len(model_path) <= 1 and len(model_path) > 0)
         return model_path[0]
 
     # Load model

@@ -209,7 +209,6 @@ def create_cond_imgs(cond, key):
     return cond
     
     
-
 def modify_cond(mod_idx, cond_params, params_loc, params_sel, n_step, bound, mod_cond, force_zero=False):
     '''
     Manually change/scale the condition parameters at i-th index e.g. [c1, c2, c3, ..., cN] => [c1 * 2.0, c2, c3, ..., cN]

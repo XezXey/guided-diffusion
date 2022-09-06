@@ -9,6 +9,7 @@ import json
 
 data_path = "/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/valid/"
 sampling_folder = 'hard_samples'
+# sampling_folder = 'rotated_normals'
 
 def sort_by_frame(path_list):
     frame_anno = []
