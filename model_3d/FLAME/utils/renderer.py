@@ -234,18 +234,30 @@ class SRenderY(nn.Module):
         shading = normals_dot_lights[:,:,:,None]*light_intensities[:,:,None,:]
         return shading.mean(1)
 
-    def render_shape(self, vertices, transformed_vertices, images=None, detail_normal_images=None, lights=None, light_type='point'):
+    def render_shape(self, vertices, transformed_vertices, images=None, detail_normal_images=None, lights=None, light_type='point', mask=None):
         '''
         -- rendering shape with detail normal map
         '''
         batch_size = vertices.shape[0]
 
         transformed_vertices[:,:,2] = transformed_vertices[:,:,2] + 10
+        
+        self.faces = self.faces[:, mask['f_mask'], :]
+        self.face_colors = self.face_colors[:, mask['f_mask'], :]
+        # print(vertices.shape)
+        # print(transformed_vertices.shape)
+        # print(self.faces.shape)
+        # print(self.face_colors.shape)
 
+        # return self.faces
         # Attributes
+        # return vertices, self.faces
         face_vertices = util.face_vertices(vertices, self.faces.expand(batch_size, -1, -1))
-        normals = util.vertex_normals(vertices, self.faces.expand(batch_size, -1, -1)); face_normals = util.face_vertices(normals, self.faces.expand(batch_size, -1, -1))
-        transformed_normals = util.vertex_normals(transformed_vertices, self.faces.expand(batch_size, -1, -1)); transformed_face_normals = util.face_vertices(transformed_normals, self.faces.expand(batch_size, -1, -1))
+        normals = util.vertex_normals(vertices, self.faces.expand(batch_size, -1, -1)); 
+        face_normals = util.face_vertices(normals, self.faces.expand(batch_size, -1, -1))
+        transformed_normals = util.vertex_normals(transformed_vertices, self.faces.expand(batch_size, -1, -1)); 
+        transformed_face_normals = util.face_vertices(transformed_normals, self.faces.expand(batch_size, -1, -1))
+        
         attributes = torch.cat([self.face_colors.expand(batch_size, -1, -1, -1), 
                         transformed_face_normals.detach(), 
                         face_vertices.detach(), 

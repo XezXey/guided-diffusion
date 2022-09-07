@@ -58,7 +58,7 @@ def get_R_normals(n_step):
 def render_deca(deca_params, idx, n, render_mode='shape', 
                 useTex=False, extractTex=True, device='cuda', 
                 avg_dict=None, rotate_normals=False, use_detail=False,
-                deca_mode='only_renderer'):
+                deca_mode='only_renderer', mask=None):
     '''
     TODO: Adding the rendering with template shape, might need to load mean of camera/tform
     # Render the deca face image that used to condition the network
@@ -113,7 +113,8 @@ def render_deca(deca_params, idx, n, render_mode='shape',
                                   use_template=use_template, 
                                   mean_cam=mean_cam, 
                                   use_detail=use_detail,
-                                  rotate_normals=rotate_normals)  
+                                  rotate_normals=rotate_normals,
+                                  mask=mask)  
     rendered_image = orig_visdict['shape_images'].mul(255).add_(0.5).clamp_(0, 255)
     return rendered_image, orig_visdict
     

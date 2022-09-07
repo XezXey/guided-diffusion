@@ -79,7 +79,7 @@ def without_classifier(itp_func):
             cond.update(interp_cond)
         
         start = time.time()
-        deca_rendered = params_utils.render_deca(deca_params=cond, idx=src_idx, n=n_step, avg_dict=avg_dict, render_mode=args.render_mode, rotate_normals=args.rotate_normals)
+        deca_rendered, _ = params_utils.render_deca(deca_params=cond, idx=src_idx, n=n_step, avg_dict=avg_dict, render_mode=args.render_mode, rotate_normals=args.rotate_normals)
         print("Rendering time : ", time.time() - start)
         for i, cond_img_name in enumerate(cfg.img_cond_model.in_image):
             if 'faceseg' in cond_img_name:

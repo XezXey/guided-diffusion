@@ -50,6 +50,7 @@ class FLAME(nn.Module):
         self.dtype = torch.float32
         self.register_buffer('faces_tensor', to_tensor(to_np(flame_model.f, dtype=np.int64), dtype=torch.long))
         # The vertices of the template model
+        # print(flame_model.v_template[:1000])
         self.register_buffer('v_template', to_tensor(to_np(flame_model.v_template), dtype=self.dtype))
         # The shape components and expression
         shapedirs = to_tensor(to_np(flame_model.shapedirs), dtype=self.dtype)
@@ -190,7 +191,7 @@ class FLAME(nn.Module):
         betas = torch.cat([shape_params, expression_params], dim=1)
         full_pose = torch.cat([pose_params[:, :3], self.neck_pose.expand(batch_size, -1), pose_params[:, 3:], eye_pose_params], dim=1)
         template_vertices = self.v_template.unsqueeze(0).expand(batch_size, -1, -1)
-
+        
         vertices, _ = lbs(betas, full_pose, template_vertices,
                           self.shapedirs, self.posedirs,
                           self.J_regressor, self.parents,
