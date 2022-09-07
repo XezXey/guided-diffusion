@@ -80,14 +80,13 @@ def render_deca(deca_params, idx, n, render_mode='shape',
     deca_cfg.model.extract_tex = extractTex
     
     testdata = datasets.TestData(deca_params['raw_image_path'][idx])
-    deca = DECA(config = deca_cfg, device=device, mode=deca_mode)
+    deca = DECA(config = deca_cfg, device=device, mode=deca_mode, mask=mask)
     codedict = {'shape':deca_params['shape'][[idx]].repeat(n, 1).to(device).float(),
                 'pose':deca_params['pose'][[idx]].repeat(n, 1).to(device).float(),
                 'exp':deca_params['exp'][[idx]].repeat(n, 1).to(device).float(),
                 'cam':deca_params['cam'][[idx]].repeat(n, 1).to(device).float(),
                 'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
                 'tform':deca_params['tform'][[idx]].repeat(n, 1).to(device).reshape(-1, 3, 3).float(),
-                # 'images':(((testdata[idx]['image'] * 255)/127.5) - 1).to(device)[None,...].float().repeat(n, 1, 1, 1),
                 'images':testdata[idx]['image'].to(device)[None,...].float().repeat(n, 1, 1, 1),
                 'tex':deca_params['albedo'][[idx]].repeat(n, 1).to(device).float(),
                 'detail':deca_params['detail'][[idx]].repeat(n, 1).to(device).float(),
@@ -114,7 +113,7 @@ def render_deca(deca_params, idx, n, render_mode='shape',
                                   mean_cam=mean_cam, 
                                   use_detail=use_detail,
                                   rotate_normals=rotate_normals,
-                                  mask=mask)  
+                                  )  
     rendered_image = orig_visdict['shape_images'].mul(255).add_(0.5).clamp_(0, 255)
     return rendered_image, orig_visdict
     
