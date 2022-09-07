@@ -58,7 +58,7 @@ def get_R_normals(n_step):
 def render_deca(deca_params, idx, n, render_mode='shape', 
                 useTex=False, extractTex=True, device='cuda', 
                 avg_dict=None, rotate_normals=False, use_detail=False,
-                deca_mode='only_renderer', mask=None):
+                deca_mode='only_renderer', mask=None, repeat=True):
     '''
     TODO: Adding the rendering with template shape, might need to load mean of camera/tform
     # Render the deca face image that used to condition the network
@@ -79,22 +79,36 @@ def render_deca(deca_params, idx, n, render_mode='shape',
     deca_cfg.rasterizer_type = 'standard'
     deca_cfg.model.extract_tex = extractTex
     
-    testdata = datasets.TestData(deca_params['raw_image_path'][idx])
+    testdata = datasets.TestData(deca_params['raw_image_path'])
     deca = DECA(config = deca_cfg, device=device, mode=deca_mode, mask=mask)
-    codedict = {'shape':deca_params['shape'][[idx]].repeat(n, 1).to(device).float(),
-                'pose':deca_params['pose'][[idx]].repeat(n, 1).to(device).float(),
-                'exp':deca_params['exp'][[idx]].repeat(n, 1).to(device).float(),
-                'cam':deca_params['cam'][[idx]].repeat(n, 1).to(device).float(),
-                'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
-                'tform':deca_params['tform'][[idx]].repeat(n, 1).to(device).reshape(-1, 3, 3).float(),
-                'images':testdata[idx]['image'].to(device)[None,...].float().repeat(n, 1, 1, 1),
-                'tex':deca_params['albedo'][[idx]].repeat(n, 1).to(device).float(),
-                'detail':deca_params['detail'][[idx]].repeat(n, 1).to(device).float(),
-    }
+    if repeat:
+        codedict = {'shape':deca_params['shape'][[idx]].repeat(n, 1).to(device).float(),
+                    'pose':deca_params['pose'][[idx]].repeat(n, 1).to(device).float(),
+                    'exp':deca_params['exp'][[idx]].repeat(n, 1).to(device).float(),
+                    'cam':deca_params['cam'][[idx]].repeat(n, 1).to(device).float(),
+                    'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
+                    'tform':deca_params['tform'][[idx]].repeat(n, 1).to(device).reshape(-1, 3, 3).float(),
+                    'images':testdata[idx]['image'].to(device)[None,...].float().repeat(n, 1, 1, 1),
+                    'tex':deca_params['albedo'][[idx]].repeat(n, 1).to(device).float(),
+                    'detail':deca_params['detail'][[idx]].repeat(n, 1).to(device).float(),
+        }
+        original_image = deca_params['raw_image'][[idx]].to(device).float().repeat(n, 1, 1, 1) / 255.0
+    else:
+        codedict = {'shape':th.tensor(deca_params['shape']).to(device).float(),
+                    'pose':th.tensor(deca_params['pose']).to(device).float(),
+                    'exp':th.tensor(deca_params['exp']).to(device).float(),
+                    'cam':th.tensor(deca_params['cam']).to(device).float(),
+                    'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
+                    'tform':th.tensor(deca_params['tform']).to(device).reshape(-1, 3, 3).float(),
+                    'images':th.stack([testdata[i]['image'] for i in range(len(deca_params['raw_image_path']))]).to(device).float(),
+                    'tex':th.tensor(deca_params['albedo']).to(device).float(),
+                    'detail':(deca_params['detail']).to(device).float(),
+        }
+        original_image = deca_params['raw_image'].to(device).float() / 255.0
+        
     if rotate_normals:
         codedict.update({'R_normals': th.tensor(deca_params['R_normals']).to(device).float()})
         
-    original_image = deca_params['raw_image'][[idx]].to(device).float().repeat(n, 1, 1, 1) / 255.0
     if render_mode == 'shape':
         use_template = False
         mean_cam = None
@@ -114,7 +128,7 @@ def render_deca(deca_params, idx, n, render_mode='shape',
                                   use_detail=use_detail,
                                   rotate_normals=rotate_normals,
                                   )  
-    rendered_image = orig_visdict['shape_images'].mul(255).add_(0.5).clamp_(0, 255)
+    rendered_image = orig_visdict['shape_images']
     return rendered_image, orig_visdict
     
 

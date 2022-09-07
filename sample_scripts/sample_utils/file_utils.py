@@ -46,8 +46,7 @@ def search_index_from_listpath(list_path, search):
     img_idx = [None, None]
     list_path = [path.split('/')[-1] for path in list_path]
     try:
-        img_idx[0] = list_path.index(search[0])
-        img_idx[1] = list_path.index(search[1])
+        img_idx = [list_path.index(s) for s in search]
     except ValueError:
         raise(f"[#] {search} cannot be found in image path list")
     return img_idx

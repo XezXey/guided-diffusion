@@ -321,26 +321,32 @@ class DECADataset(Dataset):
         face = np.logical_or.reduce((skin, l_brow, r_brow, l_eye, r_eye, eye_g, l_ear, r_ear, ear_r, nose, mouth, u_lip, l_lip))
 
         if segment_part == 'faceseg_face':
-            return face * np.array(raw_pil_image)
+            seg_m = face
         elif segment_part == 'faceseg_face&hair':
-            return ~bg * np.array(raw_pil_image)
+            seg_m = ~bg
         elif segment_part == 'faceseg_bg_noface&nohair':
-            return (bg | hat | neck | neck_l | cloth) * np.array(raw_pil_image)
+            seg_m = (bg | hat | neck | neck_l | cloth)
         elif segment_part == 'faceseg_bg':
-            return bg * np.array(raw_pil_image)
+            seg_m = bg
         elif segment_part == 'faceseg_bg&noface':
-            return (bg | hair | hat | neck | neck_l | cloth) * np.array(raw_pil_image)
+            seg_m = (bg | hair | hat | neck | neck_l | cloth)
         elif segment_part == 'faceseg_hair':
-            return hair * np.array(raw_pil_image)
+            seg_m = hair
         elif segment_part == 'faceseg_faceskin':
-            return skin * np.array(raw_pil_image)
+            seg_m = skin
         elif segment_part == 'faceseg_faceskin&nose':
-            return (skin | nose) * np.array(raw_pil_image)
+            seg_m = (skin | nose)
         elif segment_part == 'faceseg_face_noglasses':
-            return (~eye_g & face) * np.array(raw_pil_image)
+            seg_m = (~eye_g & face)
         elif segment_part == 'faceseg_face_noglasses_noeyes':
-            return (~(l_eye | r_eye) & ~eye_g & face) * np.array(raw_pil_image)
+            seg_m = (~(l_eye | r_eye) & ~eye_g & face)
+        elif segment_part == 'faceseg_eyes':
+            seg_m = (l_eye | r_eye | eye_g)
         else: raise NotImplementedError(f"Segment part: {segment_part} is not found!")
+        
+        out = seg_m * np.array(raw_pil_image)
+        return out
+        
 
     def load_image(self, path):
         with bf.BlobFile(path, "rb") as f:
