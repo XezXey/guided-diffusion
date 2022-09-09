@@ -58,7 +58,8 @@ def get_R_normals(n_step):
 def render_deca(deca_params, idx, n, render_mode='shape', 
                 useTex=False, extractTex=True, device='cuda', 
                 avg_dict=None, rotate_normals=False, use_detail=False,
-                deca_mode='only_renderer', mask=None, repeat=True):
+                deca_mode='only_renderer', mask=None, repeat=True,
+                deca_obj=None):
     '''
     TODO: Adding the rendering with template shape, might need to load mean of camera/tform
     # Render the deca face image that used to condition the network
@@ -71,16 +72,19 @@ def render_deca(deca_params, idx, n, render_mode='shape',
     :param device: device for 'cuda' or 'cpu'
     '''
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
-    from decalib.deca import DECA
+    if deca_obj is None:
+        from decalib.deca import DECA
+        from decalib.utils import util
+        from decalib.utils.config import cfg as deca_cfg
+        deca_cfg.model.use_tex = useTex
+        deca_cfg.rasterizer_type = 'standard'
+        deca_cfg.model.extract_tex = extractTex
+        deca = DECA(config = deca_cfg, device=device, mode=deca_mode, mask=mask)
+    else:
+        deca = deca_obj
+        
     from decalib.datasets import datasets 
-    from decalib.utils import util
-    from decalib.utils.config import cfg as deca_cfg
-    deca_cfg.model.use_tex = useTex
-    deca_cfg.rasterizer_type = 'standard'
-    deca_cfg.model.extract_tex = extractTex
-    
     testdata = datasets.TestData(deca_params['raw_image_path'])
-    deca = DECA(config = deca_cfg, device=device, mode=deca_mode, mask=mask)
     if repeat:
         codedict = {'shape':deca_params['shape'][[idx]].repeat(n, 1).to(device).float(),
                     'pose':deca_params['pose'][[idx]].repeat(n, 1).to(device).float(),

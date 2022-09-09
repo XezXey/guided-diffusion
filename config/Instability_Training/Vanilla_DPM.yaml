@@ -1,5 +1,5 @@
 img_model:
-  name: "Img"
+  name: "ImgCond"
   arch: "UNet"
   image_size: 64
   in_image: 'raw'
@@ -14,7 +14,7 @@ dataset:
 
 train_misc:
   exp_name: "Training_Stability_Debugging"
-  cfg_name: "vanilla_dpm"
+  cfg_name: "Vanilla_DPM"
 
 train:
   sampling_interval: 25000

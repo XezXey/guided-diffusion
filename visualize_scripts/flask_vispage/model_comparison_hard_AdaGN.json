@@ -1,0 +1,11 @@
+{
+     "model_comparison": {
+
+         "log=UNetCond_Spatial_Hadamart_Tanh_Shape_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape.yaml": "100000",
+         "log=UNetCond_Spatial_Hadamart_Tanh_Shape_WD2e-1_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape_WD2e-1.yaml": "100000",
+         "log=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg_WD2e-1_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg_WD2e-1.yaml": "100000",
+         "log=Spatial_Hadamart_AdaGN_ReduceCh-4g_Shape.yaml_cfg=Spatial_Hadamart_AdaGN_ReduceCh-4g_Shape.yaml": "100000",
+         "log=Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape+Bg.yaml_cfg=Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape+Bg.yaml": "100000",
+         "log=Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape.yaml_cfg=Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape.yaml": "150000"
+     }
+ }

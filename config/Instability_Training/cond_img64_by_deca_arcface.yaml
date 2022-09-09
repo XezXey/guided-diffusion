@@ -1,20 +1,23 @@
 img_model:
-  name: "Img"
-  arch: "UNet"
+  name: "ImgCond"
+  arch: "UNetCond"
   image_size: 64
   in_image: 'raw'
   in_channels: 3
   out_channels: 3
+  conditioning: True  # Conditioning with DECA
+  condition_proj_dim: 512
+
+param_model:
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']
 
 dataset:
   deca_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
   data_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
-  face_segment_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment/"
-  deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
 
 train_misc:
   exp_name: "Training_Stability_Debugging"
-  cfg_name: "vanilla_dpm"
+  cfg_name: "UNetCond_latent"
 
 train:
   sampling_interval: 25000

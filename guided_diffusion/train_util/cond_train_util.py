@@ -227,7 +227,8 @@ class TrainLoop(LightningModule):
         if self.step % self.log_interval == 0:
             self.log_step()
         if (self.step % self.sampling_interval == 0) or (self.resume_step!=0 and self.step==1) :
-            self.log_sampling(batch)
+            self.log_sampling(batch, sampling_model='ema')
+            self.log_sampling(batch, sampling_model='model')
     
     def zero_grad_trainer(self):
         for name in self.model_trainer_dict.keys():
@@ -335,7 +336,7 @@ class TrainLoop(LightningModule):
         
 
     @rank_zero_only
-    def log_sampling(self, batch):
+    def log_sampling(self, batch, sampling_model):
         def get_ema_model(rate):
             rate_idx = self.ema_rate.index(rate)
             ema_model = copy.deepcopy(self.model_dict)
@@ -346,12 +347,12 @@ class TrainLoop(LightningModule):
             
             return ema_model
         
-        print("Sampling...")
+        print(f"Sampling with {sampling_model}...")
         
-        if self.cfg.train.sampling_model == 'ema':
+        if sampling_model == 'ema':
             ema_model_dict = get_ema_model(rate=0.9999)
             sampling_model_dict = ema_model_dict
-        elif self.cfg.train.sampling_model == 'model':
+        elif sampling_model == 'model':
             sampling_model_dict = self.model_dict
         else: raise NotImplementedError("Only \"model\" or \"ema\"")
         
@@ -391,7 +392,7 @@ class TrainLoop(LightningModule):
             noise=noise,
         )
         sample_from_ddim = ((sample_from_ddim + 1) * 127.5) / 255.
-        tb.add_image(tag=f'ddim_sample', img_tensor=make_grid(sample_from_ddim, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        tb.add_image(tag=f'{sampling_model} - ddim_sample', img_tensor=make_grid(sample_from_ddim, nrow=4), global_step=(step_ + 1) * self.n_gpus)
         
         sample_from_ps = self.diffusion.p_sample_loop(
             model=sampling_model_dict[self.cfg.img_model.name],
@@ -401,7 +402,7 @@ class TrainLoop(LightningModule):
             noise=noise,
         )
         sample_from_ps = ((sample_from_ps + 1) * 127.5) / 255.
-        tb.add_image(tag=f'p_sample', img_tensor=make_grid(sample_from_ps, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        tb.add_image(tag=f'{sampling_model} - p_sample', img_tensor=make_grid(sample_from_ps, nrow=4), global_step=(step_ + 1) * self.n_gpus)
 
         # Save memory!
         dat = dat.detach()
