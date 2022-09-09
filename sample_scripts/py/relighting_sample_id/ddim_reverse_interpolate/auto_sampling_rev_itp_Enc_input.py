@@ -63,6 +63,7 @@ from sample_utils import (
 )
 device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
 
+#TODO: Rework function
 def without_classifier(itp_func):
     # Forward the interpolation from reverse noise map
     # Interpolate
@@ -142,7 +143,6 @@ def without_classifier(itp_func):
     save_res_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
     os.makedirs(save_res_path, exist_ok=True)
     
-    # save_frames(path=save_frames_path, frames=sample_ddim['img_output'])
     tc_frames = ((sample_ddim['img_output'] + 1) * 127.5)/255.0
     for i in range(tc_frames.shape[0]):
         frame = tc_frames[i].cpu().detach()
@@ -158,6 +158,48 @@ def without_classifier(itp_func):
         log_dict = {'sampling_args' : vars(args), 
                     'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_func':itp_fn_str, 'interpolate':interpolate_str}}
         json.dump(log_dict, fj)
+        
+        
+def uncond_sampling():
+    cond = model_kwargs.copy()
+    if cfg.img_cond_model.apply:
+        if args.rotate_normals:
+            #NOTE: Render w/ Rotated normals
+            cond.update(mani_utils.repeat_cond_params(cond, base_idx=b_idx, n=n_step, key=['light']))
+            cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
+        else:
+            #NOTE: Render w/ interpolated normals
+            interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+            cond.update(interp_cond)
+        
+        start = time.time()
+        deca_rendered, _ = params_utils.render_deca(deca_params=cond, idx=src_idx, n=n_step, avg_dict=avg_dict, render_mode=args.render_mode, rotate_normals=args.rotate_normals)
+        print("Rendering time : ", time.time() - start)
+        for i, cond_img_name in enumerate(cfg.img_cond_model.in_image):
+            if 'faceseg' in cond_img_name:
+                bg_tmp = [cond['faceseg_bg_noface&nohair_img'][src_idx]] * n_step
+                bg_tmp = np.stack(bg_tmp, axis=0)
+                cond[f"{cond_img_name}"] = bg_tmp
+            else:
+                rendered_tmp = []
+                for j in range(n_step):
+                    r_tmp = deca_rendered[j].mul(255).add_(0.5).clamp_(0, 255)
+                    r_tmp = np.transpose(r_tmp.cpu().numpy(), (1, 2, 0))
+                    r_tmp = r_tmp.astype(np.uint8)
+                    r_tmp = dataset.augmentation(PIL.Image.fromarray(r_tmp))
+                    r_tmp = dataset.prep_cond_img(r_tmp, cond_img_name, i)
+                    r_tmp = np.transpose(r_tmp, [2, 0, 1])
+                    r_tmp = (r_tmp / 127.5) - 1
+                
+                    rendered_tmp.append(r_tmp)
+                rendered_tmp = np.stack(rendered_tmp, axis=0)
+                cond[f"{cond_img_name}"] = rendered_tmp
+        cond = mani_utils.create_cond_imgs(cond, key=cfg.img_cond_model.in_image)
+        cond = inference_utils.to_tensor(cond, key=['cond_img'], device=ckpt_loader.device)
+        cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
+    pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
+    pl.
+    pass
         
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -302,3 +344,5 @@ if __name__ == '__main__':
             without_classifier(itp_func=mani_utils.lerp)
         if args.slerp:
             without_classifier(itp_func=mani_utils.slerp)
+        if args.uncond_sampling:
+            uncond_sampling()

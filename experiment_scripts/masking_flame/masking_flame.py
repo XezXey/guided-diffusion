@@ -27,6 +27,8 @@ from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--set_', type=str, required=True)
+parser.add_argument('--index', default=-1, type=int, nargs="+",
+                    help='index of image to process' )
 args = parser.parse_args()
 
 device = 'cuda'
@@ -54,8 +56,22 @@ def get_cfg(self):
     return cfg
 
 def gen_masked_face3d(batch_size, mask, set_, path, dataset):
+    if args.index == -1:
+        data_iters = list(range(len(dataset)))
+        print(f"[#] Process all data : Total={len(data_iters)}")
+    else:
+        start, end = args.index[0], args.index[1]
+        assert start < end
+        assert end <= len(dataset)
+        assert start <= len(dataset)
+        data_iters = list(range(start, end))
+        print(f"[#] Process at {start}->{end} : Total={len(data_iters)}")
+    
+    
     img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{set_}/")
+    
     avail_img_name = [i.split('/')[-1] for i in img_path]
+    avail_img_name = [avail_img_name[i] for i in data_iters]
     img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=avail_img_name)
     dat = th.utils.data.Subset(dataset, indices=img_idx)
     subset_loader = th.utils.data.DataLoader(dat, batch_size=batch_size,
@@ -88,7 +104,7 @@ def gen_masked_face3d(batch_size, mask, set_, path, dataset):
             torchvision.utils.save_image(tensor=rendered_image[i].permute((2, 0, 1)).cpu(), fp=f"{clip_path}/{name}.png")
        
 if __name__ == '__main__':
-    ckpt_loader = ckpt_utils.CkptLoader(log_dir="UNetCond_Spatial_Hadamart_Tanh_Shape", cfg_name="UNetCond_Spatial_Hadamart_Tanh_Shape.yaml")
+    ckpt_loader = ckpt_utils.CkptLoader(log_dir="UNetCond_Spatial_Concat_Shape", cfg_name="UNetCond_Spatial_Concat_Shape.yaml")
     cfg = ckpt_loader.cfg
     cfg.img_cond_model.in_image = cfg.img_cond_model.in_image + ['faceseg_bg_noface&nohair'] + ['faceseg_eyes']
     cfg.img_cond_model.prep_image = [None, None, None]
