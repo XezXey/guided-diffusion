@@ -87,10 +87,15 @@ def gen_masked_face3d(batch_size, mask, set_, path, dataset):
     deca_cfg.model.use_tex = False
     deca = DECA(config = deca_cfg, device='cuda', mode='only_renderer', mask=mask)
     
-    clip_path = f"{path}_wclip/{set_}"
-    woclip_path = f"{path}_woclip/{set_}"
-    os.makedirs(clip_path, exist_ok=True)
-    os.makedirs(woclip_path, exist_ok=True)
+    # clip_path = f"{path}_wclip/{set_}"
+    # woclip_path = f"{path}_woclip/{set_}"
+    # os.makedirs(clip_path, exist_ok=True)
+    # os.makedirs(woclip_path, exist_ok=True)
+    kpts2d_path = f"keypoints_2d/{set_}"
+    kpts3d_path = f"keypoints_3d/{set_}"
+    os.makedirs(kpts2d_path, exist_ok=True)
+    os.makedirs(kpts3d_path, exist_ok=True)
+    
     for _, sample in enumerate(tqdm.tqdm(subset_loader)):
         dat, model_kwargs = sample
     
@@ -100,8 +105,12 @@ def gen_masked_face3d(batch_size, mask, set_, path, dataset):
         rendered_image = rendered_image.permute((0, 2, 3, 1))   # BxHxWxC
         for i in range(rendered_image.shape[0]):
             name = model_kwargs['image_name'][i].split('.')[0]
-            np.save(file=f"{woclip_path}/{name}.npy", arr=rendered_image[i].cpu().numpy())
-            torchvision.utils.save_image(tensor=rendered_image[i].permute((2, 0, 1)).cpu(), fp=f"{clip_path}/{name}.png")
+            # Rendered Image
+            # np.save(file=f"{woclip_path}/{name}.npy", arr=rendered_image[i].cpu().numpy())
+            # torchvision.utils.save_image(tensor=rendered_image[i].permute((2, 0, 1)).cpu(), fp=f"{clip_path}/{name}.png")
+            np.save(file=f"{kpts2d_path}/{name}.npy", arr=orig_visdict['landmarks2d'][i].cpu().numpy())
+            np.save(file=f"{kpts3d_path}/{name}.npy", arr=orig_visdict['landmarks3d'][i].cpu().numpy())
+            
        
 if __name__ == '__main__':
     ckpt_loader = ckpt_utils.CkptLoader(log_dir="UNetCond_Spatial_Concat_Shape", cfg_name="UNetCond_Spatial_Concat_Shape.yaml")

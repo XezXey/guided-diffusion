@@ -29,6 +29,22 @@
             "justMyCode": true
         },
         {
+            "name": "Python: train_masked_deca_shape",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "10",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/EncLight_Masked_Rendered_Face/UNetCond_masked_woclip.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "500000000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
             "name": "Python: train_deca_baseline",
             "type": "python",
             "request": "launch",

@@ -4,7 +4,7 @@ import math
 import random
 
 import PIL
-from cv2 import blur
+import cv2
 from matplotlib import image
 import pandas as pd
 import blobfile as bf
@@ -181,7 +181,7 @@ def _list_image_files_recursively(data_dir):
     for entry in sorted(bf.listdir(data_dir)):
         full_path = bf.join(data_dir, entry)
         ext = entry.split(".")[-1]
-        if "." in entry and ext.lower() in ["jpg", "jpeg", "png", "gif"]:
+        if "." in entry and ext.lower() in ["jpg", "jpeg", "png", "gif", "npy"]:
             results.append(full_path)
         elif bf.isdir(full_path):
             results.extend(_list_image_files_recursively(full_path))
@@ -222,7 +222,6 @@ class DECADataset(Dataset):
 
         # Raw Images in dataset
         query_img_name = list(self.local_images.keys())[idx]
-        # print(query_img_name, self.local_images[query_img_name])
         raw_pil_image = self.load_image(self.local_images[query_img_name])
         raw_img = self.augmentation(pil_image=raw_pil_image)
 
@@ -235,6 +234,12 @@ class DECADataset(Dataset):
                     each_cond_img = (raw_img / 127.5) - 1
                     each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                     out_dict['cond_img'].append(each_cond_img)
+                elif 'woclip' in k:
+                    #NOTE: Input is the npy array -> Used cv2.resize() to handle
+                    each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_AREA)
+                    each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                    out_dict[f'{k}_img'] = each_cond_img
+                    out_dict['cond_img'].append(each_cond_img)
                 else:
                     each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
                     each_cond_img = self.prep_cond_img(each_cond_img, k, i)
@@ -242,11 +247,10 @@ class DECADataset(Dataset):
                     each_cond_img = (each_cond_img / 127.5) - 1
                     out_dict[f'{k}_img'] = each_cond_img
                     out_dict['cond_img'].append(each_cond_img)
+                    
             out_dict['cond_img'] = np.concatenate(out_dict['cond_img'], axis=0)
 
         # Deca params of img-path
-        # for k in self.cfg.param_model.params_selector:
-        #     out_dict[k] = self.deca_params[query_img_name][k]
         out_dict["cond_params"] = np.concatenate([self.deca_params[query_img_name][k] for k in self.precomp_params_key])
         for k in self.deca_params[query_img_name].keys():
             out_dict[k] = self.deca_params[query_img_name][k]
@@ -290,7 +294,10 @@ class DECADataset(Dataset):
             if 'faceseg' in in_image_type:
                 condition_image[in_image_type] = self.face_segment(raw_pil_image, in_image_type, query_img_name)
             elif 'deca' in in_image_type:
-                condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace('.jpg', '.png')]))
+                if "woclip" in in_image_type:
+                    condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace('.jpg', '.npy')], allow_pickle=True)
+                else:
+                    condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace('.jpg', '.png')]))
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
         return condition_image
@@ -340,8 +347,10 @@ class DECADataset(Dataset):
             seg_m = (~eye_g & face)
         elif segment_part == 'faceseg_face_noglasses_noeyes':
             seg_m = (~(l_eye | r_eye) & ~eye_g & face)
-        elif segment_part == 'faceseg_eyes':
+        elif segment_part == 'faceseg_eyes&glasses':
             seg_m = (l_eye | r_eye | eye_g)
+        elif segment_part == 'faceseg_eyes':
+            seg_m = (l_eye | r_eye)
         else: raise NotImplementedError(f"Segment part: {segment_part} is not found!")
         
         out = seg_m * np.array(raw_pil_image)
