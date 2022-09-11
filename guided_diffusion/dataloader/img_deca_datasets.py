@@ -7,7 +7,7 @@ from matplotlib import image
 import pandas as pd
 import blobfile as bf
 import numpy as np
-import scipy
+from scipy import ndimage
 import tqdm
 import os
 import glob
@@ -299,7 +299,7 @@ class DECADataset(Dataset):
                     each_cond_img = self.blur(each_cond_img, sigma=sigma)
                 elif 'dilate' in p:  # Dilate the mask
                     iters = int(p.split('=')[-1])
-                    each_cond_img = scipy.ndimage.binary_dilation(each_cond_img, iterations=iters)
+                    each_cond_img = ndimage.binary_dilation(each_cond_img, iterations=iters)
                 else: raise NotImplementedError("No preprocessing found.")
         return each_cond_img
                     
