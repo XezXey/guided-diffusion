@@ -104,9 +104,11 @@ img_cond_model_img_type = {'raw':3,
                             'faceseg_faceskin&nose':3, 
                             'faceseg_bg&noface':3,
                             'faceseg_bg_noface&nohair':3,
+                            'faceseg_bg&ears_noface&nohair':3,
                             'faceseg_bg':3,
                             'faceseg_face&hair':3, 
-                            'normals':3
+                            'normals':3,
+                            'laplacian_topmost_eyes':3,
 }
 cfg.img_cond_model = CN()
 cfg.img_cond_model.name = "ImgEncoder"
@@ -155,8 +157,10 @@ cfg.dataset = CN()
 cfg.dataset.training_data = ['ffhq_256_with_anno']
 cfg.dataset.deca_dir = '/data/mint/DPM_Dataset/ffhq_256_with_anno/params/'
 cfg.dataset.data_dir = '/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/'
-cfg.dataset.face_segment_dir = "/data/mint/ffhq_256_with_anno/face_segment/"
-cfg.dataset.deca_rendered_dir = "/data/mint/ffhq_256_with_anno/rendered_images/"
+cfg.dataset.face_segment_dir = "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment/"
+cfg.dataset.deca_rendered_dir = "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
+cfg.dataset.laplacian_mask_dir = "/data/mint/DPM_Dataset/ffhq_256_with_anno/eyes_segment/"
+cfg.dataset.laplacian_dir = "/data/mint/DPM_Dataset/ffhq_256_with_anno/laplacian/"
 
 # ---------------------------------------------------------------------------- #
 # Options for training

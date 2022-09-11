@@ -163,6 +163,22 @@
             "justMyCode": true
         },
         {
+            "name": "Python: train_deca_eyes_laplacian",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "10",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/EncLight_Eyes_cond/UNetCond_masked_woclip_eyes_dilate5.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "500000000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
             "name": "Python: train_deca_Hadamart_Tanh_shape+bg",
             "type": "python",
             "request": "launch",

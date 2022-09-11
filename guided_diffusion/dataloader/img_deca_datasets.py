@@ -9,12 +9,15 @@ from matplotlib import image
 import pandas as pd
 import blobfile as bf
 import numpy as np
+import scipy
 import tqdm
 import os
 import glob
 import torchvision
 import torch as th
 from torch.utils.data import DataLoader, Dataset
+
+from sample_scripts.cond_utils.DECA.decalib.utils.util import laplacian
 from ..recolor_util import recolor as recolor
 import matplotlib.pyplot as plt
 from collections import defaultdict
@@ -124,6 +127,10 @@ def load_data_img_deca(
             in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.deca_rendered_dir}/{in_image_type}/{set_}/")
         elif 'faceseg' in in_image_type:
             in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
+        elif 'laplacian' in in_image_type:
+            in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.laplacian_dir}/{set_}/")
+            in_image['laplacian_mask'] = _list_image_files_recursively(f"{cfg.dataset.laplacian_mask_dir}/{set_}/")
+            in_image['laplacian_mask'] = image_path_list_to_dict(in_image['laplacian_mask'])
         elif 'raw' in in_image_type: continue
         else:
             raise NotImplementedError(f"The {in_image_type}-image type not found.")
@@ -240,6 +247,14 @@ class DECADataset(Dataset):
                     each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                     out_dict[f'{k}_img'] = each_cond_img
                     out_dict['cond_img'].append(each_cond_img)
+                elif 'laplacian' in k:
+                    laplacian_mask = np.array(self.load_image(self.kwargs['in_image_for_cond']['laplacian_mask'][query_img_name.replace('.jpg', '.png')]))
+                    laplacian_mask = self.prep_cond_img(laplacian_mask, k, i)
+                    each_cond_img = cond_img[k] * laplacian_mask
+                    each_cond_img = cv2.resize(each_cond_img, (self.resolution, self.resolution), cv2.INTER_AREA)
+                    each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                    out_dict[f'{k}_img'] = each_cond_img
+                    out_dict['cond_img'].append(each_cond_img)
                 else:
                     each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
                     each_cond_img = self.prep_cond_img(each_cond_img, k, i)
@@ -285,6 +300,9 @@ class DECADataset(Dataset):
                 elif 'blur' in p:   # Blur image
                     sigma = float(p.split('=')[-1])
                     each_cond_img = self.blur(each_cond_img, sigma=sigma)
+                elif 'dilate' in p:  # Dilate the mask
+                    iters = int(p.split('=')[-1])
+                    each_cond_img = scipy.ndimage.binary_dilation(each_cond_img, iterations=iters)
                 else: raise NotImplementedError("No preprocessing found.")
         return each_cond_img
                     
@@ -298,6 +316,8 @@ class DECADataset(Dataset):
                     condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace('.jpg', '.npy')], allow_pickle=True)
                 else:
                     condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace('.jpg', '.png')]))
+            elif 'laplacian' in in_image_type:
+                condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace('.jpg', '.npy')], allow_pickle=True)
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
         return condition_image
@@ -332,7 +352,9 @@ class DECADataset(Dataset):
         elif segment_part == 'faceseg_face&hair':
             seg_m = ~bg
         elif segment_part == 'faceseg_bg_noface&nohair':
-            seg_m = (bg | hat | neck | neck_l | cloth)
+            seg_m = (bg | hat | neck | neck_l | cloth) 
+        elif segment_part == 'faceseg_bg&ears_noface&nohair':
+            seg_m = (bg | hat | neck | neck_l | cloth) | (l_ear | r_ear | ear_r)
         elif segment_part == 'faceseg_bg':
             seg_m = bg
         elif segment_part == 'faceseg_bg&noface':

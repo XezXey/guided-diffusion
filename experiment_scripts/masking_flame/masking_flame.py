@@ -87,12 +87,14 @@ def gen_masked_face3d(batch_size, mask, set_, path, dataset):
     deca_cfg.model.use_tex = False
     deca = DECA(config = deca_cfg, device='cuda', mode='only_renderer', mask=mask)
     
+    #NOTE: Rendered w-w/o Clip masked rendered
     # clip_path = f"{path}_wclip/{set_}"
     # woclip_path = f"{path}_woclip/{set_}"
     # os.makedirs(clip_path, exist_ok=True)
     # os.makedirs(woclip_path, exist_ok=True)
-    kpts2d_path = f"keypoints_2d/{set_}"
-    kpts3d_path = f"keypoints_3d/{set_}"
+    #NOTE: 2D-3D Keypoints 
+    kpts2d_path = f"{path}/keypoints_2d/{set_}"
+    kpts3d_path = f"{path}/keypoints_3d/{set_}"
     os.makedirs(kpts2d_path, exist_ok=True)
     os.makedirs(kpts3d_path, exist_ok=True)
     
@@ -160,6 +162,6 @@ mask={
     'f_mask':f_mask['face'].tolist(),
 }
 if args.set_=='train':
-    gen_masked_face3d(1, mask, set_="train", path="/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/deca_masked_face_images", dataset=dataset_train)
-if args.set_=='valid':
-    gen_masked_face3d(1, mask, set_="valid", path="/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/deca_masked_face_images", dataset=dataset_valid)
+    gen_masked_face3d(1, mask, set_="train", path="/data/mint/DPM_Dataset/ffhq_256_with_anno/keypoints", dataset=dataset_train)
+if args.set_=='valid':                                                                       
+    gen_masked_face3d(1, mask, set_="valid", path="/data/mint/DPM_Dataset/ffhq_256_with_anno/keypoints", dataset=dataset_valid)
