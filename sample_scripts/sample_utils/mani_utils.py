@@ -300,3 +300,48 @@ def without(src, rmv):
         if s not in rmv:
             out.append(s)
     return out
+
+def get_samples_list(sample_pair_json, sample_pair_mode, src_dst, img_path, n_subject):
+    '''
+    return
+    output of pre-finding pair is list of list : [['60065.jpg', '60001.jpg'], ['60065.jpg', '60012.jpg'], ..., n_subject]
+    '''
+    import json, os
+    if (sample_pair_json is not None) and (sample_pair_mode is not None):
+        #NOTE: Sampling with defined pairs
+        assert os.path.isfile(sample_pair_json)
+        f = open(sample_pair_json)
+        sample_pairs = json.load(f)[sample_pair_mode]
+        if sample_pair_mode == 'pair':
+            src_dst = [[sample_pairs[pair_i]['src'], sample_pairs[pair_i]['dst']]
+                        for pair_i in list(sample_pairs.keys())]
+            all_img_idx = [file_utils.search_index_from_listpath(list_path=img_path, search=sd) 
+                    for sd in src_dst]
+            all_img_name = [[img_path[r[0]].split('/')[-1], img_path[r[1]].split('/')[-1]] for r in all_img_idx]
+            if n_subject > len(sample_pairs) or n_subject == -1:
+                n_subject = len(sample_pairs.keys())
+            
+        elif sample_pair_mode == 'pairwise':
+            all_img_idx = [file_utils.search_index_from_listpath(list_path=img_path, search=[s, d]) 
+                       for s in sample_pairs['src'] for d in sample_pairs['dst']]
+            all_img_name = [[img_path[r[0]].split('/')[-1], img_path[r[1]].split('/')[-1]] for r in all_img_idx]
+            
+            if n_subject > len(sample_pairs['dst']) or n_subject == -1:
+                n_subject = len(sample_pairs.keys())
+            else: n_subject = n_subject * len(sample_pairs['dst'])
+            
+        else: raise NotImplementedError
+        
+    elif len(src_dst) == 2:
+        #NOTE: Sampling with a specific pair
+        n_subject = 1
+        all_img_idx = [file_utils.search_index_from_listpath(list_path=img_path, search=src_dst)]
+        all_img_name = [[img_path[r[0]].split('/')[-1], img_path[r[1]].split('/')[-1]] for r in all_img_idx]
+    else:
+        #NOTE: Random samples
+        all_img_idx = np.random.choice(a=range(len(img_path)), replace=False, size=n_subject * 2)
+        all_img_idx = np.array_split(all_img_idx, n_subject)
+        all_img_name = [[img_path[r[0]].split('/')[-1], img_path[r[1]].split('/')[-1]] for r in all_img_idx]
+        print(all_img_idx, all_img_name)
+    
+    return all_img_idx, all_img_name, n_subject

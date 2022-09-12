@@ -55,6 +55,15 @@ def get_R_normals(n_step):
     R = np.stack(R, axis=0)
     return R
 
+def load_flame_mask(part='face'):
+    f_mask = np.load('/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/data/FLAME_masks_face-id.pkl', allow_pickle=True, encoding='latin1')
+    v_mask = np.load('/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/data/FLAME_masks.pkl', allow_pickle=True, encoding='latin1')
+    mask={
+        'v_mask':v_mask[part].tolist(),
+        'f_mask':f_mask[part].tolist() 
+    }
+    return mask        
+
 def render_deca(deca_params, idx, n, render_mode='shape', 
                 useTex=False, extractTex=True, device='cuda', 
                 avg_dict=None, rotate_normals=False, use_detail=False,
@@ -71,6 +80,8 @@ def render_deca(deca_params, idx, n, render_mode='shape',
     :param extractTex: for deca texture (set by default of deca decoding pipeline)
     :param device: device for 'cuda' or 'cpu'
     '''
+    import warnings
+    warnings.filterwarnings("ignore")
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
     if deca_obj is None:
         from decalib.deca import DECA

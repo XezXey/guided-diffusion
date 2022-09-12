@@ -103,4 +103,4 @@ def to_tensor(cond, key, device):
             else:
                 continue
     return cond
-    
+

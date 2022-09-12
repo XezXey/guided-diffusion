@@ -46,6 +46,7 @@ sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/hard_samples_pai
 sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/test_video/
 sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/rotated_normals/
 sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/test_new/
+sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate/uncond_sampling/
 
 experiment_scripts/blur/gen/*.jpg
 experiment_scripts/face_3d/rendered_face
