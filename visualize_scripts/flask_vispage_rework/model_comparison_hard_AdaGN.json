@@ -1,8 +1,32 @@
  {
-    "log=UNetCond_Spatial_Hadamart_Tanh_Shape_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape.yaml" : {"step":"100000", "itp":"spatial_latent"},
-    "log=UNetCond_Spatial_Hadamart_Tanh_Shape_WD2e-1_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape_WD2e-1.yaml" : {"step":"100000", "itp":"spatial_latent"},
-    "log=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg_WD2e-1_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg_WD2e-1.yaml" : {"step":"100000", "itp":"spatial_latent"},
-    "log=Spatial_Hadamart_AdaGN_ReduceCh-4g_Shape.yaml_cfg=Spatial_Hadamart_AdaGN_ReduceCh-4g_Shape.yaml" : {"step":"100000", "itp":"spatial_latent"},
-    "log=Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape+Bg.yaml_cfg=Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape+Bg.yaml" :  {"step":"100000", "itp":"spatial_latent"},
-    "log=Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape.yaml_cfg=Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape.yaml" :  {"step":"150000", "itp":"spatial_latent"}
+    "log=UNetCond_Spatial_Hadamart_Tanh_Shape_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape.yaml" : {
+        "step":"100000", 
+        "itp":"spatial_latent", 
+        "alias":"Hadamart-Tanh;Head"
+    },
+    "log=UNetCond_Spatial_Hadamart_Tanh_Shape_WD2e-1_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape_WD2e-1.yaml" : {
+        "step":"100000", 
+        "itp":"spatial_latent", 
+        "alias":"Hadamart-Tanh-WD=0.2;Head"
+    },
+    "log=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg_WD2e-1_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg_WD2e-1.yaml" : {
+        "step":"100000", 
+        "itp":"spatial_latent", 
+        "alias":"Hadamart-Tanh-WD=0.2;Head+Bg"
+    },
+    "log=Spatial_Hadamart_AdaGN_ReduceCh-4g_Shape.yaml_cfg=Spatial_Hadamart_AdaGN_ReduceCh-4g_Shape.yaml" : {
+        "step":"100000", 
+        "itp":"spatial_latent", 
+        "alias":"Hadamart-AdaGN-G=4-SiLU;Head"
+    },
+    "log=Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape+Bg.yaml_cfg=Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape+Bg.yaml" :  {
+        "step":"100000", 
+        "itp":"spatial_latent", 
+        "alias":"Hadamart-AdaGN-G=4;Head+Bg"
+    },
+    "log=Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape.yaml_cfg=Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape.yaml" :  {
+        "step":"150000", 
+        "itp":"spatial_latent", 
+        "alias":"Hadamart-AdaGN-G=4-SiLU;Head"
+    }
  }

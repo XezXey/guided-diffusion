@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 import torch as th
 import torchvision
 import numpy as np
-import params_utils
+import sys
+sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/sample_utils/')
+import params_utils as params_utils
 import cv2
 
 def plot_sample(img, highlight=None, **kwargs):

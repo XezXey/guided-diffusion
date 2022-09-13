@@ -79,8 +79,8 @@ def render_deca(deca_params, idx, n, render_mode='shape',
     :param extractTex: for deca texture (set by default of deca decoding pipeline)
     :param device: device for 'cuda' or 'cpu'
     '''
-    import warnings
-    warnings.filterwarnings("ignore")
+    #import warnings
+    #warnings.filterwarnings("ignore")
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
     if deca_obj is None:
         from decalib.deca import DECA

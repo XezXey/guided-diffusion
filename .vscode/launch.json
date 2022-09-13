@@ -607,7 +607,7 @@
                     "--out_dir", "./uncond_sampling", 
                     "--cfg_name", "UNetCond_masked_wclip.yaml", 
                     "--log_dir", "UNetCond_masked_wclip", 
-                    "--diffusion_steps", "1000",
+                    "--diffusion_steps", "25",
                     "--uncond_sampling",
                     "--seed", "47",
                     "--sample_pair_json", "./hard_samples.json",

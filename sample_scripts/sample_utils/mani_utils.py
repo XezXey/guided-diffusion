@@ -309,7 +309,6 @@ def get_samples_list(sample_pair_json, sample_pair_mode, src_dst, img_path, n_su
     import json, os
     if (sample_pair_json is not None) and (sample_pair_mode is not None):
         #NOTE: Sampling with defined pairs
-        print("GGGGGG"*100)
         assert os.path.isfile(sample_pair_json)
         f = open(sample_pair_json)
         sample_pairs = json.load(f)[sample_pair_mode]
