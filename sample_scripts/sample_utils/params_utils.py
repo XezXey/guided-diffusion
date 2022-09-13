@@ -4,7 +4,6 @@ import torch as th
 import glob, os, sys
 import cv2
 from collections import defaultdict
-from . import file_utils
 
 def params_to_model(shape, exp, pose, cam, lights):
 
@@ -253,20 +252,6 @@ def get_params_set(set, params_key, path="/data/mint/ffhq_256_with_anno/params/"
     else: raise NotImplementedError
 
     return params_set
-
-# def preprocess_cond(deca_params, k, cfg):
-#     if k != 'light':
-#         return deca_params
-#     else:
-#         num_SH = cfg.relighting.num_SH
-#         for img_name in deca_params.keys():
-#             params = np.array(deca_params[img_name])
-#             params = params.reshape(9, 3)
-#             params = params[:num_SH]
-#             params = params.flatten()
-#             deca_params[img_name] = params
-#         return deca_params
-
 
 def preprocess_cond(deca_params, k, cfg):
     if k != 'light':

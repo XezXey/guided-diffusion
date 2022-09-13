@@ -5,5 +5,10 @@
     "python.linting.pycodestyleEnabled": false,
     "python.linting.banditEnabled": false,
     "python.linting.mypyEnabled": false,
-    "python.linting.pylamaEnabled": true
+    "python.linting.pylamaEnabled": true,
+    "[python]": {
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": true,
+        "editor.tabSize": 4  
+    }
 }

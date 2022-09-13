@@ -2,7 +2,7 @@ import numpy as np
 import torch as th
 import blobfile as bf
 import PIL
-from . import vis_utils, img_utils, file_utils
+import vis_utils, img_utils, file_utils
 
 def lerp(r, src, dst):
     return ((1-r) * src) + (r * dst)
@@ -309,6 +309,7 @@ def get_samples_list(sample_pair_json, sample_pair_mode, src_dst, img_path, n_su
     import json, os
     if (sample_pair_json is not None) and (sample_pair_mode is not None):
         #NOTE: Sampling with defined pairs
+        print("GGGGGG"*100)
         assert os.path.isfile(sample_pair_json)
         f = open(sample_pair_json)
         sample_pairs = json.load(f)[sample_pair_mode]

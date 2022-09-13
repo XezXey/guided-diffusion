@@ -1,0 +1,16 @@
+{
+     "model_comparison": {
+
+         "log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml": "100000",
+         "log=UNetCond_Spatial_Concat_Shape_Albedo_cfg=UNetCond_Spatial_Concat_Shape_Albedo.yaml": "050000",
+         "log=UNetCond_Spatial_Concat_Shape_cfg=UNetCond_Spatial_Concat_Shape.yaml": "100000",
+         "log=UNetCond_Spatial_Hadamart_Shape_cfg=UNetCond_Spatial_Hadamart_Shape.yaml": "100000",
+         "log=UNetCond_Spatial_Hadamart_Identity_Shape_cfg=UNetCond_Spatial_Hadamart_Identity_Shape.yaml": "100000",
+         "log=UNetCond_Spatial_Hadamart_Tanh_Shape_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape.yaml": "100000",
+         "log=UNetCond_Spatial_Hadamart_Shape_LSel-last3_cfg=UNetCond_Spatial_Hadamart_Shape_LSel-last3.yaml": "100000",
+         "log=UNetCond_Spatial_Hadamart_Shape_LSel-first3_cfg=UNetCond_Spatial_Hadamart_Shape_LSel-first3.yaml": "100000",
+         "log=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg.yaml": "100000"
+         
+
+     }
+ }

@@ -106,18 +106,16 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
                 for j in range(n_step):
                     if 'woclip' in cond_img_name:
                         #NOTE: Input is the npy array -> Used cv2.resize() to handle
-                        r_tmp = deca_rendered[j].cpu().numpy()
-                        each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_AREA)
-                        each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                        out_dict[f'{k}_img'] = each_cond_img
-                        out_dict['cond_img'].append(each_cond_img)
+                        r_tmp = deca_rendered[j].cpu().numpy().transpose((1, 2, 0))
+                        r_tmp = cv2.resize(r_tmp, (cfg.img_cond_model.image_size, cfg.img_cond_model.image_size), cv2.INTER_AREA)
+                        r_tmp = np.transpose(r_tmp, (2, 0, 1))
                     else:
                         r_tmp = deca_rendered[j].mul(255).add_(0.5).clamp_(0, 255)
                         r_tmp = np.transpose(r_tmp.cpu().numpy(), (1, 2, 0))
                         r_tmp = r_tmp.astype(np.uint8)
                         r_tmp = dataset.augmentation(PIL.Image.fromarray(r_tmp))
                         r_tmp = dataset.prep_cond_img(r_tmp, cond_img_name, i)
-                        r_tmp = np.transpose(r_tmp, [2, 0, 1])
+                        r_tmp = np.transpose(r_tmp, (2, 0, 1))
                         r_tmp = (r_tmp / 127.5) - 1
                 
                     rendered_tmp.append(r_tmp)
@@ -170,11 +168,9 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
         torchvision.utils.save_image(tensor=(frame), fp=f"{save_res_path}/frame{i}.png")
         
     if n_step >= 60:
-        #NOTE: save_video whenever n_step >= 60 only
-        frames = sample_ddim['img_output'].permute(0, 2, 3, 1)
-        frames = (frames.detach().cpu().numpy() + 1) * 127.5
-        fp_vid = f"{save_res_path}/video.mp4"
-        torchvision.io.write_video(video_array=frames, filename=fp_vid, fps=30)
+        #NOTE: save_video whenever n_step >= 60 only, w/ shape = TxHxWxC
+        vis_utils.save_video(fn=f"{save_res_path}/res.mp4", frames=(sample_ddim['img_output'].permute(0, 2, 3, 1) + 1) * 127.5)
+        vis_utils.save_video(fn=f"{save_res_path}/ren.mp4", frames=(rendered_tmp.transpose(0, 2, 3, 1) + 1) * 127.5)
     
     with open(f'{save_res_path}/res_desc.json', 'w') as fj:
         log_dict = {'sampling_args' : vars(args), 

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import torch as th
 import torchvision
 import numpy as np
-from . import params_utils
+import params_utils
 import cv2
 
 def plot_sample(img, highlight=None, **kwargs):
@@ -88,3 +88,15 @@ def plot_image(img, c_len=[], fn='./temp', range="-1to1"):
             if range == "-1to1":
                 img_plot = ((img_plot + 1) * 127.5) / 255.0
             torchvision.utils.save_image(tensor=img_plot, fp=f"./{fn}_{i}.png")
+
+def save_video(fn, frames, fps):
+    """
+    save the video
+    Args:
+        frames (list of tensor): range = [0, 255] (uint8), and shape = [T x H x W x C]
+        fn : filename to save
+    """
+    torchvision.io.write_video(video_array=frames, filename=fn, fps=fps)
+
+def save_images():
+    pass

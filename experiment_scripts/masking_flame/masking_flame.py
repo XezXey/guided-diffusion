@@ -88,15 +88,15 @@ def gen_masked_face3d(batch_size, mask, set_, path, dataset):
     deca = DECA(config = deca_cfg, device='cuda', mode='only_renderer', mask=mask)
     
     #NOTE: Rendered w-w/o Clip masked rendered
-    # clip_path = f"{path}_wclip/{set_}"
-    # woclip_path = f"{path}_woclip/{set_}"
-    # os.makedirs(clip_path, exist_ok=True)
-    # os.makedirs(woclip_path, exist_ok=True)
+    clip_path = f"{path}_wclip/{set_}"
+    woclip_path = f"{path}_woclip/{set_}"
+    os.makedirs(clip_path, exist_ok=True)
+    os.makedirs(woclip_path, exist_ok=True)
     #NOTE: 2D-3D Keypoints 
-    kpts2d_path = f"{path}/keypoints_2d/{set_}"
-    kpts3d_path = f"{path}/keypoints_3d/{set_}"
-    os.makedirs(kpts2d_path, exist_ok=True)
-    os.makedirs(kpts3d_path, exist_ok=True)
+    # kpts2d_path = f"{path}/keypoints_2d/{set_}"
+    # kpts3d_path = f"{path}/keypoints_3d/{set_}"
+    # os.makedirs(kpts2d_path, exist_ok=True)
+    # os.makedirs(kpts3d_path, exist_ok=True)
     
     for _, sample in enumerate(tqdm.tqdm(subset_loader)):
         dat, model_kwargs = sample
@@ -108,10 +108,10 @@ def gen_masked_face3d(batch_size, mask, set_, path, dataset):
         for i in range(rendered_image.shape[0]):
             name = model_kwargs['image_name'][i].split('.')[0]
             # Rendered Image
-            # np.save(file=f"{woclip_path}/{name}.npy", arr=rendered_image[i].cpu().numpy())
-            # torchvision.utils.save_image(tensor=rendered_image[i].permute((2, 0, 1)).cpu(), fp=f"{clip_path}/{name}.png")
-            np.save(file=f"{kpts2d_path}/{name}.npy", arr=orig_visdict['landmarks2d'][i].cpu().numpy())
-            np.save(file=f"{kpts3d_path}/{name}.npy", arr=orig_visdict['landmarks3d'][i].cpu().numpy())
+            np.save(file=f"{woclip_path}/{name}.npy", arr=rendered_image[i].cpu().numpy())
+            torchvision.utils.save_image(tensor=rendered_image[i].permute((2, 0, 1)).cpu(), fp=f"{clip_path}/{name}.png")
+            # np.save(file=f"{kpts2d_path}/{name}.npy", arr=orig_visdict['landmarks2d'][i].cpu().numpy())
+            # np.save(file=f"{kpts3d_path}/{name}.npy", arr=orig_visdict['landmarks3d'][i].cpu().numpy())
             
        
 if __name__ == '__main__':
@@ -162,6 +162,7 @@ mask={
     'f_mask':f_mask['face'].tolist(),
 }
 if args.set_=='train':
-    gen_masked_face3d(1, mask, set_="train", path="/data/mint/DPM_Dataset/ffhq_256_with_anno/keypoints", dataset=dataset_train)
+    # gen_masked_face3d(1, mask, set_="train", path="/data/mint/DPM_Dataset/ffhq_256_with_anno/keypoints", dataset=dataset_train)
+    gen_masked_face3d(1, mask, set_="train", path="/data/mint/DPM_Dataset/ffhq_256_with_anno/deca_masked_face_images", dataset=dataset_train)
 if args.set_=='valid':                                                                       
-    gen_masked_face3d(1, mask, set_="valid", path="/data/mint/DPM_Dataset/ffhq_256_with_anno/keypoints", dataset=dataset_valid)
+    gen_masked_face3d(1, mask, set_="valid", path="/data/mint/DPM_Dataset/ffhq_256_with_anno/deca_masked_face_images", dataset=dataset_valid)

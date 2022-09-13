@@ -61,4 +61,3 @@ def search_index_from_listpath(list_path, search):
     except ValueError:
         raise(f"[#] {search} cannot be found in image path list")
     return img_idx
-
