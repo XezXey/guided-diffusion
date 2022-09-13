@@ -42,7 +42,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import torch as th
-import PIL
+import PIL, cv2
 import json
 import copy
 import time
@@ -101,16 +101,24 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
                 bg_tmp = [cond[f"{cond_img_name}_img"][src_idx]] * n_step
                 bg_tmp = np.stack(bg_tmp, axis=0)
                 cond[f"{cond_img_name}"] = bg_tmp
-            else:
+            elif 'deca':
                 rendered_tmp = []
                 for j in range(n_step):
-                    r_tmp = deca_rendered[j].mul(255).add_(0.5).clamp_(0, 255)
-                    r_tmp = np.transpose(r_tmp.cpu().numpy(), (1, 2, 0))
-                    r_tmp = r_tmp.astype(np.uint8)
-                    r_tmp = dataset.augmentation(PIL.Image.fromarray(r_tmp))
-                    r_tmp = dataset.prep_cond_img(r_tmp, cond_img_name, i)
-                    r_tmp = np.transpose(r_tmp, [2, 0, 1])
-                    r_tmp = (r_tmp / 127.5) - 1
+                    if 'woclip' in cond_img_name:
+                        #NOTE: Input is the npy array -> Used cv2.resize() to handle
+                        r_tmp = deca_rendered[j].cpu().numpy()
+                        each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_AREA)
+                        each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                        out_dict[f'{k}_img'] = each_cond_img
+                        out_dict['cond_img'].append(each_cond_img)
+                    else:
+                        r_tmp = deca_rendered[j].mul(255).add_(0.5).clamp_(0, 255)
+                        r_tmp = np.transpose(r_tmp.cpu().numpy(), (1, 2, 0))
+                        r_tmp = r_tmp.astype(np.uint8)
+                        r_tmp = dataset.augmentation(PIL.Image.fromarray(r_tmp))
+                        r_tmp = dataset.prep_cond_img(r_tmp, cond_img_name, i)
+                        r_tmp = np.transpose(r_tmp, [2, 0, 1])
+                        r_tmp = (r_tmp / 127.5) - 1
                 
                     rendered_tmp.append(r_tmp)
                 rendered_tmp = np.stack(rendered_tmp, axis=0)
@@ -355,8 +363,8 @@ if __name__ == '__main__':
                     
             if args.slerp:
                 without_classifier(itp_func=mani_utils.slerp, 
-                                src_idx=0, src_id=img_name[0],
-                                dst_idx=0, dst_id=img_name[1]
+                                src_idx=src_idx, src_id=src_id,
+                                dst_idx=dst_idx, dst_id=dst_id
                                 )
                 if args.sample_pair_mode == 'pairwise':
                     without_classifier(itp_func=mani_utils.slerp, 
