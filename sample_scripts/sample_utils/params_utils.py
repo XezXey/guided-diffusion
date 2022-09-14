@@ -79,19 +79,20 @@ def render_deca(deca_params, idx, n, render_mode='shape',
     :param extractTex: for deca texture (set by default of deca decoding pipeline)
     :param device: device for 'cuda' or 'cpu'
     '''
+    print("JESUS CHRIST")
     #import warnings
     #warnings.filterwarnings("ignore")
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
+    # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
     if deca_obj is None:
-        from decalib.deca import DECA
-        from decalib.utils import util
+        sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+        from decalib import deca
         from decalib.utils.config import cfg as deca_cfg
         deca_cfg.model.use_tex = useTex
         deca_cfg.rasterizer_type = 'standard'
         deca_cfg.model.extract_tex = extractTex
-        deca = DECA(config = deca_cfg, device=device, mode=deca_mode, mask=mask)
+        deca_obj = deca.DECA(config = deca_cfg, device=device, mode=deca_mode, mask=mask)
     else:
-        deca = deca_obj
+        deca_obj = deca_obj
         
     from decalib.datasets import datasets 
     testdata = datasets.TestData(deca_params['raw_image_path'])
@@ -133,7 +134,7 @@ def render_deca(deca_params, idx, n, render_mode='shape',
         tform = th.tensor(avg_dict['tform'])[None, ...].repeat(n, 1).to(device).reshape(-1, 3, 3).float()
         tform_inv = th.inverse(tform).transpose(1,2)
     else: raise NotImplementedError
-    _, orig_visdict = deca.decode(codedict, 
+    _, orig_visdict = deca_obj.decode(codedict, 
                                   render_orig=True, 
                                   original_image=original_image, 
                                   tform=tform_inv, 

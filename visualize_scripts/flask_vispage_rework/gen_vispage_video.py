@@ -161,13 +161,15 @@ def create_app():
                                                        src_dst=None, 
                                                        img_path=img_path, 
                                                        n_subject=-1)
-        
-        for idx, src_dst in enumerate(subject_id):
+       
+        out += create_button_fn()
+        for s_id, src_dst in enumerate(subject_id):
             out += "<table>"
-            out += f"[#{idx}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
-            for m_index, m in enumerate(model):
-                out += "<tr>"
-                out += f"<td> <br> {m_index} : {ckpt_dict[m]['alias']} <br> </td>"
+            out += f"[#{s_id}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
+            out += create_hide(model, s_id)
+            for m_id, m in enumerate(model):
+                out += f"<tr id={s_id}_{m_id}>"
+                out += f"<td> <br> {m_id} : {ckpt_dict[m]['alias']} <br> </td>"
                 step = ckpt_dict[m]['step']
                 itp = ckpt_dict[m]['itp']
                 each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/ema_{step}/valid/{itp}/src={src_dst[0]}/dst={src_dst[1]}/"
@@ -180,11 +182,10 @@ def create_app():
                     
                 if len(vid_path) == 0:
                     out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
-                    continue
                 else:
                   out += f"""
                   <td>
-                  <video width=\"256\" height=\"256\" autoplay muted controls loop> 
+                  <video width=\"64\" height=\"64\" autoplay muted controls loop> 
                       <source src=\"/files/{vid_path[0]}\" type=\"video/mp4\">
                       Your browser does not support the video tag.
                       </video>
@@ -200,37 +201,42 @@ def create_app():
                     out += "<p style=\"color:red\">Images not found!</p>"
                 out += "</td>"
                 out += "</tr>"
+                
             out += "</table>"
+           
             out += "<br> <hr>"
         return out
+    
+    def create_hide(model, s_id): 
+        tmp = ""
+        for m_id, _ in enumerate(model):
+            tmp += (
+                f"<button id=but_{s_id}_{m_id} style='color:blue' onclick=\"toggle({s_id}, {m_id})\">Hide : {m_id}</button>"
+        )
+        return tmp
             
-        # for i, src_path in enumerate(glob.glob(f"{folder}/src=*")):
-        #     src_id = src_path.split('/')[-1]
-        #     for d in glob.glob(f"{folder}/{src_id}/dst=*"):
-        #         if not os.path.isdir(d): continue
-        #         src_id = d.split('/')[-2]
-        #         dst_id = d.split('/')[-1]
-        #         out += f"[#{i}] {src_id} : <img src=/files/{data_path}/{src_id.split('=')[-1]} width=\"64\" height=\"64\">, {dst_id} : <img src=/files/{data_path}/{dst_id.split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
-        #         for m_index, m in enumerate(model):
-        #             out += f"<br> {m_index} : {m} <br>"
-        #             if m == "log=cond_img64_by_deca_arcface_cfg=cond_img64_by_deca_arcface.yaml":
-        #                 each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/ema_{ckpt_dict[m]}/valid/light/"
-        #             else:
-        #                 each_model = f"/{args.sample_dir}/{args.exp_dir}/{m}/ema_{ckpt_dict[m]}/valid/spatial_latent/"
-        #             for d in glob.glob(f"{each_model}/{src_id}/dst=*"):
-        #                 if m in ["log=UNetCond_Spatial_Hadamart_Tanh_Shape_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape.yaml", "log=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg.yaml"]:
-        #                     img_path = glob.glob(d + f"/{itp_method}_1000/*.png")
-        #                 else:
-        #                     img_path = glob.glob(d + f"/{itp_method}_1000/n_frames={n_frame}/*.png")
-        #                 img_path = sort_by_frame(img_path)
-        #                 for f in img_path:
-        #                        out += "<img src=/files/" + f + ">"
-
-        #     out += "<br> <hr>"
-        # return out
+    def create_button_fn():
+        tmp = (
+            f"<script>"
+                f"function toggle(s_id, m_id){{"
+                    f"let element = document.getElementById(s_id + \"_\" + m_id);"
+                    f"let button = document.getElementById(\"but_\" + s_id + \"_\" + m_id);"
+                    f"let hidden = element.getAttribute(\"hidden\");"
+                    f"if (hidden) {{"
+                    f"    element.removeAttribute(\"hidden\");"
+                    f"    button.innerText = \"Hide : \" + m_id;"
+                    f"    button.style.color = 'blue';"
+                    f"}} else {{"
+                    f"    element.setAttribute(\"hidden\", \"hidden\");"
+                    f"    button.innerText = \"Show : \" +  m_id;"
+                    f"    button.style.color = 'red';"
+                    f"}}"
+                f"}}"
+                f"</script>"
+        )
+        return tmp
+            
     return app
-
-
 
 if __name__ == "__main__":
     import argparse

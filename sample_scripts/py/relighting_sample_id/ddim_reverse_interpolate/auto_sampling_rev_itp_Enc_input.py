@@ -159,6 +159,9 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
     elif itp_func == mani_utils.slerp:
         itp_fn_str = 'Slerp'
         
+        
+    out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/"
+    os.makedirs(out_folder_reconstruction, exist_ok=True)
     save_res_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
     os.makedirs(save_res_path, exist_ok=True)
     
@@ -226,7 +229,7 @@ def uncond_sampling(model_kwargs, noise_mode='fixed_noise'):
     noise_map = inference_utils.get_init_noise(n=batch_size, mode=noise_mode, img_size=cfg.img_model.image_size, device=device)
     sample_ddim = pl_sampling(noise=noise_map, model_kwargs=cond)
     
-    out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/"
+    out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/UncondSampling/"
     os.makedirs(out_folder_reconstruction, exist_ok=True)
     
     frames = ((sample_ddim['img_output'] + 1) * 127.5)/255.0
