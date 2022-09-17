@@ -151,6 +151,7 @@ def load_data_img_deca(
         rmv_params=rmv_params,
         cfg=cfg,
         in_image_for_cond=in_image,
+        mode='train',
     )
     print("[#] Parameters Conditioning")
     print("Params keys order : ", img_dataset.precomp_params_key)
@@ -158,12 +159,12 @@ def load_data_img_deca(
 
     if deterministic:
         loader = DataLoader(
-            img_dataset, batch_size=batch_size, shuffle=False, num_workers=24, drop_last=True, 
+            img_dataset, batch_size=batch_size, shuffle=False, num_workers=16, drop_last=True, 
             pin_memory=True, persistent_workers=True
         )
     else:
         loader = DataLoader(
-            img_dataset, batch_size=batch_size, shuffle=True, num_workers=24, drop_last=True, pin_memory=True,
+            img_dataset, batch_size=batch_size, shuffle=True, num_workers=16, drop_last=True, pin_memory=True,
             persistent_workers=True
         )
 
@@ -203,6 +204,7 @@ class DECADataset(Dataset):
         rmv_params,
         cfg,
         in_image_UNet='raw',
+        mode='train',
         **kwargs
     ):
         super().__init__()
@@ -215,6 +217,7 @@ class DECADataset(Dataset):
         self.params_selector = params_selector
         self.rmv_params = rmv_params
         self.cfg = cfg
+        self.mode = mode
         self.precomp_params_key = without(src=self.cfg.param_model.params_selector, rmv=['img_latent'] + self.rmv_params)
         self.kwargs = kwargs
 
@@ -252,6 +255,14 @@ class DECADataset(Dataset):
                     each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                     out_dict[f'{k}_img'] = each_cond_img
                     out_dict['cond_img'].append(each_cond_img)
+                elif 'faceseg' in k:
+                    faceseg_mask = self.prep_cond_img(~cond_img[k], k, i)
+                    faceseg = faceseg_mask * np.array(raw_pil_image)
+                    each_cond_img = self.augmentation(PIL.Image.fromarray(faceseg))
+                    each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                    each_cond_img = (each_cond_img / 127.5) - 1
+                    out_dict[f'{k}_img'] = each_cond_img
+                    out_dict['cond_img'].append(each_cond_img)
                 else:
                     each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
                     each_cond_img = self.prep_cond_img(each_cond_img, k, i)
@@ -276,7 +287,18 @@ class DECADataset(Dataset):
             arr = norm_img
             out_dict['image'] = np.transpose(arr, [2, 0, 1])
         else : raise NotImplementedError
-        return np.transpose(arr, [2, 0, 1]), out_dict
+        
+        # Return 
+        if self.mode == 'train':
+            #NOTE: For current progress, we need only ['cond_params'] or ['cond_img']
+            if self.cfg.img_cond_model.apply:
+                out_dict = {'cond_params':out_dict['cond_params'], 'cond_img':out_dict['cond_img']}
+            else:
+                out_dict = {'cond_params':out_dict['cond_params']}
+            return np.transpose(arr, [2, 0, 1]), out_dict
+        elif self.mode == 'sampling':
+            return np.transpose(arr, [2, 0, 1]), out_dict
+        else: raise NotImplementedError
 
     def prep_cond_img(self, each_cond_img, k, i):
         """
@@ -372,7 +394,7 @@ class DECADataset(Dataset):
             seg_m = (l_eye | r_eye)
         else: raise NotImplementedError(f"Segment part: {segment_part} is not found!")
         
-        out = seg_m * np.array(raw_pil_image)
+        out = seg_m
         return out
         
 

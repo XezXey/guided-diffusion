@@ -342,6 +342,5 @@ def get_samples_list(sample_pair_json, sample_pair_mode, src_dst, img_path, n_su
         all_img_idx = np.random.choice(a=range(len(img_path)), replace=False, size=n_subject * 2)
         all_img_idx = np.array_split(all_img_idx, n_subject)
         all_img_name = [[img_path[r[0]].split('/')[-1], img_path[r[1]].split('/')[-1]] for r in all_img_idx]
-        print(all_img_idx, all_img_name)
     
     return all_img_idx, all_img_name, n_subject

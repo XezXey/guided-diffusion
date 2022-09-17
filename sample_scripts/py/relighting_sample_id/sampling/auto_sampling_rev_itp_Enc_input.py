@@ -77,6 +77,7 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
     if cfg.img_cond_model.apply:
         if args.rotate_normals:
             #NOTE: Render w/ Rotated normals
+            print
             cond.update(mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light']))
             cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
         else:
@@ -172,6 +173,8 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
         out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/reverse_sampling"
     elif args.uncond_sampling: 
         out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/uncond_sampling"
+    else: raise NotImplementedError
+    
     os.makedirs(out_folder_reconstruction, exist_ok=True)
     save_res_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
     os.makedirs(save_res_path, exist_ok=True)
@@ -194,67 +197,6 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
                     'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_func':itp_fn_str, 'interpolate':interpolate_str}}
         json.dump(log_dict, fj)
 
-def uncond_sampling(model_kwargs, noise_mode='fixed_noise'):
-    cond = model_kwargs.copy()
-    batch_size = cond['cond_params'].shape[0]
-    pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
-    if cfg.img_cond_model.apply:
-        start = time.time()
-        if np.any(['deca_masked' in n for n in cfg.img_cond_model.in_image]):
-            mask = params_utils.load_flame_mask()
-        else: mask=None
-        deca_rendered, _ = params_utils.render_deca(deca_params=cond, 
-                                                    idx=src_idx, n=batch_size, 
-                                                    avg_dict=avg_dict, 
-                                                    render_mode=args.render_mode, 
-                                                    rotate_normals=args.rotate_normals, 
-                                                    mask=mask, repeat=False)
-        print("Rendering time : ", time.time() - start)
-        for i, cond_img_name in enumerate(cfg.img_cond_model.in_image):
-            if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name):
-                seg_tmp = cond[f'{cond_img_name}_img']
-                cond[f"{cond_img_name}"] = seg_tmp
-            else:
-                rendered_tmp = []
-                for j in range(batch_size):
-                    r_tmp = deca_rendered[j].mul(255).add_(0.5).clamp_(0, 255)
-                    r_tmp = np.transpose(r_tmp.cpu().numpy(), (1, 2, 0))
-                    r_tmp = r_tmp.astype(np.uint8)
-                    r_tmp = dataset.augmentation(PIL.Image.fromarray(r_tmp))
-                    r_tmp = dataset.prep_cond_img(r_tmp, cond_img_name, i)
-                    r_tmp = np.transpose(r_tmp, [2, 0, 1])
-                    r_tmp = (r_tmp / 127.5) - 1
-                    rendered_tmp.append(r_tmp)
-                rendered_tmp = np.stack(rendered_tmp, axis=0)
-                cond[cond_img_name] = rendered_tmp
-        cond = mani_utils.create_cond_imgs(cond, key=cfg.img_cond_model.in_image)
-        cond = inference_utils.to_tensor(cond, key=['cond_img'], device=ckpt_loader.device)
-        cond = pl_sampling.forward_cond_network(model_kwargs=cond)
-        
-        
-    # Finalize the cond_params
-    cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
-    to_tensor_key = ['cond_params'] + cfg.param_model.params_selector + [cfg.img_cond_model.override_cond]
-    cond = inference_utils.to_tensor(cond, key=to_tensor_key, device=ckpt_loader.device)
-    
-    # Forward
-    diffusion.num_timesteps = args.diffusion_steps
-    pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
-    noise_map = inference_utils.get_init_noise(n=batch_size, mode=noise_mode, img_size=cfg.img_model.image_size, device=device)
-    sample_ddim = pl_sampling(noise=noise_map, model_kwargs=cond)
-    
-    out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/UncondSampling/"
-    os.makedirs(out_folder_reconstruction, exist_ok=True)
-    
-    frames = ((sample_ddim['img_output'] + 1) * 127.5)/255.0
-    src_dst_id = [src_id, dst_id]
-    for i in range(frames.shape[0]):
-        save_res_path = f"{out_folder_reconstruction}/src={src_dst_id[i]}/{noise_mode}/{args.diffusion_steps}/"
-        os.makedirs(save_res_path, exist_ok=True)
-        frame = frames[i].cpu().detach()
-        unix = time.time()
-        torchvision.utils.save_image(tensor=(frame), fp=f"{save_res_path}/frame_{unix}.png")
-        
 if __name__ == '__main__':
     seed_all(args.seed)
     # Load Ckpt
@@ -351,6 +293,8 @@ if __name__ == '__main__':
             diffusion.num_timesteps = args.diffusion_steps
             pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
             sample_ddim = pl_sampling(noise=reverse_ddim_sample['img_output'], model_kwargs=cond)
+            
+            
             fig = vis_utils.plot_sample(img=img_tmp, reverse_sampling_images=reverse_ddim_sample['img_output'], sampling_img=sample_ddim['img_output'])
 
             # Save a visualization

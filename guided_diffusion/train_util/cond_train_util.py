@@ -242,14 +242,6 @@ class TrainLoop(LightningModule):
             self.model_trainer_dict[name].get_norms()
         return True
 
-    # def optimize_trainer(self):
-    # TODO: Adding a different optimizer to use with this function
-    #     took_step = []
-    #     for name in self.model_trainer_dict.keys():
-    #         tk_s = self.model_trainer_dict['ImgCond'].optimize(self.opt)
-    #         # took_step.append(tk_s)
-    #     return all(took_step)
-
     def forward_cond_network(self, dat, cond, model_dict=None):
         if model_dict is None:
             model_dict = self.model_dict
@@ -263,10 +255,11 @@ class TrainLoop(LightningModule):
             # Override the condition and re-create cond_params
             if self.cfg.img_cond_model.override_cond != "":
                 cond[self.cfg.img_cond_model.override_cond] = img_cond
-                tmp = []
-                for p in self.cfg.param_model.params_selector:
-                    tmp.append(cond[p])
-                cond['cond_params'] = th.cat(tmp, dim=-1)
+                if self.cfg.img_cond_model.override_cond in ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']:
+                    tmp = []
+                    for p in self.cfg.param_model.params_selector:
+                        tmp.append(cond[p])
+                    cond['cond_params'] = th.cat(tmp, dim=-1)
             else: raise NotImplementedError
 
 

@@ -37,7 +37,7 @@ def create_app():
         out += f"<a href=\"/best_checkpoint_vid\">Best checkpoint (Video)</a> <br>"
         out += f"<a href=\"/best_checkpoint_img\">Best checkpoint (Image)</a> <br>"
         out += f"<a href=\"/uncond_vs_reverse\"> Uncondition Vs. Reverse sampling </a> <br>"
-        out += f"<a href=\"/model_comparison_from_json/itp_method=Slerp&n_frame=5&sampling=reverse/\">Model comparison (From json)</a> <br>"
+        out += f"<a href=\"/model_comparison_from_json/itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse/\">Model comparison (From json)</a> <br>"
         return out
 
     @app.route('/best_checkpoint_vid/')
@@ -227,16 +227,12 @@ def create_app():
             out += create_hide(model, s_id)
             for m_id, m in enumerate(model):
                 out += f"<tr id={s_id}_{m_id}>"
-                out += f"<td> <br> {m_id} : {ckpt_dict[m]['alias']} <br> </td>"
+                out += f"<td> {m_id} : {ckpt_dict[m]['alias']} <br> ({ckpt_dict[m]['step']}) </td>"
                 step = ckpt_dict[m]['step']
                 itp = ckpt_dict[m]['itp']
-                each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/ema_{step}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/"
-                if m in ["log=UNetCond_Spatial_Hadamart_Tanh_Shape_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape.yaml", "log=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg.yaml"]:
-                    frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/res_*.png")
-                    vid_path = glob.glob(f"{each_model}/{itp_method}_{diff_step}/res_*.mp4")
-                else:
-                    frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
-                    vid_path = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.mp4")
+                each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/{step}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/"
+                frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
+                vid_path = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.mp4")
                     
                 if len(vid_path) == 0:
                     out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
