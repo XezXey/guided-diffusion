@@ -14,7 +14,7 @@ dataset:
 
 train_misc:
   exp_name: "Training_Stability_WeightDecay"
-  cfg_name: "Vanilla_DPM"
+  cfg_name: "Vanilla_DPM_WD2e-1"
 
 train:
   weight_decay: 0.2

@@ -17,7 +17,7 @@ dataset:
 
 train_misc:
   exp_name: "Training_Stability_WeightDecay"
-  cfg_name: "UNetCond_latent"
+  cfg_name: "UNetCond_latent_WD2e-1"
 
 train:
   weight_decay: 0.2
