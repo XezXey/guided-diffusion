@@ -15,13 +15,13 @@ param_model:
 img_cond_model:
   apply: True
   arch: "EncoderUNet_SpatialCondition"
-  in_image: ['deca_shape_images', 'faceseg_bg_noface&nohair']
-  in_channels: 6
+  in_image: ['deca_masked_face_images_woclip']
+  in_channels: 3
   image_size: 128
   out_channels: 128
   condition_dim: 256
   override_cond: "spatial_latent"
-  prep_image: [Null, 'dilate=10']
+  prep_image: [Null]
 
 relighting:
   use_SH: False
@@ -31,8 +31,10 @@ dataset:
   data_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
   face_segment_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment/"
   deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
+  laplacian_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/laplacian/"
+  laplacian_mask_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/eyes_segment/"
 
 
 train_misc:
-  exp_name: "EncLight_Spatial_Face+Bg"
-  cfg_name: "UNetCond_Spatial_Hadamart_Tanh_Shape+Bg"
+  exp_name: "EncLight_Masked_Rendered_Face"
+  cfg_name: "UNetCond128_maksed_woclip_ears_dilate5"
