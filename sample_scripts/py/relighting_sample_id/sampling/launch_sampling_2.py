@@ -2,15 +2,15 @@ import subprocess
 
 n_diffusion = 1000
 n_subject = 7
-sampling = "reverse_sampling"
+sampling = "uncond_sampling"
 sample_pair_json = "./hard_samples.json"
 sample_pair_mode = "pair"
 interpolate = "spatial_latent"
 interpolate_fn = "slerp"
-interpolate_step = 5
+interpolate_step = 45
 set_ = "valid"
 out_dir = "/data/mint/sampling/uncond_vs_reverse/"
-gpu_id = 0
+gpu_id = 2
 
 
 commands = [
@@ -44,7 +44,6 @@ commands = [
     f"python ./auto_sampling_rev_itp_Enc_input.py --cfg_name Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape+Bg.yaml --log_dir Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape+Bg --set {set_} --step 100000 --{sampling} --interpolate {interpolate} --interpolate_step {interpolate_step} --out_dir {out_dir} --n_subject {n_subject}  --{interpolate_fn} --diffusion_steps {n_diffusion} --sample_pair_mode {sample_pair_mode} --sample_pair_json {sample_pair_json} --gpu_id {gpu_id}",
     f"python ./auto_sampling_rev_itp_Enc_input.py --cfg_name Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape+Bg.yaml --log_dir Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape+Bg --set {set_} --step 150000 --{sampling} --interpolate {interpolate} --interpolate_step {interpolate_step} --out_dir {out_dir} --n_subject {n_subject}  --{interpolate_fn} --diffusion_steps {n_diffusion} --sample_pair_mode {sample_pair_mode} --sample_pair_json {sample_pair_json} --gpu_id {gpu_id}",
     f"python ./auto_sampling_rev_itp_Enc_input.py --cfg_name Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape+Bg.yaml --log_dir Spatial_Hadamart_AdaGN_ReduceCh-4g-SiLU_Shape+Bg --set {set_} --step 200000 --{sampling} --interpolate {interpolate} --interpolate_step {interpolate_step} --out_dir {out_dir} --n_subject {n_subject}  --{interpolate_fn} --diffusion_steps {n_diffusion} --sample_pair_mode {sample_pair_mode} --sample_pair_json {sample_pair_json} --gpu_id {gpu_id}",
-                                                                                                   
 ]                                                                                                  
 
 with open('./gpu_0_status.txt', mode='w') as f:

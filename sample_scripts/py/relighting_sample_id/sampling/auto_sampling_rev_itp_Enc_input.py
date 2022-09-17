@@ -132,6 +132,8 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
         if 'spatial_latent' in args.interpolate:
             interp_set = args.interpolate.copy()
             interp_set.remove('spatial_latent')
+        else:
+            interp_set = args.interpolate.copy()
         interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
     cond.update(interp_cond)
         

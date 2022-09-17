@@ -1,0 +1,22 @@
+ {
+    "log=UNetCond_masked_wclip_cfg=UNetCond_masked_wclip.yaml" :  {
+        "step":"150000", 
+        "itp":"spatial_latent", 
+        "alias":"Hadamart-Tanh;Face w/o clip"
+    },
+    "log=UNetCond_masked_woclip_cfg=UNetCond_masked_woclip.yaml" :  {
+        "step":"150000", 
+        "itp":"spatial_latent", 
+        "alias":"Hadamart-Tanh;Face w/ clip"
+    },
+    "log=UNetCond128_masked_woclip_ears_eyes_dilate5.yaml_cfg=UNetCond128_masked_woclip_ears_eyes_dilate5.yaml" :  {
+        "step":"150000", 
+        "itp":"spatial_latent", 
+        "alias":"Hadamart-Tanh;Face + Ears + Eyes"
+    },
+    "log=UNetCod_Spatial_Hadamart_Tanh_Shape_128_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape_128.yaml" :  {
+        "step":"150000", 
+        "itp":"spatial_latent", 
+        "alias":"Hadamart-Tanh;Face"
+    }
+ }

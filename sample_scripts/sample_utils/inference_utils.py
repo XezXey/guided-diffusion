@@ -32,7 +32,7 @@ class PLReverseSampling(pl.LightningModule):
             sample = self.sample_fn(
                 model=self.model_dict[self.cfg.img_model.name],
                 x=x.cuda(),
-                clip_denoised=False,
+                clip_denoised=True,
                 model_kwargs=model_kwargs,
                 progress=progress
             )

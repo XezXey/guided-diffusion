@@ -36,7 +36,8 @@ def create_app():
         out = ""
         out += f"<a href=\"/best_checkpoint_vid\">Best checkpoint (Video)</a> <br>"
         out += f"<a href=\"/best_checkpoint_img\">Best checkpoint (Image)</a> <br>"
-        out += f"<a href=\"/model_comparison_from_json/itp_method=Slerp&n_frame=5/\">Model comparison (From json)</a> <br>"
+        out += f"<a href=\"/uncond_vs_reverse\"> Uncondition Vs. Reverse sampling </a> <br>"
+        out += f"<a href=\"/model_comparison_from_json/itp_method=Slerp&n_frame=5&sampling=reverse/\">Model comparison (From json)</a> <br>"
         return out
 
     @app.route('/best_checkpoint_vid/')
@@ -46,11 +47,11 @@ def create_app():
         model = glob.glob(f"{folder}/*")
         for m in model:
             m_name = m.split('/')[-1]
-            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&n_frame=30\">{m_name}</a> <br>"
+            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&diff_step=1000&n_frame=30&sampling=reverse\">{m_name}</a> <br>"
         return out
 
-    @app.route('/best_checkpoint_vid/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&n_frame=<n_frame>')
-    def best_checkpoint_vid_show(m_name, itp, itp_method, n_frame=30):
+    @app.route('/best_checkpoint_vid/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>')
+    def best_checkpoint_vid_show(m_name, itp, itp_method, sampling, diff_step, n_frame=30):
         out = """<style>
                 th, tr, td {
                     border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
@@ -63,7 +64,7 @@ def create_app():
         folder = f"{args.sample_dir}/{args.exp_dir}/{m_name}/"
         checkpoint = sorted(glob.glob(f"{folder}/*"))
         
-        _, subject_id, _ = mani_utils.get_samples_list(sample_pair_json=f"{args.sample_dir}/hard_samples.json", 
+        _, subject_id, _ = mani_utils.get_samples_list(sample_pair_json=f"{args.sample_pair_json}", 
                                                        sample_pair_mode='pair', 
                                                        src_dst=None, 
                                                        img_path=img_path, 
@@ -72,10 +73,10 @@ def create_app():
             out += f"[#{idx}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
             out += "<table>"
             for ckpt in checkpoint:
-                out += f"<th> Checkpoint at : {ckpt.split('/')[-1]} </th>"
+                out += f"<th>{ckpt.split('/')[-1]}</th>"
             out += "<tr>"
             for ckpt in checkpoint:
-                vid_path = glob.glob(f"{ckpt}/valid/{itp}/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_1000/n_frames={n_frame}/*.mp4")
+                vid_path = glob.glob(f"{ckpt}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{diff_step}/n_frames={n_frame}/res*.mp4")
                 if len(vid_path) == 0:
                     out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
                     continue
@@ -101,11 +102,11 @@ def create_app():
         model = glob.glob(f"{folder}/*")
         for m in model:
             m_name = m.split('/')[-1]
-            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&n_frame=30\">{m_name}</a> <br>"
+            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&diff_step=1000&n_frame=30&sampling=reverse\">{m_name}</a> <br>"
         return out
 
-    @app.route('/best_checkpoint_img/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&n_frame=<n_frame>')
-    def best_checkpoint_img_show(m_name, itp, itp_method, n_frame=30):
+    @app.route('/best_checkpoint_img/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>')
+    def best_checkpoint_img_show(m_name, itp, itp_method, sampling, diff_step, n_frame=30):
         out = """<style>
                 th, tr, td {
                     border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
@@ -118,7 +119,7 @@ def create_app():
         folder = f"{args.sample_dir}/{args.exp_dir}/{m_name}/"
         checkpoint = sorted(glob.glob(f"{folder}/*"))
         
-        _, subject_id, _ = mani_utils.get_samples_list(sample_pair_json=f"{args.sample_dir}/hard_samples.json", 
+        _, subject_id, _ = mani_utils.get_samples_list(sample_pair_json=f"{args.sample_pair_json}", 
                                                        sample_pair_mode='pair', 
                                                        src_dst=None, 
                                                        img_path=img_path, 
@@ -126,11 +127,12 @@ def create_app():
         
         for idx, src_dst in enumerate(subject_id):
             out += "<table>"
+            out += "<tr> <th> Checkpoint </th> <th> Image </th> </tr>"
             out += f"[#{idx}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
             for ckpt in checkpoint:
                 out += "<tr>"
-                out += f"<td> Checkpoint at : {ckpt.split('/')[-1]} </td> "
-                frames = glob.glob(f"{ckpt}/valid/{itp}/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_1000/n_frames={n_frame}/*.png")
+                out += f"<td>{ckpt.split('/')[-1]}</td> "
+                frames = glob.glob(f"{ckpt}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
                 out += "<td>"
                 if len(frames) > 0:
                     frames = sort_by_frame(frames)
@@ -144,19 +146,74 @@ def create_app():
             out += "<br> <hr>"
             
         return out
+    
+    @app.route('/uncond_vs_reverse/')
+    def uncond_vs_reverse_img():
+        out = ""
+        folder = f"{args.sample_dir}/{args.exp_dir}/"
+        model = glob.glob(f"{folder}/*")
+        for m in model:
+            m_name = m.split('/')[-1]
+            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&diff_step=1000&n_frame=30\">{m_name}</a> <br>"
+        return out
 
-    @app.route('/model_comparison_from_json/itp_method=<itp_method>&n_frame=<n_frame>/')
-    def model_comparison_from_json(itp_method, n_frame):
+    @app.route('/uncond_vs_reverse/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>')
+    def uncond_vs_reverse_img_show(m_name, itp, itp_method, diff_step, n_frame=30):
+        out = """<style>
+                th, tr, td {
+                    border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
+                }
+                </style>"""
+        out += f"<h2>[#] Model name : {m_name} </h2>"
+        out += f"<h2>[#] Interpolate on : {itp} </h2>"
+        out += f"<h2>[#] Interpolate method : {itp_method} </h2>"
+        out += f"<h2>[#] #N-Frames (@fps=30) : {n_frame} </h2>"
+        
+        folder = f"{args.sample_dir}/{args.exp_dir}/{m_name}/"
+        checkpoint = sorted(glob.glob(f"{folder}/*"))
+        
+        _, subject_id, _ = mani_utils.get_samples_list(sample_pair_json=f"{args.sample_pair_json}", 
+                                                       sample_pair_mode='pair', 
+                                                       src_dst=None, 
+                                                       img_path=img_path, 
+                                                       n_subject=-1)
+        
+        for idx, src_dst in enumerate(subject_id):
+            out += "<table>"
+            out += "<tr> <th> Checkpoint </th>  <th> Sampling </th>  <th> Image </th> </tr>"
+            out += f"[#{idx}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
+            for ckpt in checkpoint:
+                out += "<tr>"
+                out += f"<td rowspan=\"2\">{ckpt.split('/')[-1]}</td> "
+                for sampling in ['uncond', 'reverse']:
+                    out += f"<td> {sampling}</td>"
+                    frames = glob.glob(f"{ckpt}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
+                    out += "<td>"
+                    if len(frames) > 0:
+                        frames = sort_by_frame(frames)
+                        for f in frames:
+                            out += "<img src=/files/" + f + ">"
+                    else:
+                        out += "<p style=\"color:red\">Images not found!</p>"
+                    out += "</td>"
+                    out += "</tr>"
+            out += "</table>"
+            out += "<br> <hr>"
+            
+        return out
+
+    @app.route('/model_comparison_from_json/itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>/')
+    def model_comparison_from_json(itp_method, n_frame, diff_step, sampling):
         out = """<style>
                 th, tr, td{
                     border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
                 }
                 </style>"""
-        f = open('./model_comparison_hard_AdaGN.json')
+        f = open('./model_comparison_eyes.json')
         ckpt_dict = json.load(f)
         model = list(ckpt_dict.keys())
         
-        _, subject_id, _ = mani_utils.get_samples_list(sample_pair_json=f"{args.sample_dir}/hard_samples.json", 
+        _, subject_id, _ = mani_utils.get_samples_list(sample_pair_json=f"{args.sample_pair_json}", 
                                                        sample_pair_mode='pair', 
                                                        src_dst=None, 
                                                        img_path=img_path, 
@@ -165,6 +222,7 @@ def create_app():
         out += create_button_fn()
         for s_id, src_dst in enumerate(subject_id):
             out += "<table>"
+            out += "<tr> <th> Checkpoint </th> <th> Video </th> <th> Image </th> </tr>"
             out += f"[#{s_id}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
             out += create_hide(model, s_id)
             for m_id, m in enumerate(model):
@@ -172,13 +230,13 @@ def create_app():
                 out += f"<td> <br> {m_id} : {ckpt_dict[m]['alias']} <br> </td>"
                 step = ckpt_dict[m]['step']
                 itp = ckpt_dict[m]['itp']
-                each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/ema_{step}/valid/{itp}/src={src_dst[0]}/dst={src_dst[1]}/"
+                each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/ema_{step}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/"
                 if m in ["log=UNetCond_Spatial_Hadamart_Tanh_Shape_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape.yaml", "log=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg_cfg=UNetCond_Spatial_Hadamart_Tanh_Shape+Bg.yaml"]:
-                    frames = glob.glob(f"{each_model}/{itp_method}_1000/*.png")
-                    vid_path = glob.glob(f"{each_model}/{itp_method}_1000/*.mp4")
+                    frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/res_*.png")
+                    vid_path = glob.glob(f"{each_model}/{itp_method}_{diff_step}/res_*.mp4")
                 else:
-                    frames = glob.glob(f"{each_model}/{itp_method}_1000/n_frames={n_frame}/*.png")
-                    vid_path = glob.glob(f"{each_model}/{itp_method}_1000/n_frames={n_frame}/*.mp4")
+                    frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
+                    vid_path = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.mp4")
                     
                 if len(vid_path) == 0:
                     out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
@@ -243,6 +301,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_dir', required=True)
     parser.add_argument('--sample_dir', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
+    parser.add_argument('--sample_pair_json', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
     parser.add_argument('--port', required=True)
     parser.add_argument('--host', default='0.0.0.0')
     args = parser.parse_args()
