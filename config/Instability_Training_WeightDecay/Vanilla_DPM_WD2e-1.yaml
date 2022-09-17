@@ -1,0 +1,22 @@
+img_model:
+  name: "ImgCond"
+  arch: "UNet"
+  image_size: 64
+  in_image: 'raw'
+  in_channels: 3
+  out_channels: 3
+
+dataset:
+  deca_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
+  data_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
+  face_segment_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment/"
+  deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
+
+train_misc:
+  exp_name: "Training_Stability_WeightDecay"
+  cfg_name: "Vanilla_DPM"
+
+train:
+  weight_decay: 0.2
+  sampling_interval: 25000
+  save_interval: 50000
