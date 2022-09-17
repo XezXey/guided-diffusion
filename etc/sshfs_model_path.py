@@ -17,7 +17,8 @@ for id in args.vid:
     print("... Done!")
 
     print(f"[#] mounting v{id}", end='')
-    cmd = f"sshfs mint@10.0.0.{int(id+10)}:/data/mint/model_logs/ {args.folder}/v{id}"
+    if args.local:
+      cmd = f"sshfs mint@10.0.0.{int(id+10)}:/data/mint/model_logs/ {args.folder}/v{id}"
     os.system(cmd)
     print("... Done!")
 
