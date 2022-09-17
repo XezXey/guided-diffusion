@@ -34,5 +34,5 @@ dataset:
 
 
 train_misc:
-  exp_name: "EncLight_Spatial_Face+Bg"
-  cfg_name: "UNetCond_Spatial_Hadamart_Tanh_Shape+Bg"
+  exp_name: "EncLight_DilateBg"
+  cfg_name: "Face_woclip+Bg"

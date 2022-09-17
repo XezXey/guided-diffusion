@@ -8,7 +8,8 @@ parser.add_argument('--tb_dir', type=str, required=True)
 parser.add_argument('--model_dir', type=str, required=True)
 args = parser.parse_args()
 
-assert os.path.isabs(args.folder)
+assert os.path.isabs(args.model_dir)
+assert os.path.isabs(args.tb_dir)
 print("[#] Auto sshfs to ...", [f"v{id}" for id in args.vid])
 
 for id in args.vid:

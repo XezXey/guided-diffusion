@@ -36,5 +36,5 @@ dataset:
 
 
 train_misc:
-  exp_name: "EncLight_Masked_Rendered_Face"
-  cfg_name: "UNetCond128_maksed_woclip_ears_dilate5"
+  exp_name: "EncLight_DilateBg"
+  cfg_name: "Face_woclip"
