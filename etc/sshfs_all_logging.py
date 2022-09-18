@@ -28,7 +28,7 @@ for id in args.vid:
     print(f"[# Tblogs] mounting v{id}", end='')
     cmd = f"sshfs mint@{ip}:/home/mint/guided-diffusion/tb_logs/ {args.tb_dir}/v{id}"
     os.system(cmd)
-    
+
     print(f"[# Model] mounting v{id}", end='')
     cmd = f"sshfs mint@{ip}:/data/mint/model_logs/ {args.model_dir}/v{id}"
     os.system(cmd)

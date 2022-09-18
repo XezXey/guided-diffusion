@@ -200,11 +200,11 @@
             "type": "python",
             "request": "launch",
             "program": "./train_scripts/image_train.py",
-            "env": {"CUDA_VISIBLE_DEVICES":"2"},
+            "env": {"CUDA_VISIBLE_DEVICES":"0"},
             "args": ["--train.log_dir", "/data/mint/model_logs/dev",
                     "--train.batch_size", "10",
                     "--train.n_gpus", "1", 
-                    "--cfg", "./config/EncLight_DilateBg/UNetCond_Spatial_Hadamart_Tanh_Shape+Bg.yaml",
+                    "--cfg", "./config/EncLight_DilateBg/Face_woclip+Bg_dilate5.yaml",
                     "--train.save_interval", "5000000000",
                     "--train.sampling_interval", "1"
             ],

@@ -4,6 +4,7 @@ import os
 parser = argparse.ArgumentParser()
 parser.add_argument('--vid', type=int, nargs='+')
 parser.add_argument('--folder', type=str)
+parser.add_argument('--local', action='store_true', default=False)
 args = parser.parse_args()
 
 assert os.path.isabs(args.folder)
@@ -18,7 +19,10 @@ for id in args.vid:
 
     print(f"[#] mounting v{id}", end='')
     if args.local:
-      cmd = f"sshfs mint@10.0.0.{int(id+10)}:/data/mint/model_logs/ {args.folder}/v{id}"
+      ip = f"10.0.0.{int(id+10)}"
+    else:
+      ip = f"10.204.100.{int(id+10)}"
+    cmd = f"sshfs mint@{ip}:/data/mint/model_logs/ {args.folder}/v{id}"
     os.system(cmd)
     print("... Done!")
 
