@@ -31,7 +31,7 @@ if __name__ == '__main__':
     
     if len(os.listdir(f'/home/mint/{conda_ssh_dir}/')) != 0:
         print(f"[#] Umounting : {conda_ssh_dir}")
-        umount_cmd = 'umount {conda_ssh_dir}'
+        umount_cmd = f'umount {conda_ssh_dir}'
         processes = subprocess.run(umount_cmd.split(' '))
         
     print("#" * 100)
