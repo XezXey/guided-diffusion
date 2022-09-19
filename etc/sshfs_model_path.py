@@ -18,7 +18,7 @@ for id in args.vid:
     mount_path = f'{args.folder}/v{id}'
     
     if not os.path.exists(mount_path):
-        os.makedirs(mount_path)
+        os.makedirs(mount_path, exist_ok=True)
         
     if len(os.listdir(mount_path)) != 0:
         print(f"[#] Umounting : {mount_path}")
