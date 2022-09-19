@@ -13,7 +13,6 @@ print("[#] Auto sshfs to ...", [f"v{id}" for id in args.vid])
 
 for id in args.vid:
     print(f"========== V{id} (mint@10.204.100.1{int(id+10)} / mint@10.0.0.{int(id+10)}) ==========")
-    
     mount_path = f'{args.folder}/v{id}'
     
     if not os.path.exists(mount_path):
@@ -32,6 +31,7 @@ for id in args.vid:
       ip = f"10.204.100.{int(id+10)}"
       
     cmd = f"sshfs mint@{ip}:/data/mint/model_logs/ {mount_path}"
+    print(f"Mounting : {cmd}")
     processes = subprocess.run(cmd.split(' '))
     print("... Done!")
 
