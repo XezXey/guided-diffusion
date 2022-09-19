@@ -4,16 +4,15 @@ import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--vid', type=int, nargs='+')
-parser.add_argument('--folder', type=str)
 parser.add_argument('--local', action='store_true', default=False)
 parser.add_argument('--tb_dir', default=None)
 parser.add_argument('--model_dir', default=None)
 args = parser.parse_args()
 
-assert os.path.isabs(args.folder)
 print("[#] Auto sshfs to ...", [f"v{id}" for id in args.vid])
 
 def mounting(from_path, to_path):
+    assert os.path.isabs(to_path)
     for id in args.vid:
         print(f"========== V{id} (mint@10.204.100.1{int(id+10)} / mint@10.0.0.{int(id+10)}) ==========")
         mount_path = f'{to_path}/v{id}'
