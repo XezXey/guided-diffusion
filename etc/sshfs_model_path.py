@@ -16,9 +16,15 @@ for id in args.vid:
     print(f"[#] umount v{id}", end='')
     
     mount_path = f'{args.folder}/v{id}'
-    umount = f"umount {mount_path}"
-    processes = subprocess.run(umount.split(' '))
-    print("... Done!")
+    
+    if not os.path.exists(mount_path):
+        os.makedirs(mount_path)
+        
+    if len(os.listdir(mount_path)) != 0:
+        print(f"[#] Umounting : {mount_path}")
+        umount = f"umount {mount_path}"
+        processes = subprocess.run(umount.split(' '))
+        print("... Done!")
 
     print(f"[#] mounting v{id}", end='')
     if args.local:
@@ -26,8 +32,6 @@ for id in args.vid:
     else:
       ip = f"10.204.100.{int(id+10)}"
       
-    if not os.path.exists(mount_path):
-        os.makedirs(mount_path)
     cmd = f"sshfs mint@{ip}:/data/mint/model_logs/ {mount_path}"
     processes = subprocess.run(cmd.split(' '))
     print("... Done!")
