@@ -23,7 +23,7 @@ def mounting(from_path, to_path):
         if len(os.listdir(mount_path)) != 0:
             print(f"[#] Umounting : {mount_path}")
             umount = f"umount {mount_path}"
-            processes = subprocess.run(umount.split(' '))
+            _ = subprocess.run(umount.split(' '))
             print("... Done!")
 
         if args.local:
@@ -32,8 +32,12 @@ def mounting(from_path, to_path):
             ip = f"10.204.100.1{int(id+10)}"
         
         cmd = f"sshfs mint@{ip}:{from_path} {mount_path}"
-        print(f"Mounting : {cmd}")
-        processes = subprocess.run(cmd.split(' '))
+        print(f'''
+              Mounting...
+              from : {from_path}
+              to : {to_path}
+              ''')
+        _ = subprocess.run(cmd.split(' '))
         print("... Done!")
     print("#"*100)
 
