@@ -228,6 +228,7 @@ if __name__ == '__main__':
         rmv_params=cfg.param_model.rmv_params,
         set_=args.set,
         cfg=cfg,
+        mode='valid'
     )
     
     # _, _, avg_dict = load_data_img_deca(

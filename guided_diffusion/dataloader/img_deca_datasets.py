@@ -95,6 +95,7 @@ def load_data_img_deca(
     resize_mode="resize",
     augment_mode=None,
     in_image_UNet="raw",
+    mode='train',
 ):
     """
     For a dataset, create a generator over (images, kwargs) pairs.
@@ -151,7 +152,7 @@ def load_data_img_deca(
         rmv_params=rmv_params,
         cfg=cfg,
         in_image_for_cond=in_image,
-        mode='train',
+        mode=mode,
     )
     print("[#] Parameters Conditioning")
     print("Params keys order : ", img_dataset.precomp_params_key)
