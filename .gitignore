@@ -7,15 +7,8 @@ logs/
 model_logs/
 
 sample_scripts/cond_utils/arcface/pretrained/BEST_checkpoint_r18.tar
-sample_scripts/cond_utils/deca/data/deca_model.tar
-sample_scripts/cond_utils/deca/data/fixed_displacement_256.npy
-sample_scripts/cond_utils/deca/data/generic_model.pkl
-sample_scripts/cond_utils/deca/data/head_template.obj
-sample_scripts/cond_utils/deca/data/landmark_embedding.npy
-sample_scripts/cond_utils/deca/data/mean_texture.jpg
-sample_scripts/cond_utils/deca/data/texture_data_256.npy
-sample_scripts/cond_utils/deca/data/uv_face_eye_mask.png
-sample_scripts/cond_utils/deca/data/uv_face_mask.png
+sample_scripts/cond_utils/deca/data/
+sample_scripts/cond_utils/DECA/data/
 
 sample_scripts/animated_results/
 sample_scripts/itw_images/
