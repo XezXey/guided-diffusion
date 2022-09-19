@@ -13,7 +13,6 @@ print("[#] Auto sshfs to ...", [f"v{id}" for id in args.vid])
 
 for id in args.vid:
     print(f"========== V{id} (mint@10.204.100.1{int(id+10)} / mint@10.0.0.{int(id+10)}) ==========")
-    print(f"[#] umount v{id}", end='')
     
     mount_path = f'{args.folder}/v{id}'
     
