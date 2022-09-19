@@ -25,8 +25,6 @@ if __name__ == '__main__':
         print("[#] sshfs the miniconda3 from v9(mothership)")
         ssh_cmd = f'sshfs mint@10.204.100.119:/home/mint/miniconda3 {conda_ssh_dir}'
         processes = subprocess.run(ssh_cmd.split(' '))
-    else:
-        raise Exception("Folder is not empty!")
 
     for c in args.conda_name:
         if os.path.isdir(f'{conda_ssh_dir}/envs/{c}'):
