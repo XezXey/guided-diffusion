@@ -31,7 +31,7 @@ if __name__ == '__main__':
     for c in args.conda_name:
         if os.path.isdir(f'{conda_ssh_dir}/envs/{c}'):
             print("[#] Cloning the conda envs : {c}")
-            clone_cmd = f'conda create --name {args.conda_name} --clone {conda_ssh_dir}/envs/{c}'
+            clone_cmd = f'conda create --name {c} --clone {conda_ssh_dir}/envs/{c}'
             processes = subprocess.run(clone_cmd.split(' '))
         else:
             raise FileNotFoundError(f"Conda name : {c} is not exists")
