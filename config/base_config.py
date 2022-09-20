@@ -36,7 +36,7 @@ cfg.param_model.faceemb = 512
 cfg.param_model.bound = 1.0
 
 
-params_dict = {'shape':100, 'pose':6, 'exp':50, 'cam':3, 'light':27, 'faceemb':512}
+params_dict = {'shape':100, 'pose':6, 'exp':50, 'cam':3, 'light':27, 'faceemb':512, 'shadow':1}
 cfg.param_model.n_params = []
 for param in cfg.param_model.params_selector:
     cfg.param_model.n_params.append(params_dict[param])

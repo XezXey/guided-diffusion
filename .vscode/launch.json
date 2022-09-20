@@ -195,7 +195,8 @@
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/",
             "justMyCode": true
-        },        {
+        },        
+        {
             "name": "Python: train_deca_Hadamart_Tanh_shape+blurred_bg",
             "type": "python",
             "request": "launch",
@@ -205,6 +206,23 @@
                     "--train.batch_size", "10",
                     "--train.n_gpus", "1", 
                     "--cfg", "./config/EncLight_DilateBg/Face_woclip+Bg_dilate5+Eyes_dilate5.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "1"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: train_deca_shape+bg+shadow_score",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"0"},
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "10",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/EncLight_with_shadow_score/Face_woclip+Bg+shadow_score.yaml",
                     "--train.save_interval", "5000000000",
                     "--train.sampling_interval", "1"
             ],

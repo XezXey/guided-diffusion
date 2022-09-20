@@ -18,5 +18,10 @@
         "step":"ema_150000", 
         "itp":"spatial_latent", 
         "alias":"Hadamart-Tanh;Face"
+    },
+    "log=Face_woclip+Bg+Eyes_dilate5_cfg=Face_woclip+Bg+Eyes_dilate5.yaml" : {
+        "step":"ema_100000", 
+        "itp":"spatial_latent", 
+        "alias":"Hadamart-Tanh;Face+Bg+Eyes_dilate5"
     }
  }

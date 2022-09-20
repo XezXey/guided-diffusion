@@ -22,7 +22,7 @@ def mounting(from_path, to_path):
             
         if len(os.listdir(mount_path)) != 0:
             print(f"[#] Umounting : {mount_path}")
-            umount = f"umount {mount_path}"
+            umount = f"sudo umount {mount_path}"
             _ = subprocess.run(umount.split(' '))
             print("... Done!")
 

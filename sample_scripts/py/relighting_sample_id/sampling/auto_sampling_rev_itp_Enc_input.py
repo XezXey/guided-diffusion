@@ -165,7 +165,6 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
     elif itp_func == mani_utils.slerp:
         itp_fn_str = 'Slerp'
         
-    
     interpolate_str = '_'.join(args.interpolate)
     if args.interpolate_noise:
         out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/interp_noise"
@@ -231,20 +230,22 @@ if __name__ == '__main__':
         mode='sampling'
     )
     
-    # _, _, avg_dict = load_data_img_deca(
-    #     data_dir=img_dataset_path,
-    #     deca_dir=deca_dataset_path,
-    #     batch_size=int(1e7),
-    #     image_size=cfg.img_model.image_size,
-    #     deterministic=cfg.train.deterministic,
-    #     augment_mode=cfg.img_model.augment_mode,
-    #     resize_mode=cfg.img_model.resize_mode,
-    #     in_image_UNet=cfg.img_model.in_image,
-    #     params_selector=cfg.param_model.params_selector,
-    #     rmv_params=cfg.param_model.rmv_params,
-    #     set_='train',
-    #     cfg=cfg,
-    # )
+    if args.render_mode == 'template_shape':
+        _, _, avg_dict = load_data_img_deca(
+            data_dir=img_dataset_path,
+            deca_dir=deca_dataset_path,
+            batch_size=int(1e7),
+            image_size=cfg.img_model.image_size,
+            deterministic=cfg.train.deterministic,
+            augment_mode=cfg.img_model.augment_mode,
+            resize_mode=cfg.img_model.resize_mode,
+            in_image_UNet=cfg.img_model.in_image,
+            params_selector=cfg.param_model.params_selector,
+            rmv_params=cfg.param_model.rmv_params,
+            set_='train',
+            cfg=cfg,
+        )
+    
     data_size = dataset.__len__()
     img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
     all_img_idx, all_img_name, args.n_subject = mani_utils.get_samples_list(args.sample_pair_json, args.sample_pair_mode, args.src_dst, img_path, args.n_subject)
@@ -328,5 +329,3 @@ if __name__ == '__main__':
                                 src_idx=dst_idx, src_id=dst_id,
                                 dst_idx=src_idx, dst_id=src_id)
                 
-        # elif args.uncond_sampling:
-        #     uncond_sampling(model_kwargs=model_kwargs, noise_mode='fixed_noise')

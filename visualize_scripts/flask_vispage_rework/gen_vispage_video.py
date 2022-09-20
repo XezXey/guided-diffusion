@@ -102,11 +102,11 @@ def create_app():
         model = glob.glob(f"{folder}/*")
         for m in model:
             m_name = m.split('/')[-1]
-            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&diff_step=1000&n_frame=30&sampling=reverse\">{m_name}</a> <br>"
+            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse\">{m_name}</a> <br>"
         return out
 
     @app.route('/best_checkpoint_img/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>')
-    def best_checkpoint_img_show(m_name, itp, itp_method, sampling, diff_step, n_frame=30):
+    def best_checkpoint_img_show(m_name, itp, itp_method, sampling, diff_step, n_frame=5):
         out = """<style>
                 th, tr, td {
                     border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
@@ -154,11 +154,11 @@ def create_app():
         model = glob.glob(f"{folder}/*")
         for m in model:
             m_name = m.split('/')[-1]
-            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&diff_step=1000&n_frame=30\">{m_name}</a> <br>"
+            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&diff_step=1000&n_frame=5\">{m_name}</a> <br>"
         return out
 
     @app.route('/uncond_vs_reverse/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>')
-    def uncond_vs_reverse_img_show(m_name, itp, itp_method, diff_step, n_frame=30):
+    def uncond_vs_reverse_img_show(m_name, itp, itp_method, diff_step, n_frame=5):
         out = """<style>
                 th, tr, td {
                     border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
