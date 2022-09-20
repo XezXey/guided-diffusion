@@ -36,6 +36,7 @@ def create_app():
         out = ""
         out += f"<a href=\"/best_checkpoint_vid\">Best checkpoint (Video)</a> <br>"
         out += f"<a href=\"/best_checkpoint_img\">Best checkpoint (Image)</a> <br>"
+        out += f"<a href=\"/best_diff_step_img\">Best diffusion-step (Image)</a> <br>"
         out += f"<a href=\"/uncond_vs_reverse\"> Uncondition Vs. Reverse sampling </a> <br>"
         out += f"<a href=\"/model_comparison_from_json/itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse/\">Model comparison (From json)</a> <br>"
         return out
@@ -146,6 +147,63 @@ def create_app():
             out += "<br> <hr>"
             
         return out
+    
+    @app.route('/best_diff_step_img/')
+    def best_diff_step_img():
+        out = ""
+        folder = f"{args.sample_dir}/{args.exp_dir}/"
+        model = glob.glob(f"{folder}/*")
+        for m in model:
+            m_name = m.split('/')[-1]
+            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&n_frame=5&sampling=reverse\">{m_name}</a> <br>"
+        return out
+
+    @app.route('/best_diff_step_img/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&n_frame=<n_frame>&sampling=<sampling>')
+    def best_diff_step_show(m_name, itp, itp_method, sampling, n_frame=5):
+        out = """<style>
+                th, tr, td {
+                    border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
+                }
+                </style>"""
+        out += f"<h2>[#] Model name : {m_name} </h2>"
+        out += f"<h2>[#] Interpolate on : {itp} </h2>"
+        out += f"<h2>[#] Interpolate method : {itp_method} </h2>"
+        out += f"<h2>[#] #N-Frames (@fps=30) : {n_frame} </h2>"
+        folder = f"{args.sample_dir}/{args.exp_dir}/{m_name}/"
+        checkpoint = sorted(glob.glob(f"{folder}/*"))
+        
+        _, subject_id, _ = mani_utils.get_samples_list(sample_pair_json=f"{args.sample_pair_json}", 
+                                                       sample_pair_mode='pair', 
+                                                       src_dst=None, 
+                                                       img_path=img_path, 
+                                                       n_subject=-1)
+        
+        for idx, src_dst in enumerate(subject_id):
+            out += "<table>"
+            out += "<tr> <th> Checkpoint </th> <th> Diffusion step </th> <th> Image </th> </tr>"
+            out += f"[#{idx}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
+            for ckpt in checkpoint:
+                diff_step = glob.glob(f"{ckpt}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_*")
+                diff_step = sorted([int(ds.split('/')[-1].split('_')[-1]) for ds in diff_step])
+                out += f"<td rowspan=\"{len(diff_step)+1}\"> {ckpt.split('/')[-1]}</td> "
+                for ds in diff_step:
+                    out += "<tr>"
+                    out += f"<td>{ds}</td> "
+                    frames = glob.glob(f"{ckpt}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{ds}/n_frames={n_frame}/res_*.png")
+                    out += "<td>"
+                    if len(frames) > 0:
+                        frames = sort_by_frame(frames)
+                        for f in frames:
+                            out += "<img src=/files/" + f + ">"
+                    else:
+                        out += "<p style=\"color:red\">Images not found!</p>"
+                    out += "</td>"
+                    out += "</tr>"
+            out += "</table>"
+            out += "<br> <hr>"
+            
+        return out
+    
     
     @app.route('/uncond_vs_reverse/')
     def uncond_vs_reverse_img():

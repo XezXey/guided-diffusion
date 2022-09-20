@@ -157,6 +157,7 @@ def load_data_img_deca(
     print("[#] Parameters Conditioning")
     print("Params keys order : ", img_dataset.precomp_params_key)
     print("Remove keys : ", cfg.param_model.rmv_params)
+    print("Image condition : ", cfg.img_cond_model.in_image)
 
     if deterministic:
         loader = DataLoader(
