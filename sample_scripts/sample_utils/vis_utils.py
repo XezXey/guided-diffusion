@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import torch as th
 import torchvision
 import numpy as np
-import sys
+import sys, os
 sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/sample_utils/')
 import params_utils as params_utils
 import cv2
@@ -115,3 +115,24 @@ def save_images(path, fn, frames):
     for i in range(frames.shape[0]):
         frame = frames[i].cpu().detach()
         torchvision.utils.save_image(tensor=(frame), fp=f"{path}/{fn}_frame{i}.png")
+
+def save_intermediate(path, intermediate, proc, image_name):
+
+    for itmd in intermediate:
+        t = itmd['t']
+        sample = itmd['sample'].cpu().detach()
+        sample = ((sample + 1) * 127.5).clamp(0, 255)/255.0
+        # sample = ((sample + 0.5) * 255.0).clamp(0, 255)/255.0
+        pred_xstart = itmd['pred_xstart'].cpu().detach()
+        pred_xstart = ((pred_xstart + 1) * 127.5).clamp(0, 255)/255.0
+        # pred_xstart = ((pred_xstart + 0.5) * 255.0).clamp(0, 255)/255.0
+        assert sample.shape[0] == pred_xstart.shape[0]
+
+        batch_size = sample.shape[0]
+        save_path = f"{path}/{proc}/"
+        os.makedirs(save_path, exist_ok=True)
+        for b in range(batch_size):
+            save_path = f"{path}/{proc}/{image_name[b]}"
+            os.makedirs(save_path, exist_ok=True)
+            torchvision.utils.save_image(tensor=(sample[[b]]), fp=f"{save_path}/sample_frame{t[b]}.png")
+            torchvision.utils.save_image(tensor=(pred_xstart[[b]]), fp=f"{save_path}/pred_xstart_frame{t[b]}.png")

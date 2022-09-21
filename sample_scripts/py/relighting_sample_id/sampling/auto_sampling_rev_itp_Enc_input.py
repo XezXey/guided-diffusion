@@ -27,6 +27,7 @@ parser.add_argument('--render_mode', type=str, default="shape")
 parser.add_argument('--rotate_normals', action='store_true', default=False)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
+parser.add_argument('--denoised_clamp', type=float, default=None)
 # Misc.
 parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--out_dir', type=str, required=True)
@@ -124,7 +125,7 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
                 cond[cond_img_name] = rendered_tmp
         cond = mani_utils.create_cond_imgs(cond, key=cfg.img_cond_model.in_image)
         cond = inference_utils.to_tensor(cond, key=['cond_img'], device=ckpt_loader.device)
-        cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
+        cond = pl_sampling.forward_cond_network(model_kwargs=cond)
 
     if args.interpolate == ['all']:
         interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=cfg.param_model.params_selector, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
@@ -147,16 +148,15 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
     
     # Forward
     diffusion.num_timesteps = args.diffusion_steps
-    pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
     if args.interpolate_noise:
-        src_noise = reverse_ddim_sample['img_output'][[src_idx]]
-        dst_noise = reverse_ddim_sample['img_output'][[dst_idx]]
+        src_noise = reverse_ddim_sample['final_output']['sample'][[src_idx]]
+        dst_noise = reverse_ddim_sample['final_output']['sample'][[dst_idx]]
         noise_map = mani_utils.interp_noise(src_noise, dst_noise, n_step)
     elif args.reverse_sampling: 
-        noise_map = th.cat([reverse_ddim_sample['img_output'][[src_idx]]] * n_step)
+        noise_map = th.cat([reverse_ddim_sample['final_output']['sample'][[src_idx]]] * n_step)
     elif args.uncond_sampling: 
         noise_map = inference_utils.get_init_noise(n=n_step, mode='fixed_noise', img_size=cfg.img_model.image_size, device=device)
-    sample_ddim = pl_sampling(noise=noise_map, model_kwargs=cond)
+    sample_ddim = pl_sampling.forward_proc(noise=noise_map, model_kwargs=cond)
     
     #NOTE: Save result
     if itp_func == mani_utils.lerp:
@@ -177,14 +177,16 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
     save_res_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
     os.makedirs(save_res_path, exist_ok=True)
     
-    vis_utils.save_images(path=f"{save_res_path}", fn="res", frames=((sample_ddim['img_output'] + 1) * 127.5)/255.0)
+    vis_utils.save_images(path=f"{save_res_path}", fn="res", frames=((sample_ddim['final_output']['sample'] + 1) * 127.5)/255.0)
+    # vis_utils.save_images(path=f"{save_res_path}", fn="res", frames=((sample_ddim['final_output']['sample'] + 0.5) * 255.0)/255.0)
     if clip_ren:
         vis_utils.save_images(path=f"{save_res_path}", fn="ren", frames=th.tensor((rendered_tmp + 1) * 127.5)/255.0)
     else:
         vis_utils.save_images(path=f"{save_res_path}", fn="ren", frames=th.tensor(rendered_tmp).mul(255).add_(0.5).clamp_(0, 255)/255)
     if n_step >= 30:
         #NOTE: save_video whenever n_step >= 60 only, w/ shape = TxHxWxC
-        vis_utils.save_video(fn=f"{save_res_path}/res.mp4", frames=(sample_ddim['img_output'].permute(0, 2, 3, 1) + 1) * 127.5, fps=30)
+        vis_utils.save_video(fn=f"{save_res_path}/res.mp4", frames=(sample_ddim['final_output']['sample'].permute(0, 2, 3, 1) + 1) * 127.5, fps=30)
+        # vis_utils.save_video(fn=f"{save_res_path}/res.mp4", frames=(sample_ddim['final_output']['sample'].permute(0, 2, 3, 1) + 0.5) * 255.0, fps=30)
         if clip_ren:
             vis_utils.save_video(fn=f"{save_res_path}/ren.mp4", frames=th.tensor((rendered_tmp.transpose(0, 2, 3, 1) + 1) * 127.5), fps=30)
         else:
@@ -273,10 +275,18 @@ if __name__ == '__main__':
         cond = model_kwargs.copy()
         
         diffusion.num_timesteps = args.diffusion_steps
+        if args.denoised_clamp is None:
+            denoised_fn = None
+            print("[#] No denoised function (Used default +-1)")
+        else: 
+            denoised_fn = lambda x: x.clamp(-args.denoised_clamp, +args.denoised_clamp)
+            print(f"[#] Denoised function with clamp = +-{args.denoised_clamp}")
+        
         pl_sampling = inference_utils.PLSampling(model_dict=model_dict, 
                                                  diffusion=diffusion, 
                                                  reverse_fn=diffusion.ddim_reverse_sample_loop, 
                                                  forward_fn=diffusion.ddim_sample_loop,
+                                                 denoised_fn=denoised_fn,
                                                  cfg=cfg)
         if args.reverse_sampling:
             if cfg.img_cond_model.apply:
@@ -287,17 +297,27 @@ if __name__ == '__main__':
 
             # Reverse from input image (x0)
             reverse_ddim_sample = pl_sampling.reverse_proc(x=cond['image'], model_kwargs=cond)
+
             # Forward from reverse noise map
-            sample_ddim = pl_sampling.forward_proc(noise=reverse_ddim_sample['final_output'], model_kwargs=cond)
+            sample_ddim = pl_sampling.forward_proc(noise=reverse_ddim_sample['final_output']['sample'], model_kwargs=cond)
             
             # Save a visualization
             interpolate_str = '_'.join(args.interpolate)
             out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/reverse_sampling"
             os.makedirs(out_folder_reconstruction, exist_ok=True)
             
-            
             save_reverse_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Reversed/"
             os.makedirs(save_reverse_path, exist_ok=True)
+
+            vis_utils.save_intermediate(path=save_reverse_path, 
+                                        intermediate=reverse_ddim_sample['intermediate'], 
+                                        proc='reverse', 
+                                        image_name=cond['image_name'])
+
+            vis_utils.save_intermediate(path=save_reverse_path, 
+                                        intermediate=sample_ddim['intermediate'], 
+                                        proc='forward', 
+                                        image_name=cond['image_name'])
 
         if args.lerp:
             without_classifier(itp_func=mani_utils.lerp, 

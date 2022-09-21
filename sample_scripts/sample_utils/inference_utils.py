@@ -41,7 +41,7 @@ class PLSampling(pl.LightningModule):
             )
         else: raise NotImplementedError
 
-        assert th.all(th.eq(sample['sample'] == intermediate[-1]['sample']))
+        assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
         return {"final_output":sample, "intermediate":intermediate}
     
     def forward_proc(self, model_kwargs, noise):
@@ -54,7 +54,7 @@ class PLSampling(pl.LightningModule):
             model_kwargs=model_kwargs
         )
         
-        assert th.all(th.eq(sample['sample'] == intermediate[-1]['sample']))
+        assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
         return {"final_output":sample, "intermediate":intermediate}
     
 
