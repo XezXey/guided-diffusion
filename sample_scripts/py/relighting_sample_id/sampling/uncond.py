@@ -10,7 +10,7 @@ interpolate_fn = "slerp"
 interpolate_step = 5
 set_ = "valid"
 out_dir = "/data/mint/sampling/uncond_vs_reverse/"
-gpu_id = 1
+gpu_id = 3
 
 
 commands = [
