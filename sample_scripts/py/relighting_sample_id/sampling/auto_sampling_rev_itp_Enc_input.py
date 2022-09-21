@@ -62,7 +62,6 @@ from sample_utils import (
     params_utils, 
     vis_utils, 
     file_utils, 
-    img_utils, 
     inference_utils, 
     mani_utils,
     attr_mani,
@@ -274,32 +273,28 @@ if __name__ == '__main__':
         cond = model_kwargs.copy()
         
         diffusion.num_timesteps = args.diffusion_steps
-        pl_reverse_sampling = inference_utils.PLReverseSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_reverse_sample_loop, cfg=cfg)
+        pl_sampling = inference_utils.PLSampling(model_dict=model_dict, 
+                                                 diffusion=diffusion, 
+                                                 reverse_fn=diffusion.ddim_reverse_sample_loop, 
+                                                 forward_fn=diffusion.ddim_sample_loop,
+                                                 cfg=cfg)
         if args.reverse_sampling:
-            # Reverse
             if cfg.img_cond_model.apply:
-                cond = pl_reverse_sampling.forward_cond_network(model_kwargs=cond)
-
+                cond = pl_sampling.forward_cond_network(model_kwargs=cond)
             key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
             cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
             cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
-            img_tmp = cond['image'].clone()
 
-            reverse_ddim_sample = pl_reverse_sampling(x=cond['image'], model_kwargs=cond)
-            
+            # Reverse from input image (x0)
+            reverse_ddim_sample = pl_sampling.reverse_proc(x=cond['image'], model_kwargs=cond)
             # Forward from reverse noise map
-            key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
-            cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
-            cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
-
-            diffusion.num_timesteps = args.diffusion_steps
-            pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
-            sample_ddim = pl_sampling(noise=reverse_ddim_sample['img_output'], model_kwargs=cond)
+            sample_ddim = pl_sampling.forward_proc(noise=reverse_ddim_sample['final_output'], model_kwargs=cond)
             
             # Save a visualization
             interpolate_str = '_'.join(args.interpolate)
             out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/reverse_sampling"
             os.makedirs(out_folder_reconstruction, exist_ok=True)
+            
             
             save_reverse_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Reversed/"
             os.makedirs(save_reverse_path, exist_ok=True)

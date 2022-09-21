@@ -5,10 +5,12 @@ import blobfile as bf
 import PIL
 from . import params_utils
 
-class PLReverseSampling(pl.LightningModule):
-    def __init__(self, model_dict, diffusion, sample_fn, cfg):
-        super(PLReverseSampling, self).__init__()
-        self.sample_fn = sample_fn
+class PLSampling(pl.LightningModule):
+    def __init__(self, model_dict, diffusion, forward_fn, reverse_fn, cfg, denoised_fn=None):
+        super(PLSampling, self).__init__()
+        self.forward_fn = forward_fn
+        self.reverse_fn = reverse_fn
+        self.denoised_fn = denoised_fn
         self.model_dict = model_dict 
         self.diffusion = diffusion
         self.cfg = cfg
@@ -26,56 +28,35 @@ class PLReverseSampling(pl.LightningModule):
             else: raise NotImplementedError
         return model_kwargs
 
-    def forward(self, x, model_kwargs, progress=True):
+    def reverse_proc(self, x, model_kwargs, progress=True):
         # Mimic the ddim_sample_loop or p_sample_loop
-        if self.sample_fn == self.diffusion.ddim_reverse_sample_loop:
-            sample, intermediate = self.sample_fn(
+        if self.reverse_fn == self.diffusion.ddim_reverse_sample_loop:
+            sample, intermediate = self.reverse_fn(
                 model=self.model_dict[self.cfg.img_model.name],
                 x=x.cuda(),
                 clip_denoised=True,
+                denoised_fn = self.denoised_fn,
                 model_kwargs=model_kwargs,
                 progress=progress
-            )
-        elif self.sample_fn == self.diffusion.q_sample:
-            sample = self.sample_fn(
-                x_start=x.cuda(),
-                t = self.diffusion.num_timesteps - 1
             )
         else: raise NotImplementedError
 
         assert th.all(th.eq(sample['sample'] == intermediate[-1]['sample']))
-        return {"img_output":sample, "intermediate":intermediate}
-
-class PLSampling(pl.LightningModule):
-    def __init__(self, model_dict, diffusion, sample_fn, cfg):
-        super(PLSampling, self).__init__()
-        self.model_dict = model_dict 
-        self.sample_fn = sample_fn
-        self.diffusion = diffusion
-        self.cfg = cfg
-
-    def forward_cond_network(self, model_kwargs):
-        if self.cfg.img_cond_model.apply:
-            dat = model_kwargs['cond_img'].cuda()
-            img_cond = self.model_dict[self.cfg.img_cond_model.name](
-                x=dat.float(),
-                emb=None,
-            )
-            # Override the condition and re-create cond_params
-            if self.cfg.img_cond_model.override_cond != "":
-                model_kwargs[self.cfg.img_cond_model.override_cond] = img_cond
-            else: raise NotImplementedError
-        return model_kwargs
-
-    def forward(self, model_kwargs, noise):
-        sample = self.sample_fn(
+        return {"final_output":sample, "intermediate":intermediate}
+    
+    def forward_proc(self, model_kwargs, noise):
+        sample, intermediate = self.forward_fn(
             model=self.model_dict[self.cfg.img_model.name],
             shape=noise.shape,
             noise=noise,
             clip_denoised=self.cfg.diffusion.clip_denoised,
+            denoised_fn=self.denoised_fn,
             model_kwargs=model_kwargs
         )
-        return {"img_output":sample}
+        
+        assert th.all(th.eq(sample['sample'] == intermediate[-1]['sample']))
+        return {"final_output":sample, "intermediate":intermediate}
+    
 
 def get_init_noise(n, mode, img_size, device):
     '''

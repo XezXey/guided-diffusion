@@ -544,55 +544,6 @@ class GaussianDiffusion:
                 yield out
                 img = out["sample"]
 
-    def ddim_sample(
-        self,
-        model,
-        x,
-        t,
-        clip_denoised=True,
-        denoised_fn=None,
-        cond_fn=None,
-        model_kwargs=None,
-        eta=0.0,
-    ):
-        """
-        Sample x_{t-1} from the model using DDIM.
-
-        Same usage as p_sample().
-        """
-        out = self.p_mean_variance(
-            model,
-            x,
-            t,
-            clip_denoised=clip_denoised,
-            denoised_fn=denoised_fn,
-            model_kwargs=model_kwargs,
-        )
-        if cond_fn is not None:
-            out = self.condition_score(cond_fn, out, x, t, model_kwargs=model_kwargs)
-
-        # Usually our model outputs epsilon, but we re-derive it
-        # in case we used x_start or x_prev prediction.
-        eps = self._predict_eps_from_xstart(x, t, out["pred_xstart"])
-
-        alpha_bar = _extract_into_tensor(self.alphas_cumprod, t, x.shape)
-        alpha_bar_prev = _extract_into_tensor(self.alphas_cumprod_prev, t, x.shape)
-        sigma = (
-            eta
-            * th.sqrt((1 - alpha_bar_prev) / (1 - alpha_bar))
-            * th.sqrt(1 - alpha_bar / alpha_bar_prev)
-        )
-        # Equation 12.
-        noise = th.randn_like(x)
-        mean_pred = (
-            out["pred_xstart"] * th.sqrt(alpha_bar_prev)
-            + th.sqrt(1 - alpha_bar_prev - sigma ** 2) * eps
-        )
-        nonzero_mask = (
-            (t != 0).float().view(-1, *([1] * (len(x.shape) - 1)))
-        )  # no noise when t == 0
-        sample = mean_pred + nonzero_mask * sigma * noise
-        return {"sample": sample, "pred_xstart": out["pred_xstart"]}
 
     def ddim_reverse_sample(
         self,
@@ -688,8 +639,8 @@ class GaussianDiffusion:
 
         Same usage as p_sample_loop().
         """
-        intermediate = []
         final = None
+        intermediate = []
         for sample in self.ddim_reverse_sample_loop_progressive(
             model=model,
             x=x,
@@ -702,7 +653,145 @@ class GaussianDiffusion:
         ):
             final = sample
             intermediate.append(sample)
+            
         return final, intermediate
+
+    # def ddim_reverse_sample_loop_progressive(
+    #     self,
+    #     model,
+    #     x,
+    #     clip_denoised=True,
+    #     denoised_fn=None,
+    #     model_kwargs=None,
+    #     progress=True,
+    #     device=None,
+    #     eta=0.0,
+    # ):
+    #     if device is None:
+    #         device = next(model.parameters()).device
+            
+    #     indices = list(range(self.num_timesteps))
+    #     sample_t = []
+    #     xstart_t = []
+    #     T = []
+
+    #     if progress:
+    #         # Lazy import so that we don't depend on tqdm.
+    #         from tqdm.auto import tqdm
+
+    #         indices = tqdm(indices)
+
+    #     for i in indices:
+    #         # Deep copy to prevent sth that used .pop()
+    #         model_kwargs_copy = make_deepcopyable(model_kwargs, keys=list(model_kwargs.keys()))
+    #         t = th.tensor([i] * x.shape[0], device=device)
+    #         with th.no_grad():
+    #             out = self.ddim_reverse_sample(
+    #                 model=model,
+    #                 x = x,
+    #                 t = t,
+    #                 clip_denoised=clip_denoised,
+    #                 denoised_fn=denoised_fn,
+    #                 model_kwargs=model_kwargs_copy,
+    #                 eta=eta
+    #             )
+    #             x = out['sample']
+    #             # [1, ..., T]
+    #             sample_t.append(out['sample'])
+    #             # [0, ...., T-1]
+    #             xstart_t.append(out['pred_xstart'])
+    #             # [0, ..., T-1] ready to use
+    #             T.append(t)
+                
+    #     return {
+    #         #  xT "
+    #         'sample': x,
+    #         # (1, ..., T)
+    #         'sample_t': sample_t,
+    #         # xstart here is a bit different from sampling from T = T-1 to T = 0
+    #         # may not be exact
+    #         'xstart_t': xstart_t,
+    #         'T': T,
+    #     }
+
+    # def ddim_reverse_sample_loop(
+    #     self,
+    #     model,
+    #     x,
+    #     model_kwargs,
+    #     clip_denoised,
+    #     denoised_fn=None,
+    #     progress=True,
+    #     device=None,
+    # ):
+    #     """
+    #     Generate samples from the model using DDIM.
+
+    #     Same usage as p_sample_loop().
+    #     """
+    #     final = None
+    #     intermediate = self.ddim_reverse_sample_loop_progressive(
+    #         model=model,
+    #         x=x,
+    #         clip_denoised=clip_denoised,
+    #         denoised_fn=denoised_fn,
+    #         model_kwargs=model_kwargs,
+    #         progress=progress,
+    #         device=device,
+    #         eta=0.0,
+    #     )
+    #     final = intermediate['sample']
+    #     return final, intermediate
+
+    def ddim_sample(
+        self,
+        model,
+        x,
+        t,
+        clip_denoised=True,
+        denoised_fn=None,
+        cond_fn=None,
+        model_kwargs=None,
+        eta=0.0,
+    ):
+        """
+        Sample x_{t-1} from the model using DDIM.
+
+        Same usage as p_sample().
+        """
+        out = self.p_mean_variance(
+            model,
+            x,
+            t,
+            clip_denoised=clip_denoised,
+            denoised_fn=denoised_fn,
+            model_kwargs=model_kwargs,
+        )
+        if cond_fn is not None:
+            out = self.condition_score(cond_fn, out, x, t, model_kwargs=model_kwargs)
+
+        # Usually our model outputs epsilon, but we re-derive it
+        # in case we used x_start or x_prev prediction.
+        eps = self._predict_eps_from_xstart(x, t, out["pred_xstart"])
+
+        alpha_bar = _extract_into_tensor(self.alphas_cumprod, t, x.shape)
+        alpha_bar_prev = _extract_into_tensor(self.alphas_cumprod_prev, t, x.shape)
+        sigma = (
+            eta
+            * th.sqrt((1 - alpha_bar_prev) / (1 - alpha_bar))
+            * th.sqrt(1 - alpha_bar / alpha_bar_prev)
+        )
+        # Equation 12.
+        noise = th.randn_like(x)
+        mean_pred = (
+            out["pred_xstart"] * th.sqrt(alpha_bar_prev)
+            + th.sqrt(1 - alpha_bar_prev - sigma ** 2) * eps
+        )
+        nonzero_mask = (
+            (t != 0).float().view(-1, *([1] * (len(x.shape) - 1)))
+        )  # no noise when t == 0
+        sample = mean_pred + nonzero_mask * sigma * noise
+        return {"sample": sample, "pred_xstart": out["pred_xstart"]}
 
 
     def ddim_sample_loop(
@@ -723,6 +812,7 @@ class GaussianDiffusion:
 
         Same usage as p_sample_loop().
         """
+        intermediate = []
         final = None
         for sample in self.ddim_sample_loop_progressive(
             model,
@@ -737,7 +827,8 @@ class GaussianDiffusion:
             eta=eta,
         ):
             final = sample
-        return final["sample"]
+            intermediate.append(sample)
+        return final, intermediate
 
     def ddim_sample_loop_progressive(
         self,
@@ -789,6 +880,7 @@ class GaussianDiffusion:
                     model_kwargs=model_kwargs_copy,
                     eta=eta,
                 )
+                out['t'] = t
                 yield out
                 img = out["sample"]
 
