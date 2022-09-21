@@ -637,6 +637,7 @@ class GaussianDiffusion:
         model,
         x,
         clip_denoised=True,
+        denoised_fn=None,
         model_kwargs=None,
         progress=True,
         device=None,
@@ -644,7 +645,7 @@ class GaussianDiffusion:
     ):
         if device is None:
             device = next(model.parameters()).device
-
+            
         indices = list(range(self.num_timesteps))
 
         if progress:
@@ -663,11 +664,14 @@ class GaussianDiffusion:
                     x = x,
                     t = t,
                     clip_denoised=clip_denoised,
+                    denoised_fn=denoised_fn,
                     model_kwargs=model_kwargs_copy,
                     eta=eta
                 )
+                out['t'] = t
                 yield out
                 x = out['sample']
+    
 
     def ddim_reverse_sample_loop(
         self,
@@ -675,6 +679,7 @@ class GaussianDiffusion:
         x,
         model_kwargs,
         clip_denoised,
+        denoised_fn=None,
         progress=True,
         device=None,
     ):
@@ -683,18 +688,21 @@ class GaussianDiffusion:
 
         Same usage as p_sample_loop().
         """
+        intermediate = []
         final = None
         for sample in self.ddim_reverse_sample_loop_progressive(
             model=model,
             x=x,
             clip_denoised=clip_denoised,
+            denoised_fn=denoised_fn,
             model_kwargs=model_kwargs,
             progress=progress,
             device=device,
             eta=0.0,
         ):
             final = sample
-        return final["sample"]
+            intermediate.append(sample)
+        return final, intermediate
 
 
     def ddim_sample_loop(

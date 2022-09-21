@@ -29,7 +29,7 @@ class PLReverseSampling(pl.LightningModule):
     def forward(self, x, model_kwargs, progress=True):
         # Mimic the ddim_sample_loop or p_sample_loop
         if self.sample_fn == self.diffusion.ddim_reverse_sample_loop:
-            sample = self.sample_fn(
+            sample, intermediate = self.sample_fn(
                 model=self.model_dict[self.cfg.img_model.name],
                 x=x.cuda(),
                 clip_denoised=True,
@@ -43,7 +43,8 @@ class PLReverseSampling(pl.LightningModule):
             )
         else: raise NotImplementedError
 
-        return {"img_output":sample}
+        assert th.all(th.eq(sample['sample'] == intermediate[-1]['sample']))
+        return {"img_output":sample, "intermediate":intermediate}
 
 class PLSampling(pl.LightningModule):
     def __init__(self, model_dict, diffusion, sample_fn, cfg):
@@ -67,7 +68,6 @@ class PLSampling(pl.LightningModule):
         return model_kwargs
 
     def forward(self, model_kwargs, noise):
-        # model_kwargs = self.forward_cond_network(cond=model_kwargs)
         sample = self.sample_fn(
             model=self.model_dict[self.cfg.img_model.name],
             shape=noise.shape,

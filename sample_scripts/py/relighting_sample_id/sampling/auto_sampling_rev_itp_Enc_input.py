@@ -296,19 +296,13 @@ if __name__ == '__main__':
             pl_sampling = inference_utils.PLSampling(model_dict=model_dict, diffusion=diffusion, sample_fn=diffusion.ddim_sample_loop, cfg=cfg)
             sample_ddim = pl_sampling(noise=reverse_ddim_sample['img_output'], model_kwargs=cond)
             
-            
-            fig = vis_utils.plot_sample(img=img_tmp, reverse_sampling_images=reverse_ddim_sample['img_output'], sampling_img=sample_ddim['img_output'])
-
             # Save a visualization
             interpolate_str = '_'.join(args.interpolate)
             out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/reverse_sampling"
             os.makedirs(out_folder_reconstruction, exist_ok=True)
-            save_preview_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Reversed/"
-            os.makedirs(save_preview_path, exist_ok=True)
-            fig.suptitle(f"""Reverse Sampling : set={args.set}, ckpt_selector={args.ckpt_selector}, step={args.step}, cfg={args.cfg_name},
-                            model={args.log_dir}, seed={args.seed}, interchange={args.interpolate},
-                        """, x=0.1, y=0.95, horizontalalignment='left', verticalalignment='top',)
-            plt.savefig(f"{save_preview_path}/seed={args.seed}_itp={interpolate_str}_set={args.set}_src={img_name[0]}_dst={img_name[1]}_reconstruction.png", bbox_inches='tight')
+            
+            save_reverse_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Reversed/"
+            os.makedirs(save_reverse_path, exist_ok=True)
 
         if args.lerp:
             without_classifier(itp_func=mani_utils.lerp, 
