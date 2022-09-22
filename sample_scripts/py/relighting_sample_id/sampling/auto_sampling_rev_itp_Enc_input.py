@@ -22,6 +22,11 @@ parser.add_argument('--n_subject', type=int, default=-1)
 parser.add_argument('--sample_pair_json', type=str, default=None)
 parser.add_argument('--sample_pair_mode', type=str, default=None)
 parser.add_argument('--src_dst', nargs='+', default=[])
+# Pertubation the image condition
+parser.add_argument('--perturb_img_cond', action='store_true', default=False)
+parser.add_argument('--perturb_mode', type=str, default='zero')
+parser.add_argument('--perturb_where', nargs='+', default=[])
+
 # Rendering
 parser.add_argument('--render_mode', type=str, default="shape")
 parser.add_argument('--rotate_normals', action='store_true', default=False)
@@ -290,6 +295,14 @@ if __name__ == '__main__':
                                                  cfg=cfg)
         if args.reverse_sampling:
             if cfg.img_cond_model.apply:
+                if args.perturb_img_cond:
+                    cond = mani_utils.perturb_img(cond, 
+                                                key=cfg.img_cond_model.in_image, 
+                                                p_where=args.perturb_where, 
+                                                p_mode=args.perturb_mode)
+                    cond = mani_utils.create_cond_imgs(cond, key=cfg.img_cond_model.in_image)
+                    cond = inference_utils.to_tensor(cond, key=['cond_img'], device=ckpt_loader.device)
+
                 cond = pl_sampling.forward_cond_network(model_kwargs=cond)
             key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
             cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)

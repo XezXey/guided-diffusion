@@ -796,6 +796,36 @@
             // "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/sampling/",
             "cwd": "/home/mint/mothership_v9/guided-diffusion/sample_scripts/py/relighting_sample_id/sampling/",
             "justMyCode": true
+        },
+        {
+            "name": "Python: auto_sampling_rev_itp_encoder_perturb",
+            "type": "python",
+            "request": "launch",
+            "program": "auto_sampling_rev_itp_Enc_input.py",
+            "args": ["--set", "valid", 
+                    "--step", "100000",
+                    "--out_dir", "/data/mint/sampling/zero_bg/", 
+                    "--cfg_name", "Face_woclip+Bg.yaml", 
+                    "--log_dir", "Face_woclip+Bg", 
+                    "--diffusion_steps", "1000",
+                    "--reverse_sampling",
+                    "--seed", "47",
+                    "--sample_pair_json", "./hard_samples.json",
+                    "--sample_pair_mode", "pair",
+                    "--interpolate", "spatial_latent",
+                    "--interpolate_step", "5",
+                    "--n_subject", "1",
+                    "--gpu_id", "3",
+                    "--perturb_img_cond",
+                    // "--perturb_mode", "zero",
+                    // "--perturb_mode", "rand",
+                    "--perturb_mode", "neg1",
+                    "--perturb_where", "faceseg_bg_noface&nohair",
+                ],
+            "console": "integratedTerminal",
+            // "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/sampling/",
+            "cwd": "/home/mint/mothership_v9/guided-diffusion/sample_scripts/py/relighting_sample_id/sampling/",
+            "justMyCode": true
         }
 
 

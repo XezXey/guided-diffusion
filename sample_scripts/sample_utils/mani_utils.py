@@ -1,3 +1,4 @@
+from tkinter import W
 import numpy as np
 import torch as th
 import blobfile as bf
@@ -198,6 +199,26 @@ def create_cond_imgs(cond, key):
     print(np.concatenate(tmp, axis=1).shape)
     cond['cond_img'] = np.concatenate(tmp, axis=1)
     return cond
+
+def perturb_img(cond, key, p_where, p_mode):
+    print("[#] Perturbing images condition at ", key)
+
+    def perturb_mode(x, p_mode):
+        if p_mode == 'zero':
+            return x * 0
+        elif p_mode == 'neg1':
+            return (x * 0) - 1
+        elif p_mode == 'rand':
+            return th.FloatTensor(size=x.shape).uniform_(-1, 1)
+
+    for p in key:
+        if p in p_where:
+            cond_perturb = perturb_mode(cond[f'{p}_img'], p_mode)
+            cond[p] = cond_perturb
+        else: 
+            cond[p] = cond[f'{p}_img']
+    return cond
+
     
 def modify_cond(mod_idx, cond_params, params_loc, params_sel, n_step, bound, mod_cond, force_zero=False):
     '''
