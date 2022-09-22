@@ -201,7 +201,7 @@ def create_cond_imgs(cond, key):
     return cond
 
 def perturb_img(cond, key, p_where, p_mode):
-    print(f"[#] Perturbing images condition at {key} with {p_mode}")
+    print(f"[#] Perturbing images condition at {p_where} with {p_mode}")
 
     def perturb_mode(x, p_mode):
         if p_mode == 'zero':
