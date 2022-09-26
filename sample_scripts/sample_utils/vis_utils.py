@@ -116,23 +116,28 @@ def save_images(path, fn, frames):
         frame = frames[i].cpu().detach()
         torchvision.utils.save_image(tensor=(frame), fp=f"{path}/{fn}_frame{i}.png")
 
-def save_intermediate(path, intermediate, proc, image_name):
-
-    for itmd in intermediate:
+def save_intermediate(path, out, proc, image_name):
+    
+    for itmd in out['intermediate']:
         t = itmd['t']
         sample = itmd['sample'].cpu().detach()
-        sample = ((sample + 1) * 127.5).clamp(0, 255)/255.0
-        # sample = ((sample + 0.5) * 255.0).clamp(0, 255)/255.0
+        sample = ((sample + 1) * 127.5) / 255.0
         pred_xstart = itmd['pred_xstart'].cpu().detach()
-        pred_xstart = ((pred_xstart + 1) * 127.5).clamp(0, 255)/255.0
-        # pred_xstart = ((pred_xstart + 0.5) * 255.0).clamp(0, 255)/255.0
+        pred_xstart = ((pred_xstart + 1) * 127.5) / 255.0
         assert sample.shape[0] == pred_xstart.shape[0]
 
         batch_size = sample.shape[0]
-        save_path = f"{path}/{proc}/"
-        os.makedirs(save_path, exist_ok=True)
         for b in range(batch_size):
-            save_path = f"{path}/{proc}/{image_name[b]}"
-            os.makedirs(save_path, exist_ok=True)
-            torchvision.utils.save_image(tensor=(sample[[b]]), fp=f"{save_path}/sample_frame{t[b]}.png")
-            torchvision.utils.save_image(tensor=(pred_xstart[[b]]), fp=f"{save_path}/pred_xstart_frame{t[b]}.png")
+            pred_xstart_path = f"{path}/{proc}/{image_name[b]}/pred_xstart/"
+            sample_path = f"{path}/{proc}/{image_name[b]}/sample/"
+            os.makedirs(sample_path, exist_ok=True)
+            os.makedirs(pred_xstart_path, exist_ok=True)
+            torchvision.utils.save_image(tensor=(sample[[b]]), fp=f"{sample_path}/sample_frame{t[b]}.png")
+            torchvision.utils.save_image(tensor=(pred_xstart[[b]]), fp=f"{pred_xstart_path}/pred_xstart_frame{t[b]}.png")
+
+    final_output = ((out['final_output']['sample'].cpu().detach() + 1) * 127.5) / 255.0
+    for b in range(batch_size):
+        final_output_path = f"{path}/{proc}/{image_name[b]}/final_output/"
+        os.makedirs(final_output_path, exist_ok=True)
+        torchvision.utils.save_image(tensor=(final_output[[b]]), fp=f"{final_output_path}/final_output_frame0.png")
+    

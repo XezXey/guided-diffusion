@@ -99,20 +99,23 @@ def interp_cond(src_cond, dst_cond, n_step, interp_fn):
     :return interp: interpolated between src->dst with same shape of input
     '''
     print(f"[#] Interpolate with {interp_fn}")
-    r_interp = np.linspace(0, 1, num=n_step)
+    if n_step <= 1:
+        return src_cond
+    else:
+        r_interp = np.linspace(0, 1, num=n_step)
 
-    src = src_cond
-    dst = dst_cond
-    interp = []
-    for r in r_interp:
-        tmp = interp_fn(r=r, src=src, dst=dst)
-        if th.is_tensor(tmp):
-            tmp = tmp.detach().cpu().numpy()
-        interp.append(tmp.copy())
+        src = src_cond
+        dst = dst_cond
+        interp = []
+        for r in r_interp:
+            tmp = interp_fn(r=r, src=src, dst=dst)
+            if th.is_tensor(tmp):
+                tmp = tmp.detach().cpu().numpy()
+            interp.append(tmp.copy())
 
-    interp = np.concatenate((interp), axis=0)
+        interp = np.concatenate((interp), axis=0)
 
-    return interp 
+        return interp 
 
 def interp_by_dir(cond, src_idx, itp_name, direction, n_step):
     step = np.linspace(0, 2, num=n_step)

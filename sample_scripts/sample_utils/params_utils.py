@@ -79,7 +79,6 @@ def render_deca(deca_params, idx, n, render_mode='shape',
     :param extractTex: for deca texture (set by default of deca decoding pipeline)
     :param device: device for 'cuda' or 'cpu'
     '''
-    print("JESUS CHRIST")
     #import warnings
     #warnings.filterwarnings("ignore")
     # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
@@ -266,3 +265,14 @@ def preprocess_cond(deca_params, k, cfg):
         params = params.reshape(params.shape[0], -1)
         deca_params = params
         return deca_params
+    
+def write_params(path, params, keys):
+    tmp = {}
+    for k in keys:
+        if th.is_tensor(params[k]):
+            tmp[k] = params[k].cpu().numpy()
+        else:
+            tmp[k] = params[k]
+            
+    np.save(file=path, arr=tmp)
+        

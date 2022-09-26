@@ -826,8 +826,32 @@
             // "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/sampling/",
             "cwd": "/home/mint/mothership_v9/guided-diffusion/sample_scripts/py/relighting_sample_id/sampling/",
             "justMyCode": true
-        }
-
+        },
+        {
+            "name": "Python: auto_sampling_rev_itp_encoder_uncond",
+            "type": "python",
+            "request": "launch",
+            "program": "auto_sampling_rev_itp_Enc_input.py",
+            "args": ["--set", "valid", 
+                    "--step", "250000",
+                    "--out_dir", "/data/mint/sampling/uncond77_rand10/", 
+                    "--cfg_name", "Masked_Face_woclip+Bg.yaml", 
+                    "--log_dir", "Masked_Face_woclip+Bg", 
+                    "--diffusion_steps", "1000",
+                    "--uncond_sampling",
+                    "--seed", "47",
+                    "--sample_pair_json", "./hard_samples.json",
+                    "--sample_pair_mode", "pair",
+                    "--interpolate", "spatial_latent",
+                    "--interpolate_step", "1",
+                    "--n_subject", "1",
+                    "--gpu_id", "0",
+                    "--slerp",
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/sampling/",
+            "justMyCode": true
+        },
 
 //    _____       _                                       ______ _           _     __      ___                 _ _          _   _             
 //  |  __ \     | |                                  _  |  ____| |         | |    \ \    / (_)               | (_)        | | (_)            

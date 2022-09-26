@@ -75,19 +75,18 @@ from sample_utils import (
 device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
 
 #TODO: Rework function
-def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
+def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs):
     # Forward the interpolation from reverse noise map
     # Interpolate
-    cond = model_kwargs.copy()
+    cond = copy.deepcopy(model_kwargs)
     if cfg.img_cond_model.apply:
         if args.rotate_normals:
             #NOTE: Render w/ Rotated normals
-            print
             cond.update(mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light']))
             cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
         else:
             #NOTE: Render w/ interpolated normals
-            interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+            interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
             cond.update(interp_cond)
         
         start = time.time()
@@ -124,8 +123,8 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
                         r_tmp = np.transpose(r_tmp, (2, 0, 1))
                         r_tmp = (r_tmp / 127.5) - 1
                         clip_ren = True
-                
                     rendered_tmp.append(r_tmp)
+                    
                 rendered_tmp = np.stack(rendered_tmp, axis=0)
                 cond[cond_img_name] = rendered_tmp
         cond = mani_utils.create_cond_imgs(cond, key=cfg.img_cond_model.in_image)
@@ -133,14 +132,14 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
         cond = pl_sampling.forward_cond_network(model_kwargs=cond)
 
     if args.interpolate == ['all']:
-        interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=cfg.param_model.params_selector, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+        interp_cond = mani_utils.iter_interp_cond(cond, interp_set=cfg.param_model.params_selector, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
     else:
         if 'spatial_latent' in args.interpolate:
-            interp_set = args.interpolate.copy()
+            interp_set = args.interpolate
             interp_set.remove('spatial_latent')
         else:
-            interp_set = args.interpolate.copy()
-        interp_cond = mani_utils.iter_interp_cond(cond.copy(), interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+            interp_set = args.interpolate
+        interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
     cond.update(interp_cond)
         
     repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate + ['light']))
@@ -152,7 +151,6 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
     cond = inference_utils.to_tensor(cond, key=to_tensor_key, device=ckpt_loader.device)
     
     # Forward
-    diffusion.num_timesteps = args.diffusion_steps
     if args.interpolate_noise:
         src_noise = reverse_ddim_sample['final_output']['sample'][[src_idx]]
         dst_noise = reverse_ddim_sample['final_output']['sample'][[dst_idx]]
@@ -160,6 +158,7 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
     elif args.reverse_sampling: 
         noise_map = th.cat([reverse_ddim_sample['final_output']['sample'][[src_idx]]] * n_step)
     elif args.uncond_sampling: 
+        # seed_all(47)
         noise_map = inference_utils.get_init_noise(n=n_step, mode='fixed_noise', img_size=cfg.img_model.image_size, device=device)
     sample_ddim = pl_sampling.forward_proc(noise=noise_map, model_kwargs=cond)
     
@@ -183,7 +182,6 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
     os.makedirs(save_res_path, exist_ok=True)
     
     vis_utils.save_images(path=f"{save_res_path}", fn="res", frames=((sample_ddim['final_output']['sample'] + 1) * 127.5)/255.0)
-    # vis_utils.save_images(path=f"{save_res_path}", fn="res", frames=((sample_ddim['final_output']['sample'] + 0.5) * 255.0)/255.0)
     if clip_ren:
         vis_utils.save_images(path=f"{save_res_path}", fn="ren", frames=th.tensor((rendered_tmp + 1) * 127.5)/255.0)
     else:
@@ -191,12 +189,11 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id):
     if n_step >= 30:
         #NOTE: save_video whenever n_step >= 60 only, w/ shape = TxHxWxC
         vis_utils.save_video(fn=f"{save_res_path}/res.mp4", frames=(sample_ddim['final_output']['sample'].permute(0, 2, 3, 1) + 1) * 127.5, fps=30)
-        # vis_utils.save_video(fn=f"{save_res_path}/res.mp4", frames=(sample_ddim['final_output']['sample'].permute(0, 2, 3, 1) + 0.5) * 255.0, fps=30)
         if clip_ren:
             vis_utils.save_video(fn=f"{save_res_path}/ren.mp4", frames=th.tensor((rendered_tmp.transpose(0, 2, 3, 1) + 1) * 127.5), fps=30)
         else:
             vis_utils.save_video(fn=f"{save_res_path}/ren.mp4", frames=th.tensor(rendered_tmp.transpose(0, 2, 3, 1)).mul(255).add_(0.5).clamp_(0, 255), fps=30)
-    
+            
     with open(f'{save_res_path}/res_desc.json', 'w') as fj:
         log_dict = {'sampling_args' : vars(args), 
                     'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_func':itp_fn_str, 'interpolate':interpolate_str}}
@@ -209,7 +206,11 @@ if __name__ == '__main__':
         args.cfg_name = args.log_dir + '.yaml'
     ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
     cfg = ckpt_loader.cfg
+    
+    print(f"[#] Sampling with diffusion_steps = {args.diffusion_steps}")
+    cfg.diffusion.diffusion_steps = args.diffusion_steps
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
+    model_dict = inference_utils.eval_mode(model_dict)
 
     # Load dataset
     if args.set == 'itw':
@@ -262,14 +263,14 @@ if __name__ == '__main__':
         img_name = all_img_name[i]
         
         dat = th.utils.data.Subset(dataset, indices=img_idx)
-        subset_loader = th.utils.data.DataLoader(dat, batch_size=2,
+        subset_loader = th.utils.data.DataLoader(dat, batch_size=1,
                                             shuffle=False, num_workers=24)
                                    
         dat, model_kwargs = next(iter(subset_loader))
         print("#"*100)
         # Indexing
         src_idx = 0
-        dst_idx = 1
+        dst_idx = 0
         src_id = img_name[0]
         dst_id = img_name[1]
         # LOOPER SAMPLING
@@ -277,9 +278,8 @@ if __name__ == '__main__':
         print(f"[#] Set = {args.set}, Src-id = {src_id}, Dst-id = {dst_id}")
 
         # Input
-        cond = model_kwargs.copy()
+        cond = copy.deepcopy(model_kwargs)
         
-        diffusion.num_timesteps = args.diffusion_steps
         if args.denoised_clamp is None:
             denoised_fn = None
             print("[#] No denoised function (Used default +-1)")
@@ -293,20 +293,33 @@ if __name__ == '__main__':
                                                  forward_fn=diffusion.ddim_sample_loop,
                                                  denoised_fn=denoised_fn,
                                                  cfg=cfg)
+        
+        if args.uncond_sampling:
+            if cfg.img_cond_model.apply:
+                cond = pl_sampling.forward_cond_network(model_kwargs=cond)
+            cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
+            for i in range(10):
+                noise_map = inference_utils.get_init_noise(n=1, mode='fixed_noise', img_size=cfg.img_model.image_size, device=device)
+                # Forward from reverse noise map
+                sample_ddim_x = pl_sampling.forward_proc(noise=noise_map, model_kwargs=cond)
+                
+                # Save a visualization
+                interpolate_str = '_'.join(args.interpolate)
+                out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/uncond_sampling_{i}/"
+                os.makedirs(out_folder_reconstruction, exist_ok=True)
+                
+                save_uncond_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Gaussian/"
+                os.makedirs(save_uncond_path, exist_ok=True)
+
+                vis_utils.save_intermediate(path=save_uncond_path,
+                                            out=sample_ddim_x, 
+                                            proc='forward', 
+                                            image_name=cond['image_name'])
+        exit()
+            
         if args.reverse_sampling:
             if cfg.img_cond_model.apply:
-                if args.perturb_img_cond:
-                    cond = mani_utils.perturb_img(cond, 
-                                                key=cfg.img_cond_model.in_image, 
-                                                p_where=args.perturb_where, 
-                                                p_mode=args.perturb_mode)
-                    cond = mani_utils.create_cond_imgs(cond, key=cfg.img_cond_model.in_image)
-                    cond = inference_utils.to_tensor(cond, key=['cond_img'], device=ckpt_loader.device)
-
                 cond = pl_sampling.forward_cond_network(model_kwargs=cond)
-            key_cond_params = mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params)
-            cond = mani_utils.create_cond_params(cond=cond, key=key_cond_params)
-            cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
 
             # Reverse from input image (x0)
             reverse_ddim_sample = pl_sampling.reverse_proc(x=cond['image'], model_kwargs=cond)
@@ -323,31 +336,34 @@ if __name__ == '__main__':
             os.makedirs(save_reverse_path, exist_ok=True)
 
             vis_utils.save_intermediate(path=save_reverse_path, 
-                                        intermediate=reverse_ddim_sample['intermediate'], 
+                                        out=reverse_ddim_sample, 
                                         proc='reverse', 
                                         image_name=cond['image_name'])
 
             vis_utils.save_intermediate(path=save_reverse_path, 
-                                        intermediate=sample_ddim['intermediate'], 
+                                        out=sample_ddim, 
                                         proc='forward', 
                                         image_name=cond['image_name'])
 
         if args.lerp:
             without_classifier(itp_func=mani_utils.lerp, 
                             src_idx=src_idx, src_id=src_id,
-                            dst_idx=dst_idx, dst_id=dst_id)
+                            dst_idx=dst_idx, dst_id=dst_id,
+                            model_kwargs=model_kwargs)
             if args.sample_pair_mode == 'pairwise':
                 without_classifier(itp_func=mani_utils.lerp, 
                                 src_idx=dst_idx, src_id=dst_id,
-                                dst_idx=src_idx, dst_id=src_id)
+                                dst_idx=src_idx, dst_id=src_id,
+                                model_kwargs=model_kwargs)
                 
         if args.slerp:
             without_classifier(itp_func=mani_utils.slerp, 
                             src_idx=src_idx, src_id=src_id,
-                            dst_idx=dst_idx, dst_id=dst_id
-                            )
+                            dst_idx=dst_idx, dst_id=dst_id,
+                            model_kwargs=model_kwargs)
             if args.sample_pair_mode == 'pairwise':
                 without_classifier(itp_func=mani_utils.slerp, 
                                 src_idx=dst_idx, src_id=dst_id,
-                                dst_idx=src_idx, dst_id=src_id)
+                                dst_idx=src_idx, dst_id=src_id,
+                                model_kwargs=model_kwargs)
                 

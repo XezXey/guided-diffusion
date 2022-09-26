@@ -853,9 +853,9 @@ class GaussianDiffusion:
             device = next(model.parameters()).device
         assert isinstance(shape, (tuple, list))
         if noise is not None:
-            img = noise
+            x = noise
         else:
-            img = th.randn(*shape, device=device)
+            x = th.randn(*shape, device=device)
         indices = list(range(self.num_timesteps))[::-1]
 
         if progress:
@@ -872,7 +872,7 @@ class GaussianDiffusion:
             with th.no_grad():
                 out = self.ddim_sample(
                     model,
-                    img,
+                    x,
                     t,
                     clip_denoised=clip_denoised,
                     denoised_fn=denoised_fn,
@@ -880,9 +880,9 @@ class GaussianDiffusion:
                     model_kwargs=model_kwargs_copy,
                     eta=eta,
                 )
+                x = out["sample"]
                 out['t'] = t
                 yield out
-                img = out["sample"]
 
     def _vb_terms_bpd(
         self, model, x_start, x_t, t, clip_denoised=True, model_kwargs=None

@@ -2,8 +2,6 @@ import pytorch_lightning as pl
 import torch as th
 import numpy as np
 import blobfile as bf
-import PIL
-from . import params_utils
 
 class PLSampling(pl.LightningModule):
     def __init__(self, model_dict, diffusion, forward_fn, reverse_fn, cfg, denoised_fn=None):
@@ -85,3 +83,7 @@ def to_tensor(cond, key, device):
                 continue
     return cond
 
+def eval_mode(model_dict):
+    for k, _ in model_dict.items():
+        model_dict[k].eval()
+    return model_dict
