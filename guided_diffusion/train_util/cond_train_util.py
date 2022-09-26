@@ -371,6 +371,7 @@ class TrainLoop(LightningModule):
         cond = tensor_util.dict_slice(in_d=cond, keys=cond.keys(), n=n)
         
         noise = th.randn((n, 3, H, W)).type_as(dat)
+        assert noise.shape == dat.shape
 
         # Any Encoder/Conditioned Network need to apply before a main UNet.
         if self.cfg.img_cond_model.apply:
@@ -393,7 +394,7 @@ class TrainLoop(LightningModule):
             model=sampling_model_dict[self.cfg.img_model.name],
             clip_denoised=True,
             model_kwargs=cond,
-            x=noise,
+            x=dat,
         )
         
         ddim_reverse_sample_plot = ((ddim_reverse_sample['sample'] + 1) * 127.5) / 255.
