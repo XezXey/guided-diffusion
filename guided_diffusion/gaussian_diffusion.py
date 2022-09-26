@@ -633,6 +633,7 @@ class GaussianDiffusion:
         denoised_fn=None,
         progress=True,
         device=None,
+        store_intermidiate=False,
     ):
         """
         Generate samples from the model using DDIM.
@@ -652,7 +653,8 @@ class GaussianDiffusion:
             eta=0.0,
         ):
             final = sample
-            intermediate.append(sample)
+            if store_intermidiate:
+                intermediate.append(sample)
             
         return final, intermediate
 
@@ -806,6 +808,7 @@ class GaussianDiffusion:
         device=None,
         progress=True,
         eta=0.0,
+        store_intermidiate=False,
     ):
         """
         Generate samples from the model using DDIM.
@@ -827,7 +830,8 @@ class GaussianDiffusion:
             eta=eta,
         ):
             final = sample
-            intermediate.append(sample)
+            if store_intermidiate:
+                intermediate.append(sample)
         return final, intermediate
 
     def ddim_sample_loop_progressive(
