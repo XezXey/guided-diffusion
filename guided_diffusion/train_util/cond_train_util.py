@@ -391,7 +391,6 @@ class TrainLoop(LightningModule):
         # Reverse Sampling
         ddim_reverse_sample, _ = self.diffusion.ddim_reverse_sample_loop(
             model=sampling_model_dict[self.cfg.img_model.name],
-            shape=(n, 3, H, W),
             clip_denoised=True,
             model_kwargs=cond,
             noise=noise,
