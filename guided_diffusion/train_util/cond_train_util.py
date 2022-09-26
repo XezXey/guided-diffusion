@@ -382,7 +382,7 @@ class TrainLoop(LightningModule):
             model=sampling_model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
             clip_denoised=True,
-            model_kwargs=copy.deepcopy(cond),
+            model_kwargs=cond,
             noise=noise,
         )
         ddim_sample_plot = ((ddim_sample['final_output']['sample'] + 1) * 127.5) / 255.
@@ -393,7 +393,7 @@ class TrainLoop(LightningModule):
             model=sampling_model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
             clip_denoised=True,
-            model_kwargs=copy.deepcopy(cond),
+            model_kwargs=cond,
             noise=noise,
         )
         
@@ -404,7 +404,7 @@ class TrainLoop(LightningModule):
             model=sampling_model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
             clip_denoised=True,
-            model_kwargs=copy.deepcopy(cond),
+            model_kwargs=cond,
             noise=ddim_reverse_sample['final_output']['sample'],
         )
         
