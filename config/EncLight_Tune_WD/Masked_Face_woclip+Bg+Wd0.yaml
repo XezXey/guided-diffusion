@@ -39,4 +39,4 @@ dataset:
 
 train_misc:
   exp_name: "EncLight_Tune_WD"
-  cfg_name: "Masked_Face_woclip+Bg"
+  cfg_name: "Masked_Face_woclip+Bg+WD0"
