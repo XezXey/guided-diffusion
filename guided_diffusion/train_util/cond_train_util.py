@@ -393,7 +393,7 @@ class TrainLoop(LightningModule):
             model=sampling_model_dict[self.cfg.img_model.name],
             clip_denoised=True,
             model_kwargs=cond,
-            noise=noise,
+            x=noise,
         )
         
         ddim_reverse_sample_plot = ((ddim_reverse_sample['sample'] + 1) * 127.5) / 255.
