@@ -375,27 +375,41 @@ class TrainLoop(LightningModule):
         # Any Encoder/Conditioned Network need to apply before a main UNet.
         if self.cfg.img_cond_model.apply:
             self.forward_cond_network(dat=dat, cond=cond, model_dict=sampling_model_dict)
-
+            
+        # N(0, 1) Sampling
         tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(((dat + 1)*127.5)/255., nrow=4), global_step=(step_ + 1) * self.n_gpus)
-        sample_from_ddim = self.diffusion.ddim_sample_loop(
-            model=sampling_model_dict[self.cfg.img_model.name],
-            shape=(n, 3, H, W),
-            clip_denoised=True,
-            model_kwargs=cond,
-            noise=noise,
-        )
-        sample_from_ddim = ((sample_from_ddim + 1) * 127.5) / 255.
-        tb.add_image(tag=f'{sampling_model} - ddim_sample', img_tensor=make_grid(sample_from_ddim, nrow=4), global_step=(step_ + 1) * self.n_gpus)
-        
-        sample_from_ps = self.diffusion.p_sample_loop(
+        ddim_sample = self.diffusion.ddim_sample_loop(
             model=sampling_model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),
             clip_denoised=True,
             model_kwargs=copy.deepcopy(cond),
             noise=noise,
         )
-        sample_from_ps = ((sample_from_ps + 1) * 127.5) / 255.
-        tb.add_image(tag=f'{sampling_model} - p_sample', img_tensor=make_grid(sample_from_ps, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        ddim_sample_plot = ((ddim_sample['final_output']['sample'] + 1) * 127.5) / 255.
+        tb.add_image(tag=f'{sampling_model} - ddim_sample', img_tensor=make_grid(ddim_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        
+        # Reverse Sampling
+        ddim_reverse_sample = self.diffusion.ddim_reverse_sample_loop(
+            model=sampling_model_dict[self.cfg.img_model.name],
+            shape=(n, 3, H, W),
+            clip_denoised=True,
+            model_kwargs=copy.deepcopy(cond),
+            noise=noise,
+        )
+        
+        ddim_reverse_sample_plot = ((ddim_reverse_sample['final_output']['sample'] + 1) * 127.5) / 255.
+        tb.add_image(tag=f'{sampling_model} - ddim_reverse_sample (xT)', img_tensor=make_grid(ddim_reverse_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        
+        ddim_recon_sample = self.diffusion.ddim_sample_loop(
+            model=sampling_model_dict[self.cfg.img_model.name],
+            shape=(n, 3, H, W),
+            clip_denoised=True,
+            model_kwargs=copy.deepcopy(cond),
+            noise=ddim_reverse_sample['final_output']['sample'],
+        )
+        
+        ddim_recon_sample_plot = ((ddim_recon_sample['final_output']['sample'] + 1) * 127.5) / 255.
+        tb.add_image(tag=f'{sampling_model} - ddim_recon_sample (x0)', img_tensor=make_grid(ddim_recon_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
 
         # Save memory!
         dat = dat.detach()
