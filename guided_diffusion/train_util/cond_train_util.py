@@ -385,6 +385,8 @@ class TrainLoop(LightningModule):
             model_kwargs=cond,
             noise=noise,
         )
+        print(ddim_sample.keys())
+        print(ddim_sample['final_output'])
         ddim_sample_plot = ((ddim_sample['final_output']['sample'] + 1) * 127.5) / 255.
         tb.add_image(tag=f'{sampling_model} - ddim_sample', img_tensor=make_grid(ddim_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
         
