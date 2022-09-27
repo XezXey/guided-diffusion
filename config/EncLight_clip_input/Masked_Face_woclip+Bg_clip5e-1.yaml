@@ -36,4 +36,4 @@ dataset:
 
 train_misc:
   exp_name: "EncLight_clip_input"
-  cfg_name: "Masked_Face_woclip+Bg"
+  cfg_name: "Masked_Face_woclip+Bg_clip5e-1"
