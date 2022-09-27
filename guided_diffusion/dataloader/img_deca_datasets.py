@@ -222,6 +222,7 @@ class DECADataset(Dataset):
         self.mode = mode
         self.precomp_params_key = without(src=self.cfg.param_model.params_selector, rmv=['img_latent'] + self.rmv_params)
         self.kwargs = kwargs
+        print(f"[#] Bounding the input of UNet to +-{self.cfg.img_model.input_bound}")
 
     def __len__(self):
         return len(self.local_images)
@@ -286,9 +287,15 @@ class DECADataset(Dataset):
 
         # Input to UNet-model
         if self.in_image_UNet == 'raw':
-            norm_img = (raw_img / 127.5) - 1
-            arr = norm_img
-            out_dict['image'] = np.transpose(arr, [2, 0, 1])
+            if self.cfg.img_model.input_bound == 1:
+                norm_img = (raw_img / 127.5) - 1
+                arr = norm_img
+                out_dict['image'] = np.transpose(arr, [2, 0, 1])
+            elif self.cfg.img_model.input_bound == 0.5:
+                norm_img = (raw_img / 255.0) - 0.5
+                arr = norm_img
+                out_dict['image'] = np.transpose(arr, [2, 0, 1])
+            else: raise ValueError(f"Bouding value = {self.cfg.img_model.input_bound} is invalid.")
         else : raise NotImplementedError
         
         # Return 

@@ -82,6 +82,7 @@ cfg.img_model.condition_proj_dim = 512
 cfg.img_model.pool = 'attention'
 cfg.img_model.conditioning = False
 cfg.img_model.last_conv = False  # For Duplicate UNetModel
+cfg.img_model.input_bound = 1.0   # Bound the image to [-1, 1]
 
 # Spatial-Conditioning specific
 cfg.img_model.hadamart_prep = None    # For Spatial-Hadamart conditioning

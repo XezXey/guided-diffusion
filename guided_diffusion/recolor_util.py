@@ -1,7 +1,6 @@
 import numpy as np
 import cv2
 
-
 class recolor:
     def rgb_to_sepia(img):
         r = img[..., [0]].copy()
@@ -48,3 +47,19 @@ class recolor:
     def rgb_to_luv(img):
         img_ = cv2.cvtColor(img, cv2.COLOR_RGB2LUV)
         return img_
+
+def convert2rgb(img, bound):
+    """Convert the image from +-bound into 0-255 rgb
+
+    Args:
+        img (tensor): input image
+        bound (float): bounding value e.g. 1, 0.5, ...
+
+    Returns:
+        convert image (tensor) : 
+    """
+    if bound == 1.0:
+        convert_img = (img + 1) * 127.5
+    elif bound == 0.5:
+        convert_img = (img + 0.5) * 255.0
+    return convert_img

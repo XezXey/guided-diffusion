@@ -30,6 +30,23 @@
             "justMyCode": true
         },
         {
+            "name": "Python: train_bound_input",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"2"},
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "10",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/EncLight_clip_input/Masked_Face_woclip+Bg_clip5e-1.yaml",
+                    "--train.save_interval", "5000",
+                    "--train.sampling_interval", "1"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
             "name": "Python: train_masked_deca_shape",
             "type": "python",
             "request": "launch",

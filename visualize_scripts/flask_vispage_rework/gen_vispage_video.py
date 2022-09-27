@@ -212,11 +212,11 @@ def create_app():
         model = glob.glob(f"{folder}/*")
         for m in model:
             m_name = m.split('/')[-1]
-            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&sampling=uncond&show_frame=-1\">{m_name}</a> <br>"
+            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&show_frame=-1\">{m_name}</a> <br>"
         return out
 
-    @app.route('/intermediate_step/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&sampling=<sampling>&show_frame=<show_frame>')
-    def intermediate_step_show(m_name, itp, itp_method, sampling, show_frame):
+    @app.route('/intermediate_step/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&show_frame=<show_frame>')
+    def intermediate_step_show(m_name, itp, itp_method, show_frame):
         out = """<style>
         th, tr, td {
             border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
@@ -234,7 +234,9 @@ def create_app():
                                                        img_path=img_path, 
                                                        n_subject=-1)
         
-        process = {'uncond':['forward'], 'reverse':['forward', 'reverse']}
+        process = {'uncond_sampling_0':{'name':'Gaussian', 'alias':'Gaussian noise', 'dir':['forward']}, 
+                   'reverse_sampling':{'name':'Reversed', 'alias':'DDIM reverse', 'dir':['forward', 'reverse']},
+                }
         
         show_frame = show_frame.split(',')
         show_frame = [int(s) for s in show_frame]
@@ -246,26 +248,27 @@ def create_app():
             for ckpt in checkpoint:
                 diff_step = glob.glob(f"{ckpt}/valid/{itp}/*")
                 diff_step = sorted([int(ds.split('/')[-1].split('_')[-1]) for ds in diff_step])
-                out += f"<td rowspan=\"{len(diff_step)+1}\"> {ckpt.split('/')[-1]}</td> "
+                out += f"<td rowspan=\"{len(diff_step) + 3}\"> {ckpt.split('/')[-1]}</td> "
                 for ds in diff_step:
                     out += "<tr>"
-                    out += f"<td>{ds}</td> "
-                    for proc in process.items():
-                        out += f"<td>{proc}</td> "
-                        frames = glob.glob(f"{ckpt}/valid/{itp}/diffstep_{ds}/{sampling}_sampling_0/src={src_dst[0]}/dst={src_dst[1]}/Gaussian/{proc}/{src_dst[0]}/sample/*frame*.png")
-                        out += "<td>"
-                        if len(frames) > 0:
-                            frames = sort_by_frame(frames)
-                            if -1 in show_frame:
-                                for f in frames:
-                                    out += "<img src=/files/" + f + ">"
+                    out += f"<td rowspan=\"{3}\"> {ds} </td> "
+                    for sampling, proc in process.items():
+                        for dir in proc['dir']:
+                            out += f"<td>{proc['alias']} : {dir}</td> "
+                            frames = glob.glob(f"{ckpt}/valid/{itp}/diffstep_{ds}/{sampling}/src={src_dst[0]}/dst={src_dst[1]}/{proc['name']}/{dir}/{src_dst[0]}/sample/*frame*.png")
+                            out += "<td>"
+                            if len(frames) > 0:
+                                frames = sort_by_frame(frames)
+                                if -1 in show_frame:
+                                    for f in frames:
+                                        out += "<img src=/files/" + f + ">"
+                                else:
+                                    for f in [frames[i] for i in show_frame]:
+                                        out += "<img src=/files/" + f + ">"
                             else:
-                                for f in [frames[i] for i in show_frame]:
-                                    out += "<img src=/files/" + f + ">"
-                        else:
-                            out += "<p style=\"color:red\">Images not found!</p>"
-                        out += "</td>"
-                        out += "</tr>"
+                                out += "<p style=\"color:red\">Images not found!</p>"
+                            out += "</td>"
+                            out += "</tr>"
             out += "</table>"
             out += "<br> <hr>"
             
