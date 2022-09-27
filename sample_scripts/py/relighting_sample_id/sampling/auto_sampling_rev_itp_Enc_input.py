@@ -16,6 +16,7 @@ parser.add_argument('--interpolate_noise', action='store_true', default=False)
 parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--uncond_sampling', action='store_true', default=False)
+parser.add_argument('--uncond_sampling_iters', type=int, default=1)
 parser.add_argument('--reverse_sampling', action='store_true', default=False)
 # Samples selection
 parser.add_argument('--n_subject', type=int, default=-1)
@@ -277,9 +278,6 @@ if __name__ == '__main__':
         n_step = args.interpolate_step
         print(f"[#] Set = {args.set}, Src-id = {src_id}, Dst-id = {dst_id}")
 
-        # Input
-        cond = copy.deepcopy(model_kwargs)
-        
         if args.denoised_clamp is None:
             denoised_fn = None
             print("[#] No denoised function (Used default +-1)")
@@ -295,17 +293,19 @@ if __name__ == '__main__':
                                                  cfg=cfg)
         
         if args.uncond_sampling:
+            # Input
+            cond = copy.deepcopy(model_kwargs)
             if cfg.img_cond_model.apply:
                 cond = pl_sampling.forward_cond_network(model_kwargs=cond)
             cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
-            for i in range(10):
+            for i in range(args.uncond_sampling_iters):
                 noise_map = inference_utils.get_init_noise(n=1, mode='fixed_noise', img_size=cfg.img_model.image_size, device=device)
                 # Forward from reverse noise map
                 sample_ddim_x = pl_sampling.forward_proc(noise=noise_map, model_kwargs=cond)
                 
                 # Save a visualization
                 interpolate_str = '_'.join(args.interpolate)
-                out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/uncond_sampling_{i}/"
+                out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/diffstep_{args.diffusion_steps}/uncond_sampling_{i}/"
                 os.makedirs(out_folder_reconstruction, exist_ok=True)
                 
                 save_uncond_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Gaussian/"
@@ -315,12 +315,14 @@ if __name__ == '__main__':
                                             out=sample_ddim_x, 
                                             proc='forward', 
                                             image_name=cond['image_name'])
-        exit()
             
         if args.reverse_sampling:
+            # Input
+            cond = copy.deepcopy(model_kwargs)
             if cfg.img_cond_model.apply:
                 cond = pl_sampling.forward_cond_network(model_kwargs=cond)
-
+            cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
+            
             # Reverse from input image (x0)
             reverse_ddim_sample = pl_sampling.reverse_proc(x=cond['image'], model_kwargs=cond)
 
@@ -329,7 +331,7 @@ if __name__ == '__main__':
             
             # Save a visualization
             interpolate_str = '_'.join(args.interpolate)
-            out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/reverse_sampling"
+            out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/diffstep_{args.diffusion_steps}/reverse_sampling/"
             os.makedirs(out_folder_reconstruction, exist_ok=True)
             
             save_reverse_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Reversed/"

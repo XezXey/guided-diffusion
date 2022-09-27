@@ -35,7 +35,8 @@ class PLSampling(pl.LightningModule):
                 clip_denoised=True,
                 denoised_fn = self.denoised_fn,
                 model_kwargs=model_kwargs,
-                progress=progress
+                progress=progress,
+                store_intermidiate=True
             )
         else: raise NotImplementedError
 
@@ -49,7 +50,8 @@ class PLSampling(pl.LightningModule):
             noise=noise,
             clip_denoised=self.cfg.diffusion.clip_denoised,
             denoised_fn=self.denoised_fn,
-            model_kwargs=model_kwargs
+            model_kwargs=model_kwargs,
+            store_intermidiate=True
         )
         
         assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))

@@ -38,6 +38,7 @@ def create_app():
         out += f"<a href=\"/best_checkpoint_img\">Best checkpoint (Image)</a> <br>"
         out += f"<a href=\"/best_diff_step_img\">Best diffusion-step (Image)</a> <br>"
         out += f"<a href=\"/uncond_vs_reverse\"> Uncondition Vs. Reverse sampling </a> <br>"
+        out += f"<a href=\"/intermediate_step\"> Visualize the intermediate step </a> <br>"
         out += f"<a href=\"/model_comparison_from_json/itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse/\">Model comparison (From json)</a> <br>"
         return out
 
@@ -204,6 +205,72 @@ def create_app():
             
         return out
     
+    @app.route('/intermediate_step/')
+    def intermediate_step():
+        out = ""
+        folder = f"{args.sample_dir}/{args.exp_dir}/"
+        model = glob.glob(f"{folder}/*")
+        for m in model:
+            m_name = m.split('/')[-1]
+            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&sampling=uncond&show_frame=-1\">{m_name}</a> <br>"
+        return out
+
+    @app.route('/intermediate_step/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&sampling=<sampling>&show_frame=<show_frame>')
+    def intermediate_step_show(m_name, itp, itp_method, sampling, show_frame):
+        out = """<style>
+        th, tr, td {
+            border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
+        }
+        </style>"""
+        
+        out += f"<h2>[#] Model name : {m_name} </h2>"
+        out += f"<h2>[#] Show Frames : {show_frame} </h2>"
+        folder = f"{args.sample_dir}/{args.exp_dir}/{m_name}/"
+        checkpoint = sorted(glob.glob(f"{folder}/*"))
+        
+        _, subject_id, _ = mani_utils.get_samples_list(sample_pair_json=f"{args.sample_pair_json}", 
+                                                       sample_pair_mode='pair', 
+                                                       src_dst=None, 
+                                                       img_path=img_path, 
+                                                       n_subject=-1)
+        
+        process = {'uncond':['forward'], 'reverse':['forward', 'reverse']}
+        
+        show_frame = show_frame.split(',')
+        show_frame = [int(s) for s in show_frame]
+        
+        for idx, src_dst in enumerate(subject_id):
+            out += "<table>"
+            out += "<tr> <th> Checkpoint </th> <th> Diffusion step </th> <th> Diffuse Process </th> <th> Image </th> </tr>"
+            out += f"[#{idx}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
+            for ckpt in checkpoint:
+                diff_step = glob.glob(f"{ckpt}/valid/{itp}/*")
+                diff_step = sorted([int(ds.split('/')[-1].split('_')[-1]) for ds in diff_step])
+                out += f"<td rowspan=\"{len(diff_step)+1}\"> {ckpt.split('/')[-1]}</td> "
+                for ds in diff_step:
+                    out += "<tr>"
+                    out += f"<td>{ds}</td> "
+                    for proc in process.items():
+                        out += f"<td>{proc}</td> "
+                        frames = glob.glob(f"{ckpt}/valid/{itp}/diffstep_{ds}/{sampling}_sampling_0/src={src_dst[0]}/dst={src_dst[1]}/Gaussian/{proc}/{src_dst[0]}/sample/*frame*.png")
+                        out += "<td>"
+                        if len(frames) > 0:
+                            frames = sort_by_frame(frames)
+                            if -1 in show_frame:
+                                for f in frames:
+                                    out += "<img src=/files/" + f + ">"
+                            else:
+                                for f in [frames[i] for i in show_frame]:
+                                    out += "<img src=/files/" + f + ">"
+                        else:
+                            out += "<p style=\"color:red\">Images not found!</p>"
+                        out += "</td>"
+                        out += "</tr>"
+            out += "</table>"
+            out += "<br> <hr>"
+            
+        return out
+        
     
     @app.route('/uncond_vs_reverse/')
     def uncond_vs_reverse_img():
