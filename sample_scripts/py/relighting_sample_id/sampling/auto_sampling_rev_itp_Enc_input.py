@@ -264,14 +264,14 @@ if __name__ == '__main__':
         img_name = all_img_name[i]
         
         dat = th.utils.data.Subset(dataset, indices=img_idx)
-        subset_loader = th.utils.data.DataLoader(dat, batch_size=1,
+        subset_loader = th.utils.data.DataLoader(dat, batch_size=2,
                                             shuffle=False, num_workers=24)
                                    
         dat, model_kwargs = next(iter(subset_loader))
         print("#"*100)
         # Indexing
         src_idx = 0
-        dst_idx = 0
+        dst_idx = 1
         src_id = img_name[0]
         dst_id = img_name[1]
         # LOOPER SAMPLING
@@ -299,7 +299,7 @@ if __name__ == '__main__':
                 cond = pl_sampling.forward_cond_network(model_kwargs=cond)
             cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
             for i in range(args.uncond_sampling_iters):
-                noise_map = inference_utils.get_init_noise(n=1, mode='fixed_noise', img_size=cfg.img_model.image_size, device=device)
+                noise_map = inference_utils.get_init_noise(n=2, mode='fixed_noise', img_size=cfg.img_model.image_size, device=device)
                 # Forward from reverse noise map
                 sample_ddim_x = pl_sampling.forward_proc(noise=noise_map, model_kwargs=cond)
                 
@@ -314,7 +314,8 @@ if __name__ == '__main__':
                 vis_utils.save_intermediate(path=save_uncond_path,
                                             out=sample_ddim_x, 
                                             proc='forward', 
-                                            image_name=cond['image_name'])
+                                            image_name=cond['image_name'],
+                                            bound=cfg.img_model.input_bound)
             
         if args.reverse_sampling:
             # Input
@@ -340,12 +341,14 @@ if __name__ == '__main__':
             vis_utils.save_intermediate(path=save_reverse_path, 
                                         out=reverse_ddim_sample, 
                                         proc='reverse', 
-                                        image_name=cond['image_name'])
+                                        image_name=cond['image_name'],
+                                        bound=cfg.img_model.input_bound)
 
             vis_utils.save_intermediate(path=save_reverse_path, 
                                         out=sample_ddim, 
                                         proc='forward', 
-                                        image_name=cond['image_name'])
+                                        image_name=cond['image_name'],
+                                        bound=cfg.img_model.input_bound)
 
         if args.lerp:
             without_classifier(itp_func=mani_utils.lerp, 

@@ -116,14 +116,14 @@ def save_images(path, fn, frames):
         frame = frames[i].cpu().detach()
         torchvision.utils.save_image(tensor=(frame), fp=f"{path}/{fn}_frame{i}.png")
 
-def save_intermediate(path, out, proc, image_name):
+def save_intermediate(path, out, proc, image_name, bound):
     
     for itmd in out['intermediate']:
         t = itmd['t']
         sample = itmd['sample'].cpu().detach()
-        sample = ((sample + 1) * 127.5) / 255.0
+        sample = convert2rgb(sample, bound) / 255.0
         pred_xstart = itmd['pred_xstart'].cpu().detach()
-        pred_xstart = ((pred_xstart + 1) * 127.5) / 255.0
+        pred_xstart = convert2rgb(pred_xstart, bound) / 255.0
         assert sample.shape[0] == pred_xstart.shape[0]
 
         batch_size = sample.shape[0]
@@ -135,9 +135,24 @@ def save_intermediate(path, out, proc, image_name):
             torchvision.utils.save_image(tensor=(sample[[b]]), fp=f"{sample_path}/sample_frame{t[b]}.png")
             torchvision.utils.save_image(tensor=(pred_xstart[[b]]), fp=f"{pred_xstart_path}/pred_xstart_frame{t[b]}.png")
 
-    final_output = ((out['final_output']['sample'].cpu().detach() + 1) * 127.5) / 255.0
+    final_output = convert2rgb(out['final_output']['sample'].cpu().detach(), bound) / 255.0
     for b in range(batch_size):
         final_output_path = f"{path}/{proc}/{image_name[b]}/final_output/"
         os.makedirs(final_output_path, exist_ok=True)
         torchvision.utils.save_image(tensor=(final_output[[b]]), fp=f"{final_output_path}/final_output_frame0.png")
     
+def convert2rgb(img, bound):
+    """Convert the image from +-bound into 0-255 rgb
+
+    Args:
+        img (tensor): input image
+        bound (float): bounding value e.g. 1, 0.5, ...
+
+    Returns:
+        convert image (tensor) : 
+    """
+    if bound == 1.0:
+        convert_img = (img + 1) * 127.5
+    elif bound == 0.5:
+        convert_img = (img + 0.5) * 255.0
+    return convert_img
