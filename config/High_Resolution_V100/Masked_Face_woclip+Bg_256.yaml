@@ -27,10 +27,10 @@ relighting:
   use_SH: False
 
 dataset:
-  deca_dir: "/ist/users/pitchapornr/Mint/DPM_Dataset/ffhq_256_with_anno/params/"
-  data_dir: "/ist/users/pitchapornr/Mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
-  face_segment_dir: "/ist/users/pitchapornr/Mint/DPM_Dataset/ffhq_256_with_anno/face_segment/"
-  deca_rendered_dir: "/ist/users/pitchapornr/Mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
+  deca_dir: "/ist/ist-share/vision/nontawat/DPM_Dataset/ffhq_256_with_anno/params/"
+  data_dir: "/ist/ist-share/vision/nontawat/ffhq_256_with_anno/ffhq_256/"
+  face_segment_dir: "/ist/ist-share/vision/nontawat/DPM_Dataset/ffhq_256_with_anno/face_segment/"
+  deca_rendered_dir: "/ist/ist-share/vision/nontawat/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
 
 
 train_misc:
