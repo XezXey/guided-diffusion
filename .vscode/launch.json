@@ -869,6 +869,31 @@
             "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/sampling/",
             "justMyCode": true
         },
+        {
+            "name": "Python: auto_sampling_rev_itp_encoder_shadow_score",
+            "type": "python",
+            "request": "launch",
+            "program": "auto_sampling_rev_itp_Enc_input.py",
+            "args": ["--set", "valid", 
+                    "--step", "100000",
+                    "--out_dir", "/data/mint/sampling/shadow_score/", 
+                    "--cfg_name", "Face_woclip+Bg+shadow_score.yaml", 
+                    "--log_dir", "Face_woclip+Bg+shadow_score", 
+                    "--diffusion_steps", "1000",
+                    "--reverse_sampling",
+                    "--seed", "47",
+                    "--sample_pair_json", "./shadow_score.json",
+                    "--sample_pair_mode", "pair",
+                    "--interpolate", "shadow",
+                    "--interpolate_step", "5",
+                    "--n_subject", "-1",
+                    "--gpu_id", "2",
+                    "--lerp",
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/sampling/",
+            "justMyCode": true
+        },
 
 //    _____       _                                       ______ _           _     __      ___                 _ _          _   _             
 //  |  __ \     | |                                  _  |  ____| |         | |    \ \    / (_)               | (_)        | | (_)            

@@ -2,9 +2,10 @@ import pytorch_lightning as pl
 import torch as th
 import numpy as np
 import blobfile as bf
+import mani_utils, inference_utils
 
 class PLSampling(pl.LightningModule):
-    def __init__(self, model_dict, diffusion, forward_fn, reverse_fn, cfg, denoised_fn=None):
+    def __init__(self, model_dict, diffusion, forward_fn, reverse_fn, cfg, args=None, denoised_fn=None):
         super(PLSampling, self).__init__()
         self.forward_fn = forward_fn
         self.reverse_fn = reverse_fn
@@ -12,8 +13,17 @@ class PLSampling(pl.LightningModule):
         self.model_dict = model_dict 
         self.diffusion = diffusion
         self.cfg = cfg
+        self.args = args
         
     def forward_cond_network(self, model_kwargs):
+        if self.args.perturb_img_cond:
+                    cond = mani_utils.perturb_img(cond, 
+                                                key=self.cfg.img_cond_model.in_image, 
+                                                p_where=self.args.perturb_where, 
+                                                p_mode=self.args.perturb_mode)
+                    cond = mani_utils.create_cond_imgs(cond, key=self.cfg.img_cond_model.in_image)
+                    cond = inference_utils.to_tensor(cond, key=['cond_img'], device='cuda')
+                    
         if self.cfg.img_cond_model.apply:
             dat = model_kwargs['cond_img'].cuda()
             img_cond = self.model_dict[self.cfg.img_cond_model.name](
@@ -26,7 +36,7 @@ class PLSampling(pl.LightningModule):
             else: raise NotImplementedError
         return model_kwargs
 
-    def reverse_proc(self, x, model_kwargs, progress=True):
+    def reverse_proc(self, x, model_kwargs, progress=True, store_intermediate=True):
         # Mimic the ddim_sample_loop or p_sample_loop
         if self.reverse_fn == self.diffusion.ddim_reverse_sample_loop:
             sample, intermediate = self.reverse_fn(
@@ -36,14 +46,15 @@ class PLSampling(pl.LightningModule):
                 denoised_fn = self.denoised_fn,
                 model_kwargs=model_kwargs,
                 progress=progress,
-                store_intermidiate=True
+                store_intermidiate=store_intermediate
             )
         else: raise NotImplementedError
 
-        assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
+        if store_intermediate:
+            assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
         return {"final_output":sample, "intermediate":intermediate}
     
-    def forward_proc(self, model_kwargs, noise):
+    def forward_proc(self, model_kwargs, noise, store_intermediate=True):
         sample, intermediate = self.forward_fn(
             model=self.model_dict[self.cfg.img_model.name],
             shape=noise.shape,
@@ -51,10 +62,10 @@ class PLSampling(pl.LightningModule):
             clip_denoised=self.cfg.diffusion.clip_denoised,
             denoised_fn=self.denoised_fn,
             model_kwargs=model_kwargs,
-            store_intermidiate=True
+            store_intermidiate=store_intermediate
         )
-        
-        assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
+        if store_intermediate:
+            assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
         return {"final_output":sample, "intermediate":intermediate}
     
 

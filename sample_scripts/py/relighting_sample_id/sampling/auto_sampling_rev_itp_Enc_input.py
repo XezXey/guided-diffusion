@@ -85,10 +85,14 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
             #NOTE: Render w/ Rotated normals
             cond.update(mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light']))
             cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
-        else:
-            #NOTE: Render w/ interpolated normals
+        elif 'spatial_latent' in args.interpolate:
+            #NOTE: Render w/ interpolated light
             interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
             cond.update(interp_cond)
+        else:
+            #NOTE: Render w/ same light
+            repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
+            cond.update(repeated_cond)
         
         start = time.time()
         if np.any(['deca_masked' in n for n in cfg.img_cond_model.in_image]):
@@ -136,7 +140,7 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
         interp_cond = mani_utils.iter_interp_cond(cond, interp_set=cfg.param_model.params_selector, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
     else:
         if 'spatial_latent' in args.interpolate:
-            interp_set = args.interpolate
+            interp_set = args.interpolate.copy()
             interp_set.remove('spatial_latent')
         else:
             interp_set = args.interpolate
@@ -161,7 +165,7 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
     elif args.uncond_sampling: 
         # seed_all(47)
         noise_map = inference_utils.get_init_noise(n=n_step, mode='fixed_noise', img_size=cfg.img_model.image_size, device=device)
-    sample_ddim = pl_sampling.forward_proc(noise=noise_map, model_kwargs=cond)
+    sample_ddim = pl_sampling.forward_proc(noise=noise_map, model_kwargs=cond, store_intermediate=False)
     
     #NOTE: Save result
     if itp_func == mani_utils.lerp:
@@ -174,6 +178,8 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
         out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/interp_noise"
     elif args.reverse_sampling: 
         out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/reverse_sampling"
+        print("SAVE AT : ", out_folder_reconstruction)
+        print("SAVE AT : ", interpolate_str, args.interpolate)
     elif args.uncond_sampling: 
         out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/uncond_sampling"
     else: raise NotImplementedError
@@ -290,7 +296,8 @@ if __name__ == '__main__':
                                                  reverse_fn=diffusion.ddim_reverse_sample_loop, 
                                                  forward_fn=diffusion.ddim_sample_loop,
                                                  denoised_fn=denoised_fn,
-                                                 cfg=cfg)
+                                                 cfg=cfg,
+                                                 args=args)
         
         if args.uncond_sampling:
             # Input
@@ -305,7 +312,7 @@ if __name__ == '__main__':
                 
                 # Save a visualization
                 interpolate_str = '_'.join(args.interpolate)
-                out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/diffstep_{args.diffusion_steps}/uncond_sampling_{i}/"
+                out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/Intermediate/diffstep_{args.diffusion_steps}/uncond_sampling_{i}/"
                 os.makedirs(out_folder_reconstruction, exist_ok=True)
                 
                 save_uncond_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Gaussian/"
@@ -332,7 +339,9 @@ if __name__ == '__main__':
             
             # Save a visualization
             interpolate_str = '_'.join(args.interpolate)
-            out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/diffstep_{args.diffusion_steps}/reverse_sampling/"
+            out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/Intermediate/diffstep_{args.diffusion_steps}/reverse_sampling/"
+            print("SAVE AT : ", out_folder_reconstruction)
+            print("SAVE AT : ", interpolate_str, args.interpolate)
             os.makedirs(out_folder_reconstruction, exist_ok=True)
             
             save_reverse_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Reversed/"

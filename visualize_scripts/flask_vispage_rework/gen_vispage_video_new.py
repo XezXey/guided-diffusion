@@ -246,7 +246,7 @@ def create_app():
             out += "<tr> <th> Checkpoint </th> <th> Diffusion step </th> <th> Diffuse Process </th> <th> Image </th> </tr>"
             out += f"[#{idx}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
             for ckpt in checkpoint:
-                diff_step = glob.glob(f"{ckpt}/valid/{itp}/*")
+                diff_step = glob.glob(f"{ckpt}/valid/{itp}/Intermediate/*")
                 diff_step = sorted([int(ds.split('/')[-1].split('_')[-1]) for ds in diff_step])
                 out += f"<td rowspan=\"{len(diff_step) + 3}\"> {ckpt.split('/')[-1]}</td> "
                 for ds in diff_step:
@@ -255,7 +255,7 @@ def create_app():
                     for sampling, proc in process.items():
                         for dir in proc['dir']:
                             out += f"<td>{proc['alias']} : {dir}</td> "
-                            frames = glob.glob(f"{ckpt}/valid/{itp}/diffstep_{ds}/{sampling}/src={src_dst[0]}/dst={src_dst[1]}/{proc['name']}/{dir}/{src_dst[0]}/pred_xstart/*frame*.png")
+                            frames = glob.glob(f"{ckpt}/valid/{itp}/Intermediate/diffstep_{ds}/{sampling}/src={src_dst[0]}/dst={src_dst[1]}/{proc['name']}/{dir}/{src_dst[0]}/sample/*frame*.png")
                             out += "<td>"
                             if len(frames) > 0:
                                 frames = sort_by_frame(frames)
@@ -337,7 +337,7 @@ def create_app():
                     border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
                 }
                 </style>"""
-        f = open('./model_comparison_eyes.json')
+        f = open(args.compare_json)
         ckpt_dict = json.load(f)
         model = list(ckpt_dict.keys())
         
@@ -426,6 +426,7 @@ if __name__ == "__main__":
     parser.add_argument('--exp_dir', required=True)
     parser.add_argument('--sample_dir', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
     parser.add_argument('--sample_pair_json', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
+    parser.add_argument('--compare_json', default="/home/mint/guided-diffusion/visualize_scripts/flask_vispage_rework/model_comparison_WD.json")
     parser.add_argument('--port', required=True)
     parser.add_argument('--host', default='0.0.0.0')
     args = parser.parse_args()
