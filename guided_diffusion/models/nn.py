@@ -193,7 +193,7 @@ class HadamartLayer(nn.Module):
         if apply_:
             if self.prep is None:
                 out = th.mul(x, y)
-            if self.prep == 'tanh':
+            elif self.prep == 'tanh':
                 out = th.mul(x, self.prep_layer(y))
             elif self.prep == 'identity':
                 out = th.mul(x, (1+y))
