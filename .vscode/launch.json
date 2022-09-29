@@ -45,6 +45,22 @@
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/",
             "justMyCode": true
+        },        {
+            "name": "Python: train_UNet_Bg",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"2"},
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "10",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/",
+                    "--train.save_interval", "5000",
+                    "--train.sampling_interval", "1"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
         },
         {
             "name": "Python: train_masked_deca_shape",

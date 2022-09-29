@@ -34,5 +34,5 @@ dataset:
 
 
 train_misc:
-  exp_name: "EncLight_DilateBg"
+  exp_name: "EncLight_Spatial_conditioning"
   cfg_name: "Masked_Face_woclip+Bg+NoTanh"
