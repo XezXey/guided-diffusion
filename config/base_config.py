@@ -93,6 +93,12 @@ cfg.img_model.hadamart_n_groups = None
 cfg.img_model.hadamart_use_bias = None
 cfg.img_model.hadamart_silu_scale = None
 
+# Image-Conditioning on UNet
+cfg.img_model.dpm_cond_img = []
+cfg.img_model.apply_dpm_cond_img = False
+cfg.img_model.prep_dpm_cond_img = [None]
+cfg.img_model.noise_dpm_cond_img = [None]
+
 # Additional Encoder Network
 img_cond_model_img_type = {'raw':3, 
                             'deca_shape_images':3, 
@@ -119,6 +125,7 @@ cfg.img_cond_model.in_image = ['raw']
 cfg.img_cond_model.image_size = 128
 cfg.img_cond_model.num_channels = 128
 cfg.img_cond_model.in_channels = sum(img_cond_model_img_type[in_img] for in_img in cfg.img_cond_model.in_image)
+cfg.img_cond_model.each_in_channels = [img_cond_model_img_type[in_img] for in_img in cfg.img_cond_model.in_image]
 cfg.img_cond_model.out_channels = 32
 cfg.img_cond_model.condition_dim = 32
 cfg.img_cond_model.num_res_blocks = 2
@@ -136,6 +143,8 @@ cfg.img_cond_model.pool = 'attention'
 cfg.img_cond_model.override_cond = ""
 cfg.img_cond_model.xtra_cond = ""
 cfg.img_cond_model.prep_image = [None]
+cfg.img_cond_model.add_noise_image = [None]
+cfg.img_cond_model.prep = [None]
 
 # ---------------------------------------------------------------------------- #
 # Options for relighting
@@ -299,6 +308,8 @@ def update_params(cfg):
         else:  
             in_channels = img_cond_model_img_type[in_img]
         cfg.img_cond_model.in_channels += in_channels
+        
+    cfg.img_cond_model.each_in_channels = [img_cond_model_img_type[in_img] for in_img in cfg.img_cond_model.in_image]
     return cfg
 
 

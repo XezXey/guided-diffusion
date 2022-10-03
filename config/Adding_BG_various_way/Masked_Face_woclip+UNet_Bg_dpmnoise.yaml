@@ -11,7 +11,7 @@ img_model:
   # Image-Condition directly to UNet(DPM)
   dpm_cond_img: ['faceseg_bg_noface&nohair']
   prep_dpm_cond_img: [Null]
-  noise_dpm_cond_img: [Null]
+  noise_dpm_cond_img: ['share_dpm_noise']
   apply_dpm_cond_img: True
 
 param_model:
@@ -41,4 +41,4 @@ dataset:
 
 train_misc:
   exp_name: "Adding_BG_various_way"
-  cfg_name: "Masked_Face_woclip+UNet_Bg"
+  cfg_name: "Masked_Face_woclip+UNet_Bg_dpmnoise"

@@ -192,7 +192,6 @@ class TrainLoop(LightningModule):
         :params cond: the condition dict e.g. ['cond_params'] in BXD; D is dimension of DECA, Latent, ArcFace, etc.
         '''
         self.zero_grad_trainer()
-        self.forward_cond_network(dat, cond)
         self.forward_backward(dat, cond)
         took_step = self.optimize_trainer()
         self.took_step = took_step
@@ -244,7 +243,7 @@ class TrainLoop(LightningModule):
             self.model_trainer_dict[name].get_norms()
         return True
 
-    def forward_cond_network(self, dat, cond, model_dict=None):
+    def forward_cond_network(self, cond, model_dict=None):
         if model_dict is None:
             model_dict = self.model_dict
             
@@ -263,6 +262,7 @@ class TrainLoop(LightningModule):
                         tmp.append(cond[p])
                     cond['cond_params'] = th.cat(tmp, dim=-1)
             else: raise NotImplementedError
+        return cond
 
 
     def forward_backward(self, batch, cond):
@@ -272,13 +272,22 @@ class TrainLoop(LightningModule):
         }
 
         t, weights = self.schedule_sampler.sample(batch.shape[0], self.device)
+        noise = th.randn_like(batch)
+        
+        #NOTE: Prepare condition : Utilize the same schedule from DPM, Add background or any condition.
+        cond = self.prepare_cond_train(dat=batch, cond=cond, noise=noise, t=t)
+        
+        cond = self.forward_cond_network(cond)
+        
         # Losses
         model_compute_losses = functools.partial(
             self.diffusion.training_losses,
             self.model_dict[self.cfg.img_model.name],
             batch,
             t,
+            cfg=self.cfg,
             model_kwargs=cond,
+            noise=noise
         )
         model_losses, _ = model_compute_losses()
 
@@ -294,6 +303,81 @@ class TrainLoop(LightningModule):
             self.log_loss_dict(
                 self.diffusion, t, {k: v * weights for k, v in model_losses.items()}, module=self.cfg.img_model.name,
             )
+
+
+    def prepare_cond_train(self, dat, cond, noise, t):
+        """
+        Prepare a condition for encoder network (e.g., adding noise, share noise with DPM)
+        :param noise: noise map used in DPM
+        :param t: timestep
+        :param model_kwargs: model_kwargs dict
+        """
+        
+        if self.cfg.img_model.apply_dpm_cond_img:
+            dpm_cond_img = []
+            for k, p in zip(self.cfg.img_model.dpm_cond_img, self.cfg.img_model.noise_dpm_cond_img):
+                if p == 'share_dpm_noise':
+                    if 'faceseg' in k:
+                        mask =  cond[f'{k}_mask'].bool()
+                        assert th.all(mask == cond[f'{k}_mask'])
+                        tmp_img = (self.diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
+                    else: raise NotImplementedError('Share dpm noise are not support others, except Faceseg.')
+                elif p is None:
+                    tmp_img = cond[f'{k}_img']
+                else: raise NotImplementedError("[#] Only \"share_dpm_noise\" is available.")
+                dpm_cond_img.append(tmp_img)
+
+            cond['dpm_cond_img'] = th.cat((dpm_cond_img), dim=1)
+        else:
+            cond['dpm_cond_img'] = None
+            
+        if self.cfg.img_cond_model.apply:
+            cond_img = []
+            for k, p in zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.add_noise_image):
+                if p == 'share_dpm_noise':
+                    if 'faceseg' in k:
+                        mask =  cond[f'{k}_mask'].bool()
+                        assert th.all(mask == cond[f'{k}_mask'])
+                        tmp_img = (self.diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
+                    else: raise NotImplementedError('Share dpm noise are not support others, except Faceseg.')
+                elif p is None:
+                    tmp_img = cond[f'{k}_img']
+                else: raise NotImplementedError("[#] Only \"share_dpm_noise\" is available.")
+                cond_img.append(tmp_img)
+
+            cond['cond_img'] = th.cat((cond_img), dim=1)
+        else:
+            cond['cond_img'] = None
+            
+        return cond
+    
+    def prepare_cond_sampling(self, dat, cond):
+        """
+        Prepare a condition for encoder network (e.g., adding noise, share noise with DPM)
+        :param noise: noise map used in DPM
+        :param t: timestep
+        :param model_kwargs: model_kwargs dict
+        """
+        
+        if self.cfg.img_model.apply_dpm_cond_img:
+            dpm_cond_img = []
+            for k, p in zip(self.cfg.img_model.dpm_cond_img, self.cfg.img_model.noise_dpm_cond_img):
+                tmp_img = cond[f'{k}_img']
+                dpm_cond_img.append(tmp_img)
+            cond['dpm_cond_img'] = th.cat((dpm_cond_img), dim=1)
+        else:
+            cond['dpm_cond_img'] = None
+            
+        if self.cfg.img_cond_model.apply:
+            cond_img = []
+            for k, p in zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.add_noise_image):
+                tmp_img = cond[f'{k}_img']
+                cond_img.append(tmp_img)
+            cond['cond_img'] = th.cat((cond_img), dim=1)
+        else:
+            cond['cond_img'] = None
+            
+        return cond
 
     @rank_zero_only
     def _update_ema(self):
@@ -370,14 +454,15 @@ class TrainLoop(LightningModule):
             n = dat.shape[0]
             
         dat = dat[:n]
-        cond = tensor_util.dict_slice(in_d=cond, keys=cond.keys(), n=n)
-        
         noise = th.randn((n, 3, H, W)).type_as(dat)
         assert noise.shape == dat.shape
+        cond = self.prepare_cond_sampling(dat=batch, cond=cond)
+        cond = tensor_util.dict_slice(in_d=cond, keys=cond.keys(), n=n)
+        
 
         # Any Encoder/Conditioned Network need to apply before a main UNet.
         if self.cfg.img_cond_model.apply:
-            self.forward_cond_network(dat=dat, cond=cond, model_dict=sampling_model_dict)
+            self.forward_cond_network(cond=cond, model_dict=sampling_model_dict)
             
         # N(0, 1) Sampling
         source_img = convert2rgb(dat, bound=self.input_bound) / 255.

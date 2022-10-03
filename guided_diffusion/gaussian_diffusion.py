@@ -262,7 +262,11 @@ class GaussianDiffusion:
         assert t.shape == (B,)
         # print(type(x), type(self._scale_timesteps(t)))
         # assert False
-        model_output_ = model(x.float(), self._scale_timesteps(t), **model_kwargs)
+        
+        if model_kwargs['dpm_cond_img'] is not None:
+            model_output_ = model(th.cat((x, model_kwargs['dpm_cond_img']), dim=1).float(), self._scale_timesteps(t), **model_kwargs)
+        else:
+            model_output_ = model(x.float(), self._scale_timesteps(t), **model_kwargs)
         model_output = model_output_["output"]
 
         if self.model_var_type in [ModelVarType.LEARNED, ModelVarType.LEARNED_RANGE]:
@@ -923,7 +927,7 @@ class GaussianDiffusion:
         output = th.where((t == 0), decoder_nll, kl)
         return {"output": output, "pred_xstart": out["pred_xstart"]}
 
-    def training_losses(self, model, x_start, t, model_kwargs=None, noise=None):
+    def training_losses(self, model, x_start, t, cfg, model_kwargs=None, noise=None):
         """
         Compute training losses for a single timestep.
 
@@ -942,10 +946,14 @@ class GaussianDiffusion:
             noise = th.randn_like(x_start)
 
         x_t = self.q_sample(x_start, t, noise=noise)
-
+        
         terms = {}
         if self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
-            output = model(x_t.float(), self._scale_timesteps(t).long(), **model_kwargs)
+            #NOTE: Forward pass happens here...    
+            if model_kwargs['dpm_cond_img'] is not None:
+                output = model(th.cat((x_t, model_kwargs['dpm_cond_img']), dim=1).float(), self._scale_timesteps(t).long(), **model_kwargs)
+            else:
+                output = model(x_t.float(), self._scale_timesteps(t).long(), **model_kwargs)
             model_output = output['output']
             target = {
                 ModelMeanType.PREVIOUS_X: self.q_posterior_mean_variance(
@@ -964,6 +972,7 @@ class GaussianDiffusion:
             raise NotImplementedError(self.loss_type)
 
         return terms, output
+
 
     def _prior_bpd(self, x_start):
         """
