@@ -64,6 +64,23 @@
             "justMyCode": true
         },
         {
+            "name": "Python: train_UNet_Masked_Face+UNet_Bg",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"2"},
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "5",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/Adding_BG_various_way/UNet_Masked_Face_woclip+UNet_Bg.yaml",
+                    "--train.save_interval", "5000",
+                    "--train.sampling_interval", "10"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
             "name": "Python: train_UNet_Bg_dpmnoise",
             "type": "python",
             "request": "launch",

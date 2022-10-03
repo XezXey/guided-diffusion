@@ -243,7 +243,7 @@ class DECADataset(Dataset):
 
         # cond_img contains the condition image from "img_cond_model.in_image + img_model.dpm_cond_img"
         cond_img = self.load_condition_image(raw_pil_image, query_img_name) 
-        if self.cfg.img_cond_model.apply:
+        if self.cfg.img_cond_model.apply or self.cfg.img_model.apply_dpm_cond_img:
             for i, k in enumerate(self.condition_image):
                 if k is None:continue
                 elif k == 'raw':

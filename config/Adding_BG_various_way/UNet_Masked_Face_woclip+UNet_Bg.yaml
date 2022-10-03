@@ -1,0 +1,34 @@
+img_model:
+  name: "ImgCond"
+  arch: "UNetCond"
+  image_size: 128
+  in_image: 'raw' 
+  in_channels: 9
+  out_channels: 3
+  conditioning: True  # Conditioning with DECA
+  condition_proj_dim: 512
+  # Image-Condition directly to UNet(DPM)
+  dpm_cond_img: ['deca_masked_face_images_woclip', 'faceseg_bg_noface&nohair']
+  prep_dpm_cond_img: [Null, Null]
+  noise_dpm_cond_img: [Null, Null]
+  apply_dpm_cond_img: True
+
+param_model:
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb']
+
+img_cond_model:
+  apply: False
+
+relighting:
+  use_SH: False
+
+dataset:
+  deca_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
+  data_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
+  face_segment_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment/"
+  deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
+
+
+train_misc:
+  exp_name: "Adding_BG_various_way"
+  cfg_name: "UNet_Masked_Face_woclip+UNet_Bg"
