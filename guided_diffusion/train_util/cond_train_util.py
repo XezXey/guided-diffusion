@@ -464,9 +464,34 @@ class TrainLoop(LightningModule):
         if self.cfg.img_cond_model.apply:
             self.forward_cond_network(cond=cond, model_dict=sampling_model_dict)
             
-        # N(0, 1) Sampling
+        # Source Image
         source_img = convert2rgb(dat, bound=self.input_bound) / 255.
         tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(source_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        
+        # Condition Image
+        if cond['dpm_cond_img'] is not None:
+            cond_img = []
+            s = 0
+            for c in self.cfg.img_model.each_in_channels:
+                e = s + c
+                cond_img.append(cond['dpm_cond_img'][:, s:e, ...])
+                s += c
+            cond_img = th.cat((cond_img), dim=0)
+            cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.
+            tb.add_image(tag=f'conditioned_image (UNet)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        
+        if cond['cond_img'] is not None:
+            cond_img = []
+            s = 0
+            for c in self.cfg.img_cond_model.each_in_channels:
+                e = s + c
+                cond_img.append(cond['cond_img'][:, s:e, ...])
+                s += c
+            cond_img = th.cat((cond_img), dim=0)
+            cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.
+            tb.add_image(tag=f'conditioned_image (Encoder)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        
+        # N(0, 1) Sampling
         ddim_sample, _ = self.diffusion.ddim_sample_loop(
             model=sampling_model_dict[self.cfg.img_model.name],
             shape=(n, 3, H, W),

@@ -120,18 +120,21 @@ def load_data_img_deca(
         raise ValueError("unspecified data directory")
     in_image = {}
     # For conditioning images
-    for in_image_type in cfg.img_cond_model.in_image + cfg.img_model.dpm_cond_img:
-        if 'deca' in in_image_type:
-            in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.deca_rendered_dir}/{in_image_type}/{set_}/")
-        elif 'faceseg' in in_image_type:
-            in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
-        elif 'laplacian' in in_image_type:
-            in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.laplacian_dir}/{set_}/")
-            in_image['laplacian_mask'] = _list_image_files_recursively(f"{cfg.dataset.laplacian_mask_dir}/{set_}/")
-            in_image['laplacian_mask'] = image_path_list_to_dict(in_image['laplacian_mask'])
-        elif 'raw' in in_image_type: continue
+    condition_image = cfg.img_cond_model.in_image + cfg.img_model.dpm_cond_img
+    for in_image_type in condition_image:
+        if in_image_type is None: continue
         else:
-            raise NotImplementedError(f"The {in_image_type}-image type not found.")
+            if 'deca' in in_image_type:
+                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.deca_rendered_dir}/{in_image_type}/{set_}/")
+            elif 'faceseg' in in_image_type:
+                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
+            elif 'laplacian' in in_image_type:
+                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.laplacian_dir}/{set_}/")
+                in_image['laplacian_mask'] = _list_image_files_recursively(f"{cfg.dataset.laplacian_mask_dir}/{set_}/")
+                in_image['laplacian_mask'] = image_path_list_to_dict(in_image['laplacian_mask'])
+            elif 'raw' in in_image_type: continue
+            else:
+                raise NotImplementedError(f"The {in_image_type}-image type not found.")
 
         in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
     
@@ -223,6 +226,8 @@ class DECADataset(Dataset):
         self.mode = mode
         self.precomp_params_key = without(src=self.cfg.param_model.params_selector, rmv=['img_latent'] + self.rmv_params)
         self.kwargs = kwargs
+        self.condition_image = self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img
+        self.prep_condition_image = self.cfg.img_cond_model.prep_image + self.cfg.img_model.prep_dpm_cond_img
         print(f"[#] Bounding the input of UNet to +-{self.cfg.img_model.input_bound}")
 
     def __len__(self):
@@ -239,18 +244,16 @@ class DECADataset(Dataset):
         # cond_img contains the condition image from "img_cond_model.in_image + img_model.dpm_cond_img"
         cond_img = self.load_condition_image(raw_pil_image, query_img_name) 
         if self.cfg.img_cond_model.apply:
-            out_dict['cond_img'] = []
-            for i, k in enumerate(self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img):
-                if k == 'raw':
+            for i, k in enumerate(self.condition_image):
+                if k is None:continue
+                elif k == 'raw':
                     each_cond_img = (raw_img / 127.5) - 1
                     each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                    out_dict['cond_img'].append(each_cond_img)
                 elif 'woclip' in k:
                     #NOTE: Input is the npy array -> Used cv2.resize() to handle
                     each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_AREA)
                     each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                     out_dict[f'{k}_img'] = each_cond_img
-                    out_dict['cond_img'].append(each_cond_img)
                 elif 'laplacian' in k:
                     laplacian_mask = np.array(self.load_image(self.kwargs['in_image_for_cond']['laplacian_mask'][query_img_name.replace('.jpg', '.png')]))
                     laplacian_mask = self.prep_cond_img(laplacian_mask, k, i)
@@ -262,7 +265,6 @@ class DECADataset(Dataset):
                     laplacian_mask = cv2.resize(laplacian_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                     out_dict[f'{k}_mask'] = np.transpose(laplacian_mask, (2, 0, 1))
                     assert np.all(np.unique(out_dict[f'{k}_mask']) == [0, 1])
-                    out_dict['cond_img'].append(each_cond_img)
                 elif 'faceseg' in k:
                     faceseg_mask = self.prep_cond_img(~cond_img[k], k, i)   # Invert mask for dilation
                     faceseg_mask = ~faceseg_mask    # Invert back to original mask
@@ -275,15 +277,12 @@ class DECADataset(Dataset):
                     faceseg_mask = cv2.resize(faceseg_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                     out_dict[f'{k}_mask'] = np.transpose(faceseg_mask, (2, 0, 1))
                     assert np.all(np.unique(out_dict[f'{k}_mask']) == [0, 1])
-                    out_dict['cond_img'].append(each_cond_img)
                 else:
                     each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
                     each_cond_img = self.prep_cond_img(each_cond_img, k, i)
                     each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                     each_cond_img = (each_cond_img / 127.5) - 1
                     out_dict[f'{k}_img'] = each_cond_img
-                    out_dict['cond_img'].append(each_cond_img)
-            out_dict['cond_img'] = np.concatenate(out_dict['cond_img'], axis=0)
             
         # Deca params of img-path
         out_dict["cond_params"] = np.concatenate([self.deca_params[query_img_name][k] for k in self.precomp_params_key])
@@ -326,8 +325,8 @@ class DECADataset(Dataset):
             - Blur
         :param each_cond_img: condition image in [H x W x C]
         """
-        assert k == (self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img)[i]
-        prep = (self.cfg.img_cond_model.prep_image + self.cfg.img_model.prep_dpm_cond_img)[i]
+        assert k == (self.condition_image)[i]
+        prep = (self.prep_condition_image)[i]
         if prep is None:
             pass
         else:
@@ -346,8 +345,9 @@ class DECADataset(Dataset):
                     
     def load_condition_image(self, raw_pil_image, query_img_name):
         condition_image = {}
-        for in_image_type in self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img:
-            if 'faceseg' in in_image_type:
+        for in_image_type in self.condition_image:
+            if in_image_type is None:continue
+            elif 'faceseg' in in_image_type:
                 condition_image[in_image_type] = self.face_segment(in_image_type, query_img_name)
             elif 'deca' in in_image_type:
                 if "woclip" in in_image_type:
@@ -358,6 +358,7 @@ class DECADataset(Dataset):
                 condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace('.jpg', '.npy')], allow_pickle=True)
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
+            else: raise ValueError(f"Not supported type of condition image : {in_image_type}")
         return condition_image
 
     def face_segment(self, segment_part, query_img_name):

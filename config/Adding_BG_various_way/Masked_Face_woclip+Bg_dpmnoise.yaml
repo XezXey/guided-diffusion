@@ -9,7 +9,7 @@ img_model:
   condition_proj_dim: 512
   hadamart_prep: "Tanh"
   # Image-Condition directly to UNet(DPM)
-  dpm_cond_img: []
+  dpm_cond_img: [Null]
   prep_dpm_cond_img: [Null]
   noise_dpm_cond_img: [Null]
   apply_dpm_cond_img: False

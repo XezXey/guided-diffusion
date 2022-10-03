@@ -74,7 +74,7 @@
                     "--train.n_gpus", "1", 
                     "--cfg", "./config/Adding_BG_various_way/Masked_Face_woclip+UNet_Bg_dpmnoise.yaml",
                     "--train.save_interval", "5000",
-                    "--train.sampling_interval", "10"
+                    "--train.sampling_interval", "1"
             ],
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/",
@@ -91,7 +91,7 @@
                     "--train.n_gpus", "1", 
                     "--cfg", "./config/Adding_BG_various_way/Masked_Face_woclip+Bg_dpmnoise.yaml",
                     "--train.save_interval", "5000",
-                    "--train.sampling_interval", "10"
+                    "--train.sampling_interval", "1"
             ],
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/",

@@ -54,7 +54,7 @@ cfg.param_model.use_checkpoint = ""
 # ---------------------------------------------------------------------------- #
 # Options for Image model (e.g. raw image, uv_displacement_normal, depth, etc.) 
 # ---------------------------------------------------------------------------- #
-img_model_img_type = {'raw':3, 'uvdn':3}
+img_model_img_type = {'raw':3}
 cfg.img_model = CN()
 cfg.img_model.name = "Img"
 cfg.img_model.in_image = '+'.join(img_model_img_type.keys())
@@ -65,6 +65,7 @@ cfg.img_model.arch = 'UNet'
 cfg.img_model.image_size = 128
 cfg.img_model.num_channels = 128
 cfg.img_model.in_channels = sum(img_model_img_type.values())
+cfg.img_model.each_in_channels = [cfg.img_model.in_channels]
 cfg.img_model.out_channels = sum(img_model_img_type.values())
 cfg.img_model.num_res_blocks = 2
 cfg.img_model.num_heads = 4
@@ -116,6 +117,7 @@ img_cond_model_img_type = {'raw':3,
                             'faceseg_face&hair':3, 
                             'normals':3,
                             'laplacian_topmost_eyes':3,
+                            None:0,
 }
 cfg.img_cond_model = CN()
 cfg.img_cond_model.name = "ImgEncoder"
@@ -295,23 +297,45 @@ def update_params(cfg):
     cfg.param_model.out_channels = sum(cfg.param_model.n_params)
     cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
 
-    # Update conditioning image type for img_cond_model
-    cfg.img_cond_model.in_channels = 0
-    # print(img_cond_model_img_type)
-    for prep, in_img in zip(cfg.img_cond_model.prep_image, cfg.img_cond_model.in_image):
-        # print(prep, in_img)
-        in_channels = 0
-        if prep is None:
-            in_channels = img_cond_model_img_type[in_img]
-        elif 'color=YUV' in prep:
-            in_channels = img_cond_model_img_type[in_img] - 2
-        else:  
-            in_channels = img_cond_model_img_type[in_img]
-        cfg.img_cond_model.in_channels += in_channels
+    # # Update conditioning image type for img_cond_model
+    # cfg.img_cond_model.in_channels = 0
+    # for prep, in_img in zip(cfg.img_cond_model.prep_image, cfg.img_cond_model.in_image):
+    #     # print(prep, in_img)
+    #     in_channels = 0
+    #     if prep is None:
+    #         in_channels = img_cond_model_img_type[in_img]
+    #     elif 'color=YUV' in prep:
+    #         in_channels = img_cond_model_img_type[in_img] - 2
+    #     else:  
+    #         in_channels = img_cond_model_img_type[in_img]
+    #     cfg.img_cond_model.in_channels += in_channels
         
-    cfg.img_cond_model.each_in_channels = [img_cond_model_img_type[in_img] for in_img in cfg.img_cond_model.in_image]
+    # cfg.img_cond_model.each_in_channels = [img_cond_model_img_type[in_img] for in_img in cfg.img_cond_model.in_image]
+    
+    cfg.img_model.in_channels, cfg.img_model.each_in_channels = update_img_chns(img_list=cfg.img_model.dpm_cond_img, 
+                                                                                prep_list=cfg.img_model.prep_dpm_cond_img, 
+                                                                                in_channels=3,
+                                                                            )
+    cfg.img_cond_model.in_channels, cfg.img_cond_model.each_in_channels = update_img_chns(img_list=cfg.img_cond_model.in_image, prep_list=cfg.img_cond_model.prep_image)
+    
     return cfg
+    
 
+def update_img_chns(img_list, prep_list, in_channels=0):
+    # Update conditioning image type for img_model/img_cond_model
+    assert len(img_list) == len(prep_list)
+    for in_img, prep in zip(img_list, prep_list):
+        # print(prep, in_img)
+        if prep is None:
+            in_c = img_cond_model_img_type[in_img]
+        elif 'color=YUV' in prep:
+            in_c = img_cond_model_img_type[in_img] - 2
+        else:  
+            in_c = img_cond_model_img_type[in_img]
+        in_channels += in_c
+        
+    each_in_channels = [img_cond_model_img_type[in_img] for in_img in img_list]
+    return in_channels, each_in_channels
 
 def cmd_to_cfg_format(opts):
     """
