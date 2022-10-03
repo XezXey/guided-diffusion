@@ -1,6 +1,0 @@
-[#]Running : python ./auto_sampling_rev_itp_Enc_input.py --cfg_name Masked_Face_woclip+Bg.yaml --log_dir Masked_Face_woclip+Bg --set valid --step 500000 --reverse_sampling --interpolate spatial_latent --interpolate_step 5 --out_dir /data/mint/sampling/intermediate2_darkarea/ --n_subject -1 --slerp --diffusion_steps 1000 --sample_pair_mode pair --sample_pair_json ./dark_area.json --gpu_id 0
-   [#] Exit code : -9
-[#]Running : python ./auto_sampling_rev_itp_Enc_input.py --cfg_name Masked_Face_woclip+Bg.yaml --log_dir Masked_Face_woclip+Bg --set valid --step 450000 --reverse_sampling --interpolate spatial_latent --interpolate_step 5 --out_dir /data/mint/sampling/intermediate2_darkarea/ --n_subject -1 --slerp --diffusion_steps 1000 --sample_pair_mode pair --sample_pair_json ./dark_area.json --gpu_id 0
-   [#] Exit code : 1
-[#]Running : python ./auto_sampling_rev_itp_Enc_input.py --cfg_name Masked_Face_woclip+Bg.yaml --log_dir Masked_Face_woclip+Bg --set valid --step 350000 --reverse_sampling --interpolate spatial_latent --interpolate_step 5 --out_dir /data/mint/sampling/intermediate2_darkarea/ --n_subject -1 --slerp --diffusion_steps 1000 --sample_pair_mode pair --sample_pair_json ./dark_area.json --gpu_id 0
-   [#] Exit code : 1

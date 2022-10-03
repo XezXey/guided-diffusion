@@ -100,3 +100,31 @@ def eval_mode(model_dict):
     for k, _ in model_dict.items():
         model_dict[k].eval()
     return model_dict
+
+def prepare_cond_sampling(dat, cond, cfg):
+    """
+    Prepare a condition for encoder network (e.g., adding noise, share noise with DPM)
+    :param noise: noise map used in DPM
+    :param t: timestep
+    :param model_kwargs: model_kwargs dict
+    """
+    
+    if cfg.img_model.apply_dpm_cond_img:
+        dpm_cond_img = []
+        for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
+            tmp_img = cond[f'{k}_img']
+            dpm_cond_img.append(tmp_img)
+        cond['dpm_cond_img'] = th.cat((dpm_cond_img), dim=1)
+    else:
+        cond['dpm_cond_img'] = None
+        
+    if cfg.img_cond_model.apply:
+        cond_img = []
+        for k, p in zip(cfg.img_cond_model.in_image, cfg.img_cond_model.add_noise_image):
+            tmp_img = cond[f'{k}_img']
+            cond_img.append(tmp_img)
+        cond['cond_img'] = th.cat((cond_img), dim=1)
+    else:
+        cond['cond_img'] = None
+        
+    return cond

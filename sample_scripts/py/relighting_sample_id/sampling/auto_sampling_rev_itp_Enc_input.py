@@ -188,14 +188,17 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
     save_res_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
     os.makedirs(save_res_path, exist_ok=True)
     
-    vis_utils.save_images(path=f"{save_res_path}", fn="res", frames=((sample_ddim['final_output']['sample'] + 1) * 127.5)/255.0)
+    
+    sample_frames = vis_utils.convert2rgb(sample_ddim['final_output']['sample'], cfg.img_model.input_bound) / 255.0
+    vis_utils.save_images(path=f"{save_res_path}", fn="res", frames=sample_frames)
     if clip_ren:
         vis_utils.save_images(path=f"{save_res_path}", fn="ren", frames=th.tensor((rendered_tmp + 1) * 127.5)/255.0)
     else:
         vis_utils.save_images(path=f"{save_res_path}", fn="ren", frames=th.tensor(rendered_tmp).mul(255).add_(0.5).clamp_(0, 255)/255)
     if n_step >= 30:
         #NOTE: save_video whenever n_step >= 60 only, w/ shape = TxHxWxC
-        vis_utils.save_video(fn=f"{save_res_path}/res.mp4", frames=(sample_ddim['final_output']['sample'].permute(0, 2, 3, 1) + 1) * 127.5, fps=30)
+        sample_vid = vis_utils.convert2rgb(sample_ddim['final_output']['sample'].permute(0, 2, 3, 1), cfg.img_model.input_bound)
+        vis_utils.save_video(fn=f"{save_res_path}/res.mp4", frames=sample_vid, fps=30)
         if clip_ren:
             vis_utils.save_video(fn=f"{save_res_path}/ren.mp4", frames=th.tensor((rendered_tmp.transpose(0, 2, 3, 1) + 1) * 127.5), fps=30)
         else:
@@ -299,6 +302,7 @@ if __name__ == '__main__':
                                                  cfg=cfg,
                                                  args=args)
         
+        model_kwargs = inference_utils.prepare_cond_sampling(dat=dat, cond=model_kwargs, cfg=cfg)
         if args.uncond_sampling:
             # Input
             cond = copy.deepcopy(model_kwargs)

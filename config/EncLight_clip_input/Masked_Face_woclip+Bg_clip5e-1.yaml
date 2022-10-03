@@ -23,6 +23,7 @@ img_cond_model:
   condition_dim: 256
   override_cond: "spatial_latent"
   prep_image: [Null, Null]
+  add_noise_image: [Null, Null]
 
 relighting:
   use_SH: False

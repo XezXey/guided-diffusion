@@ -95,7 +95,7 @@ cfg.img_model.hadamart_use_bias = None
 cfg.img_model.hadamart_silu_scale = None
 
 # Image-Conditioning on UNet
-cfg.img_model.dpm_cond_img = []
+cfg.img_model.dpm_cond_img = [None]
 cfg.img_model.apply_dpm_cond_img = False
 cfg.img_model.prep_dpm_cond_img = [None]
 cfg.img_model.noise_dpm_cond_img = [None]
