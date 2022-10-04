@@ -71,7 +71,6 @@ from sample_utils import (
     file_utils, 
     inference_utils, 
     mani_utils,
-    attr_mani,
 )
 device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
 
@@ -80,68 +79,29 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
     # Forward the interpolation from reverse noise map
     # Interpolate
     cond = copy.deepcopy(model_kwargs)
+    condition_img = list(filter(None, dataset.condition_image))
+    misc = {'condition_img':condition_img,
+            'src_idx':src_idx,
+            'dst_idx':dst_idx,
+            'n_step':n_step,
+            'avg_dict':avg_dict,
+            'dataset':dataset,
+            'args':args,
+            'itp_func':itp_func,
+            'img_size':cfg.img_model.image_size,
+            }
+    cond, clip_ren = inference_utils.build_condition_image(cond=cond, misc=misc)
+    cond = inference_utils.prepare_cond_sampling(dat=dat, cond=cond, cfg=cfg, use_render_itp=True)
+    
     if cfg.img_cond_model.apply:
-        if args.rotate_normals:
-            #NOTE: Render w/ Rotated normals
-            cond.update(mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light']))
-            cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
-        elif 'spatial_latent' in args.interpolate:
-            #NOTE: Render w/ interpolated light
-            interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
-            cond.update(interp_cond)
-        else:
-            #NOTE: Render w/ same light
-            repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
-            cond.update(repeated_cond)
-        
-        start = time.time()
-        if np.any(['deca_masked' in n for n in cfg.img_cond_model.in_image]):
-            mask = params_utils.load_flame_mask()
-        else: mask=None
-        deca_rendered, _ = params_utils.render_deca(deca_params=cond, 
-                                                    idx=src_idx, n=n_step, 
-                                                    avg_dict=avg_dict, 
-                                                    render_mode=args.render_mode, 
-                                                    rotate_normals=args.rotate_normals, 
-                                                    mask=mask)
-        print("Rendering time : ", time.time() - start)
-        for i, cond_img_name in enumerate(cfg.img_cond_model.in_image):
-            if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name):
-                bg_tmp = [cond[f"{cond_img_name}_img"][src_idx]] * n_step
-                bg_tmp = np.stack(bg_tmp, axis=0)
-                cond[f"{cond_img_name}"] = bg_tmp
-            elif 'deca' in cond_img_name:
-                rendered_tmp = []
-                for j in range(n_step):
-                    if 'woclip' in cond_img_name:
-                        #NOTE: Input is the npy array -> Used cv2.resize() to handle
-                        r_tmp = deca_rendered[j].cpu().numpy().transpose((1, 2, 0))
-                        r_tmp = cv2.resize(r_tmp, (cfg.img_cond_model.image_size, cfg.img_cond_model.image_size), cv2.INTER_AREA)
-                        r_tmp = np.transpose(r_tmp, (2, 0, 1))
-                        clip_ren = False
-                    else:
-                        r_tmp = deca_rendered[j].mul(255).add_(0.5).clamp_(0, 255)
-                        r_tmp = np.transpose(r_tmp.cpu().numpy(), (1, 2, 0))
-                        r_tmp = r_tmp.astype(np.uint8)
-                        r_tmp = dataset.augmentation(PIL.Image.fromarray(r_tmp))
-                        r_tmp = dataset.prep_cond_img(r_tmp, cond_img_name, i)
-                        r_tmp = np.transpose(r_tmp, (2, 0, 1))
-                        r_tmp = (r_tmp / 127.5) - 1
-                        clip_ren = True
-                    rendered_tmp.append(r_tmp)
-                    
-                rendered_tmp = np.stack(rendered_tmp, axis=0)
-                cond[cond_img_name] = rendered_tmp
-        cond = mani_utils.create_cond_imgs(cond, key=cfg.img_cond_model.in_image)
-        cond = inference_utils.to_tensor(cond, key=['cond_img'], device=ckpt_loader.device)
         cond = pl_sampling.forward_cond_network(model_kwargs=cond)
 
     if args.interpolate == ['all']:
         interp_cond = mani_utils.iter_interp_cond(cond, interp_set=cfg.param_model.params_selector, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
     else:
-        if 'spatial_latent' in args.interpolate:
+        if 'render_face' in args.interpolate:
             interp_set = args.interpolate.copy()
-            interp_set.remove('spatial_latent')
+            interp_set.remove('render_face')
         else:
             interp_set = args.interpolate
         interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
@@ -152,7 +112,10 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
 
     # Finalize the cond_params
     cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
-    to_tensor_key = ['cond_params'] + cfg.param_model.params_selector + [cfg.img_cond_model.override_cond]
+    if cfg.img_cond_model.override_cond != '':
+        to_tensor_key = ['cond_params'] + cfg.param_model.params_selector + [cfg.img_cond_model.override_cond]
+    else:    
+        to_tensor_key = ['cond_params'] + cfg.param_model.params_selector
     cond = inference_utils.to_tensor(cond, key=to_tensor_key, device=ckpt_loader.device)
     
     # Forward
@@ -178,8 +141,6 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
         out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/interp_noise"
     elif args.reverse_sampling: 
         out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/reverse_sampling"
-        print("SAVE AT : ", out_folder_reconstruction)
-        print("SAVE AT : ", interpolate_str, args.interpolate)
     elif args.uncond_sampling: 
         out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/uncond_sampling"
     else: raise NotImplementedError
@@ -191,18 +152,26 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
     
     sample_frames = vis_utils.convert2rgb(sample_ddim['final_output']['sample'], cfg.img_model.input_bound) / 255.0
     vis_utils.save_images(path=f"{save_res_path}", fn="res", frames=sample_frames)
-    if clip_ren:
-        vis_utils.save_images(path=f"{save_res_path}", fn="ren", frames=th.tensor((rendered_tmp + 1) * 127.5)/255.0)
-    else:
-        vis_utils.save_images(path=f"{save_res_path}", fn="ren", frames=th.tensor(rendered_tmp).mul(255).add_(0.5).clamp_(0, 255)/255)
+    
+    is_render = np.any(['deca' in i for i in condition_img])
+    if is_render:
+        k = [i for i in condition_img if 'deca' in i][0]
+        rendered_tmp = cond[k]
+        if clip_ren:
+            vis_utils.save_images(path=f"{save_res_path}", fn="ren", frames=th.tensor((rendered_tmp + 1) * 127.5)/255.0)
+        else:
+            vis_utils.save_images(path=f"{save_res_path}", fn="ren", frames=th.tensor(rendered_tmp).mul(255).add_(0.5).clamp_(0, 255)/255)
     if n_step >= 30:
         #NOTE: save_video whenever n_step >= 60 only, w/ shape = TxHxWxC
         sample_vid = vis_utils.convert2rgb(sample_ddim['final_output']['sample'].permute(0, 2, 3, 1), cfg.img_model.input_bound)
         vis_utils.save_video(fn=f"{save_res_path}/res.mp4", frames=sample_vid, fps=30)
-        if clip_ren:
-            vis_utils.save_video(fn=f"{save_res_path}/ren.mp4", frames=th.tensor((rendered_tmp.transpose(0, 2, 3, 1) + 1) * 127.5), fps=30)
-        else:
-            vis_utils.save_video(fn=f"{save_res_path}/ren.mp4", frames=th.tensor(rendered_tmp.transpose(0, 2, 3, 1)).mul(255).add_(0.5).clamp_(0, 255), fps=30)
+        if is_render:
+            k = [i for i in condition_img if 'deca' in i][0]
+            rendered_tmp = cond[k]
+            if clip_ren:
+                vis_utils.save_video(fn=f"{save_res_path}/ren.mp4", frames=th.tensor((rendered_tmp.transpose(0, 2, 3, 1) + 1) * 127.5), fps=30)
+            else:
+                vis_utils.save_video(fn=f"{save_res_path}/ren.mp4", frames=th.tensor(rendered_tmp.transpose(0, 2, 3, 1)).mul(255).add_(0.5).clamp_(0, 255), fps=30)
             
     with open(f'{save_res_path}/res_desc.json', 'w') as fj:
         log_dict = {'sampling_args' : vars(args), 

@@ -2,7 +2,9 @@ import pytorch_lightning as pl
 import torch as th
 import numpy as np
 import blobfile as bf
-import mani_utils, inference_utils
+import mani_utils, inference_utils, params_utils
+import cv2, PIL
+import time
 
 class PLSampling(pl.LightningModule):
     def __init__(self, model_dict, diffusion, forward_fn, reverse_fn, cfg, args=None, denoised_fn=None):
@@ -101,7 +103,7 @@ def eval_mode(model_dict):
         model_dict[k].eval()
     return model_dict
 
-def prepare_cond_sampling(dat, cond, cfg):
+def prepare_cond_sampling(dat, cond, cfg, use_render_itp=False, device='cuda'):
     """
     Prepare a condition for encoder network (e.g., adding noise, share noise with DPM)
     :param noise: noise map used in DPM
@@ -111,20 +113,94 @@ def prepare_cond_sampling(dat, cond, cfg):
     
     if cfg.img_model.apply_dpm_cond_img:
         dpm_cond_img = []
-        for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
-            tmp_img = cond[f'{k}_img']
+        for k in cfg.img_model.dpm_cond_img:
+            if use_render_itp: 
+                tmp_img = cond[f'{k}']
+            else: 
+                tmp_img = cond[f'{k}_img']
             dpm_cond_img.append(tmp_img)
-        cond['dpm_cond_img'] = th.cat((dpm_cond_img), dim=1)
+        cond['dpm_cond_img'] = th.cat((dpm_cond_img), dim=1).to(device)
     else:
         cond['dpm_cond_img'] = None
         
     if cfg.img_cond_model.apply:
         cond_img = []
-        for k, p in zip(cfg.img_cond_model.in_image, cfg.img_cond_model.add_noise_image):
-            tmp_img = cond[f'{k}_img']
+        for k in cfg.img_cond_model.in_image:
+            if use_render_itp: 
+                tmp_img = cond[f'{k}']
+            else: 
+                tmp_img = cond[f'{k}_img']
             cond_img.append(tmp_img)
-        cond['cond_img'] = th.cat((cond_img), dim=1)
+        cond['cond_img'] = th.cat((cond_img), dim=1).to(device)
     else:
         cond['cond_img'] = None
         
     return cond
+
+def build_condition_image(cond, misc):
+    src_idx = misc['src_idx']
+    dst_idx = misc['dst_idx']
+    n_step = misc['n_step']
+    avg_dict = misc['avg_dict']
+    dataset = misc['dataset']
+    args = misc['args']
+    condition_img = misc['condition_img']
+    img_size = misc['img_size']
+    itp_func = misc['itp_func']
+    if np.any(['deca' in i for i in condition_img]):
+        # Render the face
+        if args.rotate_normals:
+            #NOTE: Render w/ Rotated normals
+            cond.update(mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light']))
+            cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
+        elif 'render_face' in args.interpolate:
+            #NOTE: Render w/ interpolated light
+            interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+            cond.update(interp_cond)
+        else:
+            #NOTE: Render w/ same light
+            repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
+            cond.update(repeated_cond)
+        
+        start = time.time()
+        if np.any(['deca_masked' in n for n in condition_img]):
+            mask = params_utils.load_flame_mask()
+        else: mask=None
+        deca_rendered, _ = params_utils.render_deca(deca_params=cond, 
+                                                    idx=src_idx, n=n_step, 
+                                                    avg_dict=avg_dict, 
+                                                    render_mode=args.render_mode, 
+                                                    rotate_normals=args.rotate_normals, 
+                                                    mask=mask)
+        print("Rendering time : ", time.time() - start)
+        
+    #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'
+    for i, cond_img_name in enumerate(condition_img):
+        if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name):
+            bg_tmp = [cond[f"{cond_img_name}_img"][src_idx]] * n_step
+            bg_tmp = np.stack(bg_tmp, axis=0)
+            cond[f"{cond_img_name}"] = th.tensor(bg_tmp)
+        elif 'deca' in cond_img_name:
+            rendered_tmp = []
+            for j in range(n_step):
+                if 'woclip' in cond_img_name:
+                    #NOTE: Input is the npy array -> Used cv2.resize() to handle
+                    r_tmp = deca_rendered[j].cpu().numpy().transpose((1, 2, 0))
+                    r_tmp = cv2.resize(r_tmp, (img_size, img_size), cv2.INTER_AREA)
+                    r_tmp = np.transpose(r_tmp, (2, 0, 1))
+                    clip_ren = False
+                else:
+                    r_tmp = deca_rendered[j].mul(255).add_(0.5).clamp_(0, 255)
+                    r_tmp = np.transpose(r_tmp.cpu().numpy(), (1, 2, 0))
+                    r_tmp = r_tmp.astype(np.uint8)
+                    r_tmp = dataset.augmentation(PIL.Image.fromarray(r_tmp))
+                    r_tmp = dataset.prep_cond_img(r_tmp, cond_img_name, i)
+                    r_tmp = np.transpose(r_tmp, (2, 0, 1))
+                    r_tmp = (r_tmp / 127.5) - 1
+                    clip_ren = True
+                rendered_tmp.append(r_tmp)
+                
+            rendered_tmp = np.stack(rendered_tmp, axis=0)
+            cond[cond_img_name] = th.tensor(rendered_tmp)
+            
+    return cond, clip_ren

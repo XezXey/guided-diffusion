@@ -245,7 +245,7 @@ class DECADataset(Dataset):
         cond_img = self.load_condition_image(raw_pil_image, query_img_name) 
         if self.cfg.img_cond_model.apply or self.cfg.img_model.apply_dpm_cond_img:
             for i, k in enumerate(self.condition_image):
-                if k is None:continue
+                if k is None: continue
                 elif k == 'raw':
                     each_cond_img = (raw_img / 127.5) - 1
                     each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
@@ -305,17 +305,6 @@ class DECADataset(Dataset):
             else: raise ValueError(f"Bouding value = {self.cfg.img_model.input_bound} is invalid.")
         else : raise NotImplementedError
         
-        # Return 
-        # if self.mode == 'train':
-        #     #NOTE: For current progress, we need only ['cond_params'] or ['cond_img']
-        #     if self.cfg.img_cond_model.apply:
-        #         out_dict = {'cond_params':out_dict['cond_params'], 'cond_img':out_dict['cond_img']}
-        #     else:
-        #         out_dict = {'cond_params':out_dict['cond_params']}
-        #     return np.transpose(arr, [2, 0, 1]), out_dict
-        # elif self.mode == 'sampling':
-        #     return np.transpose(arr, [2, 0, 1]), out_dict
-        # else: raise NotImplementedError
         return np.transpose(arr, [2, 0, 1]), out_dict
 
     def prep_cond_img(self, each_cond_img, k, i):
