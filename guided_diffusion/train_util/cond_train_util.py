@@ -61,9 +61,11 @@ class TrainLoop(LightningModule):
 
         # Lightning
         self.n_gpus = self.cfg.train.n_gpus
+        self.num_nodes = self.cfg.train.num_nodes
         self.tb_logger = tb_logger
         self.pl_trainer = pl.Trainer(
-            gpus=self.n_gpus,
+            devices=self.n_gpus,
+            num_nodes=self.num_nodes,
             accumulate_grad_batches=cfg.train.accumulate_grad_batches, 
             logger=self.tb_logger,
             log_every_n_steps=self.cfg.train.log_interval,
@@ -102,7 +104,7 @@ class TrainLoop(LightningModule):
         self.sampling_interval = self.cfg.train.sampling_interval
         self.resume_checkpoint = self.cfg.train.resume_checkpoint
         self.schedule_sampler = schedule_sampler or UniformSampler(diffusion)
-        self.global_batch = self.n_gpus * self.batch_size
+        self.global_batch = self.n_gpus * self.batch_size * self.num_nodes
         self.weight_decay = self.cfg.train.weight_decay
         self.lr_anneal_steps = self.cfg.train.lr_anneal_steps
         self.name = name
@@ -400,7 +402,7 @@ class TrainLoop(LightningModule):
     def log_step(self):
         step_ = float(self.step + self.resume_step)
         self.log("training_progress/step", step_ + 1)
-        self.log("training_progress/global_step", (step_ + 1) * self.n_gpus)
+        self.log("training_progress/global_step", (step_ + 1) * self.n_gpus * self.num_nodes)
         self.log("training_progress/global_samples", (step_ + 1) * self.global_batch)
 
     @rank_zero_only
