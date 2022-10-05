@@ -268,7 +268,8 @@ def parse_args(ipynb={'mode':False, 'cfg':None}):
     cfg = update_params(cfg)
     # Update the dataset path
     cfg = update_dataset_path(cfg)
-    
+    print(cfg)
+    exit()
     return cfg
 
 def update_params(cfg):
@@ -311,8 +312,6 @@ def update_params(cfg):
     
     
 def update_dataset_path(cfg):
-    cfg.dataset.training_data = 'ffhq_256_with_anno'
-    cfg.dataset.root_path = '/data/mint/DPM_Dataset/'
     cfg.dataset.deca_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
     cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
     cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
