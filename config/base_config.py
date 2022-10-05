@@ -268,8 +268,6 @@ def parse_args(ipynb={'mode':False, 'cfg':None}):
     cfg = update_params(cfg)
     # Update the dataset path
     cfg = update_dataset_path(cfg)
-    print(cfg)
-    exit()
     return cfg
 
 def update_params(cfg):
