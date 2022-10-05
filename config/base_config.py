@@ -168,12 +168,12 @@ cfg.relighting.num_shaded_ch = 1
 cfg.dataset = CN()
 cfg.dataset.training_data = 'ffhq_256_with_anno'
 cfg.dataset.root_path = '/data/mint/DPM_Dataset/'
-cfg.dataset.deca_dir = '{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
-cfg.dataset.data_dir = '{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
-cfg.dataset.face_segment_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
-cfg.dataset.deca_rendered_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
-cfg.dataset.laplacian_mask_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
-cfg.dataset.laplacian_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
+cfg.dataset.deca_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
+cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
+cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
+cfg.dataset.deca_rendered_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
+cfg.dataset.laplacian_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
+cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
 
 # ---------------------------------------------------------------------------- #
 # Options for training
@@ -313,12 +313,12 @@ def update_params(cfg):
 def update_dataset_path(cfg):
     cfg.dataset.training_data = 'ffhq_256_with_anno'
     cfg.dataset.root_path = '/data/mint/DPM_Dataset/'
-    cfg.dataset.deca_dir = '{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
-    cfg.dataset.data_dir = '{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
-    cfg.dataset.face_segment_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
-    cfg.dataset.deca_rendered_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
-    cfg.dataset.laplacian_mask_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
-    cfg.dataset.laplacian_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
+    cfg.dataset.deca_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
+    cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
+    cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
+    cfg.dataset.deca_rendered_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
+    cfg.dataset.laplacian_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
+    cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
     return cfg
 
 def update_img_chns(img_list, prep_list, in_channels=0):
