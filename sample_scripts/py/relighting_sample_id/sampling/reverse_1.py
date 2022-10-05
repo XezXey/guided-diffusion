@@ -9,7 +9,7 @@ interpolate = "render_face"
 interpolate_fn = "slerp"
 interpolate_step = 5
 set_ = "valid"
-out_dir = "/data/mint/sampling/Adding_Bg_exp/"
+out_dir = "/data/mint/sampling/Add_Bg_exp/"
 gpu_id = 1
 
 commands = [
@@ -46,7 +46,7 @@ commands = [
     f"python ./auto_sampling_rev_itp_Enc_input.py --cfg_name Masked_Face_woclip+UNet_Bg_dpmnoise.yaml --log_dir Masked_Face_woclip+UNet_Bg_dpmnoise --set {set_} --step 050000 --uncond_sampling --interpolate {interpolate} --interpolate_step {interpolate_step} --out_dir {out_dir} --n_subject {n_subject} --{interpolate_fn} --diffusion_steps {n_diffusion} --sample_pair_mode {sample_pair_mode} --sample_pair_json {sample_pair_json} --gpu_id {gpu_id}",
 ]                                                                                                  
 
-with open('./gpu_0_status.txt', mode='w') as f:
+with open(f'./gpu_{gpu_id}_status.txt', mode='w') as f:
     for cmd in commands:
         print(f"[#]Running : {cmd}\n")
         f.write(f"[#]Running : {cmd}\n")

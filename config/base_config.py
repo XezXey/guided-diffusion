@@ -166,13 +166,14 @@ cfg.relighting.num_shaded_ch = 1
 # Options for Dataset
 # ---------------------------------------------------------------------------- #
 cfg.dataset = CN()
-cfg.dataset.training_data = ['ffhq_256_with_anno']
-cfg.dataset.deca_dir = '/data/mint/DPM_Dataset/ffhq_256_with_anno/params/'
-cfg.dataset.data_dir = '/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/'
-cfg.dataset.face_segment_dir = "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment/"
-cfg.dataset.deca_rendered_dir = "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
-cfg.dataset.laplacian_mask_dir = "/data/mint/DPM_Dataset/ffhq_256_with_anno/eyes_segment/"
-cfg.dataset.laplacian_dir = "/data/mint/DPM_Dataset/ffhq_256_with_anno/laplacian/"
+cfg.dataset.training_data = 'ffhq_256_with_anno'
+cfg.dataset.root_path = '/data/mint/DPM_Dataset/'
+cfg.dataset.deca_dir = '{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
+cfg.dataset.data_dir = '{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
+cfg.dataset.face_segment_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
+cfg.dataset.deca_rendered_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
+cfg.dataset.laplacian_mask_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
+cfg.dataset.laplacian_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
 
 # ---------------------------------------------------------------------------- #
 # Options for training
@@ -265,6 +266,9 @@ def parse_args(ipynb={'mode':False, 'cfg':None}):
 
     # Some parameters in config need to be updated
     cfg = update_params(cfg)
+    # Update the dataset path
+    cfg = update_dataset_path(cfg)
+    
     return cfg
 
 def update_params(cfg):
@@ -297,21 +301,6 @@ def update_params(cfg):
     cfg.param_model.out_channels = sum(cfg.param_model.n_params)
     cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
 
-    # # Update conditioning image type for img_cond_model
-    # cfg.img_cond_model.in_channels = 0
-    # for prep, in_img in zip(cfg.img_cond_model.prep_image, cfg.img_cond_model.in_image):
-    #     # print(prep, in_img)
-    #     in_channels = 0
-    #     if prep is None:
-    #         in_channels = img_cond_model_img_type[in_img]
-    #     elif 'color=YUV' in prep:
-    #         in_channels = img_cond_model_img_type[in_img] - 2
-    #     else:  
-    #         in_channels = img_cond_model_img_type[in_img]
-    #     cfg.img_cond_model.in_channels += in_channels
-        
-    # cfg.img_cond_model.each_in_channels = [img_cond_model_img_type[in_img] for in_img in cfg.img_cond_model.in_image]
-    
     cfg.img_model.in_channels, cfg.img_model.each_in_channels = update_img_chns(img_list=cfg.img_model.dpm_cond_img, 
                                                                                 prep_list=cfg.img_model.prep_dpm_cond_img, 
                                                                                 in_channels=3,
@@ -320,6 +309,17 @@ def update_params(cfg):
     
     return cfg
     
+    
+def update_dataset_path(cfg):
+    cfg.dataset.training_data = 'ffhq_256_with_anno'
+    cfg.dataset.root_path = '/data/mint/DPM_Dataset/'
+    cfg.dataset.deca_dir = '{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
+    cfg.dataset.data_dir = '{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
+    cfg.dataset.face_segment_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
+    cfg.dataset.deca_rendered_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
+    cfg.dataset.laplacian_mask_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
+    cfg.dataset.laplacian_dir = "{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
+    return cfg
 
 def update_img_chns(img_list, prep_list, in_channels=0):
     # Update conditioning image type for img_model/img_cond_model

@@ -9,7 +9,7 @@ interpolate = "render_face"
 interpolate_fn = "slerp"
 interpolate_step = 5
 set_ = "valid"
-out_dir = "/data/mint/sampling/Adding_Bg_exp/"
+out_dir = "/data/mint/sampling/Add_Bg_exp/"
 gpu_id = 2
 
 commands = [
@@ -38,7 +38,7 @@ commands = [
     
 ]                                                                                                  
 
-with open('./gpu_0_status.txt', mode='w') as f:
+with open(f'./gpu_{gpu_id}_status.txt', mode='w') as f:
     for cmd in commands:
         print(f"[#]Running : {cmd}\n")
         f.write(f"[#]Running : {cmd}\n")

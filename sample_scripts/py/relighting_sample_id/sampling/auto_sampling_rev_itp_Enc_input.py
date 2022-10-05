@@ -89,6 +89,7 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
             'args':args,
             'itp_func':itp_func,
             'img_size':cfg.img_model.image_size,
+            'deca_obj':deca_obj
             }
     cond, clip_ren = inference_utils.build_condition_image(cond=cond, misc=misc)
     cond = inference_utils.prepare_cond_sampling(dat=dat, cond=cond, cfg=cfg, use_render_itp=True)
@@ -235,6 +236,8 @@ if __name__ == '__main__':
     data_size = dataset.__len__()
     img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
     all_img_idx, all_img_name, args.n_subject = mani_utils.get_samples_list(args.sample_pair_json, args.sample_pair_mode, args.src_dst, img_path, args.n_subject)
+    
+    deca_obj = params_utils.init_deca()
         
     # Load image & condition
     for i in range(args.n_subject):

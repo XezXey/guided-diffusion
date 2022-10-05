@@ -22,15 +22,14 @@ img_cond_model:
   condition_dim: 256
   override_cond: "spatial_latent"
   prep_image: [Null, Null]
+  add_noise_image: [Null, Null]
 
 relighting:
   use_SH: False
 
 dataset:
-  deca_dir: "/ist/ist-share/vision/nontawat/DPM_Dataset/ffhq_256_with_anno/params/"
-  data_dir: "/ist/ist-share/vision/nontawat/ffhq_256_with_anno/ffhq_256/"
-  face_segment_dir: "/ist/ist-share/vision/nontawat/DPM_Dataset/ffhq_256_with_anno/face_segment/"
-  deca_rendered_dir: "/ist/ist-share/vision/nontawat/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
+  root_path: "/ist/ist-share/vision/mint/DPM_Dataset/"
+  training_data: "ffhq_256_with_anno"
 
 
 train_misc:

@@ -147,6 +147,8 @@ def build_condition_image(cond, misc):
     condition_img = misc['condition_img']
     img_size = misc['img_size']
     itp_func = misc['itp_func']
+    deca_obj = misc['deca_obj']
+    
     if np.any(['deca' in i for i in condition_img]):
         # Render the face
         if args.rotate_normals:
@@ -171,7 +173,8 @@ def build_condition_image(cond, misc):
                                                     avg_dict=avg_dict, 
                                                     render_mode=args.render_mode, 
                                                     rotate_normals=args.rotate_normals, 
-                                                    mask=mask)
+                                                    mask=mask,
+                                                    deca_obj=deca_obj)
         print("Rendering time : ", time.time() - start)
         
     #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'

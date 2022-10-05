@@ -63,6 +63,18 @@ def load_flame_mask(part='face'):
     }
     return mask        
 
+def init_deca(useTex=False, extractTex=True, device='cuda', 
+              deca_mode='only_renderer', mask=None, deca_obj=None):
+    
+    sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+    from decalib import deca
+    from decalib.utils.config import cfg as deca_cfg
+    deca_cfg.model.use_tex = useTex
+    deca_cfg.rasterizer_type = 'standard'
+    deca_cfg.model.extract_tex = extractTex
+    deca_obj = deca.DECA(config = deca_cfg, device=device, mode=deca_mode, mask=mask)
+    return deca_obj
+
 def render_deca(deca_params, idx, n, render_mode='shape', 
                 useTex=False, extractTex=True, device='cuda', 
                 avg_dict=None, rotate_normals=False, use_detail=False,
