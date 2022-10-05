@@ -237,7 +237,12 @@ if __name__ == '__main__':
     img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
     all_img_idx, all_img_name, args.n_subject = mani_utils.get_samples_list(args.sample_pair_json, args.sample_pair_mode, args.src_dst, img_path, args.n_subject)
     
-    deca_obj = params_utils.init_deca()
+    
+    if np.any(['deca_masked' in n for n in list(filter(None, dataset.condition_image))]):
+        mask = params_utils.load_flame_mask()
+    else: mask=None
+    
+    deca_obj = params_utils.init_deca(mask=mask)
         
     # Load image & condition
     for i in range(args.n_subject):

@@ -22,13 +22,6 @@ img_cond_model:
 relighting:
   use_SH: False
 
-dataset:
-  deca_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
-  data_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
-  face_segment_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment/"
-  deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
-
-
 train_misc:
   exp_name: "Adding_BG_various_way"
   cfg_name: "UNet_Masked_Face_woclip+UNet_Bg"
