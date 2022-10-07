@@ -32,6 +32,10 @@ img_cond_model:
 relighting:
   use_SH: False
 
+dataset:
+  root_path: "/ist/ist-share/vision/mint/DPM_Dataset/"
+  training_data: "ffhq_256_with_anno"
+
 train:
   weight_decay: 0.0
   sampling_interval: 25000

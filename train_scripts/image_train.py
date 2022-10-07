@@ -19,7 +19,6 @@ def main():
     cfg = parse_args()
     seed_all(47)    # Seeding the model - Independent training
 
-    
     logger.configure(dir=cfg.train.log_dir)
     logger.log("[#] Creating model and diffusion...")
 
