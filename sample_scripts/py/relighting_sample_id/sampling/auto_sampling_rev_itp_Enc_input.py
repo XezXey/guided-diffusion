@@ -278,8 +278,7 @@ if __name__ == '__main__':
                                                  denoised_fn=denoised_fn,
                                                  cfg=cfg,
                                                  args=args)
-        
-        model_kwargs = inference_utils.prepare_cond_sampling(dat=dat, cond=model_kwargs, cfg=cfg)
+        model_kwargs = inference_utils.prepare_cond_sampling(dat=dat, dpm_noise=dpm_noise, cond=model_kwargs, cfg=cfg)
         if args.uncond_sampling:
             # Input
             cond = copy.deepcopy(model_kwargs)

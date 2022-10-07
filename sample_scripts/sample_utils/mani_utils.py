@@ -50,23 +50,27 @@ def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn):
     for itp in interp_set:
         assert itp in cond.keys()
         assert src_idx < len(cond[itp]) and dst_idx < len(cond[itp])
-        if isinstance(cond[itp], list):
-            #NOTE: interpolate the condition (list-type)
-            interp = []
-            for i in range(len(cond[itp])):
-                assert cond[itp][i][[src_idx]].shape == cond[itp][i][[dst_idx]].shape
-                interp_temp = interp_cond(src_cond=cond[itp][i][[src_idx]],
-                                dst_cond=cond[itp][i][[dst_idx]],
-                                n_step=n_step,
-                                interp_fn=interp_fn)
-                interp.append(interp_temp)
-        elif th.is_tensor(cond[itp]) or isinstance(cond[itp], np.ndarray):
-            #NOTE: interpolate the condition (tensor-type)
-            interp = interp_cond(src_cond=cond[itp][[src_idx]],
-                                dst_cond=cond[itp][[dst_idx]],
-                                n_step=n_step,
-                                interp_fn=interp_fn)
-        else: raise NotImplementedError
+        
+        if itp == 'shadow':
+            interp = np.linspace(-5, 8, n_step)[..., None]
+        else:
+            if isinstance(cond[itp], list):
+                #NOTE: interpolate the condition (list-type)
+                interp = []
+                for i in range(len(cond[itp])):
+                    assert cond[itp][i][[src_idx]].shape == cond[itp][i][[dst_idx]].shape
+                    interp_temp = interp_cond(src_cond=cond[itp][i][[src_idx]],
+                                    dst_cond=cond[itp][i][[dst_idx]],
+                                    n_step=n_step,
+                                    interp_fn=interp_fn)
+                    interp.append(interp_temp)
+            elif th.is_tensor(cond[itp]) or isinstance(cond[itp], np.ndarray):
+                #NOTE: interpolate the condition (tensor-type)
+                interp = interp_cond(src_cond=cond[itp][[src_idx]],
+                                    dst_cond=cond[itp][[dst_idx]],
+                                    n_step=n_step,
+                                    interp_fn=interp_fn)
+            else: raise NotImplementedError
         out_interp[itp] = interp
 
     return out_interp 
