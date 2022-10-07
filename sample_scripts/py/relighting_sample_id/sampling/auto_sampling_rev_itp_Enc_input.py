@@ -74,7 +74,6 @@ from sample_utils import (
 )
 device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
 
-#TODO: Rework function
 def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs):
     # Forward the interpolation from reverse noise map
     # Interpolate
@@ -278,10 +277,17 @@ if __name__ == '__main__':
                                                  denoised_fn=denoised_fn,
                                                  cfg=cfg,
                                                  args=args)
-        model_kwargs = inference_utils.prepare_cond_sampling(dat=dat, dpm_noise=dpm_noise, cond=model_kwargs, cfg=cfg)
+        
+        model_kwargs = inference_utils.prepare_cond_sampling(dat=dat, cond=model_kwargs, cfg=cfg)
+        model_kwargs['cfg'] = cfg
+        model_kwargs['use_cond_xt_fn'] = False
+        if (cfg.img_model.apply_dpm_cond_img) and ('share_dpm_noise' in cfg.img_model.noise_dpm_cond_img):
+            model_kwargs['use_cond_xt_fn'] = True
+            model_kwargs.update(inference_utils.progressive_noise(dat=dat, cond=model_kwargs, diffusion=diffusion, keys=dataset.condition_image))
         if args.uncond_sampling:
             # Input
             cond = copy.deepcopy(model_kwargs)
+            cond['use_render_itp'] = False
             if cfg.img_cond_model.apply:
                 cond = pl_sampling.forward_cond_network(model_kwargs=cond)
             cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
@@ -307,6 +313,7 @@ if __name__ == '__main__':
         if args.reverse_sampling:
             # Input
             cond = copy.deepcopy(model_kwargs)
+            cond['use_render_itp'] = False
             if cfg.img_cond_model.apply:
                 cond = pl_sampling.forward_cond_network(model_kwargs=cond)
             cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)

@@ -10,7 +10,7 @@ def make_deepcopyable(model_kwargs, keys):
     :return dict_tensor: the deepcopy version of input dict_tensor
     '''
     for key in keys:
-        if key in ['image_name', 'raw_image_path']:
+        if key in ['image_name', 'raw_image_path', 'cfg', 'use_render_itp', 'use_cond_xt_fn']:
             continue
         else:
             if th.is_tensor(model_kwargs[key]):

@@ -15,7 +15,6 @@ from .models.nn import mean_flat
 from .losses import normal_kl, discretized_gaussian_log_likelihood
 from .tensor_util import make_deepcopyable
 
-
 def get_named_beta_schedule(schedule_name, num_diffusion_timesteps):
     """
     Get a pre-defined beta schedule for the given name.
@@ -593,11 +592,13 @@ class GaussianDiffusion:
         x,
         clip_denoised=True,
         denoised_fn=None,
+        cond_xt_fn=None,
         model_kwargs=None,
         progress=True,
         device=None,
         eta=0.0,
     ):
+        
         if device is None:
             device = next(model.parameters()).device
             
@@ -612,6 +613,14 @@ class GaussianDiffusion:
         for i in indices:
             # Deep copy to prevent sth that used .pop()
             model_kwargs_copy = make_deepcopyable(model_kwargs, keys=list(model_kwargs.keys()))
+            #TODO: Adding progressive noise to construct the cond_img, dpm_cond_img given t
+            if cond_xt_fn is not None:
+                model_kwargs_copy = cond_xt_fn(cond=model_kwargs_copy, 
+                                               i=i, 
+                                               cfg=model_kwargs_copy['cfg'],
+                                               use_render_itp=model_kwargs_copy['use_render_itp']
+                                               )
+            
             t = th.tensor([i] * x.shape[0], device=device)
             with th.no_grad():
                 out = self.ddim_reverse_sample(
@@ -635,6 +644,7 @@ class GaussianDiffusion:
         model_kwargs,
         clip_denoised,
         denoised_fn=None,
+        cond_xt_fn=None,
         progress=True,
         device=None,
         store_intermidiate=False,
@@ -652,6 +662,7 @@ class GaussianDiffusion:
             clip_denoised=clip_denoised,
             denoised_fn=denoised_fn,
             model_kwargs=model_kwargs,
+            cond_xt_fn=cond_xt_fn,
             progress=progress,
             device=device,
             eta=0.0,
@@ -669,7 +680,6 @@ class GaussianDiffusion:
         t,
         clip_denoised=True,
         denoised_fn=None,
-        cond_fn=None,
         model_kwargs=None,
         eta=0.0,
     ):
@@ -686,8 +696,6 @@ class GaussianDiffusion:
             denoised_fn=denoised_fn,
             model_kwargs=model_kwargs,
         )
-        if cond_fn is not None:
-            out = self.condition_score(cond_fn, out, x, t, model_kwargs=model_kwargs)
 
         # Usually our model outputs epsilon, but we re-derive it
         # in case we used x_start or x_prev prediction.
@@ -720,7 +728,7 @@ class GaussianDiffusion:
         noise=None,
         clip_denoised=True,
         denoised_fn=None,
-        cond_fn=None,
+        cond_xt_fn=None,
         model_kwargs=None,
         device=None,
         progress=True,
@@ -740,7 +748,7 @@ class GaussianDiffusion:
             noise=noise,
             clip_denoised=clip_denoised,
             denoised_fn=denoised_fn,
-            cond_fn=cond_fn,
+            cond_xt_fn=cond_xt_fn,
             model_kwargs=model_kwargs,
             device=device,
             progress=progress,
@@ -758,7 +766,7 @@ class GaussianDiffusion:
         noise=None,
         clip_denoised=True,
         denoised_fn=None,
-        cond_fn=None,
+        cond_xt_fn=None,
         model_kwargs=None,
         device=None,
         progress=False,
@@ -788,8 +796,15 @@ class GaussianDiffusion:
         for i in indices:
             # Deep copy to prevent sth that used .pop()
             model_kwargs_copy = make_deepcopyable(model_kwargs, keys=list(model_kwargs.keys()))
+            #TODO: Adding progressive noise to construct the cond_img, dpm_cond_img given t
+            if cond_xt_fn is not None:
+                model_kwargs_copy = cond_xt_fn(cond=model_kwargs_copy, 
+                                               i=i, 
+                                               cfg=model_kwargs_copy['cfg'],
+                                               use_render_itp=model_kwargs_copy['use_render_itp']
+                                               )
 
-            t = th.tensor([i] * shape[0], device=device)
+            t= th.tensor([i] * shape[0], device=device)
             with th.no_grad():
                 out = self.ddim_sample(
                     model,
@@ -797,7 +812,6 @@ class GaussianDiffusion:
                     t,
                     clip_denoised=clip_denoised,
                     denoised_fn=denoised_fn,
-                    cond_fn=cond_fn,
                     model_kwargs=model_kwargs_copy,
                     eta=eta,
                 )

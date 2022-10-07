@@ -48,7 +48,8 @@ class PLSampling(pl.LightningModule):
                 denoised_fn = self.denoised_fn,
                 model_kwargs=model_kwargs,
                 progress=progress,
-                store_intermidiate=store_intermediate
+                store_intermidiate=store_intermediate,
+                cond_xt_fn=cond_xt_fn if model_kwargs['use_cond_xt_fn'] else None
             )
         else: raise NotImplementedError
 
@@ -64,12 +65,36 @@ class PLSampling(pl.LightningModule):
             clip_denoised=self.cfg.diffusion.clip_denoised,
             denoised_fn=self.denoised_fn,
             model_kwargs=model_kwargs,
-            store_intermidiate=store_intermediate
+            store_intermidiate=store_intermediate,
+            cond_xt_fn=cond_xt_fn if model_kwargs['use_cond_xt_fn'] else None
         )
         if store_intermediate:
             assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
         return {"final_output":sample, "intermediate":intermediate}
     
+def cond_xt_fn(cond, i, cfg, use_render_itp, device='cuda'):
+    #NOTE: This specifically run for ['dpm_cond_img']
+    #TODO: T
+    # 1. extract the condition of x_t=i 
+    # 2. rebuild the dpm_cond_img from extracted x_t=i
+    
+    # if True:
+    if cfg.img_model.apply_dpm_cond_img:
+        dpm_cond_img = []
+        for k in cfg.img_model.dpm_cond_img:
+            if (f'{k}_xt' in cond.keys()) and ('faceseg' in k):
+                xt_img = th.tensor(cond[f'{k}_xt'][i]).to(device)
+                dpm_cond_img.append(xt_img)
+            else:
+                if use_render_itp: 
+                    tmp_img = cond[f'{k}']
+                else: 
+                    tmp_img = cond[f'{k}_img']
+                dpm_cond_img.append(tmp_img)
+        cond['dpm_cond_img'] = th.cat(dpm_cond_img, dim=1)
+    else:
+        cond['dpm_cond_img'] = None
+    return cond
 
 def get_init_noise(n, mode, img_size, device):
     '''
@@ -102,65 +127,6 @@ def eval_mode(model_dict):
     for k, _ in model_dict.items():
         model_dict[k].eval()
     return model_dict
-
-# def prepare_cond_sampling(dat, cond, cfg, _noise_obj, use_render_itp=False, device='cuda'):
-#     """
-#     Prepare a condition for encoder network (e.g., adding noise, share noise with DPM)
-#     :param noise: noise map used in DPM
-#     :param t: timestep
-#     :param model_kwargs: model_kwargs dict
-#     """
-#     t = share_noise_obj['t']
-#     noise = share_noise_obj['noise']
-#     diffusion = share_noise_obj['diffusion']
-    
-#     if cfg.img_model.apply_dpm_cond_img:
-#         dpm_cond_img = []
-#         for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
-#             if p == 'share_dpm_noise':
-#                 # Add noise : shared with dpm schedule
-#                 if 'faceseg' in k:
-#                     # Faceseg need to add noise 
-#                     mask =  cond[f'{k}_mask'].bool()
-#                     raw = cond['image']
-#                     assert th.all(mask == cond[f'{k}_mask'])
-#                     tmp_img = (diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(raw) * ~mask)
-#                 else: raise NotImplementedError('Share dpm noise are not support others, except Faceseg.')
-#             elif p is None:
-#                 if use_render_itp: 
-#                     tmp_img = cond[f'{k}']
-#                 else: 
-#                     tmp_img = cond[f'{k}_img']
-#             else: raise NotImplementedError("[#] Only \"share_dpm_noise\" is available.")
-#             dpm_cond_img.append(tmp_img)
-#         cond['dpm_cond_img'] = th.cat((dpm_cond_img), dim=1).to(device)
-#     else:
-#         cond['dpm_cond_img'] = None
-        
-#     if cfg.img_cond_model.apply:
-#         cond_img = []
-#         for k, p in zip(cfg.img_cond_model.in_image, cfg.img_cond_model.add_noise_image):
-#             if p == 'share_dpm_noise':
-#                 # Add noise : shared with dpm schedule
-#                 if 'faceseg' in k:
-#                     # Faceseg need to add noise 
-#                     mask =  cond[f'{k}_mask'].bool()
-#                     raw = cond['image']
-#                     assert th.all(mask == cond[f'{k}_mask'])
-#                     tmp_img = (diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(raw) * ~mask)
-#                 else: raise NotImplementedError('Share dpm noise are not support others, except Faceseg.')
-#             elif p is None:
-#                 if use_render_itp: 
-#                     tmp_img = cond[f'{k}']
-#                 else: 
-#                     tmp_img = cond[f'{k}_img']
-#             else: raise NotImplementedError("[#] Only \"share_dpm_noise\" is available.")
-#             cond_img.append(tmp_img)
-#         cond['cond_img'] = th.cat((cond_img), dim=1).to(device)
-#     else:
-#         cond['cond_img'] = None
-        
-#     return cond
 
 def prepare_cond_sampling(dat, cond, cfg, use_render_itp=False, device='cuda'):
     """
@@ -196,6 +162,28 @@ def prepare_cond_sampling(dat, cond, cfg, use_render_itp=False, device='cuda'):
         
     return cond
 
+def progressive_noise(dat, cond, keys, diffusion, noise=None, device='cuda'):
+    noise_img = {}
+    for k in keys:
+        if 'faceseg' in k:
+            xt_all = []
+            dat = dat.to(device)
+            if noise is None:
+                noise = th.randn_like(dat).to(device)
+            for i in range(diffusion.num_timesteps):
+                t = th.tensor([i] * dat.shape[0], device=device)
+                if 'faceseg' in k:
+                    mask =  cond[f'{k}_mask'].bool()
+                    assert th.all(mask == cond[f'{k}_mask'])
+                    mask = mask.to(device)
+                    xt = (diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
+                else: raise NotImplementedError('Share dpm noise are not support others, except Faceseg.')
+                xt_all.append(xt)
+            noise_img[f'{k}_xt'] = th.stack((xt_all), dim=0).detach().cpu().numpy()  # Save memory!
+        else:
+            pass
+    return noise_img
+        
 def build_condition_image(cond, misc):
     src_idx = misc['src_idx']
     dst_idx = misc['dst_idx']

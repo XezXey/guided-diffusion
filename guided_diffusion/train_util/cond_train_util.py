@@ -52,7 +52,7 @@ class TrainLoop(LightningModule):
         diffusion,
         train_loader,
         cfg,
-        tb_logger,
+        t_logger,
         schedule_sampler=None,
     ):
 
@@ -62,12 +62,12 @@ class TrainLoop(LightningModule):
         # Lightning
         self.n_gpus = self.cfg.train.n_gpus
         self.num_nodes = self.cfg.train.num_nodes
-        self.tb_logger = tb_logger
+        self.t_logger = t_logger
         self.pl_trainer = pl.Trainer(
             devices=self.n_gpus,
             num_nodes=self.num_nodes,
             accumulate_grad_batches=cfg.train.accumulate_grad_batches, 
-            logger=self.tb_logger,
+            logger=self.t_logger,
             log_every_n_steps=self.cfg.train.log_interval,
             max_epochs=1e6,
             accelerator=cfg.train.accelerator,
@@ -112,7 +112,7 @@ class TrainLoop(LightningModule):
 
         self.step = 0
         self.resume_step = 0
-
+        
         # Load model checkpoints
         self.load_ckpt()
 
@@ -124,7 +124,7 @@ class TrainLoop(LightningModule):
             sum([list(self.model_trainer_dict[name].master_params) for name in self.model_trainer_dict.keys()], []),
             lr=self.lr, weight_decay=self.weight_decay
         )
-
+        
         # Initialize ema_parameters
         if self.resume_step:
             self._load_optimizer_state()
@@ -274,10 +274,9 @@ class TrainLoop(LightningModule):
         }
 
         t, weights = self.schedule_sampler.sample(batch.shape[0], self.device)
-        noise = th.randn_like(batch)
         
         #NOTE: Prepare condition : Utilize the same schedule from DPM, Add background or any condition.
-        cond = self.prepare_cond_train(dat=batch, cond=cond, noise=noise, t=t)
+        cond = self.prepare_cond_train(dat=batch, cond=cond, t=t)
         
         cond = self.forward_cond_network(cond)
         
@@ -289,7 +288,6 @@ class TrainLoop(LightningModule):
             t,
             cfg=self.cfg,
             model_kwargs=cond,
-            noise=noise
         )
         model_losses, _ = model_compute_losses()
 
@@ -307,7 +305,7 @@ class TrainLoop(LightningModule):
             )
 
 
-    def prepare_cond_train(self, dat, cond, noise, t):
+    def prepare_cond_train(self, dat, cond, t, noise=None):
         """
         Prepare a condition for encoder network (e.g., adding noise, share noise with DPM)
         :param noise: noise map used in DPM
@@ -315,39 +313,35 @@ class TrainLoop(LightningModule):
         :param model_kwargs: model_kwargs dict
         """
         
-        if self.cfg.img_model.apply_dpm_cond_img:
-            dpm_cond_img = []
-            for k, p in zip(self.cfg.img_model.dpm_cond_img, self.cfg.img_model.noise_dpm_cond_img):
-                if p == 'share_dpm_noise':
-                    if 'faceseg' in k:
-                        mask =  cond[f'{k}_mask'].bool()
-                        assert th.all(mask == cond[f'{k}_mask'])
-                        tmp_img = (self.diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
-                    else: raise NotImplementedError('Share dpm noise are not support others, except Faceseg.')
-                elif p is None:
-                    tmp_img = cond[f'{k}_img']
-                else: raise NotImplementedError("[#] Only \"share_dpm_noise\" is available.")
-                dpm_cond_img.append(tmp_img)
-
-            cond['dpm_cond_img'] = th.cat((dpm_cond_img), dim=1)
-        else:
-            cond['dpm_cond_img'] = None
-            
-        if self.cfg.img_cond_model.apply:
+        def construct_cond_tensor(pair_cfg, cond):
             cond_img = []
-            for k, p in zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.add_noise_image):
-                if p == 'share_dpm_noise':
-                    if 'faceseg' in k:
-                        mask =  cond[f'{k}_mask'].bool()
-                        assert th.all(mask == cond[f'{k}_mask'])
-                        tmp_img = (self.diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
-                    else: raise NotImplementedError('Share dpm noise are not support others, except Faceseg.')
+            for k, p in pair_cfg:
+                if p == 'share_dpm_noise_masking' and noise is not None:
+                    assert 'faceseg' in k
+                    mask =  cond[f'{k}_mask'].bool()
+                    assert th.all(mask == cond[f'{k}_mask'])
+                    tmp_img = (self.diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
+                elif p == 'share_dpm_schedule':
+                    assert 'faceseg' in k
+                    tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t)
                 elif p is None:
                     tmp_img = cond[f'{k}_img']
                 else: raise NotImplementedError("[#] Only \"share_dpm_noise\" is available.")
                 cond_img.append(tmp_img)
 
-            cond['cond_img'] = th.cat((cond_img), dim=1)
+            return th.cat((cond_img), dim=1)
+        
+        if self.cfg.img_model.apply_dpm_cond_img:
+            cond['dpm_cond_img'] = construct_cond_tensor(pair_cfg=zip(self.cfg.img_model.dpm_cond_img, 
+                                                                      self.cfg.img_model.noise_dpm_cond_img),
+                                                         cond=cond)
+        else:
+            cond['dpm_cond_img'] = None
+            
+        if self.cfg.img_cond_model.apply:
+            cond['cond_img'] = construct_cond_tensor(pair_cfg=zip(self.cfg.img_cond_model.in_image, 
+                                                                  self.cfg.img_cond_model.noise_dpm_cond_img),
+                                                     cond=cond)
         else:
             cond['cond_img'] = None
             
@@ -372,7 +366,7 @@ class TrainLoop(LightningModule):
             
         if self.cfg.img_cond_model.apply:
             cond_img = []
-            for k, p in zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.add_noise_image):
+            for k, p in zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.noise_dpm_cond_img):
                 tmp_img = cond[f'{k}_img']
                 cond_img.append(tmp_img)
             cond['cond_img'] = th.cat((cond_img), dim=1)
@@ -440,7 +434,6 @@ class TrainLoop(LightningModule):
         self.eval_mode(model=sampling_model_dict)
 
         step_ = float(self.step + self.resume_step)
-        tb = self.tb_logger.experiment
         H = W = self.cfg.img_model.image_size
 
         if self.cfg.train.same_sampling:
@@ -468,7 +461,8 @@ class TrainLoop(LightningModule):
             
         # Source Image
         source_img = convert2rgb(dat, bound=self.input_bound) / 255.
-        tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(source_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        # tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(source_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        self.t_logger.log_image(key=f'{sampling_model} - conditioned_image', images=[make_grid(source_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
         # Condition Image
         if cond['dpm_cond_img'] is not None:
@@ -480,7 +474,8 @@ class TrainLoop(LightningModule):
                 s += c
             cond_img = th.cat((cond_img), dim=0)
             cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.
-            tb.add_image(tag=f'conditioned_image (UNet)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+            # tb.add_image(tag=f'conditioned_image (UNet)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+            self.t_logger.log_image(key=f'{sampling_model} - conditioned_image (UNet)', images=[make_grid(cond_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
         if cond['cond_img'] is not None:
             cond_img = []
@@ -491,7 +486,8 @@ class TrainLoop(LightningModule):
                 s += c
             cond_img = th.cat((cond_img), dim=0)
             cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.
-            tb.add_image(tag=f'conditioned_image (Encoder)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+            # tb.add_image(tag=f'conditioned_image (Encoder)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+            self.t_logger.log_image(key=f'{sampling_model} - conditioned_image (Encoder)', images=[make_grid(cond_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
         # N(0, 1) Sampling
         ddim_sample, _ = self.diffusion.ddim_sample_loop(
@@ -503,7 +499,8 @@ class TrainLoop(LightningModule):
         )
         # ddim_sample_plot = convert2rgb(ddim_sample['sample'], bound=self.input_bound) / 255.
         ddim_sample_plot = ((ddim_sample['sample'] + 1) * 127.5) / 255.
-        tb.add_image(tag=f'{sampling_model} - ddim_sample', img_tensor=make_grid(ddim_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        # tb.add_image(tag=f'{sampling_model} - ddim_sample', img_tensor=make_grid(ddim_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        self.t_logger.log_image(key=f'{sampling_model} - ddim_sample', images=[make_grid(ddim_sample_plot, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
         # Reverse Sampling
         ddim_reverse_sample, _ = self.diffusion.ddim_reverse_sample_loop(
@@ -515,7 +512,8 @@ class TrainLoop(LightningModule):
         
         # ddim_reverse_sample_plot = convert2rgb(ddim_reverse_sample['sample'], bound=self.input_bound) / 255.
         ddim_reverse_sample_plot = ((ddim_reverse_sample['sample'] + 1) * 127.5) / 255.
-        tb.add_image(tag=f'{sampling_model} - ddim_reverse_sample (xT)', img_tensor=make_grid(ddim_reverse_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        # tb.add_image(tag=f'{sampling_model} - ddim_reverse_sample (xT)', img_tensor=make_grid(ddim_reverse_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        self.t_logger.log_image(key=f'{sampling_model} - ddim_reverse_sample (xT)', images=[make_grid(ddim_reverse_sample_plot, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
         ddim_recon_sample, _ = self.diffusion.ddim_sample_loop(
             model=sampling_model_dict[self.cfg.img_model.name],
@@ -527,7 +525,8 @@ class TrainLoop(LightningModule):
         
         # ddim_recon_sample_plot = convert2rgb(ddim_recon_sample['sample']) / 255.
         ddim_recon_sample_plot = ((ddim_recon_sample['sample'] + 1) * 127.5) / 255.
-        tb.add_image(tag=f'{sampling_model} - ddim_recon_sample (x0)', img_tensor=make_grid(ddim_recon_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        # tb.add_image(tag=f'{sampling_model} - ddim_recon_sample (x0)', img_tensor=make_grid(ddim_recon_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+        self.t_logger.log_image(key=f'{sampling_model} - ddim_recon_sample (x0)', images=[make_grid(ddim_recon_sample_plot, nrow=4)], step=(step_ + 1) * self.n_gpus)
 
         # Save memory!
         dat = dat.detach()
@@ -558,10 +557,8 @@ class TrainLoop(LightningModule):
             th.save(self.opt.state_dict(), f)
 
     def configure_optimizers(self):
-        self.opt = AdamW(
-            sum([list(self.model_trainer_dict[name].master_params) for name in self.model_trainer_dict.keys()], []),
-            lr=self.lr, weight_decay=self.weight_decay
-        )
+        print("[#] Optimizer")
+        print(self.opt)
         return self.opt
 
     @rank_zero_only

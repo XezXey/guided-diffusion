@@ -98,6 +98,23 @@
             "justMyCode": true
         },
         {
+            "name": "Python: train_UNet_Bg_dpm_schedule",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"1"},
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "5",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/CVPRs/WD-Hypertuning/Masked_Face_woclip+UNet_Bg_dpm_schedule_WD0.yaml",
+                    "--train.save_interval", "5000",
+                    "--train.sampling_interval", "50"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
             "name": "Python: train_Bg_dpmnoise",
             "type": "python",
             "request": "launch",
@@ -997,7 +1014,7 @@
                     "--out_dir", "/data/mint/sampling/test_addnoise/", 
                     "--cfg_name", "Masked_Face_woclip+UNet_Bg_dpmnoise.yaml", 
                     "--log_dir", "Masked_Face_woclip+UNet_Bg_dpmnoise", 
-                    "--diffusion_steps", "25",
+                    "--diffusion_steps", "1000",
                     "--reverse_sampling",
                     "--seed", "47",
                     "--sample_pair_json", "./hard_samples.json",
@@ -1005,7 +1022,7 @@
                     "--interpolate", "render_face",
                     "--interpolate_step", "5",
                     "--n_subject", "2",
-                    "--gpu_id", "2",
+                    "--gpu_id", "1",
                     "--slerp",
                 ],
             "console": "integratedTerminal",

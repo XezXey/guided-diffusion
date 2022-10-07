@@ -2,10 +2,11 @@
 Train a diffusion model on images.
 """
 
+import os
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import TensorBoardLogger
-from config.base_config import parse_args
 from guided_diffusion import logger
+from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
+from config.base_config import parse_args
 from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
 from guided_diffusion.resample import create_named_schedule_sampler
 from guided_diffusion.script_util import (
@@ -42,7 +43,9 @@ def main():
     )
 
     logger.log("[#] Training...")
-    tb_logger = TensorBoardLogger("tb_logs", name="diffusion", version=cfg.train_misc.exp_name, sub_dir=cfg.train_misc.cfg_name)
+    # logger = TensorBoardLogger("tb_logs", name="diffusion", version=cfg.train_misc.exp_name, sub_dir=cfg.train_misc.cfg_name)
+    os.makedirs(cfg.train.logger_dir, exist_ok=True)
+    t_logger = WandbLogger(project='Relighting-DPM', save_dir=cfg.train.logger_dir, tags=[cfg.train_misc.exp_name], name=cfg.train_misc.cfg_name)
 
     train_loop = TrainLoop(
         model=list(img_model.values()),
@@ -50,7 +53,7 @@ def main():
         diffusion=diffusion,
         train_loader=train_loader,
         cfg=cfg,
-        tb_logger=tb_logger,
+        t_logger=t_logger,
         schedule_sampler=schedule_sampler,
     )
     

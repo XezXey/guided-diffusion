@@ -145,7 +145,7 @@ cfg.img_cond_model.pool = 'attention'
 cfg.img_cond_model.override_cond = ""
 cfg.img_cond_model.xtra_cond = ""
 cfg.img_cond_model.prep_image = [None]
-cfg.img_cond_model.add_noise_image = [None]
+cfg.img_cond_model.noise_dpm_cond_img = [None]
 cfg.img_cond_model.prep = [None]
 
 # ---------------------------------------------------------------------------- #
@@ -192,6 +192,7 @@ cfg.train.same_sampling = True
 cfg.train.sampling_model = "ema"
 cfg.train.resume_checkpoint = ""
 cfg.train.log_dir = "./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_image"))
+cfg.train.logger_dir = "/data/mint/wandb_logs/"
 cfg.train.n_gpus = 1
 cfg.train.num_nodes = 1
 cfg.train.accelerator = 'gpu'
