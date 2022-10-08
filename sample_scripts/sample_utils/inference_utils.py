@@ -72,19 +72,18 @@ class PLSampling(pl.LightningModule):
             assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
         return {"final_output":sample, "intermediate":intermediate}
     
-def cond_xt_fn(cond, i, cfg, use_render_itp, device='cuda'):
+def cond_xt_fn(cond, cfg, use_render_itp, t, diffusion, device='cuda'):
     #NOTE: This specifically run for ['dpm_cond_img']
-    #TODO: T
-    # 1. extract the condition of x_t=i 
-    # 2. rebuild the dpm_cond_img from extracted x_t=i
-    
-    # if True:
     if cfg.img_model.apply_dpm_cond_img:
         dpm_cond_img = []
         for k in cfg.img_model.dpm_cond_img:
-            if (f'{k}_xt' in cond.keys()) and ('faceseg' in k):
-                xt_img = th.tensor(cond[f'{k}_xt'][i]).to(device)
-                dpm_cond_img.append(xt_img)
+            if 'faceseg' in k:
+                if use_render_itp:
+                    xt_img = diffusion.q_sample(cond[f'{k}'], t)
+                    dpm_cond_img.append(xt_img)
+                else:
+                    xt_img = diffusion.q_sample(cond[f'{k}_img'], t)
+                    dpm_cond_img.append(xt_img)
             else:
                 if use_render_itp: 
                     tmp_img = cond[f'{k}']
@@ -228,7 +227,10 @@ def build_condition_image(cond, misc):
     for i, cond_img_name in enumerate(condition_img):
         if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name):
             bg_tmp = [cond[f"{cond_img_name}_img"][src_idx]] * n_step
-            bg_tmp = np.stack(bg_tmp, axis=0)
+            if th.is_tensor(cond[f"{cond_img_name}_img"][src_idx]):
+                bg_tmp = th.stack(bg_tmp, axis=0)
+            else:
+                bg_tmp = np.stack(bg_tmp, axis=0)
             cond[f"{cond_img_name}"] = th.tensor(bg_tmp)
         elif 'deca' in cond_img_name:
             rendered_tmp = []

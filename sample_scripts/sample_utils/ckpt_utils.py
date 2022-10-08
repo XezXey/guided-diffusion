@@ -21,11 +21,12 @@ class CkptLoader():
             if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0:
                self.device = 'cuda' 
             else : self.device = 'cpu'
+            
                 
 
     # Config file
     def get_cfg(self):
-        cfg_file_path = glob.glob("/home/mint/guided-diffusion/config/*/*", recursive=True)
+        cfg_file_path = glob.glob("/home/mint/guided-diffusion/config/**", recursive=True)
         cfg_file_path = [cfg_path for cfg_path in cfg_file_path if f"/{self.cfg_name}" in cfg_path]    # Add /{}/ to achieve a case-sensitive of folder
         print("[#] Config Path : ", cfg_file_path)
         assert len(cfg_file_path) <= 1

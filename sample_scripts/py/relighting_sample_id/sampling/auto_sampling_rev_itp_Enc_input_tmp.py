@@ -282,11 +282,9 @@ if __name__ == '__main__':
         model_kwargs = inference_utils.prepare_cond_sampling(dat=dat, cond=model_kwargs, cfg=cfg)
         model_kwargs['cfg'] = cfg
         model_kwargs['use_cond_xt_fn'] = False
-        if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):
+        if (cfg.img_model.apply_dpm_cond_img) and ('share_dpm_noise' in cfg.img_model.noise_dpm_cond_img):
             model_kwargs['use_cond_xt_fn'] = True
-            for k in cfg.img_model.dpm_cond_img:
-                model_kwargs[f'{k}_img'] = model_kwargs[f'{k}_img'].to(device)
-            
+            model_kwargs.update(inference_utils.progressive_noise(dat=dat, cond=model_kwargs, diffusion=diffusion, keys=dataset.condition_image))
         if args.uncond_sampling:
             # Input
             cond = copy.deepcopy(model_kwargs)
@@ -350,7 +348,6 @@ if __name__ == '__main__':
                                         bound=cfg.img_model.input_bound)
 
         if args.lerp:
-            model_kwargs['use_render_itp'] = True
             without_classifier(itp_func=mani_utils.lerp, 
                             src_idx=src_idx, src_id=src_id,
                             dst_idx=dst_idx, dst_id=dst_id,
@@ -362,7 +359,6 @@ if __name__ == '__main__':
                                 model_kwargs=model_kwargs)
                 
         if args.slerp:
-            model_kwargs['use_render_itp'] = True
             without_classifier(itp_func=mani_utils.slerp, 
                             src_idx=src_idx, src_id=src_id,
                             dst_idx=dst_idx, dst_id=dst_id,

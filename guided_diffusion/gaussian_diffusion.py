@@ -613,15 +613,15 @@ class GaussianDiffusion:
         for i in indices:
             # Deep copy to prevent sth that used .pop()
             model_kwargs_copy = make_deepcopyable(model_kwargs, keys=list(model_kwargs.keys()))
+            t = th.tensor([i] * x.shape[0], device=device)
             #TODO: Adding progressive noise to construct the cond_img, dpm_cond_img given t
             if cond_xt_fn is not None:
                 model_kwargs_copy = cond_xt_fn(cond=model_kwargs_copy, 
-                                               i=i, 
+                                               t=t, 
                                                cfg=model_kwargs_copy['cfg'],
-                                               use_render_itp=model_kwargs_copy['use_render_itp']
+                                               use_render_itp=model_kwargs_copy['use_render_itp'],
+                                               diffusion=self
                                                )
-            
-            t = th.tensor([i] * x.shape[0], device=device)
             with th.no_grad():
                 out = self.ddim_reverse_sample(
                     model=model,
@@ -797,14 +797,14 @@ class GaussianDiffusion:
             # Deep copy to prevent sth that used .pop()
             model_kwargs_copy = make_deepcopyable(model_kwargs, keys=list(model_kwargs.keys()))
             #TODO: Adding progressive noise to construct the cond_img, dpm_cond_img given t
+            t= th.tensor([i] * shape[0], device=device)
             if cond_xt_fn is not None:
                 model_kwargs_copy = cond_xt_fn(cond=model_kwargs_copy, 
-                                               i=i, 
+                                               t=t, 
                                                cfg=model_kwargs_copy['cfg'],
-                                               use_render_itp=model_kwargs_copy['use_render_itp']
+                                               use_render_itp=model_kwargs_copy['use_render_itp'],
+                                               diffusion=self
                                                )
-
-            t= th.tensor([i] * shape[0], device=device)
             with th.no_grad():
                 out = self.ddim_sample(
                     model,
