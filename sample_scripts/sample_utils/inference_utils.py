@@ -74,16 +74,29 @@ class PLSampling(pl.LightningModule):
     
 def cond_xt_fn(cond, cfg, use_render_itp, t, diffusion, device='cuda'):
     #NOTE: This specifically run for ['dpm_cond_img']
+    
+    def faceseg_dpm_noise(x_start, p, k):
+        if p == 'share_dpm_noise_masking':
+            img = cond['image']
+            mask =  cond[f'{k}_mask'].bool()
+            assert th.all(mask == cond[f'{k}_mask'])
+            xt = (diffusion.q_sample(img, t) * mask) + (-th.ones_like(img) * ~mask)
+        elif p == 'share_dpm_schedule':
+            xt = diffusion.q_sample(x_start, t)
+        else: raise NotImplementedError("[#] Share noise mode is not available.")
+        
+        return xt
+    
     if cfg.img_model.apply_dpm_cond_img:
         dpm_cond_img = []
-        for k in cfg.img_model.dpm_cond_img:
+        for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
             if 'faceseg' in k:
                 if use_render_itp:
-                    xt_img = diffusion.q_sample(cond[f'{k}'], t)
-                    dpm_cond_img.append(xt_img)
+                    xt = faceseg_dpm_noise(x_start=cond[f'{k}'], p=p, k=k)
+                    dpm_cond_img.append(xt)
                 else:
-                    xt_img = diffusion.q_sample(cond[f'{k}_img'], t)
-                    dpm_cond_img.append(xt_img)
+                    xt = faceseg_dpm_noise(x_start=cond[f'{k}_img'], p=p, k=k)
+                    dpm_cond_img.append(xt)
             else:
                 if use_render_itp: 
                     tmp_img = cond[f'{k}']

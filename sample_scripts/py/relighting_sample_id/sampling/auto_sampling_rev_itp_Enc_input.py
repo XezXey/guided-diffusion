@@ -89,7 +89,12 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
             'itp_func':itp_func,
             'img_size':cfg.img_model.image_size,
             'deca_obj':deca_obj
-            }
+            }  
+    # This is for the noise_dpm_cond_img
+    cond['image'] = th.stack([cond['image'][src_idx]] * n_step, dim=0)
+    for k in cfg.img_model.dpm_cond_img:
+        cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
+    
     cond, clip_ren = inference_utils.build_condition_image(cond=cond, misc=misc)
     cond = inference_utils.prepare_cond_sampling(dat=dat, cond=cond, cfg=cfg, use_render_itp=True)
     
@@ -235,7 +240,10 @@ if __name__ == '__main__':
     
     data_size = dataset.__len__()
     img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
-    all_img_idx, all_img_name, args.n_subject = mani_utils.get_samples_list(args.sample_pair_json, args.sample_pair_mode, args.src_dst, img_path, args.n_subject)
+    all_img_idx, all_img_name, args.n_subject = mani_utils.get_samples_list(args.sample_pair_json, 
+                                                                            args.sample_pair_mode, 
+                                                                            args.src_dst, img_path, 
+                                                                            args.n_subject)
     
     
     if np.any(['deca_masked' in n for n in list(filter(None, dataset.condition_image))]):
@@ -284,8 +292,12 @@ if __name__ == '__main__':
         model_kwargs['use_cond_xt_fn'] = False
         if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):
             model_kwargs['use_cond_xt_fn'] = True
-            for k in cfg.img_model.dpm_cond_img:
+            for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
                 model_kwargs[f'{k}_img'] = model_kwargs[f'{k}_img'].to(device)
+                if p == 'share_dpm_noise_masking':
+                    model_kwargs[f'{k}_mask'] = model_kwargs[f'{k}_mask'].to(device)
+                    model_kwargs['image'] = model_kwargs['image'].to(device)
+                
             
         if args.uncond_sampling:
             # Input
