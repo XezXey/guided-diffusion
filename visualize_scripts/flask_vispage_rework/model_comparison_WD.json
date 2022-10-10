@@ -1,32 +1,32 @@
  {
-    "log=Masked_Face_woclip+Bg_cfg=Masked_Face_woclip+Bg.yaml" :  {
+    "log=Masked_Face_woclip+UNet_Bg_dpm_schedule_WD1e-1_cfg=Masked_Face_woclip+UNet_Bg_dpm_schedule_WD1e-1.yaml" :  {
         "step":"ema_050000", 
-        "itp":"spatial_latent", 
-        "alias":"Face + Bg (128x128)"
+        "itp":"render_face", 
+        "alias":"WD=1-e1"
     },
-    "log=Masked_Face_woclip+Bg_clip5e-1_cfg=Masked_Face_woclip+Bg_clip5e-1.yaml" :  {
+    "log=Masked_Face_woclip+UNet_Bg_dpm_schedule_WD75e-3_cfg=Masked_Face_woclip+UNet_Bg_dpm_schedule_WD75e-3.yaml" :  {
         "step":"ema_050000", 
-        "itp":"spatial_latent", 
-        "alias":"Face + Bg (128x128), clip +- 0.5"
+        "itp":"render_face", 
+        "alias":"WD=75e-3"
     },
-    "log=Masked_Face_woclip+Bg+WD0.yaml_cfg=Masked_Face_woclip+Bg+WD0.yaml" :  {
-        "step":"ema_100000", 
-        "itp":"spatial_latent", 
-        "alias":"Face + Bg (64x64), WD=0"
+    "log=Masked_Face_woclip+UNet_Bg_dpm_schedule_WD5e-2_cfg=Masked_Face_woclip+UNet_Bg_dpm_schedule_WD5e-2.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"WD=5e-2"
     },
-    "log=Masked_Face_woclip+Bg+WD1e-3.yaml_cfg=Masked_Face_woclip+Bg+WD1e-3.yaml" :  {
-        "step":"ema_100000", 
-        "itp":"spatial_latent", 
-        "alias":"Face + Bg (64x64), WD=0.001"
+    "log=Masked_Face_woclip+UNet_Bg_dpm_schedule_WD1e-2_cfg=Masked_Face_woclip+UNet_Bg_dpm_schedule_WD1e-2.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"WD=1e-2"
     },
-    "log=Masked_Face_woclip+Bg+WD1e-2.yaml_cfg=Masked_Face_woclip+Bg+WD1e-2.yaml" :  {
-        "step":"ema_100000", 
-        "itp":"spatial_latent", 
-        "alias":"Face + Bg (64x64), WD=0.01"
+    "log=Masked_Face_woclip+UNet_Bg_dpm_schedule_WD1e-3_cfg=Masked_Face_woclip+UNet_Bg_dpm_schedule_WD1e-3.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"WD=1e-3"
     },
-    "log=Masked_Face_woclip+Bg+WD5e-2.yaml_cfg=Masked_Face_woclip+Bg+WD5e-2.yaml" :  {
-        "step":"ema_100000", 
-        "itp":"spatial_latent", 
-        "alias":"Face + Bg (64x64), WD=0.05"
+    "log=Masked_Face_woclip+UNet_Bg_dpm_schedule_WD0_cfg=Masked_Face_woclip+UNet_Bg_dpm_schedule_WD0.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"WD=0"
     }
 }

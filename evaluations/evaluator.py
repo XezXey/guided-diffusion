@@ -45,6 +45,7 @@ class Evaluator():
             # Score & Map
             lpips_score = self.lpips(img1=pred_, img2=gt_)
             ssim_score, ssim_map = self.ssim(pred_, gt_)
+            #TODO: Might need to use ssim map to 
             dssim_score = (1 - ssim_score) / 2 
             mse_score = self.mse(pred_, gt_)
             

@@ -274,9 +274,10 @@ class TrainLoop(LightningModule):
         }
 
         t, weights = self.schedule_sampler.sample(batch.shape[0], self.device)
+        noise = th.randn_like(batch)
         
         #NOTE: Prepare condition : Utilize the same schedule from DPM, Add background or any condition.
-        cond = self.prepare_cond_train(dat=batch, cond=cond, t=t)
+        cond = self.prepare_cond_train(dat=batch, cond=cond, t=t, noise=noise)
         
         cond = self.forward_cond_network(cond)
         
@@ -286,7 +287,7 @@ class TrainLoop(LightningModule):
             self.model_dict[self.cfg.img_model.name],
             batch,
             t,
-            cfg=self.cfg,
+            noise=noise,
             model_kwargs=cond,
         )
         model_losses, _ = model_compute_losses()
@@ -316,17 +317,25 @@ class TrainLoop(LightningModule):
         def construct_cond_tensor(pair_cfg, cond):
             cond_img = []
             for k, p in pair_cfg:
-                if p == 'share_dpm_noise_masking' and noise is not None:
-                    assert 'faceseg' in k
-                    mask =  cond[f'{k}_mask'].bool()
-                    assert th.all(mask == cond[f'{k}_mask'])
-                    tmp_img = (self.diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
-                elif p == 'share_dpm_schedule':
-                    assert 'faceseg' in k
-                    tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t)
-                elif p is None:
+                if p is None:
                     tmp_img = cond[f'{k}_img']
-                else: raise NotImplementedError("[#] Only \"share_dpm_noise\" is available.")
+                else:
+                    assert 'faceseg' in k
+                    share = True if p.split('-')[0] == 'share' else False
+                    masking = p.split('-')[-1]
+                    if masking == 'dpm_noise_masking':
+                        mask =  cond[f'{k}_mask'].bool()
+                        assert th.all(mask == cond[f'{k}_mask'])
+                        if share:
+                            tmp_img = (self.diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
+                        else:
+                            tmp_img = (self.diffusion.q_sample(dat, t) * mask) + (-th.ones_like(dat) * ~mask)
+                    elif masking == 'dpm_noise':
+                        if share:
+                            tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t, noise=noise)
+                        else:
+                            tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t)
+                    else: raise NotImplementedError("[#] Only dpm_noise_masking and dpm_noise is available")
                 cond_img.append(tmp_img)
 
             return th.cat((cond_img), dim=1)

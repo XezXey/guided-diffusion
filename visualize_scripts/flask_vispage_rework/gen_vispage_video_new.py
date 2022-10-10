@@ -39,7 +39,7 @@ def create_app():
         out += f"<a href=\"/best_diff_step_img\">Best diffusion-step (Image)</a> <br>"
         out += f"<a href=\"/uncond_vs_reverse\"> Uncondition Vs. Reverse sampling </a> <br>"
         out += f"<a href=\"/intermediate_step\"> Visualize the intermediate step </a> <br>"
-        out += f"<a href=\"/model_comparison_from_json/itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse/\">Model comparison (From json)</a> <br>"
+        out += f"<a href=\"/model_comparison_from_json/itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse&ckpt=050000/\">Model comparison (From json)</a> <br>"
         return out
 
     @app.route('/best_checkpoint_vid/')
@@ -330,13 +330,17 @@ def create_app():
             
         return out
 
-    @app.route('/model_comparison_from_json/itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>/')
-    def model_comparison_from_json(itp_method, n_frame, diff_step, sampling):
+
+    @app.route('/model_comparison_from_json/itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>&ckpt=<ckpt>/')
+    def model_comparison_from_json(itp_method, n_frame, diff_step, sampling, ckpt):
+        
+        print(ckpt)
         out = """<style>
                 th, tr, td{
                     border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
                 }
                 </style>"""
+        out+= ckpt
         f = open(args.compare_json)
         ckpt_dict = json.load(f)
         model = list(ckpt_dict.keys())
@@ -354,9 +358,13 @@ def create_app():
             out += f"[#{s_id}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
             out += create_hide(model, s_id)
             for m_id, m in enumerate(model):
+                if ckpt == 'json':
+                    vis_ckpt = step = ckpt_dict[m]['step']
+                else:
+                    vis_ckpt = step = f'ema_{ckpt}'
+                    
                 out += f"<tr id={s_id}_{m_id}>"
-                out += f"<td> {m_id} : {ckpt_dict[m]['alias']} <br> ({ckpt_dict[m]['step']}) </td>"
-                step = ckpt_dict[m]['step']
+                out += f"<td> {m_id} : {ckpt_dict[m]['alias']} <br> ({vis_ckpt}) </td>"
                 itp = ckpt_dict[m]['itp']
                 each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/{step}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/"
                 frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
