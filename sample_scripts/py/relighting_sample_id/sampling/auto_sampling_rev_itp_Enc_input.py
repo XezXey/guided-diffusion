@@ -91,9 +91,10 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
             'deca_obj':deca_obj
             }  
     # This is for the noise_dpm_cond_img
-    cond['image'] = th.stack([cond['image'][src_idx]] * n_step, dim=0)
-    for k in cfg.img_model.dpm_cond_img:
-        cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
+    if cfg.img_model.apply_dpm_cond_img:
+        cond['image'] = th.stack([cond['image'][src_idx]] * n_step, dim=0)
+        for k in cfg.img_model.dpm_cond_img:
+            cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
     
     cond, clip_ren = inference_utils.build_condition_image(cond=cond, misc=misc)
     cond = inference_utils.prepare_cond_sampling(dat=dat, cond=cond, cfg=cfg, use_render_itp=True)

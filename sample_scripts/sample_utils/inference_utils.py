@@ -72,19 +72,34 @@ class PLSampling(pl.LightningModule):
             assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
         return {"final_output":sample, "intermediate":intermediate}
     
-def cond_xt_fn(cond, cfg, use_render_itp, t, diffusion, device='cuda'):
+def cond_xt_fn(cond, cfg, use_render_itp, t, diffusion, noise, device='cuda'):
     #NOTE: This specifically run for ['dpm_cond_img']
     
     def faceseg_dpm_noise(x_start, p, k):
-        if p == 'share_dpm_noise_masking':
-            img = cond['image']
+        # if p == 'share_dpm_noise_masking':
+        #     img = cond['image']
+        #     mask =  cond[f'{k}_mask'].bool()
+        #     assert th.all(mask == cond[f'{k}_mask'])
+        #     xt = (diffusion.q_sample(img, t) * mask) + (-th.ones_like(img) * ~mask)
+        # elif p == 'share_dpm_schedule':
+        #     xt = diffusion.q_sample(x_start, t)
+        
+        share = True if p.split('-')[0] == 'share' else False
+        masking = p.split('-')[-1]
+        if masking == 'dpm_noise_masking':
+            dat = cond['image']
             mask =  cond[f'{k}_mask'].bool()
             assert th.all(mask == cond[f'{k}_mask'])
-            xt = (diffusion.q_sample(img, t) * mask) + (-th.ones_like(img) * ~mask)
-        elif p == 'share_dpm_schedule':
-            xt = diffusion.q_sample(x_start, t)
-        else: raise NotImplementedError("[#] Share noise mode is not available.")
-        
+            if share:
+                xt = (diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
+            else:
+                xt = (diffusion.q_sample(dat, t) * mask) + (-th.ones_like(dat) * ~mask)
+        elif masking == 'dpm_noise':
+            if share:
+                xt = diffusion.q_sample(cond[f'{k}_img'], t, noise=noise)
+            else:
+                xt = diffusion.q_sample(cond[f'{k}_img'], t)
+        else: raise NotImplementedError("[#] Only dpm_noise_masking and dpm_noise is available")
         return xt
     
     if cfg.img_model.apply_dpm_cond_img:
@@ -207,6 +222,7 @@ def build_condition_image(cond, misc):
     img_size = misc['img_size']
     itp_func = misc['itp_func']
     deca_obj = misc['deca_obj']
+    clip_ren = None
     
     if np.any(['deca' in i for i in condition_img]):
         # Render the face
