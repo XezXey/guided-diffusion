@@ -33,8 +33,8 @@ relighting:
   use_SH: False
 
 dataset:
-  # root_path: "/ist/ist-share/vision/mint/DPM_Dataset/"
-  root_path: "/data/mint/DPM_Dataset/"
+  root_path: "/ist/ist-share/vision/mint/DPM_Dataset/"
+  # root_path: "/data/mint/DPM_Dataset/"
   training_data: "ffhq_256_with_anno"
 
 train:
