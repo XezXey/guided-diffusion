@@ -35,11 +35,11 @@ class PLSampling(pl.LightningModule):
             # Override the condition and re-create cond_params
             if self.cfg.img_cond_model.override_cond != "":
                 model_kwargs[self.cfg.img_cond_model.override_cond] = img_cond
-                if self.cfg.img_cond_model.override_cond in ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'img_latent']:
-                    tmp = []
-                    for p in self.cfg.param_model.params_selector:
-                        tmp.append(model_kwargs[p].to(dat.device))
-                    model_kwargs['cond_params'] = th.cat(tmp, dim=-1)
+                # if self.cfg.img_cond_model.override_cond in ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'img_latent']:
+                #     tmp = []
+                #     for p in self.cfg.param_model.params_selector:
+                #         tmp.append(model_kwargs[p].to(dat.device))
+                #     model_kwargs['cond_params'] = th.cat(tmp, dim=-1)
             else: raise NotImplementedError
         return model_kwargs
 

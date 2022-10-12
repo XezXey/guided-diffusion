@@ -160,6 +160,7 @@ def interp_noise(src_noise, dst_noise, n_step, interp_fn=lerp):
     return interp
 
 def repeat_cond_params(cond, base_idx, n, key):
+    print("[#] Repeating cond : ", key)
     repeat = {}
     for p in key:
         if th.is_tensor(cond[p][[base_idx]]):

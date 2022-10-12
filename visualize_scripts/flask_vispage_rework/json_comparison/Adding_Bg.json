@@ -39,6 +39,11 @@
         "step":"ema_050000", 
         "itp":"render_face", 
         "alias":"Enc(Face + Bg) + Non-spatial(Arcface) (128x128)"
+    },
+    "log=DiffAE_cfg=DiffAE.yaml" :  {
+        "step":"ema_030000", 
+        "itp":"render_face", 
+        "alias":"DiffAE (128x128)"
     }
    
 }

@@ -307,6 +307,8 @@ if __name__ == '__main__':
             cond['use_render_itp'] = False
             if cfg.img_cond_model.apply:
                 cond = pl_sampling.forward_cond_network(model_kwargs=cond)
+                
+            cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
             cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
             for i in range(args.uncond_sampling_iters):
                 noise_map = inference_utils.get_init_noise(n=2, mode='fixed_noise', img_size=cfg.img_model.image_size, device=device)
@@ -334,6 +336,8 @@ if __name__ == '__main__':
             cond['use_render_itp'] = False
             if cfg.img_cond_model.apply:
                 cond = pl_sampling.forward_cond_network(model_kwargs=cond)
+                
+            cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
             cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
             
             # Reverse from input image (x0)
