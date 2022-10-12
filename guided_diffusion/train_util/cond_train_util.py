@@ -157,6 +157,8 @@ class TrainLoop(LightningModule):
                 self.model_dict[name].load_state_dict(
                     th.load(ckpt_path, map_location='cpu'),
                 )
+        elif (self.resume_checkpoint != "") and (not found_resume_checkpoint):
+            assert FileNotFoundError(f"[#] Checkpoint not found on {self.resume_checkpoint}")
 
     def _load_optimizer_state(self):
         '''
