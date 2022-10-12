@@ -79,5 +79,5 @@ if __name__ == '__main__':
         print("[#] Mounting the model log from ist-cluster")
         mounting_ist_cluster(from_path="/ist/ist-share/vision/mint/model_logs/", to_path=args.ist_cluster_model_dir)
     if args.ist_cluster_log_dir is not None:
-        mounting_ist_cluster(from_path="/ist/ist-share/vision/mint/wandb_logs/", to_path=args.ist_cluster_log_dir)
+        mounting_ist_cluster(from_path="/ist/ist-share/vision/mint/tb_logs/", to_path=args.ist_cluster_log_dir)
         
