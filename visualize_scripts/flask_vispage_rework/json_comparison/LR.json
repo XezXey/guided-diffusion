@@ -1,0 +1,22 @@
+ {
+    "log=Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_LR1e-2_cfg=Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_LR1e-2.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"LR=1e-2"
+    },
+    "log=Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_LR1e-3_cfg=Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_LR1e-3.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"LR=1e-3"
+    },
+    "log=Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_cfg=Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"LR=1e-4"
+    },
+    "log=Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_LR1e-5_cfg=Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_LR1e-5.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"LR=1e-5"
+    }
+}

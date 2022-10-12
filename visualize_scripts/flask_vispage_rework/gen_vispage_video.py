@@ -7,8 +7,6 @@ sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/sample_utils/')
 import mani_utils, file_utils
 
 
-data_path = "/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/valid/"
-img_path = file_utils._list_image_files_recursively(data_path)
 
 def sort_by_frame(path_list):
     frame_anno = []
@@ -39,7 +37,8 @@ def create_app():
         out += f"<a href=\"/best_diff_step_img\">Best diffusion-step (Image)</a> <br>"
         out += f"<a href=\"/uncond_vs_reverse\"> Uncondition Vs. Reverse sampling </a> <br>"
         out += f"<a href=\"/intermediate_step\"> Visualize the intermediate step </a> <br>"
-        out += f"<a href=\"/model_comparison_from_json/itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse/\">Model comparison (From json)</a> <br>"
+        # out += f"<a href=\"/model_comparison_from_json/itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse&ckpt=050000/\">Model comparison (From json)</a> <br>"
+        out += f"<a href=\"/model_comparison_from_json/\">Model comparison (From json)</a> <br>"
         return out
 
     @app.route('/best_checkpoint_vid/')
@@ -49,7 +48,7 @@ def create_app():
         model = glob.glob(f"{folder}/*")
         for m in model:
             m_name = m.split('/')[-1]
-            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&diff_step=1000&n_frame=30&sampling=reverse\">{m_name}</a> <br>"
+            out += f"<a href=\"show_m_name={m_name}&itp=render_face&itp_method=Slerp&diff_step=1000&n_frame=30&sampling=reverse\">{m_name}</a> <br>"
         return out
 
     @app.route('/best_checkpoint_vid/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>')
@@ -78,7 +77,7 @@ def create_app():
                 out += f"<th>{ckpt.split('/')[-1]}</th>"
             out += "<tr>"
             for ckpt in checkpoint:
-                vid_path = glob.glob(f"{ckpt}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{diff_step}/n_frames={n_frame}/res*.mp4")
+                vid_path = glob.glob(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{diff_step}/n_frames={n_frame}/res*.mp4")
                 if len(vid_path) == 0:
                     out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
                     continue
@@ -104,7 +103,7 @@ def create_app():
         model = glob.glob(f"{folder}/*")
         for m in model:
             m_name = m.split('/')[-1]
-            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse\">{m_name}</a> <br>"
+            out += f"<a href=\"show_m_name={m_name}&itp=render_face&itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse\">{m_name}</a> <br>"
         return out
 
     @app.route('/best_checkpoint_img/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>')
@@ -134,7 +133,7 @@ def create_app():
             for ckpt in checkpoint:
                 out += "<tr>"
                 out += f"<td>{ckpt.split('/')[-1]}</td> "
-                frames = glob.glob(f"{ckpt}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
+                frames = glob.glob(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
                 out += "<td>"
                 if len(frames) > 0:
                     frames = sort_by_frame(frames)
@@ -156,7 +155,7 @@ def create_app():
         model = glob.glob(f"{folder}/*")
         for m in model:
             m_name = m.split('/')[-1]
-            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&n_frame=5&sampling=reverse\">{m_name}</a> <br>"
+            out += f"<a href=\"show_m_name={m_name}&itp=render_face&itp_method=Slerp&n_frame=5&sampling=reverse\">{m_name}</a> <br>"
         return out
 
     @app.route('/best_diff_step_img/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&n_frame=<n_frame>&sampling=<sampling>')
@@ -184,13 +183,13 @@ def create_app():
             out += "<tr> <th> Checkpoint </th> <th> Diffusion step </th> <th> Image </th> </tr>"
             out += f"[#{idx}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
             for ckpt in checkpoint:
-                diff_step = glob.glob(f"{ckpt}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_*")
+                diff_step = glob.glob(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_*")
                 diff_step = sorted([int(ds.split('/')[-1].split('_')[-1]) for ds in diff_step])
                 out += f"<td rowspan=\"{len(diff_step)+1}\"> {ckpt.split('/')[-1]}</td> "
                 for ds in diff_step:
                     out += "<tr>"
                     out += f"<td>{ds}</td> "
-                    frames = glob.glob(f"{ckpt}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{ds}/n_frames={n_frame}/res_*.png")
+                    frames = glob.glob(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{ds}/n_frames={n_frame}/res_*.png")
                     out += "<td>"
                     if len(frames) > 0:
                         frames = sort_by_frame(frames)
@@ -212,7 +211,7 @@ def create_app():
         model = glob.glob(f"{folder}/*")
         for m in model:
             m_name = m.split('/')[-1]
-            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&show_frame=0,25,50,75,100,125,250,500,750,800,999\">{m_name}</a> <br>"
+            out += f"<a href=\"show_m_name={m_name}&itp=render_face&itp_method=Slerp&show_frame=0,25,50,75,100,125,250,500,750,800,999\">{m_name}</a> <br>"
         return out
 
     @app.route('/intermediate_step/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&show_frame=<show_frame>')
@@ -246,7 +245,7 @@ def create_app():
             out += "<tr> <th> Checkpoint </th> <th> Diffusion step </th> <th> Diffuse Process </th> <th> Image </th> </tr>"
             out += f"[#{idx}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
             for ckpt in checkpoint:
-                diff_step = glob.glob(f"{ckpt}/valid/{itp}/*")
+                diff_step = glob.glob(f"{ckpt}/{args.set_}/{itp}/Intermediate/*")
                 diff_step = sorted([int(ds.split('/')[-1].split('_')[-1]) for ds in diff_step])
                 out += f"<td rowspan=\"{len(diff_step) + 3}\"> {ckpt.split('/')[-1]}</td> "
                 for ds in diff_step:
@@ -255,7 +254,7 @@ def create_app():
                     for sampling, proc in process.items():
                         for dir in proc['dir']:
                             out += f"<td>{proc['alias']} : {dir}</td> "
-                            frames = glob.glob(f"{ckpt}/valid/{itp}/diffstep_{ds}/{sampling}/src={src_dst[0]}/dst={src_dst[1]}/{proc['name']}/{dir}/{src_dst[0]}/pred_xstart/*frame*.png")
+                            frames = glob.glob(f"{ckpt}/{args.set_}/{itp}/Intermediate/diffstep_{ds}/{sampling}/src={src_dst[0]}/dst={src_dst[1]}/{proc['name']}/{dir}/{src_dst[0]}/sample/*frame*.png")
                             out += "<td>"
                             if len(frames) > 0:
                                 frames = sort_by_frame(frames)
@@ -282,7 +281,7 @@ def create_app():
         model = glob.glob(f"{folder}/*")
         for m in model:
             m_name = m.split('/')[-1]
-            out += f"<a href=\"show_m_name={m_name}&itp=spatial_latent&itp_method=Slerp&diff_step=1000&n_frame=5\">{m_name}</a> <br>"
+            out += f"<a href=\"show_m_name={m_name}&itp=render_face&itp_method=Slerp&diff_step=1000&n_frame=5\">{m_name}</a> <br>"
         return out
 
     @app.route('/uncond_vs_reverse/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>')
@@ -315,7 +314,7 @@ def create_app():
                 out += f"<td rowspan=\"2\">{ckpt.split('/')[-1]}</td> "
                 for sampling in ['uncond', 'reverse']:
                     out += f"<td> {sampling}</td>"
-                    frames = glob.glob(f"{ckpt}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
+                    frames = glob.glob(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
                     out += "<td>"
                     if len(frames) > 0:
                         frames = sort_by_frame(frames)
@@ -330,14 +329,29 @@ def create_app():
             
         return out
 
-    @app.route('/model_comparison_from_json/itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>/')
-    def model_comparison_from_json(itp_method, n_frame, diff_step, sampling):
+
+    @app.route('/model_comparison_from_json/')
+    def model_comparison_from_json_selector():
+        out = ""
+        json_files = glob.glob('./json_comparison/*.json')
+        link_based = "itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>&ckpt=<ckpt>"
+        link_based = "itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse&ckpt=050000"
+        for jf in json_files:
+            jf = jf.split('/')[-1]
+            out += f"Comparison file : <a href=\"jf={jf}&&{link_based}\">{jf}</a> <br>"
+        return out
+        
+    @app.route('/model_comparison_from_json/jf=<jf>&&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>&ckpt=<ckpt>/')
+    def model_comparison_from_json_show(jf, itp_method, n_frame, diff_step, sampling, ckpt):
+        
+        print(ckpt)
         out = """<style>
                 th, tr, td{
                     border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
                 }
                 </style>"""
-        f = open('./model_comparison_eyes.json')
+        out+= ckpt
+        f = open(f'./json_comparison/{jf}')
         ckpt_dict = json.load(f)
         model = list(ckpt_dict.keys())
         
@@ -354,11 +368,15 @@ def create_app():
             out += f"[#{s_id}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
             out += create_hide(model, s_id)
             for m_id, m in enumerate(model):
+                if ckpt == 'json':
+                    vis_ckpt = step = ckpt_dict[m]['step']
+                else:
+                    vis_ckpt = step = f'ema_{ckpt}'
+                    
                 out += f"<tr id={s_id}_{m_id}>"
-                out += f"<td> {m_id} : {ckpt_dict[m]['alias']} <br> ({ckpt_dict[m]['step']}) </td>"
-                step = ckpt_dict[m]['step']
+                out += f"<td> {m_id} : {ckpt_dict[m]['alias']} <br> ({vis_ckpt}) </td>"
                 itp = ckpt_dict[m]['itp']
-                each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/{step}/valid/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/"
+                each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/{step}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/"
                 frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
                 vid_path = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.mp4")
                     
@@ -422,12 +440,19 @@ def create_app():
 
 if __name__ == "__main__":
     import argparse
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_dir', required=True)
     parser.add_argument('--sample_dir', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
     parser.add_argument('--sample_pair_json', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
+    # parser.add_argument('--compare_json', default="/home/mint/guided-diffusion/visualize_scripts/flask_vispage_rework/model_comparison_WD.json")
+    parser.add_argument('--set_', default='valid')
     parser.add_argument('--port', required=True)
     parser.add_argument('--host', default='0.0.0.0')
     args = parser.parse_args()
+    
+    
+    data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/{args.set_}/"
+    img_path = file_utils._list_image_files_recursively(data_path)
     app = create_app()
     app.run(host=args.host, port=args.port, debug=True, threaded=False)
