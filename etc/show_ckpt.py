@@ -56,9 +56,12 @@ def create_app():
         out = ""
         out += "<h1> Available Checkpoint </h1>"
         machine = sorted([name for name in os.listdir(args.model_path) if os.path.isdir(os.path.join(args.model_path, name))])
+        print(machine)
         for m in machine:
+            print(m)
             m_path = f"{args.model_path}/{m}/"
             out += f"<h2> {m} </h2>"
+            print((os.listdir(m_path)))
             # List the contents 
             if len(os.listdir(m_path)) == 0:
                 out += "<h3 style=\"color:red\"> [#] This directory is not mounted! </h3>"

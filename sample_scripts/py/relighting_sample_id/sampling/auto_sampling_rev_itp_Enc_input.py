@@ -38,6 +38,7 @@ parser.add_argument('--denoised_clamp', type=float, default=None)
 parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--out_dir', type=str, required=True)
 parser.add_argument('--gpu_id', type=str, default="0")
+parser.add_argument('--save_intermediate', action='store_true', default=False)
 
 args = parser.parse_args()
 
@@ -295,7 +296,7 @@ if __name__ == '__main__':
             model_kwargs['use_cond_xt_fn'] = True
             for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
                 model_kwargs[f'{k}_img'] = model_kwargs[f'{k}_img'].to(device)
-                if p == 'share_dpm_noise_masking':
+                if 'dpm_noise_masking' in p:
                     model_kwargs[f'{k}_mask'] = model_kwargs[f'{k}_mask'].to(device)
                     model_kwargs['image'] = model_kwargs['image'].to(device)
                 
@@ -310,7 +311,7 @@ if __name__ == '__main__':
             for i in range(args.uncond_sampling_iters):
                 noise_map = inference_utils.get_init_noise(n=2, mode='fixed_noise', img_size=cfg.img_model.image_size, device=device)
                 # Forward from reverse noise map
-                sample_ddim_x = pl_sampling.forward_proc(noise=noise_map, model_kwargs=cond)
+                sample_ddim_x = pl_sampling.forward_proc(noise=noise_map, model_kwargs=cond, store_intermediate=args.save_intermediate)
                 
                 # Save a visualization
                 interpolate_str = '_'.join(args.interpolate)
@@ -320,11 +321,12 @@ if __name__ == '__main__':
                 save_uncond_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Gaussian/"
                 os.makedirs(save_uncond_path, exist_ok=True)
 
-                vis_utils.save_intermediate(path=save_uncond_path,
-                                            out=sample_ddim_x, 
-                                            proc='forward', 
-                                            image_name=cond['image_name'],
-                                            bound=cfg.img_model.input_bound)
+                if args.save_intermediate:
+                    vis_utils.save_intermediate(path=save_uncond_path,
+                                                out=sample_ddim_x, 
+                                                proc='forward', 
+                                                image_name=cond['image_name'],
+                                                bound=cfg.img_model.input_bound)
             
         if args.reverse_sampling:
             # Input
@@ -335,10 +337,10 @@ if __name__ == '__main__':
             cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
             
             # Reverse from input image (x0)
-            reverse_ddim_sample = pl_sampling.reverse_proc(x=cond['image'], model_kwargs=cond)
+            reverse_ddim_sample = pl_sampling.reverse_proc(x=cond['image'], model_kwargs=cond, store_intermediate=args.save_intermediate)
 
             # Forward from reverse noise map
-            sample_ddim = pl_sampling.forward_proc(noise=reverse_ddim_sample['final_output']['sample'], model_kwargs=cond)
+            sample_ddim = pl_sampling.forward_proc(noise=reverse_ddim_sample['final_output']['sample'], model_kwargs=cond, store_intermediate=args.save_intermediate)
             
             # Save a visualization
             interpolate_str = '_'.join(args.interpolate)
@@ -350,17 +352,18 @@ if __name__ == '__main__':
             save_reverse_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Reversed/"
             os.makedirs(save_reverse_path, exist_ok=True)
 
-            vis_utils.save_intermediate(path=save_reverse_path, 
-                                        out=reverse_ddim_sample, 
-                                        proc='reverse', 
-                                        image_name=cond['image_name'],
-                                        bound=cfg.img_model.input_bound)
+            if args.save_intermediate:
+                vis_utils.save_intermediate(path=save_reverse_path, 
+                                            out=reverse_ddim_sample, 
+                                            proc='reverse', 
+                                            image_name=cond['image_name'],
+                                            bound=cfg.img_model.input_bound)
 
-            vis_utils.save_intermediate(path=save_reverse_path, 
-                                        out=sample_ddim, 
-                                        proc='forward', 
-                                        image_name=cond['image_name'],
-                                        bound=cfg.img_model.input_bound)
+                vis_utils.save_intermediate(path=save_reverse_path, 
+                                            out=sample_ddim, 
+                                            proc='forward', 
+                                            image_name=cond['image_name'],
+                                            bound=cfg.img_model.input_bound)
 
         if args.lerp:
             model_kwargs['use_render_itp'] = True

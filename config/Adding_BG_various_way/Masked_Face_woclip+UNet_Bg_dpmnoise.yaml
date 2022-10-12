@@ -11,7 +11,7 @@ img_model:
   # Image-Condition directly to UNet(DPM)
   dpm_cond_img: ['faceseg_bg_noface&nohair']
   prep_dpm_cond_img: [Null]
-  noise_dpm_cond_img: ['share_dpm_noise_masking']
+  noise_dpm_cond_img: ['share-dpm_noise_masking']
   apply_dpm_cond_img: True
 
 param_model:

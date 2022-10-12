@@ -87,18 +87,18 @@ def cond_xt_fn(cond, cfg, use_render_itp, t, diffusion, noise, device='cuda'):
         share = True if p.split('-')[0] == 'share' else False
         masking = p.split('-')[-1]
         if masking == 'dpm_noise_masking':
-            dat = cond['image']
+            img = cond['image']
             mask =  cond[f'{k}_mask'].bool()
             assert th.all(mask == cond[f'{k}_mask'])
             if share:
-                xt = (diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
+                xt = (diffusion.q_sample(img, t, noise=noise) * mask) + (-th.ones_like(img) * ~mask)
             else:
-                xt = (diffusion.q_sample(dat, t) * mask) + (-th.ones_like(dat) * ~mask)
+                xt = (diffusion.q_sample(img, t) * mask) + (-th.ones_like(img) * ~mask)
         elif masking == 'dpm_noise':
             if share:
-                xt = diffusion.q_sample(cond[f'{k}_img'], t, noise=noise)
+                xt = diffusion.q_sample(x_start, t, noise=noise)
             else:
-                xt = diffusion.q_sample(cond[f'{k}_img'], t)
+                xt = diffusion.q_sample(x_start, t)
         else: raise NotImplementedError("[#] Only dpm_noise_masking and dpm_noise is available")
         return xt
     

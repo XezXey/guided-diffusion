@@ -258,7 +258,7 @@ class TrainLoop(LightningModule):
             # Override the condition and re-create cond_params
             if self.cfg.img_cond_model.override_cond != "":
                 cond[self.cfg.img_cond_model.override_cond] = img_cond
-                if self.cfg.img_cond_model.override_cond in ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb']:
+                if self.cfg.img_cond_model.override_cond in ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'img_latent']:
                     tmp = []
                     for p in self.cfg.param_model.params_selector:
                         tmp.append(cond[p])
