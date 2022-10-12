@@ -63,6 +63,7 @@ class TrainLoop(LightningModule):
         self.n_gpus = self.cfg.train.n_gpus
         self.num_nodes = self.cfg.train.num_nodes
         self.t_logger = t_logger
+        self.logger_mode = self.cfg.train.logger_mode
         self.pl_trainer = pl.Trainer(
             devices=self.n_gpus,
             num_nodes=self.num_nodes,
@@ -431,6 +432,17 @@ class TrainLoop(LightningModule):
             
             return ema_model
         
+        def log_image_fn(key, image, step):
+            if self.logger_mode == 'wandb':
+                # self.t_logger.log_image(key=f'{sampling_model} - conditioned_image', images=[make_grid(source_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
+                self.t_logger.log_image(key=key, images=[image], step=step)
+            elif self.logger_mode == 'tb':
+                # self.t_logger.add_image(tag=f'{sampling_model} - conditioned_image', img_tensor=make_grid(source_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+                tb = self.t_logger.experiment
+                tb.add_image(tag=key, img_tensor=image, global_step=step)
+                
+            
+        
         print(f"Sampling with {sampling_model}...")
         
         if sampling_model == 'ema':
@@ -470,8 +482,7 @@ class TrainLoop(LightningModule):
             
         # Source Image
         source_img = convert2rgb(dat, bound=self.input_bound) / 255.
-        # tb.add_image(tag=f'conditioned_image', img_tensor=make_grid(source_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
-        self.t_logger.log_image(key=f'{sampling_model} - conditioned_image', images=[make_grid(source_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
+        log_image_fn(key=f'{sampling_model} - conditioned_image', image=make_grid(source_img, nrow=4), step=(step_ + 1) * self.n_gpus)
         
         # Condition Image
         if cond['dpm_cond_img'] is not None:
@@ -483,8 +494,10 @@ class TrainLoop(LightningModule):
                 s += c
             cond_img = th.cat((cond_img), dim=0)
             cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.
-            # tb.add_image(tag=f'conditioned_image (UNet)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
-            self.t_logger.log_image(key=f'{sampling_model} - conditioned_image (UNet)', images=[make_grid(cond_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
+            
+            log_image_fn(key=f'{sampling_model} - conditioned_image (UNet)', image=make_grid(cond_img, nrow=4), step=(step_ + 1) * self.n_gpus)
+            # self.t_logger.add_image(tag=f'conditioned_image (UNet)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
+            # self.t_logger.log_image(key=f'{sampling_model} - conditioned_image (UNet)', images=[make_grid(cond_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
         if cond['cond_img'] is not None:
             cond_img = []
@@ -495,8 +508,10 @@ class TrainLoop(LightningModule):
                 s += c
             cond_img = th.cat((cond_img), dim=0)
             cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.
+            
+            log_image_fn(key=f'{sampling_model} - conditioned_image (Encoder)', image=make_grid(cond_img, nrow=4), step=(step_ + 1) * self.n_gpus)
             # tb.add_image(tag=f'conditioned_image (Encoder)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
-            self.t_logger.log_image(key=f'{sampling_model} - conditioned_image (Encoder)', images=[make_grid(cond_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
+            # self.t_logger.log_image(key=f'{sampling_model} - conditioned_image (Encoder)', images=[make_grid(cond_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
         # N(0, 1) Sampling
         ddim_sample, _ = self.diffusion.ddim_sample_loop(
@@ -508,8 +523,9 @@ class TrainLoop(LightningModule):
         )
         # ddim_sample_plot = convert2rgb(ddim_sample['sample'], bound=self.input_bound) / 255.
         ddim_sample_plot = ((ddim_sample['sample'] + 1) * 127.5) / 255.
+        log_image_fn(key=f'{sampling_model} - ddim_sample', image=make_grid(ddim_sample_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
         # tb.add_image(tag=f'{sampling_model} - ddim_sample', img_tensor=make_grid(ddim_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
-        self.t_logger.log_image(key=f'{sampling_model} - ddim_sample', images=[make_grid(ddim_sample_plot, nrow=4)], step=(step_ + 1) * self.n_gpus)
+        # self.t_logger.log_image(key=f'{sampling_model} - ddim_sample', images=[make_grid(ddim_sample_plot, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
         # Reverse Sampling
         ddim_reverse_sample, _ = self.diffusion.ddim_reverse_sample_loop(
@@ -521,8 +537,9 @@ class TrainLoop(LightningModule):
         
         # ddim_reverse_sample_plot = convert2rgb(ddim_reverse_sample['sample'], bound=self.input_bound) / 255.
         ddim_reverse_sample_plot = ((ddim_reverse_sample['sample'] + 1) * 127.5) / 255.
+        log_image_fn(key=f'{sampling_model} - ddim_reverse_sample (xT)', image=make_grid(ddim_reverse_sample_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
         # tb.add_image(tag=f'{sampling_model} - ddim_reverse_sample (xT)', img_tensor=make_grid(ddim_reverse_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
-        self.t_logger.log_image(key=f'{sampling_model} - ddim_reverse_sample (xT)', images=[make_grid(ddim_reverse_sample_plot, nrow=4)], step=(step_ + 1) * self.n_gpus)
+        # self.t_logger.log_image(key=f'{sampling_model} - ddim_reverse_sample (xT)', images=[make_grid(ddim_reverse_sample_plot, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
         ddim_recon_sample, _ = self.diffusion.ddim_sample_loop(
             model=sampling_model_dict[self.cfg.img_model.name],
@@ -534,8 +551,9 @@ class TrainLoop(LightningModule):
         
         # ddim_recon_sample_plot = convert2rgb(ddim_recon_sample['sample']) / 255.
         ddim_recon_sample_plot = ((ddim_recon_sample['sample'] + 1) * 127.5) / 255.
+        log_image_fn(key=f'{sampling_model} - ddim_recon_sample (x0)', image=make_grid(ddim_recon_sample_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
         # tb.add_image(tag=f'{sampling_model} - ddim_recon_sample (x0)', img_tensor=make_grid(ddim_recon_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
-        self.t_logger.log_image(key=f'{sampling_model} - ddim_recon_sample (x0)', images=[make_grid(ddim_recon_sample_plot, nrow=4)], step=(step_ + 1) * self.n_gpus)
+        # self.t_logger.log_image(key=f'{sampling_model} - ddim_recon_sample (x0)', images=[make_grid(ddim_recon_sample_plot, nrow=4)], step=(step_ + 1) * self.n_gpus)
 
         # Save memory!
         dat = dat.detach()

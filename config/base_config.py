@@ -161,7 +161,6 @@ cfg.relighting.mult_shaded = 'No'
 cfg.relighting.num_shaded_ch = 1
 
 
-
 # ---------------------------------------------------------------------------- #
 # Options for Dataset
 # ---------------------------------------------------------------------------- #
@@ -193,6 +192,7 @@ cfg.train.sampling_model = "ema"
 cfg.train.resume_checkpoint = ""
 cfg.train.log_dir = "./model_logs/{}/".format(datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f_image"))
 cfg.train.logger_dir = "/data/mint/wandb_logs/"
+cfg.train.logger_mode = "wandb"
 cfg.train.n_gpus = 1
 cfg.train.num_nodes = 1
 cfg.train.accelerator = 'gpu'

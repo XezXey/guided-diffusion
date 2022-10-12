@@ -7,7 +7,8 @@ parser.add_argument('--vid', type=int, nargs='+', default=[])
 parser.add_argument('--local', action='store_true', default=False)
 parser.add_argument('--tb_dir', default=None)
 parser.add_argument('--model_dir', default=None)
-parser.add_argument('--ist_cluster_dir', default=None)
+parser.add_argument('--ist_cluster_model_dir', default=None)
+parser.add_argument('--ist_cluster_log_dir', default=None)
 args = parser.parse_args()
 
 
@@ -74,7 +75,9 @@ if __name__ == '__main__':
     if args.model_dir is not None:
         print("[#] Mounting the model log from \"/model_logs\"")
         mounting(from_path='/data/mint/model_logs/', to_path=args.model_dir)
-    if args.ist_cluster_dir is not None:
+    if args.ist_cluster_model_dir is not None:
         print("[#] Mounting the model log from ist-cluster")
-        mounting_ist_cluster(from_path="/ist/ist-share/vision/mint/model_logs/", to_path=args.ist_cluster_dir)
+        mounting_ist_cluster(from_path="/ist/ist-share/vision/mint/model_logs/", to_path=args.ist_cluster_model_dir)
+    if args.ist_cluster_log_dir is not None:
+        mounting_ist_cluster(from_path="/ist/ist-share/vision/mint/wandb_logs/", to_path=args.ist_cluster_log_dir)
         

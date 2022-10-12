@@ -44,9 +44,15 @@ def main():
     )
 
     logger.log("[#] Training...")
-    # logger = TensorBoardLogger("tb_logs", name="diffusion", version=cfg.train_misc.exp_name, sub_dir=cfg.train_misc.cfg_name)
+    
+    print(f"Initialize \"{cfg.train.logger_mode}\" logger : {cfg.train.logger_dir}")
     os.makedirs(cfg.train.logger_dir, exist_ok=True)
-    t_logger = WandbLogger(project='Relighting-DPM', save_dir=cfg.train.logger_dir, tags=[cfg.train_misc.exp_name], name=cfg.train_misc.cfg_name)
+    if cfg.train.logger_mode == 'wandb':
+        t_logger = WandbLogger(project='Relighting-DPM', save_dir=cfg.train.logger_dir, tags=[cfg.train_misc.exp_name], name=cfg.train_misc.cfg_name)
+    elif cfg.train.logger_mode == 'tb':
+        t_logger = TensorBoardLogger(save_dir=cfg.train.logger_dir, name="diffusion", version=cfg.train_misc.exp_name, sub_dir=cfg.train_misc.cfg_name)
+    else: 
+        raise NotImplementedError("[#] Logger mode is not available")
 
     train_loop = TrainLoop(
         model=list(img_model.values()),
