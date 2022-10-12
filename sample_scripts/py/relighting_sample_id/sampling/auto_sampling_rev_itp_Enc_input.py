@@ -114,7 +114,7 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
         interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
     cond.update(interp_cond)
         
-    repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate + ['light']))
+    repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate + ['light', 'img_latent']))
     cond.update(repeated_cond)
 
     # Finalize the cond_params
