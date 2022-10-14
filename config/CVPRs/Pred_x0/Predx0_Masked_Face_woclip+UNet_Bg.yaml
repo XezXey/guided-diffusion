@@ -42,4 +42,4 @@ diffusion:
 
 train_misc:
   exp_name: "Predict_x0"
-  cfg_name: "Enc_Face+UNet_Bg_masking"
+  cfg_name: "Enc_Face+UNet_Bg"

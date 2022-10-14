@@ -523,11 +523,10 @@ class TrainLoop(LightningModule):
             model_kwargs=cond,
             noise=noise,
         )
-        # ddim_sample_plot = convert2rgb(ddim_sample['sample'], bound=self.input_bound) / 255.
         ddim_sample_plot = ((ddim_sample['sample'] + 1) * 127.5) / 255.
         log_image_fn(key=f'{sampling_model} - ddim_sample', image=make_grid(ddim_sample_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
-        # tb.add_image(tag=f'{sampling_model} - ddim_sample', img_tensor=make_grid(ddim_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
-        # self.t_logger.log_image(key=f'{sampling_model} - ddim_sample', images=[make_grid(ddim_sample_plot, nrow=4)], step=(step_ + 1) * self.n_gpus)
+        ddim_predx0_plot = ((ddim_sample['pred_xstart'] + 1) * 127.5) / 255.
+        log_image_fn(key=f'{sampling_model} - ddim_predx0', image=make_grid(ddim_predx0_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
         
         # Reverse Sampling
         ddim_reverse_sample, _ = self.diffusion.ddim_reverse_sample_loop(
@@ -537,11 +536,10 @@ class TrainLoop(LightningModule):
             x=dat,
         )
         
-        # ddim_reverse_sample_plot = convert2rgb(ddim_reverse_sample['sample'], bound=self.input_bound) / 255.
         ddim_reverse_sample_plot = ((ddim_reverse_sample['sample'] + 1) * 127.5) / 255.
         log_image_fn(key=f'{sampling_model} - ddim_reverse_sample (xT)', image=make_grid(ddim_reverse_sample_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
-        # tb.add_image(tag=f'{sampling_model} - ddim_reverse_sample (xT)', img_tensor=make_grid(ddim_reverse_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
-        # self.t_logger.log_image(key=f'{sampling_model} - ddim_reverse_sample (xT)', images=[make_grid(ddim_reverse_sample_plot, nrow=4)], step=(step_ + 1) * self.n_gpus)
+        ddim_reverse_predx0_plot = ((ddim_reverse_sample['pred_xstart'] + 1) * 127.5) / 255.
+        log_image_fn(key=f'{sampling_model} - ddim_reverse_predx0 (xT)', image=make_grid(ddim_reverse_predx0_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
         
         ddim_recon_sample, _ = self.diffusion.ddim_sample_loop(
             model=sampling_model_dict[self.cfg.img_model.name],
@@ -551,12 +549,11 @@ class TrainLoop(LightningModule):
             noise=ddim_reverse_sample['sample'],
         )
         
-        # ddim_recon_sample_plot = convert2rgb(ddim_recon_sample['sample']) / 255.
         ddim_recon_sample_plot = ((ddim_recon_sample['sample'] + 1) * 127.5) / 255.
         log_image_fn(key=f'{sampling_model} - ddim_recon_sample (x0)', image=make_grid(ddim_recon_sample_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
+        ddim_recon_predx0_plot = ((ddim_recon_sample['pred_xstart'] + 1) * 127.5) / 255.
+        log_image_fn(key=f'{sampling_model} - ddim_recon_predx0 (x0)', image=make_grid(ddim_recon_predx0_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
         
-        # tb.add_image(tag=f'{sampling_model} - ddim_recon_sample (x0)', img_tensor=make_grid(ddim_recon_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
-        # self.t_logger.log_image(key=f'{sampling_model} - ddim_recon_sample (x0)', images=[make_grid(ddim_recon_sample_plot, nrow=4)], step=(step_ + 1) * self.n_gpus)
 
         # Save memory!
         dat = dat.detach()
