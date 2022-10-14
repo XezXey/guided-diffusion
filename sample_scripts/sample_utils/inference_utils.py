@@ -218,6 +218,13 @@ def build_condition_image(cond, misc):
             #NOTE: Render w/ interpolated light
             interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
             cond.update(interp_cond)
+        elif 'render_face_modSH' in args.interpolate:
+            #NOTE: Render w/ interpolated light
+            interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+            print(interp_cond['light'].shape)
+            print(interp_cond)
+            exit()
+            cond.update(interp_cond)
         else:
             #NOTE: Render w/ same light
             repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
