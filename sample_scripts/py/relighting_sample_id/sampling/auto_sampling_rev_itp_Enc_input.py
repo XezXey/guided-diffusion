@@ -39,6 +39,7 @@ parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--out_dir', type=str, required=True)
 parser.add_argument('--gpu_id', type=str, default="0")
 parser.add_argument('--save_intermediate', action='store_true', default=False)
+parser.add_argument('--postfix', type=str, default='')
 
 args = parser.parse_args()
 
@@ -349,8 +350,6 @@ if __name__ == '__main__':
             # Save a visualization
             interpolate_str = '_'.join(args.interpolate)
             out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/Intermediate/diffstep_{args.diffusion_steps}/reverse_sampling/"
-            print("SAVE AT : ", out_folder_reconstruction)
-            print("SAVE AT : ", interpolate_str, args.interpolate)
             os.makedirs(out_folder_reconstruction, exist_ok=True)
             
             save_reverse_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Reversed/"

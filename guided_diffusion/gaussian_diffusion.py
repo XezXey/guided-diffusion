@@ -259,8 +259,6 @@ class GaussianDiffusion:
 
         B, C = x.shape[:2]
         assert t.shape == (B,)
-        # print(type(x), type(self._scale_timesteps(t)))
-        # assert False
         
         if model_kwargs['dpm_cond_img'] is not None:
             model_output_ = model(th.cat((x, model_kwargs['dpm_cond_img']), dim=1).float(), self._scale_timesteps(t), **model_kwargs)
@@ -332,7 +330,6 @@ class GaussianDiffusion:
             "variance": model_variance,
             "log_variance": model_log_variance,
             "pred_xstart": pred_xstart,
-            "middle_block" : model_output_['middle_block'] if 'middle_block' in model_output_.keys() else None
         }
 
     def _predict_xstart_from_eps(self, x_t, t, eps):
@@ -621,7 +618,7 @@ class GaussianDiffusion:
                                                cfg=model_kwargs_copy['cfg'],
                                                use_render_itp=model_kwargs_copy['use_render_itp'],
                                                diffusion=self,
-                                               noise=None
+                                               noise=model_kwargs_copy['const_noise']
                                             )
             with th.no_grad():
                 out = self.ddim_reverse_sample(
@@ -805,7 +802,7 @@ class GaussianDiffusion:
                                                cfg=model_kwargs_copy['cfg'],
                                                use_render_itp=model_kwargs_copy['use_render_itp'],
                                                diffusion=self,
-                                               noise=None
+                                               noise=model_kwargs_copy['const_noise']
                                             )
             with th.no_grad():
                 out = self.ddim_sample(

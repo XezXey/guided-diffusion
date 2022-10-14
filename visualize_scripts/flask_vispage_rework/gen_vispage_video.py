@@ -6,8 +6,6 @@ import sys
 sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/sample_utils/')
 import mani_utils, file_utils
 
-
-
 def sort_by_frame(path_list):
     frame_anno = []
     for p in path_list:
@@ -355,17 +353,19 @@ def create_app():
         ckpt_dict = json.load(f)
         model = list(ckpt_dict.keys())
         
+        
         _, subject_id, _ = mani_utils.get_samples_list(sample_pair_json=f"{args.sample_pair_json}", 
                                                        sample_pair_mode='pair', 
                                                        src_dst=None, 
-                                                       img_path=img_path, 
+                                                       img_path=img_path,
                                                        n_subject=-1)
-       
+        print(subject_id)
         out += create_button_fn()
         for s_id, src_dst in enumerate(subject_id):
+            print(src_dst)
             out += "<table>"
-            out += "<tr> <th> Checkpoint </th> <th> Video </th> <th> Image </th> </tr>"
-            out += f"[#{s_id}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
+            out += "<tr> <th> Checkpoint </th> <th> Video </th> <th> Input </th> <th> Image </th> <th> Input </th> </tr>"
+            out += f"[#{s_id}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].replace('jpg', 'png')} width=\"64\" height=\"64\">" + "<br>" + "<br>"
             out += create_hide(model, s_id)
             for m_id, m in enumerate(model):
                 if ckpt == 'json':
@@ -374,9 +374,9 @@ def create_app():
                     vis_ckpt = step = f'ema_{ckpt}'
                     
                 out += f"<tr id={s_id}_{m_id}>"
-                out += f"<td> {m_id} : {ckpt_dict[m]['alias']} <br> ({vis_ckpt}) </td>"
+                out += f"<td> {m_id+1} : {ckpt_dict[m]['alias']} <br> ({vis_ckpt}) </td>"
                 itp = ckpt_dict[m]['itp']
-                each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/{step}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/"
+                each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/{step}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0].replace('png', 'jpg')}/dst={src_dst[1].replace('png', 'jpg')}/"
                 frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
                 vid_path = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.mp4")
                     
@@ -392,6 +392,7 @@ def create_app():
                   </td>
                   """
                 
+                out += f"<td> <img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')}> </td>"
                 out += "<td>"
                 if len(frames) > 0:
                     frames = sort_by_frame(frames)
@@ -400,6 +401,7 @@ def create_app():
                 else:
                     out += "<p style=\"color:red\">Images not found!</p>"
                 out += "</td>"
+                out += f"<td> <img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')}> </td>"
                 out += "</tr>"
                 
             out += "</table>"
@@ -411,10 +413,10 @@ def create_app():
         tmp = ""
         for m_id, _ in enumerate(model):
             tmp += (
-                f"<button id=but_{s_id}_{m_id} style='color:blue' onclick=\"toggle({s_id}, {m_id})\">Hide : {m_id}</button>"
+                f"<button id=but_{s_id}_{m_id} style='color:blue' onclick=\"toggle({s_id}, {m_id})\">Hide : {m_id+1}</button>"
         )
         return tmp
-            
+           
     def create_button_fn():
         tmp = (
             f"<script>"
@@ -428,14 +430,13 @@ def create_app():
                     f"    button.style.color = 'blue';"
                     f"}} else {{"
                     f"    element.setAttribute(\"hidden\", \"hidden\");"
-                    f"    button.innerText = \"Show : \" +  m_id;"
+                    f"    button.innerText = \"Show : \" + m_id;"
                     f"    button.style.color = 'red';"
                     f"}}"
                 f"}}"
                 f"</script>"
         )
         return tmp
-            
     return app
 
 if __name__ == "__main__":
@@ -445,14 +446,14 @@ if __name__ == "__main__":
     parser.add_argument('--exp_dir', required=True)
     parser.add_argument('--sample_dir', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
     parser.add_argument('--sample_pair_json', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
-    # parser.add_argument('--compare_json', default="/home/mint/guided-diffusion/visualize_scripts/flask_vispage_rework/model_comparison_WD.json")
     parser.add_argument('--set_', default='valid')
+    parser.add_argument('--res', default=128)
     parser.add_argument('--port', required=True)
     parser.add_argument('--host', default='0.0.0.0')
     args = parser.parse_args()
     
     
-    data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/{args.set_}/"
+    data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_{args.res}/{args.set_}/"
     img_path = file_utils._list_image_files_recursively(data_path)
     app = create_app()
     app.run(host=args.host, port=args.port, debug=True, threaded=False)

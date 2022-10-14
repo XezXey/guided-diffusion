@@ -30,6 +30,23 @@
             "justMyCode": true
         },
         {
+            "name": "Python: train_Face_x0",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"1", "WANDB_MODE":"offline"},
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "2",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/CVPRs/Pred_x0/Predx0_Masked_Face_woclip.yaml",
+                    "--train.save_interval", "10000",
+                    "--train.sampling_interval", "1"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
             "name": "Python: train_bound_input",
             "type": "python",
             "request": "launch",
@@ -1099,10 +1116,10 @@
                     "--out_dir", "/data/mint/sampling/test_addnoise/", 
                     "--cfg_name", "Masked_Face_woclip+UNet_Bg_dpmnoise.yaml", 
                     "--log_dir", "Masked_Face_woclip+UNet_Bg_dpmnoise", 
-                    "--diffusion_steps", "50",
+                    "--diffusion_steps", "1000",
                     "--reverse_sampling",
                     "--seed", "47",
-                    "--sample_pair_json", "./hard_samples.json",
+                    "--sample_pair_json", "./sample_json/hard_samples.json",
                     "--sample_pair_mode", "pair",
                     "--interpolate", "render_face",
                     "--interpolate_step", "5",

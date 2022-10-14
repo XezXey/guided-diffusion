@@ -156,3 +156,6 @@ def convert2rgb(img, bound):
     elif bound == 0.5:
         convert_img = (img + 0.5) * 255.0
     return convert_img
+
+def test_lib_save_image():
+    pass

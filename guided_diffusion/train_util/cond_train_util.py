@@ -228,7 +228,7 @@ class TrainLoop(LightningModule):
         if self.step % self.save_interval == 0:
             self.save()
 
-    @rank_zero_only 
+    @rank_zero_only
     def log_rank_zero(self, batch):
         if self.step % self.log_interval == 0:
             self.log_step()
@@ -554,6 +554,7 @@ class TrainLoop(LightningModule):
         # ddim_recon_sample_plot = convert2rgb(ddim_recon_sample['sample']) / 255.
         ddim_recon_sample_plot = ((ddim_recon_sample['sample'] + 1) * 127.5) / 255.
         log_image_fn(key=f'{sampling_model} - ddim_recon_sample (x0)', image=make_grid(ddim_recon_sample_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
+        
         # tb.add_image(tag=f'{sampling_model} - ddim_recon_sample (x0)', img_tensor=make_grid(ddim_recon_sample_plot, nrow=4), global_step=(step_ + 1) * self.n_gpus)
         # self.t_logger.log_image(key=f'{sampling_model} - ddim_recon_sample (x0)', images=[make_grid(ddim_recon_sample_plot, nrow=4)], step=(step_ + 1) * self.n_gpus)
 

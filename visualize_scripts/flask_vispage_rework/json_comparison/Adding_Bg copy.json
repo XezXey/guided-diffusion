@@ -1,0 +1,54 @@
+ {
+
+    "log=Face_woclip_cfg=Face_woclip.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Enc(Face) (128x128)"
+    },
+    "log=Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_cfg=Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Enc(Face) + UNet(Bg_masking - share noise&schedule) (128x128)"
+    },
+    "log=Masked_Face_woclip+Bg_cfg=Masked_Face_woclip+Bg.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Enc(Face + Bg) (128x128)"
+    },
+    "log=Masked_Face_woclip+Bg_clip5e-1.yaml_cfg=Masked_Face_woclip+Bg_clip5e-1.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Enc(Face + Bg) (128x128), clip +- 0.5"
+    },
+    "log=UNet_Masked_Face_woclip+UNet_Bg_cfg=UNet_Masked_Face_woclip+UNet_Bg.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"UNet(Face + Bg) (128x128)"
+    },
+    "log=Masked_Face_woclip+UNet_Bg_cfg=Masked_Face_woclip+UNet_Bg.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Enc(Face) + UNet(Bg) (128x128)"
+    },
+    "log=Masked_Face_woclip+Bg_dpmnoise_cfg=Masked_Face_woclip+Bg_dpmnoise.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face",
+        "alias":"Enc(Face + Bg_noise) (128x128)"
+    },
+    "log=Masked_Face_woclip+UNet_Bg_dpmnoise_cfg=Masked_Face_woclip+UNet_Bg_dpmnoise.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Enc(Face) + UNet(Bg_noise) (128x128)"
+    },
+    "log=Masked_Face_woclip+Bg+Arcface_cfg=Masked_Face_woclip+Bg+Arcface.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Enc(Face + Bg) + Non-spatial(Arcface) (128x128)"
+    },
+    "log=DiffAE_cfg=DiffAE.yaml" :  {
+        "step":"ema_030000", 
+        "itp":"render_face", 
+        "alias":"DiffAE (128x128)"
+    }
+   
+}
