@@ -11,11 +11,11 @@ img_model:
   # Image-Condition directly to UNet(DPM)
   dpm_cond_img: ['faceseg_bg_noface&nohair']
   prep_dpm_cond_img: [Null]
-  noise_dpm_cond_img: ['share-dpm_noise']
+  noise_dpm_cond_img: ['share-dpm_noise_masking']
   apply_dpm_cond_img: True
 
 param_model:
-  params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb']
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb', 'shadow']
 
 img_cond_model:
   apply: True
@@ -44,5 +44,5 @@ train:
 
 train_misc:
   exp_name: "High_Resolution_V100"
-  cfg_name: "Masked_Face_woclip+UNet_Bg_dpm_schedule_256"
+  cfg_name: "Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_shadow_256"
 
