@@ -62,7 +62,7 @@ class TimestepBlock(nn.Module):
     """
 
     @abstractmethod
-    def forward(self, x, emb):
+    def forward(self, x, emb, condition=None):
         """
         Apply the module to `x` given `emb` timestep embeddings.
         """
@@ -73,7 +73,7 @@ class TimestepEmbedSequential(nn.Sequential, TimestepBlock):
     support it as an extra input.
     """
 
-    def forward(self, x, emb):
+    def forward(self, x, emb, condition=None):
         for layer in self:
             if isinstance(layer, TimestepBlock):
                 x = layer(x, emb)
@@ -249,7 +249,7 @@ class ResBlock(TimestepBlock):
         else:
             self.skip_connection = conv_nd(dims, channels, self.out_channels, 1)
 
-    def forward(self, x, emb):
+    def forward(self, x, emb, cond=None):
         """
         Apply the block to a Tensor, conditioned on a timestep embedding.
         :param x: an [N x C x ...] Tensor of features.
@@ -1521,8 +1521,6 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         self.cond_layer_selector = ConditionLayerSelector(cond_layer_selector=self.all_cfg.img_model.cond_layer_selector, 
                                                           n_cond_encoder=len(self.input_blocks[1:])
                                                         )
-        pass
-        
 
     def convert_to_fp16(self):
         """

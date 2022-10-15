@@ -110,6 +110,9 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
         if 'render_face' in args.interpolate:
             interp_set = args.interpolate.copy()
             interp_set.remove('render_face')
+        elif 'render_face_modSH' in args.interpolate:
+            interp_set = args.interpolate.copy()
+            interp_set.remove('render_face_modSH')
         else:
             interp_set = args.interpolate
         interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)

@@ -1,0 +1,7 @@
+ {
+    "log=Face_woclip_cfg=Face_woclip.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"Enc(Face) (128x128)"
+    }
+}

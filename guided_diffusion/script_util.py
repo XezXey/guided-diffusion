@@ -231,7 +231,8 @@ def create_model(cfg, all_cfg=None):
             use_new_attention_order=cfg.use_new_attention_order,
             condition_dim=cfg.condition_dim,
             condition_proj_dim=cfg.condition_proj_dim,
-            conditioning=True,
+            # conditioning=True,
+            conditioning=cfg.conditioning,
             all_cfg=all_cfg,
         )
     elif cfg.arch == 'UNetCond_SpatialCondition_Concat':
