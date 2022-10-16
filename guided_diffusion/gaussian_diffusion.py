@@ -794,7 +794,6 @@ class GaussianDiffusion:
         for i in indices:
             # Deep copy to prevent sth that used .pop()
             model_kwargs_copy = make_deepcopyable(model_kwargs, keys=list(model_kwargs.keys()))
-            #TODO: Adding progressive noise to construct the cond_img, dpm_cond_img given t
             t= th.tensor([i] * shape[0], device=device)
             if cond_xt_fn is not None:
                 model_kwargs_copy = cond_xt_fn(cond=model_kwargs_copy, 

@@ -1290,6 +1290,58 @@
             "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/sampling/",
             "justMyCode": true
         },
+        {
+            "name": "Python: auto_sampling_rev_itp_Masked_Face_woclip+UNet_Bg_xstart",
+            "type": "python",
+            "request": "launch",
+            "program": "auto_sampling_rev_itp_Enc_input.py",
+            "args": ["--set", "valid", 
+                    "--step", "050000",
+                    "--out_dir", "/data/mint/sampling/test_addnoise/", 
+                    "--cfg_name", "Predx0_Masked_Face_woclip+UNet_Bg.yaml", 
+                    "--log_dir", "Predx0_Masked_Face_woclip+UNet_Bg", 
+                    "--diffusion_steps", "1000",
+                    "--reverse_sampling",
+                    "--seed", "47",
+                    "--sample_pair_json", "./sample_json/hard_samples.json",
+                    "--sample_pair_mode", "pair",
+                    "--interpolate", "render_face",
+                    "--interpolate_step", "5",
+                    "--n_subject", "2",
+                    "--gpu_id", "2",
+                    "--slerp",
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/sampling/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: auto_sampling_rev_itp_Masked_Face_woclip_no_nonspatial_sep_reverse",
+            "type": "python",
+            "request": "launch",
+            "program": "auto_sampling_rev_itp_Enc_input_sep_reverse.py",
+            "args": ["--set", "valid", 
+                    "--step", "050000",
+                    "--out_dir", "/data/mint/sampling/test_addnoise/", 
+                    "--cfg_name", "Masked_Face_woclip_no_nonspatial.yaml", 
+                    "--log_dir", "Masked_Face_woclip_no_nonspatial", 
+                    "--diffusion_steps", "1000",
+                    "--separate_reverse_sampling",
+                    "--seed", "47",
+                    "--sample_pair_json", "./sample_json/hard_samples.json",
+                    "--sample_pair_mode", "pair",
+                    "--interpolate", "render_face_modSH",
+                    "--interpolate_step", "5",
+                    "--n_subject", "2",
+                    "--gpu_id", "2",
+                    "--slerp",
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/sampling/",
+            "justMyCode": true
+        },
+
+
 
 
 //    _____       _                                       ______ _           _     __      ___                 _ _          _   _             

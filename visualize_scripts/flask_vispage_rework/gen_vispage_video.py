@@ -101,11 +101,11 @@ def create_app():
         model = glob.glob(f"{folder}/*")
         for m in model:
             m_name = m.split('/')[-1]
-            out += f"<a href=\"show_m_name={m_name}&itp=render_face&itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse\">{m_name}</a> <br>"
+            out += f"<a href=\"show_m_name={m_name}&itp=render_face&itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse&show=res\">{m_name}</a> <br>"
         return out
 
-    @app.route('/best_checkpoint_img/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>')
-    def best_checkpoint_img_show(m_name, itp, itp_method, sampling, diff_step, n_frame=5):
+    @app.route('/best_checkpoint_img/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>&show=<show>')
+    def best_checkpoint_img_show(m_name, itp, itp_method, sampling, diff_step, n_frame=5, show='res'):
         out = """<style>
                 th, tr, td {
                     border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
@@ -131,7 +131,7 @@ def create_app():
             for ckpt in checkpoint:
                 out += "<tr>"
                 out += f"<td>{ckpt.split('/')[-1]}</td> "
-                frames = glob.glob(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
+                frames = glob.glob(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0].replace('png', 'jpg')}/dst={src_dst[1].replace('png', 'jpg')}/{itp_method}_{diff_step}/n_frames={n_frame}/{show}_f*.png")
                 out += "<td>"
                 if len(frames) > 0:
                     frames = sort_by_frame(frames)
@@ -332,15 +332,14 @@ def create_app():
     def model_comparison_from_json_selector():
         out = ""
         json_files = glob.glob('./json_comparison/*.json')
-        link_based = "itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>&ckpt=<ckpt>"
-        link_based = "itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse&ckpt=050000"
+        link_based = "itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse&ckpt=050000&show=res"
         for jf in json_files:
             jf = jf.split('/')[-1]
             out += f"Comparison file : <a href=\"jf={jf}&&{link_based}\">{jf}</a> <br>"
         return out
         
-    @app.route('/model_comparison_from_json/jf=<jf>&&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>&ckpt=<ckpt>/')
-    def model_comparison_from_json_show(jf, itp_method, n_frame, diff_step, sampling, ckpt):
+    @app.route('/model_comparison_from_json/jf=<jf>&&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>&ckpt=<ckpt>&show=<show>/')
+    def model_comparison_from_json_show(jf, itp_method, n_frame, diff_step, sampling, ckpt, show):
         
         print(ckpt)
         out = """<style>
@@ -377,8 +376,8 @@ def create_app():
                 out += f"<td> {m_id+1} : {ckpt_dict[m]['alias']} <br> ({vis_ckpt}) </td>"
                 itp = ckpt_dict[m]['itp']
                 each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/{step}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0].replace('png', 'jpg')}/dst={src_dst[1].replace('png', 'jpg')}/"
-                frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
-                vid_path = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.mp4")
+                frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/{show}_f*.png")
+                vid_path = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/{show}_f*.mp4")
                     
                 if len(vid_path) == 0:
                     out += "<td> <p style=\"color:red\">Video not found!</p> </td>"

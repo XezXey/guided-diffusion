@@ -185,8 +185,9 @@ def create_cond_params(cond, key):
             tmp.append(cond[p].cpu().detach().numpy())
         else:
             tmp.append(cond[p])
-    print(np.concatenate(tmp, axis=1).shape)
-    cond['cond_params'] = np.concatenate(tmp, axis=1)
+    if tmp != []:
+        print(np.concatenate(tmp, axis=1).shape)
+        cond['cond_params'] = np.concatenate(tmp, axis=1)
     return cond
     
 def create_cond_imgs(cond, key):

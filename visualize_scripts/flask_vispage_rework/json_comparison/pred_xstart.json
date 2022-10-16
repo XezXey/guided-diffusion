@@ -1,0 +1,27 @@
+ {
+    "log=Predx0_Masked_Face_woclip_cfg=Predx0_Masked_Face_woclip.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Predx0_Enc(Face) (128x128)"
+    },
+    "log=Predx0_Masked_Face_woclip+Bg_cfg=Predx0_Masked_Face_woclip+Bg.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Predx0_Enc(Face+Bg) (128x128)"
+    },
+    "log=Predx0_Masked_Face_woclip+UNet_Bg_cfg=Predx0_Masked_Face_woclip+UNet_Bg.yaml" : {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Predx0_Enc(Face) + UNet(Bg) (128x128)"
+    },
+    "log=Predx0_Masked_Face_woclip+UNet_Bg_sep_dpm_noise_masking_cfg=Predx0_Masked_Face_woclip+UNet_Bg_sep_dpm_noise_masking.yaml" : {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Predx0_Enc(Face) + UNet(Bg_share_schedule) (128x128)"
+    },
+    "log=Predx0_Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_cfg=Predx0_Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking.yaml" : {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Predx0_Enc(Face) + UNet(Bg_share_noise&schedule) (128x128)"
+    }
+}

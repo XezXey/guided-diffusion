@@ -2,7 +2,22 @@
     "log=Face_woclip_cfg=Face_woclip.yaml" :  {
         "step":"ema_050000", 
         "itp":"render_face", 
-        "alias":"Enc(Face) (128x128)"
+        "alias":"Deca + Arcface : Enc(Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_no_nonspatial_cfg=Masked_Face_woclip_no_nonspatial.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"No-nonspatial : Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_Arcface_cfg=Masked_Face_woclip_Arcface.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Only Arcface : Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_Deca_cfg=Masked_Face_woclip_Deca.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Only Deca : Enc(Rendered Face) (128x128)"
     },
     "log=Masked_Face_woclip+UNet_Bg_sep_dpm_noise_masking_cfg=Masked_Face_woclip+UNet_Bg_sep_dpm_noise_masking.yaml" :  {
         "step":"ema_050000", 

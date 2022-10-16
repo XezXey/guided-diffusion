@@ -284,11 +284,12 @@ class DECADataset(Dataset):
                     each_cond_img = (each_cond_img / 127.5) - 1
                     out_dict[f'{k}_img'] = each_cond_img
             
-        # Deca params of img-path
-        if self.cfg.img_model.conditioning:
+        # Consturct the 'cond_params' for non-spatial conditioning
+        if self.cfg.img_model.conditioning: 
             out_dict["cond_params"] = np.concatenate([self.deca_params[query_img_name][k] for k in self.precomp_params_key])
-            for k in self.deca_params[query_img_name].keys():
-                out_dict[k] = self.deca_params[query_img_name][k]
+            
+        for k in self.deca_params[query_img_name].keys():
+            out_dict[k] = self.deca_params[query_img_name][k]
         out_dict['image_name'] = query_img_name
         out_dict['raw_image'] = np.transpose(np.array(raw_pil_image), [2, 0, 1])
         out_dict['raw_image_path'] = self.local_images[query_img_name]
@@ -305,7 +306,6 @@ class DECADataset(Dataset):
                 out_dict['image'] = np.transpose(arr, [2, 0, 1])
             else: raise ValueError(f"Bouding value = {self.cfg.img_model.input_bound} is invalid.")
         else : raise NotImplementedError
-        
         return np.transpose(arr, [2, 0, 1]), out_dict
 
     def prep_cond_img(self, each_cond_img, k, i):

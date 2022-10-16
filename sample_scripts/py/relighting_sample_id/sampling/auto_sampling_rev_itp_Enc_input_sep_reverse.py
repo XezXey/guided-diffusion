@@ -18,6 +18,7 @@ parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--uncond_sampling', action='store_true', default=False)
 parser.add_argument('--uncond_sampling_iters', type=int, default=1)
 parser.add_argument('--reverse_sampling', action='store_true', default=False)
+parser.add_argument('--separate_reverse_sampling', action='store_true', default=False)
 # Samples selection
 parser.add_argument('--n_subject', type=int, default=-1)
 parser.add_argument('--sample_pair_json', type=str, default=None)
@@ -136,9 +137,14 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
         noise_map = mani_utils.interp_noise(src_noise, dst_noise, n_step)
     elif args.reverse_sampling: 
         noise_map = th.cat([reverse_ddim_sample['final_output']['sample'][[src_idx]]] * n_step)
+    elif args.separate_reverse_sampling:
+        # Reverse from input image (x0)
+        reverse_ddim_sample = pl_sampling.reverse_proc(x=th.cat([cond['image'][[src_idx]]]*n_step, dim=0), model_kwargs=cond, store_intermediate=args.save_intermediate)
+        noise_map = reverse_ddim_sample['final_output']['sample']
     elif args.uncond_sampling: 
         # seed_all(47)
         noise_map = inference_utils.get_init_noise(n=n_step, mode='fixed_noise', img_size=cfg.img_model.image_size, device=device)
+        
     sample_ddim = pl_sampling.forward_proc(noise=noise_map, model_kwargs=cond, store_intermediate=False)
     
     #NOTE: Save result
@@ -153,6 +159,8 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
         out_folder_reconstruction += "/interp_noise"
     elif args.reverse_sampling: 
         out_folder_reconstruction += "/reverse_sampling"
+    elif args.separate_reverse_sampling: 
+        out_folder_reconstruction += "/separate_reverse_sampling"
     elif args.uncond_sampling: 
         out_folder_reconstruction += "/uncond_sampling"
     else: raise NotImplementedError

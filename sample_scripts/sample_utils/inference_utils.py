@@ -87,7 +87,7 @@ def cond_xt_fn(cond, cfg, use_render_itp, t, diffusion, noise, device='cuda'):
     #NOTE: This specifically run for ['dpm_cond_img']
     
     def faceseg_dpm_noise(x_start, p, k, noise):
-        
+        if p is None: return x_start
         share = True if p.split('-')[0] == 'share' else False
         masking = p.split('-')[-1]
         if masking == 'dpm_noise_masking':
@@ -144,16 +144,19 @@ def get_init_noise(n, mode, img_size, device):
 
 def to_tensor(cond, key, device):
     for k in key:
-        if isinstance(cond[k], list):
-            for i in range(len(cond[k])):
-                cond[k][i] = th.tensor(cond[k][i]).to(device)
+        if k not in cond.keys():
+            continue
         else:
-            if th.is_tensor(cond[k]):
-                cond[k] = cond[k].clone().to(device)
-            elif isinstance(cond[k], np.ndarray):
-                cond[k] = th.tensor(cond[k]).to(device)
+            if isinstance(cond[k], list):
+                for i in range(len(cond[k])):
+                    cond[k][i] = th.tensor(cond[k][i]).to(device)
             else:
-                continue
+                if th.is_tensor(cond[k]):
+                    cond[k] = cond[k].clone().to(device)
+                elif isinstance(cond[k], np.ndarray):
+                    cond[k] = th.tensor(cond[k]).to(device)
+                else:
+                    continue
     return cond
 
 def eval_mode(model_dict):
@@ -221,7 +224,8 @@ def build_condition_image(cond, misc):
         elif 'render_face_modSH' in args.interpolate:
             #NOTE: Render w/ interpolated light
             repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
-            mod_SH = np.array([1, 1.1, 1.2, 1/1.1, 1/1.2])[..., None]
+            # mod_SH = np.array([1, 1.1, 1.2, 1/1.1, 1/1.2])[..., None]
+            mod_SH = np.array([0, 1, 1.2, 1/1.2])[..., None]
             repeated_cond['light'] = repeated_cond['light'] * mod_SH
             cond.update(repeated_cond)
         else:
