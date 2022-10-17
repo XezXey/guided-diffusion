@@ -93,6 +93,7 @@ cfg.img_model.hadamart_share_norm = None
 cfg.img_model.hadamart_n_groups = None
 cfg.img_model.hadamart_use_bias = None
 cfg.img_model.hadamart_silu_scale = None
+cfg.img_model.hadamart_activation_scale = None
 
 # Image-Conditioning on UNet
 cfg.img_model.dpm_cond_img = [None]

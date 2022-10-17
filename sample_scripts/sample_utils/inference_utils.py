@@ -83,6 +83,14 @@ class PLSampling(pl.LightningModule):
             assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
         return {"final_output":sample, "intermediate":intermediate}
     
+    def override_modulator(self, cond, val=1):
+        print(f"[#] Override the modulator with {val}")
+        for i in range(len(cond)):
+            if val == 1:
+                cond[i] = th.ones_like(cond[i])
+        return cond
+        
+    
 def cond_xt_fn(cond, cfg, use_render_itp, t, diffusion, noise, device='cuda'):
     #NOTE: This specifically run for ['dpm_cond_img']
     

@@ -212,7 +212,10 @@ class SRenderY(nn.Module):
         self.register_buffer('face_uvcoords', face_uvcoords)
 
         # shape colors, for rendering shape overlay
+        # colors = torch.tensor([255, 255, 255])[None, None, :].repeat(1, faces.max()+1, 1).float()/255.
+        # colors = torch.tensor([1000, 1000, 1000])[None, None, :].repeat(1, faces.max()+1, 1).float()/255.
         colors = torch.tensor([180, 180, 180])[None, None, :].repeat(1, faces.max()+1, 1).float()/255.
+        # colors = torch.tensor([50, 50, 50])[None, None, :].repeat(1, faces.max()+1, 1).float()/255.
         face_colors = util.face_vertices(colors, faces)
         self.register_buffer('face_colors', face_colors)
 

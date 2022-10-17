@@ -3,5 +3,45 @@
         "step":"ema_050000", 
         "itp":"render_face_modSH", 
         "alias":"No-nonspatial (separate reverse) : Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_no_nonspatial_cfg=Masked_Face_woclip_no_nonspatial.yaml_no_modulation" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"\"No modulation\"; No-nonspatial (separate reverse) : Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_no_nonspatial_cfg=Masked_Face_woclip_no_nonspatial.yaml_grey_bg" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"\"Grey_bg\"; No-nonspatial (separate reverse) : Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_no_nonspatial_cfg=Masked_Face_woclip_no_nonspatial.yaml_no_modulation_grey_bg" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"\"No modulation - grey bg\"; No-nonspatial (separate reverse) : Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_no_nonspatial_cfg=Masked_Face_woclip_no_nonspatial.yaml_60065_bg" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"\"60065_bg\"; No-nonspatial (separate reverse) : Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_no_nonspatial_cfg=Masked_Face_woclip_no_nonspatial.yaml_no_modulation_60065_bg" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"\"No modulation - 60065 bg\"; No-nonspatial (separate reverse) : Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_no_nonspatial_cfg=Masked_Face_woclip_no_nonspatial.yaml_black_bg" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"\"Black_bg\"; No-nonspatial (separate reverse) : Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_no_nonspatial_cfg=Masked_Face_woclip_no_nonspatial.yaml_no_modulation_black_bg" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"\"No modulation - black bg\"; No-nonspatial (separate reverse) : Enc(Rendered Face) (128x128)"
+    },
+    "log=original_dpm_cfg=original_dpm.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"Original DPM (128x128)"
     }
 }

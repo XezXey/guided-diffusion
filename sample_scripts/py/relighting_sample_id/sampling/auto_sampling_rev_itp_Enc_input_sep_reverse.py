@@ -138,9 +138,18 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
     elif args.reverse_sampling: 
         noise_map = th.cat([reverse_ddim_sample['final_output']['sample'][[src_idx]]] * n_step)
     elif args.separate_reverse_sampling:
-        # Reverse from input image (x0)
+        # ovr_img = dataset.load_image(path='./62872_black_bg.png')
+        # ovr_img = dataset.load_image(path='./62872_grey_bg.png')
+        # ovr_img = dataset.load_image(path='./62872_60065_bg.png')
+        # ovr_img = (np.array(ovr_img) / 127.5) - 1
+        # ovr_img = np.transpose(ovr_img, (2, 0, 1))[None, ...]
+        # ovr_img = th.tensor(ovr_img).to(cond['image'].device)
+        # cond['image'] = ovr_img
+        # if cfg.img_cond_model.apply:
+        #     cond['spatial_latent'] = pl_sampling.override_modulator(cond['spatial_latent'])
         reverse_ddim_sample = pl_sampling.reverse_proc(x=th.cat([cond['image'][[src_idx]]]*n_step, dim=0), model_kwargs=cond, store_intermediate=args.save_intermediate)
         noise_map = reverse_ddim_sample['final_output']['sample']
+        # Load specific mod image
     elif args.uncond_sampling: 
         # seed_all(47)
         noise_map = inference_utils.get_init_noise(n=n_step, mode='fixed_noise', img_size=cfg.img_model.image_size, device=device)
@@ -154,7 +163,7 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
         itp_fn_str = 'Slerp'
         
     interpolate_str = '_'.join(args.interpolate)
-    out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}"
+    out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}"
     if args.interpolate_noise:
         out_folder_reconstruction += "/interp_noise"
     elif args.reverse_sampling: 
@@ -202,6 +211,8 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
 
 if __name__ == '__main__':
     seed_all(args.seed)
+    if args.postfix != '':
+        args.postfix = f'_{args.postfix}'
     # Load Ckpt
     if args.cfg_name is None:
         args.cfg_name = args.log_dir + '.yaml'
@@ -332,7 +343,7 @@ if __name__ == '__main__':
                 
                 # Save a visualization
                 interpolate_str = '_'.join(args.interpolate)
-                out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/Intermediate/diffstep_{args.diffusion_steps}/uncond_sampling_{i}/"
+                out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/Intermediate/diffstep_{args.diffusion_steps}/uncond_sampling_{i}/"
                 os.makedirs(out_folder_reconstruction, exist_ok=True)
                 
                 save_uncond_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Gaussian/"
@@ -363,7 +374,7 @@ if __name__ == '__main__':
             
             # Save a visualization
             interpolate_str = '_'.join(args.interpolate)
-            out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/Intermediate/diffstep_{args.diffusion_steps}/reverse_sampling/"
+            out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/Intermediate/diffstep_{args.diffusion_steps}/reverse_sampling/"
             os.makedirs(out_folder_reconstruction, exist_ok=True)
             
             save_reverse_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Reversed/"
@@ -381,7 +392,7 @@ if __name__ == '__main__':
                                             proc='forward', 
                                             image_name=cond['image_name'],
                                             bound=cfg.img_model.input_bound)
-
+        
         if args.lerp:
             model_kwargs['use_render_itp'] = True
             without_classifier(itp_func=mani_utils.lerp, 
