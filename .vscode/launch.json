@@ -28,13 +28,31 @@
             "console": "integratedTerminal",
             "cwd": "/home/mint/guided-diffusion/",
             "justMyCode": true
+        }, 
+        {
+            "name": "Python: train_masked_out_bg",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"1", "WANDB_MODE":"offline"},
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "3",
+                    "--train.n_gpus", "1", 
+                    // "--cfg", "./config/CVPRs/TrainOnSegmentFace/Masked_Face_woclip_no_nonspatial.yaml",
+                    "--cfg", "./config/CVPRs/TrainOnSegmentFace/original_dpm.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "500000000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
         },
         {
             "name": "Python: train_Face_x0",
             "type": "python",
             "request": "launch",
             "program": "./train_scripts/image_train.py",
-            "env": {"CUDA_VISIBLE_DEVICES":"1"},
+            "env": {"CUDA_VISIBLE_DEVICES":"1", "WANDB_MODE":"offline"},
             "args": ["--train.log_dir", "/data/mint/model_logs/dev",
                     "--train.batch_size", "2",
                     "--train.n_gpus", "1", 

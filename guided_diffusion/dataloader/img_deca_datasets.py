@@ -121,7 +121,8 @@ def load_data_img_deca(
     in_image = {}
     # For conditioning images
     condition_image = cfg.img_cond_model.in_image + cfg.img_model.dpm_cond_img
-    for in_image_type in condition_image:
+    input_image = cfg.img_model.in_image
+    for in_image_type in condition_image + input_image:
         if in_image_type is None: continue
         else:
             if 'deca' in in_image_type:
@@ -160,6 +161,7 @@ def load_data_img_deca(
     print("[#] Parameters Conditioning")
     print("Params keys order : ", img_dataset.precomp_params_key)
     print("Remove keys : ", cfg.param_model.rmv_params)
+    print("Input Image : ", cfg.img_model.in_image)
     print("Image condition : ", cfg.img_cond_model.in_image)
     print("DPM Image condition : ", cfg.img_model.dpm_cond_img)
 
@@ -226,8 +228,8 @@ class DECADataset(Dataset):
         self.mode = mode
         self.precomp_params_key = without(src=self.cfg.param_model.params_selector, rmv=['img_latent'] + self.rmv_params)
         self.kwargs = kwargs
-        self.condition_image = self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img
-        self.prep_condition_image = self.cfg.img_cond_model.prep_image + self.cfg.img_model.prep_dpm_cond_img
+        self.condition_image = self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img + self.cfg.img_model.in_image
+        self.prep_condition_image = self.cfg.img_cond_model.prep_image + self.cfg.img_model.prep_dpm_cond_img + self.cfg.img_model.prep_in_image
         print(f"[#] Bounding the input of UNet to +-{self.cfg.img_model.input_bound}")
 
     def __len__(self):
@@ -243,47 +245,46 @@ class DECADataset(Dataset):
 
         # cond_img contains the condition image from "img_cond_model.in_image + img_model.dpm_cond_img"
         cond_img = self.load_condition_image(raw_pil_image, query_img_name) 
-        if self.cfg.img_cond_model.apply or self.cfg.img_model.apply_dpm_cond_img:
-            for i, k in enumerate(self.condition_image):
-                if k is None: continue
-                elif k == 'raw':
-                    each_cond_img = (raw_img / 127.5) - 1
-                    each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                elif 'woclip' in k:
-                    #NOTE: Input is the npy array -> Used cv2.resize() to handle
-                    each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_AREA)
-                    each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                    out_dict[f'{k}_img'] = each_cond_img
-                elif 'laplacian' in k:
-                    laplacian_mask = np.array(self.load_image(self.kwargs['in_image_for_cond']['laplacian_mask'][query_img_name.replace('.jpg', '.png')]))
-                    laplacian_mask = self.prep_cond_img(laplacian_mask, k, i)
-                    each_cond_img = cond_img[k] * laplacian_mask
-                    each_cond_img = cv2.resize(each_cond_img, (self.resolution, self.resolution), cv2.INTER_AREA)
-                    each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                    # Store mask & img
-                    out_dict[f'{k}_img'] = each_cond_img
-                    laplacian_mask = cv2.resize(laplacian_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                    out_dict[f'{k}_mask'] = np.transpose(laplacian_mask, (2, 0, 1))
-                    assert np.all(np.unique(out_dict[f'{k}_mask']) == [0, 1])
-                elif 'faceseg' in k:
-                    faceseg_mask = self.prep_cond_img(~cond_img[k], k, i)   # Invert mask for dilation
-                    faceseg_mask = ~faceseg_mask    # Invert back to original mask
-                    faceseg = faceseg_mask * np.array(raw_pil_image)
-                    each_cond_img = self.augmentation(PIL.Image.fromarray(faceseg))
-                    each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                    each_cond_img = (each_cond_img / 127.5) - 1
-                    # Store mask & img
-                    out_dict[f'{k}_img'] = each_cond_img
-                    faceseg_mask = cv2.resize(faceseg_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                    out_dict[f'{k}_mask'] = np.transpose(faceseg_mask, (2, 0, 1))
-                    assert np.all(np.unique(out_dict[f'{k}_mask']) == [0, 1])
-                else:
-                    each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
-                    each_cond_img = self.prep_cond_img(each_cond_img, k, i)
-                    each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                    each_cond_img = (each_cond_img / 127.5) - 1
-                    out_dict[f'{k}_img'] = each_cond_img
-            
+        # if self.cfg.img_cond_model.apply or self.cfg.img_model.apply_dpm_cond_img:
+        for i, k in enumerate(self.condition_image):
+            if k is None: continue
+            elif k == 'raw':
+                each_cond_img = (raw_img / 127.5) - 1
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+            elif 'woclip' in k:
+                #NOTE: Input is the npy array -> Used cv2.resize() to handle
+                each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_AREA)
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                out_dict[f'{k}_img'] = each_cond_img
+            elif 'laplacian' in k:
+                laplacian_mask = np.array(self.load_image(self.kwargs['in_image_for_cond']['laplacian_mask'][query_img_name.replace('.jpg', '.png')]))
+                laplacian_mask = self.prep_cond_img(laplacian_mask, k, i)
+                each_cond_img = cond_img[k] * laplacian_mask
+                each_cond_img = cv2.resize(each_cond_img, (self.resolution, self.resolution), cv2.INTER_AREA)
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                # Store mask & img
+                out_dict[f'{k}_img'] = each_cond_img
+                laplacian_mask = cv2.resize(laplacian_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                out_dict[f'{k}_mask'] = np.transpose(laplacian_mask, (2, 0, 1))
+                assert np.all(np.unique(out_dict[f'{k}_mask']) == [0, 1])
+            elif 'faceseg' in k:
+                faceseg_mask = self.prep_cond_img(~cond_img[k], k, i)   # Invert mask for dilation
+                faceseg_mask = ~faceseg_mask    # Invert back to original mask
+                faceseg = (faceseg_mask * np.array(raw_pil_image)) + (~faceseg_mask * 127.5)
+                each_cond_img = self.augmentation(PIL.Image.fromarray(faceseg.astype(np.uint8)))
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                each_cond_img = (each_cond_img / 127.5) - 1
+                # Store mask & img
+                out_dict[f'{k}_img'] = each_cond_img
+                faceseg_mask = cv2.resize(faceseg_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                out_dict[f'{k}_mask'] = np.transpose(faceseg_mask, (2, 0, 1))
+                assert np.all(np.unique(out_dict[f'{k}_mask']) == [0, 1])
+            else:
+                each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
+                each_cond_img = self.prep_cond_img(each_cond_img, k, i)
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                each_cond_img = (each_cond_img / 127.5) - 1
+                out_dict[f'{k}_img'] = each_cond_img
         # Consturct the 'cond_params' for non-spatial conditioning
         if self.cfg.img_model.conditioning: 
             out_dict["cond_params"] = np.concatenate([self.deca_params[query_img_name][k] for k in self.precomp_params_key])
@@ -295,18 +296,19 @@ class DECADataset(Dataset):
         out_dict['raw_image_path'] = self.local_images[query_img_name]
 
         # Input to UNet-model
-        if self.in_image_UNet == 'raw':
-            if self.cfg.img_model.input_bound == 1:
-                norm_img = (raw_img / 127.5) - 1
+        if self.in_image_UNet == ['raw']:
+            if self.cfg.img_model.input_bound in [0.5, 1]:
+                norm_img = (raw_img / 127.5) - self.cfg.img_model.input_bound
                 arr = norm_img
-                out_dict['image'] = np.transpose(arr, [2, 0, 1])
-            elif self.cfg.img_model.input_bound == 0.5:
-                norm_img = (raw_img / 255.0) - 0.5
-                arr = norm_img
-                out_dict['image'] = np.transpose(arr, [2, 0, 1])
+                arr = np.transpose(arr, [2, 0, 1])
+                out_dict['image'] = arr
             else: raise ValueError(f"Bouding value = {self.cfg.img_model.input_bound} is invalid.")
+            
+        elif self.in_image_UNet == ['faceseg_head']:
+            arr = out_dict['faceseg_head_img']
+            out_dict['image'] = arr
         else : raise NotImplementedError
-        return np.transpose(arr, [2, 0, 1]), out_dict
+        return arr, out_dict
 
     def prep_cond_img(self, each_cond_img, k, i):
         """
@@ -378,6 +380,8 @@ class DECADataset(Dataset):
 
         if segment_part == 'faceseg_face':
             seg_m = face
+        elif segment_part == 'faceseg_head':
+            seg_m = (face | neck | hair)
         elif segment_part == 'faceseg_face&hair':
             seg_m = ~bg
         elif segment_part == 'faceseg_bg_noface&nohair':

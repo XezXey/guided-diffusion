@@ -54,19 +54,19 @@ cfg.param_model.use_checkpoint = ""
 # ---------------------------------------------------------------------------- #
 # Options for Image model (e.g. raw image, uv_displacement_normal, depth, etc.) 
 # ---------------------------------------------------------------------------- #
-img_model_img_type = {'raw':3}
 cfg.img_model = CN()
 cfg.img_model.name = "Img"
-cfg.img_model.in_image = '+'.join(img_model_img_type.keys())
+cfg.img_model.in_image = ['raw']
+cfg.img_model.prep_in_image = [None]
 cfg.img_model.resize_mode = 'resize'
 cfg.img_model.augment_mode = None
 # Network
 cfg.img_model.arch = 'UNet'
 cfg.img_model.image_size = 128
 cfg.img_model.num_channels = 128
-cfg.img_model.in_channels = sum(img_model_img_type.values())
+cfg.img_model.in_channels = 3
 cfg.img_model.each_in_channels = [cfg.img_model.in_channels]
-cfg.img_model.out_channels = sum(img_model_img_type.values())
+cfg.img_model.out_channels = 3
 cfg.img_model.num_res_blocks = 2
 cfg.img_model.num_heads = 4
 cfg.img_model.num_heads_upsample = -1
