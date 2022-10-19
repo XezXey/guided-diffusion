@@ -185,10 +185,10 @@ class HadamartLayer(nn.Module):
             self.prep = str.lower(self.prep)
             if self.prep == 'tanh' or self.prep == 'tanh_after':
                 print(f"[#] Use Hadamart-{self.prep}")
-                self.clip_layer = nn.Tanh()
+                self.prep_layer = nn.Tanh()
             elif self.prep == 'sigmoid':
                 print("[#] Use Hadamart-Sigmoid")
-                self.clip_layer = nn.Sigmoid()
+                self.prep_layer = nn.Sigmoid()
             elif self.prep == 'identity':
                 print("[#] Use Hadamart-Identity")
             elif self.prep == 'adaptive_patches_gn':
@@ -215,9 +215,9 @@ class HadamartLayer(nn.Module):
             elif self.prep == 'tanh':
                 out = th.mul(x, self.prep_layer(y))
             elif self.prep == 'tanh_after':
-                out = self.clip_layer(th.mul(x, y))
+                out = self.prep_layer(th.mul(x, y))
             elif self.prep == 'sigmoid':
-                out = th.mul(x, self.clip_layer(y))
+                out = th.mul(x, self.prep_layer(y))
             elif self.prep == 'identity':
                 out = th.mul(x, (1+y))
             elif self.prep in ['adaptive_patches_gn', 'adaptive_reducech_gn']:

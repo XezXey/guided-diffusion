@@ -146,7 +146,7 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
         itp_fn_str = 'Lerp'
     elif itp_func == mani_utils.slerp:
         itp_fn_str = 'Slerp'
-        
+
     interpolate_str = '_'.join(args.interpolate)
     out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}"
     if args.interpolate_noise:

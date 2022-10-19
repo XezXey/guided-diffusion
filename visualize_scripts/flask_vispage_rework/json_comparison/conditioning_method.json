@@ -1,0 +1,32 @@
+ {
+    "log=original_dpm_cfg=original_dpm.yaml" :  {
+        "step":"ema_040000", 
+        "itp":"render_face_modSH", 
+        "alias":" Original DPM (128x128)"
+    },
+    "log=Masked_Face_woclip_Sigmoid_no_nonspatial_cfg=Masked_Face_woclip_Sigmoid_no_nonspatial.yaml" :  {
+        "step":"ema_040000", 
+        "itp":"render_face_modSH", 
+        "alias":"Sigmoid : Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_Identity_no_nonspatial.yaml_cfg=Masked_Face_woclip_Identity_no_nonspatial.yaml" :  {
+        "step":"ema_040000", 
+        "itp":"render_face_modSH", 
+        "alias":"Identity (x * (1+y)) : Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_Tanh_after_no_nonspatial_cfg=Masked_Face_woclip_Tanh_after_no_nonspatial.yaml" :  {
+        "step":"ema_040000", 
+        "itp":"render_face_modSH", 
+        "alias":"Tanh_after : Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_no_nonspatial_cfg=Masked_Face_woclip_no_nonspatial.yaml" :  {
+        "step":"ema_040000", 
+        "itp":"render_face_modSH", 
+        "alias":"Tanh : Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_Ada4GN_Tanh_no_nonspatial_cfg=Masked_Face_woclip_Ada4GN_Tanh_no_nonspatial.yaml" :  {
+        "step":"ema_040000", 
+        "itp":"render_face_modSH", 
+        "alias":"AdaGN : Enc(Rendered Face) (128x128)"
+    }
+}

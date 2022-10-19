@@ -1,0 +1,27 @@
+ {
+    "log=original_dpm_cfg=original_dpm.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"No Normalize; Original DPM"
+    },
+    "log=original_dpm_cfg=original_dpm.yaml_rgb_global_fix" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"Global Normalize rgb; Original DPM"
+    },
+    "log=Masked_Face_woclip_no_nonspatial_cfg=Masked_Face_woclip_no_nonspatial.yaml" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"No Normalize; No-nonspatial + Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_no_nonspatial_cfg=Masked_Face_woclip_no_nonspatial.yaml_rgb_global_fix" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"Global Normalize rgb; No-nonspatial + Enc(Rendered Face) (128x128)"
+    },
+    "log=Masked_Face_woclip_no_nonspatial_cfg=Masked_Face_woclip_no_nonspatial.yaml_gray_global_fix" :  {
+        "step":"ema_050000", 
+        "itp":"render_face_modSH", 
+        "alias":"Global Normalize gray; No-nonspatial + Enc(Rendered Face) (128x128)"
+    }
+}

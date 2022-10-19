@@ -126,12 +126,15 @@ def create_app():
         
         for idx, src_dst in enumerate(subject_id):
             out += "<table>"
-            out += "<tr> <th> Checkpoint </th> <th> Image </th> </tr>"
-            out += f"[#{idx}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].split('=')[-1]} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].split('=')[-1]} width=\"64\" height=\"64\">" + "<br>" + "<br>"
+            out += "<tr> <th> Checkpoint </th> <th> Input </th> <th> Image </th> <th> Input </th> </tr>"
+            out += f"[#{idx+1}] {src_dst[0]} : <img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')} width=\"64\" height=\"64\">, {src_dst[1]} : <img src=/files/{data_path}/{src_dst[1].replace('jpg', 'png')} width=\"64\" height=\"64\">" + "<br>" + "<br>"
             for ckpt in checkpoint:
                 out += "<tr>"
                 out += f"<td>{ckpt.split('/')[-1]}</td> "
                 frames = glob.glob(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0].replace('png', 'jpg')}/dst={src_dst[1].replace('png', 'jpg')}/{itp_method}_{diff_step}/n_frames={n_frame}/{show}_f*.png")
+                
+                
+                out += f"<td> <img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')}> </td>"
                 out += "<td>"
                 if len(frames) > 0:
                     frames = sort_by_frame(frames)
@@ -140,7 +143,9 @@ def create_app():
                 else:
                     out += "<p style=\"color:red\">Images not found!</p>"
                 out += "</td>"
+                out += f"<td> <img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')}> </td>"
                 out += "</tr>"
+                
             out += "</table>"
             out += "<br> <hr>"
             

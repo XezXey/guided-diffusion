@@ -41,6 +41,11 @@ parser.add_argument('--out_dir', type=str, required=True)
 parser.add_argument('--gpu_id', type=str, default="0")
 parser.add_argument('--save_intermediate', action='store_true', default=False)
 parser.add_argument('--postfix', type=str, default='')
+parser.add_argument('--ovr_img', type=str, default=None)
+parser.add_argument('--ovr_mod', action='store_true', default=False)
+parser.add_argument('--norm_img', action='store_true', default=False)
+parser.add_argument('--use_global_norm', action='store_true', default=False)
+parser.add_argument('--norm_space', type=str, default='rgb')
 
 args = parser.parse_args()
 
@@ -138,29 +143,70 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
     elif args.reverse_sampling: 
         noise_map = th.cat([reverse_ddim_sample['final_output']['sample'][[src_idx]]] * n_step)
     elif args.separate_reverse_sampling:
-        # ovr_img = dataset.load_image(path='./62872_black_bg.png')
-        # ovr_img = dataset.load_image(path='./62872_grey_bg.png')
-        # ovr_img = dataset.load_image(path='./62872_60065_bg.png')
-        # ovr_img = (np.array(ovr_img) / 127.5) - 1
-        # ovr_img = np.transpose(ovr_img, (2, 0, 1))[None, ...]
-        # ovr_img = th.tensor(ovr_img).to(cond['image'].device)
-        # cond['image'] = ovr_img
-        # if cfg.img_cond_model.apply:
-        #     cond['spatial_latent'] = pl_sampling.override_modulator(cond['spatial_latent'])
+        #NOTE: Special for SH modulation and experiment on brightness
+        if args.ovr_img is not None:
+            # Load specific mod image
+            assert src_id.split('.')[0] in args.ovr_img
+            print("[#] Overriding the images...")
+            ovr_img = dataset.load_image(path=f'{args.ovr_img}')
+            ovr_img = (np.array(ovr_img) / 127.5) - 1
+            ovr_img = np.transpose(ovr_img, (2, 0, 1))[None, ...]
+            ovr_img = th.tensor(ovr_img).to(cond['image'].device)
+            cond['image'] = ovr_img
+            
+        if args.ovr_mod and cfg.img_cond_model.apply:
+            print("[#] Overriding modulators...")
+            cond['spatial_latent'] = pl_sampling.override_modulator(cond['spatial_latent'])
+        if args.norm_img:
+            print(f"[#] Normalize image in {args.norm_space}...")
+            def rgb_to_gray(img):
+                out = (img[[0], [[0]], ...] * 0.2989) + (img[[0], [[1]], ...] * 0.5870) + (img[[0], [[2]], ...] * 0.1140)
+                return out
+            assert args.norm_space in ['gray', 'rgb']
+            if args.norm_space == 'gray':
+                gray_img = rgb_to_gray(cond['image'][[src_idx]])
+                std_img, mu_img = th.std_mean(gray_img)
+                mu_gray_dataset, std_gray_dataset = 114.49997340551313, 58.050383371049826
+                mu_gray_dataset = (mu_gray_dataset/127.5) - 1
+                std_gray_dataset = (std_gray_dataset/127.5)
+                mu_dataset = mu_gray_dataset
+                std_dataset = std_gray_dataset
+            elif args.norm_space == 'rgb':
+                std_img, mu_img = th.std_mean(cond['image'][[src_idx]])
+                mu_rgb_dataset, std_rgb_dataset = 112.82840539423624, 62.779011111637864
+                mu_rgb_dataset = (mu_rgb_dataset/127.5) - 1
+                std_rgb_dataset = (std_rgb_dataset/127.5)
+                mu_dataset = mu_rgb_dataset
+                std_dataset = std_rgb_dataset
+            else: raise ValueError(f"[#] Invalid : {args.norm_space}")
+            cond['image'] = (cond['image'] - mu_img) / std_img
+            print(f"Local Normalization factor(mu, std) : {mu_img}, {std_img}")
+            if args.use_global_norm:
+                print("[#] Using global norm...")
+                print(f"Global Normalization factor(mu, std) : {mu_dataset}, {std_dataset}")
+                cond['image'] = (cond['image'] * std_dataset) + mu_dataset
+            
         reverse_ddim_sample = pl_sampling.reverse_proc(x=th.cat([cond['image'][[src_idx]]]*n_step, dim=0), model_kwargs=cond, store_intermediate=args.save_intermediate)
         noise_map = reverse_ddim_sample['final_output']['sample']
-        # Load specific mod image
     elif args.uncond_sampling: 
-        # seed_all(47)
         noise_map = inference_utils.get_init_noise(n=n_step, mode='fixed_noise', img_size=cfg.img_model.image_size, device=device)
-        
+    
+    plt.imshow((((cond['image'][0].cpu().numpy().transpose(1, 2, 0) + 1) * 127.5)/255.0))#.astype(np.float))
+    os.makedirs(f'./vis_img/{src_id}/', exist_ok=True)
+    plt.savefig(f'./vis_img/{src_id}/norm_{src_id}.png')
+    
+    
     sample_ddim = pl_sampling.forward_proc(noise=noise_map, model_kwargs=cond, store_intermediate=False)
+    for i in range(n_step):
+        plt.imshow((((sample_ddim['final_output']['sample'][i].cpu().numpy().transpose(1, 2, 0) + 1) * 127.5)/255.0))#.astype(np.float))
+        plt.savefig(f'./vis_img/{src_id}/inverted_{src_id}_{i}.png')
     
     #NOTE: Save result
     if itp_func == mani_utils.lerp:
         itp_fn_str = 'Lerp'
     elif itp_func == mani_utils.slerp:
         itp_fn_str = 'Slerp'
+        
         
     interpolate_str = '_'.join(args.interpolate)
     out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}"
@@ -178,11 +224,46 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
     save_res_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
     os.makedirs(save_res_path, exist_ok=True)
     
+        
+    if args.norm_img:
+        # Denorm
+        print("[#] DeNormalize image...")
+        if args.use_global_norm:
+            print("[#] Global DeNormalizing...")
+            sample_ddim['final_output']['sample'] = (sample_ddim['final_output']['sample'] - mu_dataset) / std_dataset
+            sample_ddim['final_output']['pred_xstart'] = (sample_ddim['final_output']['pred_xstart'] - mu_dataset) / std_dataset
+        sample_ddim['final_output']['sample'] = (sample_ddim['final_output']['sample'] * std_img) + mu_img
+        sample_ddim['final_output']['pred_xstart'] = (sample_ddim['final_output']['pred_xstart'] * std_img) + mu_img
+        
+    for i in range(n_step):
+        plt.imshow((((sample_ddim['final_output']['sample'][i].cpu().numpy().transpose(1, 2, 0) + 1) * 127.5)/255.0))#.astype(np.float))
+        plt.savefig(f'./vis_img/{src_id}/denorm_inverted_{src_id}_{i}.png')
+    
     sample_frames = vis_utils.convert2rgb(sample_ddim['final_output']['sample'], cfg.img_model.input_bound) / 255.0
     vis_utils.save_images(path=f"{save_res_path}", fn="res", frames=sample_frames)
     
     sample_frames = vis_utils.convert2rgb(sample_ddim['final_output']['pred_xstart'], cfg.img_model.input_bound) / 255.0
     vis_utils.save_images(path=f"{save_res_path}", fn="res_xstart", frames=sample_frames)
+    
+    # sample_frames = vis_utils.convert2rgb(sample_ddim['final_output']['sample'], cfg.img_model.input_bound)
+    # if args.norm_img:
+    #     # Denorm
+    #     print("[#] DeNormalize image...")
+    #     if args.use_global_norm:
+    #         print("[#] Global DeNormalizing...")
+    #         sample_frames = (sample_frames - mu_dataset) / std_dataset
+    #     sample_frames = (sample_frames * std_img) + mu_img
+    # vis_utils.save_images(path=f"{save_res_path}", fn="res", frames=sample_frames / 255.0)
+    
+    # sample_frames = vis_utils.convert2rgb(sample_ddim['final_output']['pred_xstart'], cfg.img_model.input_bound)
+    # if args.norm_img:
+    #     # Denorm
+    #     print("[#] DeNormalize image...")
+    #     if args.use_global_norm:
+    #         print("[#] Global DeNormalizing...")
+    #         sample_frames = (sample_frames - mu_dataset) / std_dataset
+    #     sample_frames = (sample_frames * std_img) + mu_img
+    # vis_utils.save_images(path=f"{save_res_path}", fn="res_xstart", frames=sample_frames / 255.0)
     
     is_render = np.any(['deca' in i for i in condition_img])
     if is_render:
