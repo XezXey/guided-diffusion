@@ -172,7 +172,7 @@ def eval_mode(model_dict):
         model_dict[k].eval()
     return model_dict
 
-def prepare_cond_sampling(dat, cond, cfg, use_render_itp=False, device='cuda'):
+def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
     """
     Prepare a condition for encoder network (e.g., adding noise, share noise with DPM)
     :param noise: noise map used in DPM

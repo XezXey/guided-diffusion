@@ -105,7 +105,7 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
             cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
     
     cond, clip_ren = inference_utils.build_condition_image(cond=cond, misc=misc)
-    cond = inference_utils.prepare_cond_sampling(dat=dat, cond=cond, cfg=cfg, use_render_itp=True)
+    cond = inference_utils.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
     
     if cfg.img_cond_model.apply:
         cond = pl_sampling.forward_cond_network(model_kwargs=cond)
@@ -245,26 +245,6 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
     sample_frames = vis_utils.convert2rgb(sample_ddim['final_output']['pred_xstart'], cfg.img_model.input_bound) / 255.0
     vis_utils.save_images(path=f"{save_res_path}", fn="res_xstart", frames=sample_frames)
     
-    # sample_frames = vis_utils.convert2rgb(sample_ddim['final_output']['sample'], cfg.img_model.input_bound)
-    # if args.norm_img:
-    #     # Denorm
-    #     print("[#] DeNormalize image...")
-    #     if args.use_global_norm:
-    #         print("[#] Global DeNormalizing...")
-    #         sample_frames = (sample_frames - mu_dataset) / std_dataset
-    #     sample_frames = (sample_frames * std_img) + mu_img
-    # vis_utils.save_images(path=f"{save_res_path}", fn="res", frames=sample_frames / 255.0)
-    
-    # sample_frames = vis_utils.convert2rgb(sample_ddim['final_output']['pred_xstart'], cfg.img_model.input_bound)
-    # if args.norm_img:
-    #     # Denorm
-    #     print("[#] DeNormalize image...")
-    #     if args.use_global_norm:
-    #         print("[#] Global DeNormalizing...")
-    #         sample_frames = (sample_frames - mu_dataset) / std_dataset
-    #     sample_frames = (sample_frames * std_img) + mu_img
-    # vis_utils.save_images(path=f"{save_res_path}", fn="res_xstart", frames=sample_frames / 255.0)
-    
     is_render = np.any(['deca' in i for i in condition_img])
     if is_render:
         k = [i for i in condition_img if 'deca' in i][0]
@@ -395,7 +375,7 @@ if __name__ == '__main__':
                                                  cfg=cfg,
                                                  args=args)
         
-        model_kwargs = inference_utils.prepare_cond_sampling(dat=dat, cond=model_kwargs, cfg=cfg)
+        model_kwargs = inference_utils.prepare_cond_sampling(cond=model_kwargs, cfg=cfg)
         model_kwargs['cfg'] = cfg
         model_kwargs['use_cond_xt_fn'] = False
         if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):

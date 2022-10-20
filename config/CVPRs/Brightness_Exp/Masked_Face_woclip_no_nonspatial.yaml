@@ -2,7 +2,8 @@ img_model:
   name: "ImgCond"
   arch: "UNetCond_SpatialCondition_Hadamart"
   image_size: 128
-  in_image: 'raw'
+  in_image: ['raw']
+  prep_in_image: [Null]
   in_channels: 3
   out_channels: 3
   conditioning: False  # Conditioning with DECA
