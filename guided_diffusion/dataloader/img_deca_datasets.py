@@ -266,7 +266,7 @@ class DECADataset(Dataset):
                 out_dict[f'{k}_img'] = each_cond_img
                 laplacian_mask = cv2.resize(laplacian_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                 out_dict[f'{k}_mask'] = np.transpose(laplacian_mask, (2, 0, 1))
-                assert np.all(np.isin(out_dict[f'{k}_mask']), [0, 1])
+                assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
             elif 'faceseg' in k:
                 faceseg_mask = self.prep_cond_img(~cond_img[k], k, i)   # Invert mask for dilation
                 faceseg_mask = ~faceseg_mask    # Invert back to original mask
@@ -278,7 +278,7 @@ class DECADataset(Dataset):
                 out_dict[f'{k}_img'] = each_cond_img
                 faceseg_mask = cv2.resize(faceseg_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                 out_dict[f'{k}_mask'] = np.transpose(faceseg_mask, (2, 0, 1))
-                assert np.all(np.isin(out_dict[f'{k}_mask']), [0, 1])
+                assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
             else:
                 each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
                 each_cond_img = self.prep_cond_img(each_cond_img, k, i)
