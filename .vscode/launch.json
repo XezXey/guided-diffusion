@@ -39,7 +39,7 @@
                     "--train.batch_size", "3",
                     "--train.n_gpus", "1", 
                     // "--cfg", "./config/CVPRs/TrainOnSegmentFace/Masked_Face_woclip_no_nonspatial.yaml",
-                    "--cfg", "./config/CVPRs/TrainOnSegmentFace/original_dpm.yaml",
+                    "--cfg", "./config/CVPRs/TrainOnSegmentFace/original_dpm_faceseg.yaml",
                     "--train.save_interval", "5000000000",
                     "--train.sampling_interval", "500000000"
             ],

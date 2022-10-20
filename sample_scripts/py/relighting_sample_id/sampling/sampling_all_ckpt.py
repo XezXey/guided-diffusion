@@ -1,1 +1,0 @@
-#TODO: Write the script to auto running commands given #N-gpu. the process will fetch the commands and run till finished then, fetch next command to run
