@@ -732,6 +732,7 @@ class GaussianDiffusion:
         progress=True,
         eta=0.0,
         store_intermidiate=False,
+        sdedit=None,
     ):
         """
         Generate samples from the model using DDIM.
@@ -751,6 +752,7 @@ class GaussianDiffusion:
             device=device,
             progress=progress,
             eta=eta,
+            sdedit=sdedit
         ):
             final = sample
             if store_intermidiate:
@@ -769,6 +771,7 @@ class GaussianDiffusion:
         device=None,
         progress=False,
         eta=0.0,
+        sdedit=None
     ):
         """
         Use DDIM to sample from the model and yield intermediate samples from
@@ -792,9 +795,24 @@ class GaussianDiffusion:
             indices = tqdm(indices)
 
         for i in indices:
+            t = th.tensor([i] * shape[0], device=device)
+            if sdedit is not None:
+                #NOTE: SDedit implemented here
+                if i == self.num_timesteps-1:
+                    print("[#] Applying the SDedit on Background")
+                bg_e = sdedit['bg']
+                mask_e = sdedit['mask']
+                noise_e = sdedit['noise']
+                bg_e = self.q_sample(x_start=bg_e, t=t, noise=noise_e)
+                bg_e = th.repeat_interleave(bg_e, repeats=shape[0], dim=0)
+                if i % 100 == 0:
+                    import torchvision
+                    torchvision.utils.save_image(tensor=(bg_e+1)*0.5, fp=f"./bg_frame_t={i}.png")
+            
+                x = (mask_e == 0) * bg_e + (mask_e != 0) * x    # Face(mask==1), Bg(mask==0)
+            
             # Deep copy to prevent sth that used .pop()
             model_kwargs_copy = make_deepcopyable(model_kwargs, keys=list(model_kwargs.keys()))
-            t= th.tensor([i] * shape[0], device=device)
             if cond_xt_fn is not None:
                 model_kwargs_copy = cond_xt_fn(cond=model_kwargs_copy, 
                                                t=t, 

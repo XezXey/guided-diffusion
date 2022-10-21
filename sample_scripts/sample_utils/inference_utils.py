@@ -67,7 +67,7 @@ class PLSampling(pl.LightningModule):
             assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
         return {"final_output":sample, "intermediate":intermediate}
     
-    def forward_proc(self, model_kwargs, noise, store_intermediate=True):
+    def forward_proc(self, model_kwargs, noise, store_intermediate=True, sdedit=None):
         model_kwargs['const_noise'] = self.const_noise
         sample, intermediate = self.forward_fn(
             model=self.model_dict[self.cfg.img_model.name],
@@ -77,7 +77,8 @@ class PLSampling(pl.LightningModule):
             denoised_fn=self.denoised_fn,
             model_kwargs=model_kwargs,
             store_intermidiate=store_intermediate,
-            cond_xt_fn=cond_xt_fn if model_kwargs['use_cond_xt_fn'] else None
+            cond_xt_fn=cond_xt_fn if model_kwargs['use_cond_xt_fn'] else None,
+            sdedit=sdedit
         )
         if store_intermediate:
             assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
