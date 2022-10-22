@@ -620,6 +620,10 @@ class GaussianDiffusion:
                                                diffusion=self,
                                                noise=model_kwargs_copy['const_noise']
                                             )
+                # if i % 100 == 0:
+                #     import torchvision, time
+                #     torchvision.utils.save_image(tensor=(model_kwargs_copy['dpm_cond_img']+1)*0.5, fp=f"./dpm_rev_frame_t={i}_{time.time()}.png")
+                
             with th.no_grad():
                 out = self.ddim_reverse_sample(
                     model=model,
@@ -805,9 +809,9 @@ class GaussianDiffusion:
                 noise_e = sdedit['noise']
                 bg_e = self.q_sample(x_start=bg_e, t=t, noise=noise_e)
                 bg_e = th.repeat_interleave(bg_e, repeats=shape[0], dim=0)
-                if i % 100 == 0:
-                    import torchvision
-                    torchvision.utils.save_image(tensor=(bg_e+1)*0.5, fp=f"./bg_frame_t={i}.png")
+                # if i % 100 == 0:
+                #     import torchvision
+                #     torchvision.utils.save_image(tensor=(bg_e+1)*0.5, fp=f"./bg_frame_t={i}.png")
             
                 x = (mask_e == 0) * bg_e + (mask_e != 0) * x    # Face(mask==1), Bg(mask==0)
             
@@ -821,6 +825,10 @@ class GaussianDiffusion:
                                                diffusion=self,
                                                noise=model_kwargs_copy['const_noise']
                                             )
+                # if i % 100 == 0:
+                #     import torchvision, time
+                #     torchvision.utils.save_image(tensor=(model_kwargs_copy['dpm_cond_img']+1)*0.5, fp=f"./dpm_rev_frame_t={i}_{time.time()}.png")
+                    
             with th.no_grad():
                 out = self.ddim_sample(
                     model,
