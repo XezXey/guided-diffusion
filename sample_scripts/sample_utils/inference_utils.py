@@ -24,7 +24,7 @@ class PLSampling(pl.LightningModule):
         self.diffusion = diffusion
         self.cfg = cfg
         self.args = args
-        self.const_noise = th.randn((1, 3, 128, 128)).cuda()
+        self.const_noise = th.randn((1, 3, cfg.img_model.image_size, cfg.img_model.image_size)).cuda()
         
     def forward_cond_network(self, model_kwargs):
         if self.args.perturb_img_cond:

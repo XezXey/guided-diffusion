@@ -141,6 +141,7 @@ def without_classifier(itp_func, src_idx, dst_idx, src_id, dst_id, model_kwargs)
         dst_noise = reverse_ddim_sample['final_output']['sample'][[dst_idx]]
         noise_map = mani_utils.interp_noise(src_noise, dst_noise, n_step)
     elif args.reverse_sampling: 
+        reverse_ddim_sample = model_kwargs['reverse']
         noise_map = th.cat([reverse_ddim_sample['final_output']['sample'][[src_idx]]] * n_step)
     elif args.separate_reverse_sampling:
         #NOTE: Special for SH modulation and experiment on brightness
@@ -456,6 +457,7 @@ if __name__ == '__main__':
         
         if args.lerp:
             model_kwargs['use_render_itp'] = True
+            model_kwargs['reverse'] = reverse_ddim_sample
             without_classifier(itp_func=mani_utils.lerp, 
                             src_idx=src_idx, src_id=src_id,
                             dst_idx=dst_idx, dst_id=dst_id,
@@ -467,6 +469,7 @@ if __name__ == '__main__':
                                 model_kwargs=model_kwargs)
                 
         if args.slerp:
+            model_kwargs['reverse'] = reverse_ddim_sample
             model_kwargs['use_render_itp'] = True
             without_classifier(itp_func=mani_utils.slerp, 
                             src_idx=src_idx, src_id=src_id,
