@@ -638,6 +638,12 @@ class GaussianDiffusion:
                 yield out
                 x = out['sample']
     
+    def mean_batch(self, x):
+      if len(x.shape) != 4:
+        raise NotImplementedError
+      # return th.mean(x, (1, 2, 3), keepdim=True)
+      return th.mean(x, (2, 3), keepdim=True)
+
 
     def ddim_reverse_sample_loop(
         self,
@@ -650,6 +656,7 @@ class GaussianDiffusion:
         progress=True,
         device=None,
         store_intermidiate=False,
+        store_mean=False
     ):
         """
         Generate samples from the model using DDIM.
@@ -658,6 +665,10 @@ class GaussianDiffusion:
         """
         final = None
         intermediate = []
+
+        if store_mean:
+            intermediate = [self.mean_batch(x)]
+
         for sample in self.ddim_reverse_sample_loop_progressive(
             model=model,
             x=x,
@@ -670,7 +681,9 @@ class GaussianDiffusion:
             eta=0.0,
         ):
             final = sample
-            if store_intermidiate:
+            if store_mean:
+                intermediate.append(self.mean_batch(sample['sample'])) 
+            elif store_intermidiate:
                 intermediate.append(sample)
             
         return final, intermediate
@@ -737,6 +750,8 @@ class GaussianDiffusion:
         eta=0.0,
         store_intermidiate=False,
         sdedit=None,
+        rev_mean=None,
+        add_mean=None
     ):
         """
         Generate samples from the model using DDIM.
@@ -756,7 +771,9 @@ class GaussianDiffusion:
             device=device,
             progress=progress,
             eta=eta,
-            sdedit=sdedit
+            sdedit=sdedit,
+            rev_mean=rev_mean,
+            add_mean=add_mean
         ):
             final = sample
             if store_intermidiate:
@@ -775,7 +792,9 @@ class GaussianDiffusion:
         device=None,
         progress=False,
         eta=0.0,
-        sdedit=None
+        sdedit=None,
+        rev_mean=None,
+        add_mean=None
     ):
         """
         Use DDIM to sample from the model and yield intermediate samples from
@@ -839,6 +858,12 @@ class GaussianDiffusion:
                     model_kwargs=model_kwargs_copy,
                     eta=eta,
                 )
+                if rev_mean is not None:
+                  rev_mean[i] -= self.mean_batch(out["sample"])
+                  out["sample"] = out["sample"] + rev_mean[i]
+                elif add_mean is not None:
+                  out["sample"] = out["sample"] + add_mean[i]
+
                 x = out["sample"]
                 out['t'] = t
                 yield out

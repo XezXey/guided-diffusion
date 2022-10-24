@@ -47,7 +47,7 @@ class PLSampling(pl.LightningModule):
                 else: raise NotImplementedError
         return model_kwargs
 
-    def reverse_proc(self, x, model_kwargs, progress=True, store_intermediate=True):
+    def reverse_proc(self, x, model_kwargs, progress=True, store_intermediate=True, store_mean=False):
         # Mimic the ddim_sample_loop or p_sample_loop
         model_kwargs['const_noise'] = self.const_noise
         if self.reverse_fn == self.diffusion.ddim_reverse_sample_loop:
@@ -59,15 +59,22 @@ class PLSampling(pl.LightningModule):
                 model_kwargs=model_kwargs,
                 progress=progress,
                 store_intermidiate=store_intermediate,
-                cond_xt_fn=cond_xt_fn if model_kwargs['use_cond_xt_fn'] else None
+                cond_xt_fn=cond_xt_fn if model_kwargs['use_cond_xt_fn'] else None,
+                store_mean=store_mean
             )
         else: raise NotImplementedError
 
-        if store_intermediate:
-            assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
+        # if store_intermediate:
+            # assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))
         return {"final_output":sample, "intermediate":intermediate}
     
-    def forward_proc(self, model_kwargs, noise, store_intermediate=True, sdedit=None):
+    def forward_proc(self,
+                     model_kwargs,
+                     noise,
+                     store_intermediate=True,
+                     sdedit=None,
+                     rev_mean=None,
+                     add_mean=None):
         model_kwargs['const_noise'] = self.const_noise
         sample, intermediate = self.forward_fn(
             model=self.model_dict[self.cfg.img_model.name],
@@ -78,7 +85,9 @@ class PLSampling(pl.LightningModule):
             model_kwargs=model_kwargs,
             store_intermidiate=store_intermediate,
             cond_xt_fn=cond_xt_fn if model_kwargs['use_cond_xt_fn'] else None,
-            sdedit=sdedit
+            sdedit=sdedit,
+            rev_mean=rev_mean,
+            add_mean=add_mean
         )
         if store_intermediate:
             assert th.all(th.eq(sample['sample'], intermediate[-1]['sample']))

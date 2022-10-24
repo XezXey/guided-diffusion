@@ -56,3 +56,7 @@ experiment_scripts/generate_samples_json/light_left/*
 experiment_scripts/generate_samples_json/light_right/*
 
 visualize_scripts/flask_vispage/node_server
+preprocess_scripts/ITW
+preprocess_scripts/Relighting_preprocessing_tools/DECA/data
+preprocess_scripts/Relighting_preprocessing_tools/face-parsing.PyTorch/res
+preprocess_scripts/Relighting_preprocessing_tools/Arcface/pretrained
