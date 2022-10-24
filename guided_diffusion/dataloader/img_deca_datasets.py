@@ -96,6 +96,7 @@ def load_data_img_deca(
     augment_mode=None,
     in_image_UNet="raw",
     mode='train',
+    img_ext='.jpg'
 ):
     """
     For a dataset, create a generator over (images, kwargs) pairs.
@@ -157,6 +158,7 @@ def load_data_img_deca(
         cfg=cfg,
         in_image_for_cond=in_image,
         mode=mode,
+        img_ext=img_ext
     )
     print("[#] Parameters Conditioning")
     print("Params keys order : ", img_dataset.precomp_params_key)
@@ -213,6 +215,7 @@ class DECADataset(Dataset):
         cfg,
         in_image_UNet='raw',
         mode='train',
+        img_ext='.jpg',
         **kwargs
     ):
         super().__init__()
@@ -226,6 +229,7 @@ class DECADataset(Dataset):
         self.rmv_params = rmv_params
         self.cfg = cfg
         self.mode = mode
+        self.img_ext = img_ext
         self.precomp_params_key = without(src=self.cfg.param_model.params_selector, rmv=['img_latent'] + self.rmv_params)
         self.kwargs = kwargs
         self.condition_image = self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img + self.cfg.img_model.in_image
@@ -257,7 +261,7 @@ class DECADataset(Dataset):
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                 out_dict[f'{k}_img'] = each_cond_img
             elif 'laplacian' in k:
-                laplacian_mask = np.array(self.load_image(self.kwargs['in_image_for_cond']['laplacian_mask'][query_img_name.replace('.jpg', '.png')]))
+                laplacian_mask = np.array(self.load_image(self.kwargs['in_image_for_cond']['laplacian_mask'][query_img_name.replace(self.img_ext, '.png')]))
                 laplacian_mask = self.prep_cond_img(laplacian_mask, k, i)
                 each_cond_img = cond_img[k] * laplacian_mask
                 each_cond_img = cv2.resize(each_cond_img, (self.resolution, self.resolution), cv2.INTER_AREA)
@@ -343,18 +347,18 @@ class DECADataset(Dataset):
                 condition_image[in_image_type] = self.face_segment(in_image_type, query_img_name)
             elif 'deca' in in_image_type:
                 if "woclip" in in_image_type:
-                    condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace('.jpg', '.npy')], allow_pickle=True)
+                    condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
                 else:
-                    condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace('.jpg', '.png')]))
+                    condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
             elif 'laplacian' in in_image_type:
-                condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace('.jpg', '.npy')], allow_pickle=True)
+                condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
             else: raise ValueError(f"Not supported type of condition image : {in_image_type}")
         return condition_image
 
     def face_segment(self, segment_part, query_img_name):
-        face_segment_anno = self.load_image(self.kwargs['in_image_for_cond'][segment_part][query_img_name.replace('.jpg', '.png')])
+        face_segment_anno = self.load_image(self.kwargs['in_image_for_cond'][segment_part][query_img_name.replace(self.img_ext, '.png')])
 
         face_segment_anno = np.array(face_segment_anno)
         bg = (face_segment_anno == 0)
