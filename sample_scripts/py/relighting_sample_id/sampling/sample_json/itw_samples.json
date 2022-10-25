@@ -1,20 +1,20 @@
 {
      "pair": {
         "pair_1": {
-            "src": "018_01_01_051_16.png",
-            "dst": "018_01_01_051_18.png"
+            "src": "018-01-01-051-16.png",
+            "dst": "018-01-01-051-18.png"
         },
         "pair_2": {
             "src": "moke.png",
-            "dst": "kellan.png"
+            "dst": "60065.png"
         },
         "pair_3": {
             "src": "supasorn.png",
-            "dst": "moke.png"
+            "dst": "60065.png"
         },
         "pair_4": {
-            "src": "moke.png",
-            "dst": "008_03_02_051_05.png"
+            "src": "kellan.png",
+            "dst": "60065.png"
         }
     }
- }
+}
