@@ -9,10 +9,22 @@
             "dst": "60065.png"
         },
         "pair_3": {
+            "src": "moke.png",
+            "dst": "supasorn.png"
+        },
+        "pair_4": {
+            "src": "60065.png",
+            "dst": "60182.png"
+        },
+        "pair_5": {
+            "src": "60182.png",
+            "dst": "60065.png"
+        },
+        "pair_6": {
             "src": "supasorn.png",
             "dst": "60065.png"
         },
-        "pair_4": {
+        "pair_7": {
             "src": "kellan.png",
             "dst": "60065.png"
         }
