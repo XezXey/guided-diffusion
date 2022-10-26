@@ -8,9 +8,9 @@ img_model:
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
   # Image-Condition directly to UNet(DPM)
-  dpm_cond_img: ['deca_masked_face_images_woclip', 'faceseg_nohead']
-  prep_dpm_cond_img: [Null, Null]
-  noise_dpm_cond_img: ['sep-dpm_noise', 'sep-dpm_noise_masking']
+  dpm_cond_img: ['deca_masked_face_images_woclip']
+  prep_dpm_cond_img: [Null]
+  noise_dpm_cond_img: [Null]
   apply_dpm_cond_img: True
 
 param_model:
@@ -24,4 +24,4 @@ relighting:
 
 train_misc:
   exp_name: "Retraining_BG"
-  cfg_name: "All_in_UNet_sep_dpm_noise"
+  cfg_name: "All_in_UNet"

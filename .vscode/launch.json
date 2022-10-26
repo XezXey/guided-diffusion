@@ -30,6 +30,40 @@
             "justMyCode": true
         }, 
         {
+            "name": "Python: train_masked_All_in_UNet",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"1", "WANDB_MODE":"offline"},
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "3",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/CVPRs/Retraining_BG/All_in_UNet_sep_dpm_noise.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "500000000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: train_masked_UNet_BgNoHead",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"2", "WANDB_MODE":"offline"},
+            "args": ["--train.log_dir", "/data/mint/model_logs/dev",
+                    "--train.batch_size", "1",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/CVPRs/Retraining_BG/Masked_Face_woclip+UNet_BgNoHead_sep_dpm_noise_masking.yaml",
+                    "--train.save_interval", "5000000000",
+                    "--train.sampling_interval", "500000000"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        },
+        {
             "name": "Python: train_masked_out_bg",
             "type": "python",
             "request": "launch",

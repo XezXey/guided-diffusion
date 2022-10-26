@@ -2,7 +2,7 @@ img_model:
   name: "ImgCond"
   arch: "UNetCond"
   image_size: 128
-  in_image: 'raw' 
+  in_image: ['raw'] 
   in_channels: 9
   out_channels: 3
   conditioning: True  # Conditioning with DECA
@@ -10,7 +10,7 @@ img_model:
   # Image-Condition directly to UNet(DPM)
   dpm_cond_img: ['deca_masked_face_images_woclip', 'faceseg_nohead']
   prep_dpm_cond_img: [Null, Null]
-  noise_dpm_cond_img: [Null, 'share-dpm_noise']
+  noise_dpm_cond_img: ['share-dpm_noise', 'share-dpm_noise_masking']
   apply_dpm_cond_img: True
 
 param_model:
@@ -24,4 +24,4 @@ relighting:
 
 train_misc:
   exp_name: "Retraining_BG"
-  cfg_name: "All_in_UNet"
+  cfg_name: "All_in_UNet_share_dpm_noise"
