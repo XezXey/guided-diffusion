@@ -3,36 +3,35 @@ import argparse
 
 parser = argparse.ArgumentParser()
 # Dataset
+parser.add_argument('--dataset', type=str, required=True)
 parser.add_argument('--set', type=str, required=True)
 # Model/Config
 parser.add_argument('--step', type=str, required=True)
 parser.add_argument('--ckpt_selector', type=str, default='ema')
-parser.add_argument('--cfg_name', type=str, default=None)
+parser.add_argument('--cfg_name', type=str, required=True)
 parser.add_argument('--log_dir', type=str, required=True)
 # Interpolation
-parser.add_argument('--interpolate', nargs='+', default=None)
-parser.add_argument('--interpolate_step', type=int, default=15)
-parser.add_argument('--interpolate_noise', action='store_true', default=False)
+parser.add_argument('--itp', nargs='+', default=None)
+parser.add_argument('--itp_step', type=int, default=15)
 parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
-parser.add_argument('--reverse_sampling', action='store_true', default=False)
-parser.add_argument('--separate_reverse_sampling', action='store_true', default=False)
 # Samples selection
 parser.add_argument('--n_subject', type=int, default=-1)
 parser.add_argument('--sample_pair_json', type=str, default=None)
 parser.add_argument('--sample_pair_mode', type=str, default=None)
-parser.add_argument('--src_dst', nargs='+', default=[])
+parser.add_argument('--src_dst', nargs='+', default=[], help='list of src and dst image')
 # Rendering
 parser.add_argument('--render_mode', type=str, default="shape")
 parser.add_argument('--rotate_normals', action='store_true', default=False)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
-parser.add_argument('--denoised_clamp', type=float, default=None)
 # Misc.
 parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--out_dir', type=str, required=True)
 parser.add_argument('--gpu_id', type=str, default="0")
 parser.add_argument('--postfix', type=str, default='')
+parser.add_argument('--save_vid', action='store_true', default=False)
+parser.add_argument('--fps', action='store_true', default=False)
 
 args = parser.parse_args()
 
@@ -73,13 +72,80 @@ from sample_utils import (
 )
 device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
 
-def relight(dat, model_kwargs, norm_img, n_step=3, sidx=0, didx=1):
+def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
+    condition_img = list(filter(None, dataset.condition_image))
+    args.interpolate = args.itp
+    misc = {'condition_img':condition_img,
+            'src_idx':src_idx,
+            'dst_idx':dst_idx,
+            'n_step':n_step,
+            'avg_dict':avg_dict,
+            'dataset':dataset,
+            'args':args,
+            'itp_func':itp_func,
+            'img_size':cfg.img_model.image_size,
+            'deca_obj':deca_obj,
+            'cfg':cfg
+            }  
+    
+    if itp_func is not None:
+        cond['use_render_itp'] = False 
+    else:
+        cond['use_render_itp'] = True
+        
+    # This is for the noise_dpm_cond_img
+    if cfg.img_model.apply_dpm_cond_img:
+        cond['image'] = th.stack([cond['image'][src_idx]] * n_step, dim=0)
+        for k in cfg.img_model.dpm_cond_img:
+            cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
+        
+    cond, _ = inference_utils.build_condition_image(cond=cond, misc=misc)
+    cond = inference_utils.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
+    cond['cfg'] = cfg
+    if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):
+        cond['use_cond_xt_fn'] = True
+        for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
+            cond[f'{k}_img'] = cond[f'{k}_img'].to(device)
+            if p is not None:
+                if 'dpm_noise_masking' in p:
+                    cond[f'{k}_mask'] = cond[f'{k}_mask'].to(device)
+                    cond['image'] = cond['image'].to(device)
+    
+
+    if 'render_face' in args.itp:
+        interp_set = args.itp.copy()
+        interp_set.remove('render_face')
+        
+    # Interpolate non-spatial
+    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+    cond.update(interp_cond)
+        
+    # Repeated non-spatial
+    repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate + ['light', 'img_latent']))
+    cond.update(repeated_cond)
+
+    # Finalize the cond_params
+    cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
+    if cfg.img_cond_model.override_cond != '':
+        to_tensor_key = ['cond_params'] + cfg.param_model.params_selector + [cfg.img_cond_model.override_cond]
+    else:    
+        to_tensor_key = ['cond_params'] + cfg.param_model.params_selector
+    cond = inference_utils.to_tensor(cond, key=to_tensor_key, device=ckpt_loader.device)
+    
+    return cond
+    
+
+def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
+    '''
+    Relighting the image
+    Output : Tensor (B x C x H x W); range = -1 to 1
+    '''
     # Rendering
-    args.interpolate = ['render_face']
     cond = copy.deepcopy(model_kwargs)
     cond = make_condition(cond=cond, 
-                        src_idx=sidx, dst_idx=didx, 
-                        n_step=n_step, itp_func=mani_utils.slerp)
+                        src_idx=src_idx, dst_idx=dst_idx, 
+                        n_step=n_step, itp_func=itp_func
+                    )
 
     # Reverse 
     if cfg.img_cond_model.apply:
@@ -115,7 +181,7 @@ def relight(dat, model_kwargs, norm_img, n_step=3, sidx=0, didx=1):
         store_intermediate=False,
         add_mean=rev_mean_first)
     
-    return relight_out["final_output"]["sample"]
+    return relight_out["final_output"]["sample"], cond['cond_img']
 
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -133,13 +199,25 @@ if __name__ == '__main__':
     model_dict = inference_utils.eval_mode(model_dict)
 
     # Load dataset
-    if args.set == 'itw':
-        img_dataset_path = "../../itw_images/aligned/"
-        deca_dataset_path = None
-    elif args.set == 'train' or args.set == 'valid':
+    if args.dataset == 'itw':
+        img_dataset_path = f"/data/mint/DPM_Dataset/ITW/itw_images_aligned/"
+        deca_dataset_path = f"/data/mint/DPM_Dataset/ITW/params/"
+        img_ext = '.png'
+        cfg.dataset.training_data = 'ITW'
+        cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/itw_images_aligned/'
+    elif args.dataset == 'ffhq':
         img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
         deca_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
-    else: raise NotImplementedError
+        img_ext = '.jpg'
+        cfg.dataset.training_data = 'ffhq_256_with_anno'
+        cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
+    else: raise ValueError
+
+    cfg.dataset.deca_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
+    cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
+    cfg.dataset.deca_rendered_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
+    cfg.dataset.laplacian_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
+    cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
 
     loader, dataset, avg_dict = load_data_img_deca(
         data_dir=img_dataset_path,
@@ -157,34 +235,16 @@ if __name__ == '__main__':
         mode='sampling'
     )
     
-    if args.render_mode == 'template_shape':
-        _, _, avg_dict = load_data_img_deca(
-            data_dir=img_dataset_path,
-            deca_dir=deca_dataset_path,
-            batch_size=int(1e7),
-            image_size=cfg.img_model.image_size,
-            deterministic=cfg.train.deterministic,
-            augment_mode=cfg.img_model.augment_mode,
-            resize_mode=cfg.img_model.resize_mode,
-            in_image_UNet=cfg.img_model.in_image,
-            params_selector=cfg.param_model.params_selector,
-            rmv_params=cfg.param_model.rmv_params,
-            set_='train',
-            cfg=cfg,
-        )
-    
     data_size = dataset.__len__()
     img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
     all_img_idx, all_img_name, args.n_subject = mani_utils.get_samples_list(args.sample_pair_json, 
                                                                             args.sample_pair_mode, 
                                                                             args.src_dst, img_path, 
                                                                             args.n_subject)
-    
-    
+    #NOTE: Initialize a DECA renderer
     if np.any(['deca_masked' in n for n in list(filter(None, dataset.condition_image))]):
         mask = params_utils.load_flame_mask()
     else: mask=None
-    
     deca_obj = params_utils.init_deca(mask=mask)
         
     # Load image & condition
@@ -204,9 +264,9 @@ if __name__ == '__main__':
         src_id = img_name[0]
         dst_id = img_name[1]
         # LOOPER SAMPLING
-        n_step = args.interpolate_step
+        n_step = args.itp_step
         print(f"[#] Set = {args.set}, Src-id = {src_id}, Dst-id = {dst_id}")
-
+        
         pl_sampling = inference_utils.PLSampling(model_dict=model_dict,
                                                     diffusion=diffusion,
                                                     reverse_fn=diffusion.ddim_reverse_sample_loop,
@@ -227,108 +287,62 @@ if __name__ == '__main__':
                         model_kwargs[f'{k}_mask'] = model_kwargs[f'{k}_mask'].to(device)
                         model_kwargs['image'] = model_kwargs['image'].to(device)
            
-        if args.reverse_sampling:
-            # Input
-            cond = copy.deepcopy(model_kwargs)
-            cond['use_render_itp'] = False
-            if cfg.img_cond_model.apply:
-                cond = pl_sampling.forward_cond_network(model_kwargs=cond)
-                
-            cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
-            cond = inference_utils.to_tensor(cond, key=['cond_params'], device=ckpt_loader.device)
-            
-            # Reverse from input image (x0)
-            reverse_ddim_sample = pl_sampling.reverse_proc(x=cond['image'], model_kwargs=cond, store_intermediate=args.save_intermediate)
-
-            # Forward from reverse noise map
-            sample_ddim = pl_sampling.forward_proc(noise=reverse_ddim_sample['final_output']['sample'], model_kwargs=cond, store_intermediate=args.save_intermediate)
-            
-            # Save a visualization
-            interpolate_str = '_'.join(args.interpolate)
-            out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}/Intermediate/diffstep_{args.diffusion_steps}/reverse_sampling/"
-            os.makedirs(out_folder_reconstruction, exist_ok=True)
-            
-            save_reverse_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/Reversed/"
-            os.makedirs(save_reverse_path, exist_ok=True)
-
-        if args.lerp:
-            model_kwargs['use_render_itp'] = True
-            model_kwargs['reverse'] = reverse_ddim_sample
-            without_classifier(itp_func=mani_utils.lerp, 
-                            src_idx=src_idx, src_id=src_id,
-                            dst_idx=dst_idx, dst_id=dst_id,
-                            model_kwargs=model_kwargs)
-            if args.sample_pair_mode == 'pairwise':
-                without_classifier(itp_func=mani_utils.lerp, 
-                                src_idx=dst_idx, src_id=dst_id,
-                                dst_idx=src_idx, dst_id=src_id,
-                                model_kwargs=model_kwargs)
-                
-        if args.slerp:
-            model_kwargs['reverse'] = reverse_ddim_sample
-            model_kwargs['use_render_itp'] = True
-            without_classifier(itp_func=mani_utils.slerp, 
-                            src_idx=src_idx, src_id=src_id,
-                            dst_idx=dst_idx, dst_id=dst_id,
-                            model_kwargs=model_kwargs)
-            if args.sample_pair_mode == 'pairwise':
-                without_classifier(itp_func=mani_utils.slerp, 
-                                src_idx=dst_idx, src_id=dst_id,
-                                dst_idx=src_idx, dst_id=src_id,
-                                model_kwargs=model_kwargs)
-                
-                
+        itp_fn = mani_utils.slerp if args.slerp else mani_utils.lerp
+        itp_fn_str = 'Slerp' if itp_fn == mani_utils.slerp else 'Lerp'
+        itp_str = '_'.join(args.itp)
+        
+        model_kwargs['use_render_itp'] = True
+        out_relit, out_render = relight(dat = dat,
+                                    model_kwargs=model_kwargs,
+                                    src_idx=src_idx, dst_idx=dst_idx,
+                                    itp_func=itp_fn,
+                                    n_step = n_step
+                                )
+        
         #NOTE: Save result
-    if itp_func == mani_utils.lerp:
-        itp_fn_str = 'Lerp'
-    elif itp_func == mani_utils.slerp:
-        itp_fn_str = 'Slerp'
+        out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/relight/"
         
+        os.makedirs(out_dir_relit, exist_ok=True)
+        save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
+        os.makedirs(save_res_dir, exist_ok=True)
         
-    interpolate_str = '_'.join(args.interpolate)
-    out_folder_reconstruction = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{interpolate_str}"
-    if args.interpolate_noise:
-        out_folder_reconstruction += "/interp_noise"
-    elif args.reverse_sampling: 
-        out_folder_reconstruction += "/reverse_sampling"
-    elif args.separate_reverse_sampling: 
-        out_folder_reconstruction += "/separate_reverse_sampling"
-    elif args.uncond_sampling: 
-        out_folder_reconstruction += "/uncond_sampling"
-    else: raise NotImplementedError
-    
-    os.makedirs(out_folder_reconstruction, exist_ok=True)
-    save_res_path = f"{out_folder_reconstruction}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
-    os.makedirs(save_res_path, exist_ok=True)
-    
-    sample_frames = vis_utils.convert2rgb(sample_ddim['final_output']['sample'], cfg.img_model.input_bound) / 255.0
-    vis_utils.save_images(path=f"{save_res_path}", fn="res", frames=sample_frames)
-    
-    sample_frames = vis_utils.convert2rgb(sample_ddim['final_output']['pred_xstart'], cfg.img_model.input_bound) / 255.0
-    vis_utils.save_images(path=f"{save_res_path}", fn="res_xstart", frames=sample_frames)
-    
-    is_render = np.any(['deca' in i for i in condition_img])
-    if is_render:
-        k = [i for i in condition_img if 'deca' in i][0]
-        rendered_tmp = cond[k]
-        if clip_ren:
-            vis_utils.save_images(path=f"{save_res_path}", fn="ren", frames=th.tensor((rendered_tmp + 1) * 127.5)/255.0)
-        else:
-            vis_utils.save_images(path=f"{save_res_path}", fn="ren", frames=th.tensor(rendered_tmp).mul(255).add_(0.5).clamp_(0, 255)/255)
-    if n_step >= 30:
-        #NOTE: save_video whenever n_step >= 60 only, w/ shape = TxHxWxC
-        sample_vid = vis_utils.convert2rgb(sample_ddim['final_output']['sample'].permute(0, 2, 3, 1), cfg.img_model.input_bound)
-        vis_utils.save_video(fn=f"{save_res_path}/res.mp4", frames=sample_vid, fps=30)
+        sample_frames = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0
+        vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=sample_frames)
+        
+        # condition_img = list(filter(None, dataset.condition_image))
+        # is_render = np.any(['deca' in i for i in condition_img])
+        is_render = True if out_render is not None else False
         if is_render:
-            k = [i for i in condition_img if 'deca' in i][0]
-            rendered_tmp = cond[k]
+            clip_ren = True if 'wclip' in dataset.condition_image else True
             if clip_ren:
-                vis_utils.save_video(fn=f"{save_res_path}/ren.mp4", frames=th.tensor((rendered_tmp.transpose(0, 2, 3, 1) + 1) * 127.5), fps=30)
+                vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5)
             else:
-                vis_utils.save_video(fn=f"{save_res_path}/ren.mp4", frames=th.tensor(rendered_tmp.transpose(0, 2, 3, 1)).mul(255).add_(0.5).clamp_(0, 255), fps=30)
-            
-    with open(f'{save_res_path}/res_desc.json', 'w') as fj:
-        log_dict = {'sampling_args' : vars(args), 
-                    'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_func':itp_fn_str, 'interpolate':interpolate_str}}
-        json.dump(log_dict, fj)
+                vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_render.mul(255).add_(0.5).clamp_(0, 255)/255)
+                
+        if args.save_vid:
+            """
+            save the video
+            Args:
+                frames (list of tensor): range = [0, 255] (uint8), and shape = [T x H x W x C]
+                fn : path + filename to save
+                fps : video fps
+            """
+            #NOTE: save_video, w/ shape = TxHxWxC and value range = [0, 255]
+            vid_relit = th.cat((out_relit, th.flip(out_relit, dims=[0])))
+            vid_relit = vid_relit.permute(0, 2, 3, 1)
+            vid_relit = ((vid_relit + 1)*127.5).clamp_(0, 255).type(th.ByteTensor)
+            torchvision.io.write_video(video_array=vid_relit, filename=f"{save_res_dir}/res.mp4", fps=args.fps)
+            if is_render:
+                clip_ren = True if 'wclip' in dataset.condition_image else True
+                if clip_ren:
+                    vid_ren = ((out_render.permute(0, 2, 3, 1) + 1) * 127.5).clamp_(0, 255).type(th.ByteTensor)
+                    torchvision.io.write_video(video_array=vid_ren, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
+                else:
+                    vid_ren = (out_render.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
+                    torchvision.io.write_video(video_array=vid_ren, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
+                
+        with open(f'{save_res_dir}/res_desc.json', 'w') as fj:
+            log_dict = {'sampling_args' : vars(args), 
+                        'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_fn':itp_fn_str, 'itp':itp_str}}
+            json.dump(log_dict, fj)
                 

@@ -27,13 +27,6 @@ class PLSampling(pl.LightningModule):
         self.const_noise = th.randn((1, 3, cfg.img_model.image_size, cfg.img_model.image_size)).cuda()
         
     def forward_cond_network(self, model_kwargs):
-        if self.args.perturb_img_cond:
-                    cond = mani_utils.perturb_img(cond, 
-                                                key=self.cfg.img_cond_model.in_image, 
-                                                p_where=self.args.perturb_where, 
-                                                p_mode=self.args.perturb_mode)
-                    cond = mani_utils.create_cond_imgs(cond, key=self.cfg.img_cond_model.in_image)
-                    cond = inference_utils.to_tensor(cond, key=['cond_img'], device='cuda')
         with th.no_grad():
             if self.cfg.img_cond_model.apply:
                 dat = model_kwargs['cond_img'].cuda()
