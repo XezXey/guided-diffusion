@@ -9,13 +9,13 @@ interpolate = "render_face"
 interpolate_fn = "slerp"
 interpolate_step = 5
 set_ = "valid"
-out_dir = "/data/mint/sampling/LR/"
-gpu_id = 2
+out_dir = "/data/mint/sampling/Add_Bg_exp/"
+gpu_id = 0
 
 commands = [
-    # # Masked_Face_woclip+Bg
-    f"python ./auto_sampling_rev_itp_Enc_input.py --cfg_name Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_LR1e-2.yaml --log_dir Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_LR1e-2 --set {set_} --step 050000 --{sampling} --interpolate {interpolate} --interpolate_step {interpolate_step} --out_dir {out_dir} --n_subject {n_subject} --{interpolate_fn} --diffusion_steps {n_diffusion} --sample_pair_mode {sample_pair_mode} --sample_pair_json {sample_pair_json} --gpu_id {gpu_id}",
-    f"python ./auto_sampling_rev_itp_Enc_input.py --cfg_name Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_LR1e-3.yaml --log_dir Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_LR1e-3 --set {set_} --step 050000 --{sampling} --interpolate {interpolate} --interpolate_step {interpolate_step} --out_dir {out_dir} --n_subject {n_subject} --{interpolate_fn} --diffusion_steps {n_diffusion} --sample_pair_mode {sample_pair_mode} --sample_pair_json {sample_pair_json} --gpu_id {gpu_id}",
+    "python auto_sampling_rev_itp_Enc_input_sep_reverse.py --set valid --step 090000 --out_dir /data/mint/sampling/hires --cfg_name Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_shadow_256.yaml --log_dir Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_shadow_256_cont2 --diffusion_steps 1000 --reverse_sampling --seed 47 --sample_pair_json ./sample_json/hard_samples.json --sample_pair_mode pair --interpolate render_face --interpolate_step 3 --n_subject -1 --gpu_id 2 --slerp",
+    "python auto_sampling_rev_itp_Enc_input_sep_reverse.py --set valid --step 080000 --out_dir /data/mint/sampling/hires --cfg_name Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_shadow_256.yaml --log_dir Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_shadow_256_cont2 --diffusion_steps 1000 --reverse_sampling --seed 47 --sample_pair_json ./sample_json/hard_samples.json --sample_pair_mode pair --interpolate render_face --interpolate_step 3 --n_subject -1 --gpu_id 2 --slerp",
+    "python auto_sampling_rev_itp_Enc_input_sep_reverse.py --set valid --step 070000 --out_dir /data/mint/sampling/hires --cfg_name Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_shadow_256.yaml --log_dir Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_shadow_256_cont2 --diffusion_steps 1000 --reverse_sampling --seed 47 --sample_pair_json ./sample_json/hard_samples.json --sample_pair_mode pair --interpolate render_face --interpolate_step 3 --n_subject -1 --gpu_id 2 --slerp"
 ]                                                                                                  
 
 with open(f'./gpu_{gpu_id}_status.txt', mode='w') as f:

@@ -60,3 +60,12 @@ preprocess_scripts/ITW
 preprocess_scripts/Relighting_preprocessing_tools/DECA/data
 preprocess_scripts/Relighting_preprocessing_tools/face-parsing.PyTorch/res
 preprocess_scripts/Relighting_preprocessing_tools/Arcface/pretrained
+
+
+sample_scripts/py/relighting_sample_id/sampling/relight/
+sample_scripts/py/relighting_sample_id/sampling/relight_2/
+sample_scripts/py/relighting_sample_id/sampling/relight_3/
+sample_scripts/py/relighting_sample_id/sampling/relight_050000/
+sample_scripts/py/relighting_sample_id/sampling/ovr_img/
+sample_scripts/py/relighting_sample_id/sampling/norm/
+sample_scripts/py/relighting_sample_id/sampling/vis_img/
