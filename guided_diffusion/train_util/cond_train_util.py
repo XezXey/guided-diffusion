@@ -323,22 +323,29 @@ class TrainLoop(LightningModule):
                 if p is None:
                     tmp_img = cond[f'{k}_img']
                 else:
-                    assert 'faceseg' in k
-                    share = True if p.split('-')[0] == 'share' else False
-                    masking = p.split('-')[-1]
-                    if masking == 'dpm_noise_masking':
-                        mask =  cond[f'{k}_mask'].bool()
-                        assert th.all(mask == cond[f'{k}_mask'])
-                        if share:
-                            tmp_img = (self.diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
-                        else:
-                            tmp_img = (self.diffusion.q_sample(dat, t) * mask) + (-th.ones_like(dat) * ~mask)
-                    elif masking == 'dpm_noise':
+                    if 'faceseg' in k:
+                        share = True if p.split('-')[0] == 'share' else False
+                        masking = p.split('-')[-1]
+                        if masking == 'dpm_noise_masking':
+                            mask =  cond[f'{k}_mask'].bool()
+                            assert th.all(mask == cond[f'{k}_mask'])
+                            if share:
+                                tmp_img = (self.diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
+                            else:
+                                tmp_img = (self.diffusion.q_sample(dat, t) * mask) + (-th.ones_like(dat) * ~mask)
+                        elif masking == 'dpm_noise':
+                            if share:
+                                tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t, noise=noise)
+                            else:
+                                tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t)
+                        else: raise NotImplementedError("[#] Only dpm_noise_masking and dpm_noise is available")
+                    elif 'deca' in k:
+                        share = True if p.split('-')[0] == 'share' else False
                         if share:
                             tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t, noise=noise)
                         else:
                             tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t)
-                    else: raise NotImplementedError("[#] Only dpm_noise_masking and dpm_noise is available")
+                    else: raise NotImplementedError("[#] Input Features are not available")
                 cond_img.append(tmp_img)
 
             return th.cat((cond_img), dim=1)

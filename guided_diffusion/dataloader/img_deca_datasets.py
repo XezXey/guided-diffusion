@@ -386,6 +386,8 @@ class DECADataset(Dataset):
             seg_m = face
         elif segment_part == 'faceseg_head':
             seg_m = (face | neck | hair)
+        elif segment_part == 'faceseg_nohead':
+            seg_m = ~(face | neck | hair)
         elif segment_part == 'faceseg_face&hair':
             seg_m = ~bg
         elif segment_part == 'faceseg_bg_noface&nohair':

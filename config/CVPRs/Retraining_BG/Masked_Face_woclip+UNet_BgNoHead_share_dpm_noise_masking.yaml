@@ -2,16 +2,16 @@ img_model:
   name: "ImgCond"
   arch: "UNetCond_SpatialCondition_Hadamart"
   image_size: 128
-  in_image: ['raw'] 
+  in_image: ['raw']
   in_channels: 6
   out_channels: 3
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
   hadamart_prep: "Tanh"
   # Image-Condition directly to UNet(DPM)
-  dpm_cond_img: ['faceseg_bg_noface&nohair']
+  dpm_cond_img: ['faceseg_nohead']
   prep_dpm_cond_img: [Null]
-  noise_dpm_cond_img: ['share-dpm_noise']
+  noise_dpm_cond_img: ['share-dpm_noise_masking']
   apply_dpm_cond_img: True
 
 param_model:
@@ -38,7 +38,7 @@ train:
   save_interval: 10000
 
 train_misc:
-  exp_name: "AddingBG"
-  cfg_name: "Masked_Face_woclip+UNet_Bg_share_dpm_noise"
+  exp_name: "Retraining_BG"
+  cfg_name: "Masked_Face_woclip+UNet_BgNoHead_share_dpm_noise_masking"
 
 

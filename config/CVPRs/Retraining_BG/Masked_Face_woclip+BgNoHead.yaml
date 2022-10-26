@@ -15,7 +15,7 @@ param_model:
 img_cond_model:
   apply: True
   arch: "EncoderUNet_SpatialCondition"
-  in_image: ['deca_masked_face_images_woclip', 'faceseg_bg_noface&nohair']
+  in_image: ['deca_masked_face_images_woclip', 'faceseg_nohead']
   in_channels: 6
   image_size: 128
   out_channels: 128
@@ -35,5 +35,5 @@ dataset:
 
 
 train_misc:
-  exp_name: "EncLight_DilateBg"
-  cfg_name: "Masked_Face_woclip+Bg"
+  exp_name: "Retraining_BG"
+  cfg_name: "Masked_Face_woclip+BgNoHead"

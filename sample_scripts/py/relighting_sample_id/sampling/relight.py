@@ -322,7 +322,7 @@ if __name__ == '__main__':
             if clip_ren:
                 vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5)
             else:
-                vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_render.mul(255).add_(0.5).clamp_(0, 255)/255)
+                vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
                 
         if args.save_vid:
             """
@@ -353,4 +353,5 @@ if __name__ == '__main__':
             json.dump(log_dict, fj)
             
             
-                
+    # Free memory!!!
+    del deca_obj               

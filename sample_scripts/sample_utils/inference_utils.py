@@ -190,8 +190,8 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
                 tmp_img = cond[f'{k}']
             else: 
                 tmp_img = cond[f'{k}_img']
-            dpm_cond_img.append(tmp_img)
-        cond['dpm_cond_img'] = th.cat((dpm_cond_img), dim=1).to(device)
+            dpm_cond_img.append(tmp_img.to(device))
+        cond['dpm_cond_img'] = th.cat((dpm_cond_img), dim=1)
     else:
         cond['dpm_cond_img'] = None
         
@@ -202,7 +202,7 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
                 tmp_img = cond[f'{k}']
             else: 
                 tmp_img = cond[f'{k}_img']
-            cond_img.append(tmp_img)
+            cond_img.append(tmp_img.to(device))
         cond['cond_img'] = th.cat((cond_img), dim=1).to(device)
     else:
         cond['cond_img'] = None
