@@ -3,7 +3,7 @@ img_model:
   arch: "UNetCond"
   image_size: 128
   in_image: ['raw']
-  in_channels: 9
+  in_channels: 6
   out_channels: 3
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
