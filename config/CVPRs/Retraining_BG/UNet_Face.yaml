@@ -24,4 +24,4 @@ relighting:
 
 train_misc:
   exp_name: "Retraining_BG"
-  cfg_name: "All_in_UNet"
+  cfg_name: "UNet_Face"
