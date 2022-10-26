@@ -28,6 +28,7 @@ parser.add_argument('--diffusion_steps', type=int, default=1000)
 # Misc.
 parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--out_dir', type=str, required=True)
+parser.add_argument('--eval_dir', type=str, default=None)
 parser.add_argument('--gpu_id', type=str, default="0")
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--save_vid', action='store_true', default=False)
@@ -115,13 +116,15 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     if 'render_face' in args.itp:
         interp_set = args.itp.copy()
         interp_set.remove('render_face')
+    else:
+        interp_set = args.itp
         
     # Interpolate non-spatial
     interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
     cond.update(interp_cond)
         
     # Repeated non-spatial
-    repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.interpolate + ['light', 'img_latent']))
+    repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.itp + ['light', 'img_latent']))
     cond.update(repeated_cond)
 
     # Finalize the cond_params
@@ -301,19 +304,21 @@ if __name__ == '__main__':
         
         #NOTE: Save result
         out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/relight/"
-        
         os.makedirs(out_dir_relit, exist_ok=True)
         save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
         os.makedirs(save_res_dir, exist_ok=True)
         
-        sample_frames = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0
-        vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=sample_frames)
+        f_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0
+        vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=f_relit)
         
-        # condition_img = list(filter(None, dataset.condition_image))
-        # is_render = np.any(['deca' in i for i in condition_img])
+        if args.eval_dir is not None:
+            os.makedirs(f"{args.eval_dir}", exist_ok=True)
+            torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{args.eval_dir}/input={src_id}#pred={dst_id}.png")
+            
+        
         is_render = True if out_render is not None else False
         if is_render:
-            clip_ren = True if 'wclip' in dataset.condition_image else True
+            clip_ren = True if 'wclip' in dataset.condition_image[0] else False 
             if clip_ren:
                 vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5)
             else:
@@ -333,16 +338,19 @@ if __name__ == '__main__':
             vid_relit = ((vid_relit + 1)*127.5).clamp_(0, 255).type(th.ByteTensor)
             torchvision.io.write_video(video_array=vid_relit, filename=f"{save_res_dir}/res.mp4", fps=args.fps)
             if is_render:
+                vid_render = th.cat((out_render, th.flip(out_render, dims=[0])))
                 clip_ren = True if 'wclip' in dataset.condition_image else True
                 if clip_ren:
-                    vid_ren = ((out_render.permute(0, 2, 3, 1) + 1) * 127.5).clamp_(0, 255).type(th.ByteTensor)
-                    torchvision.io.write_video(video_array=vid_ren, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
+                    vid_render = ((vid_render.permute(0, 2, 3, 1) + 1) * 127.5).clamp_(0, 255).type(th.ByteTensor)
+                    torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
                 else:
-                    vid_ren = (out_render.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
-                    torchvision.io.write_video(video_array=vid_ren, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
+                    vid_render = (vid_render.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
+                    torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
                 
         with open(f'{save_res_dir}/res_desc.json', 'w') as fj:
             log_dict = {'sampling_args' : vars(args), 
                         'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_fn':itp_fn_str, 'itp':itp_str}}
             json.dump(log_dict, fj)
+            
+            
                 
