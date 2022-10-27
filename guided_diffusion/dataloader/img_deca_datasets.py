@@ -274,7 +274,7 @@ class DECADataset(Dataset):
             elif 'faceseg' in k:
                 faceseg_mask = self.prep_cond_img(~cond_img[k], k, i)   # Invert mask for dilation
                 faceseg_mask = ~faceseg_mask    # Invert back to original mask
-                faceseg = (faceseg_mask * np.array(raw_pil_image)) + (~faceseg_mask * 127.5)
+                faceseg = (faceseg_mask * np.array(raw_pil_image))
                 each_cond_img = self.augmentation(PIL.Image.fromarray(faceseg.astype(np.uint8)))
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                 each_cond_img = (each_cond_img / 127.5) - 1

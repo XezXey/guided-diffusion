@@ -13,7 +13,7 @@
     "log=Masked_Face_woclip+Bg_cfg=Masked_Face_woclip+Bg.yaml_mean_matching" :  {
         "step":"ema_050000", 
         "itp":"render_face", 
-        "alias":"Mean matching : Enc(Face + Bg)"
+        "alias":"Enc(Face + Bg)"
     },
     "log=UNet_Masked_Face_woclip+UNet_Bg_cfg=UNet_Masked_Face_woclip+UNet_Bg.yaml" :  {
         "step":"ema_050000", 
@@ -33,7 +33,7 @@
     "log=Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_cfg=Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking.yaml_mean_matching" :  {
         "step":"ema_050000", 
         "itp":"render_face", 
-        "alias":"Mean matching : Enc(Face) + UNet(Bg_masking - share noise&schedule)"
+        "alias":"Enc(Face) + UNet(Bg_masking - share noise&schedule)"
     },
     "log=Masked_Face_woclip+UNet_Bg_sep_dpm_noise_cfg=Masked_Face_woclip+UNet_Bg_share_dpm_noise.yaml" :  {
         "step":"ema_050000", 
@@ -48,7 +48,7 @@
     "log=Masked_Face_woclip+UNet_Bg_sep_dpm_noise_masking_cfg=Masked_Face_woclip+UNet_Bg_sep_dpm_noise_masking.yaml_mean_matching" :  {
         "step":"ema_050000", 
         "itp":"render_face", 
-        "alias":"Mean matching : Enc(Face) + UNet(Bg_masking - share schedule)"
+        "alias":"Enc(Face) + UNet(Bg_masking - share schedule) - Mean matching"
     },
     "log=Masked_Face_woclip+UNet_Bg_sep_dpm_noise_cfg=Masked_Face_woclip+UNet_Bg_sep_dpm_noise.yaml_fixed_noise" :  {
         "step":"ema_050000", 
