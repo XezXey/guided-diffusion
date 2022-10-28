@@ -1360,7 +1360,7 @@
             "justMyCode": true
         },
         {
-            "name": "Python: relight_All_in_UNet_sep_dpm_noise",
+            "name": "Python: relight_All_in_UNet_share_dpm_noise",
             "type": "python",
             "request": "launch",
             "program": "relight.py",
@@ -1368,8 +1368,8 @@
                     "--step", "050000",
                     "--dataset", "ffhq",
                     "--out_dir", "/data/mint/sampling/test/", 
-                    "--cfg_name", "All_in_UNet_sep_dpm_noise.yaml", 
-                    "--log_dir", "All_in_UNet_sep_dpm_noise", 
+                    "--cfg_name", "All_in_UNet_share_dpm_noise.yaml", 
+                    "--log_dir", "All_in_UNet_share_dpm_noise", 
                     "--diffusion_steps", "25",
                     "--seed", "47",
                     "--sample_pair_json", "./sample_json/hard_samples.json",

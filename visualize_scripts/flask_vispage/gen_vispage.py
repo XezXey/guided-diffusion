@@ -442,11 +442,69 @@ def create_app():
         )
         return tmp
 
+    # @app.route('/model_comparison_from_json_lf/jf=<jf>&&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>&ckpt=<ckpt>&show=<show>/')
+    # def model_comparison_from_json_lf(jf, itp_method, n_frame, diff_step, sampling, ckpt, show):
+        # out = """<style>
+                # th, tr, td{
+                    # border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
+                # }
+                # </style>"""
+        # f = open(f'./json_comparison/{jf}')
+        # ckpt_dict = json.load(f)
+        # model = list(ckpt_dict.keys())
+        # 
+        # _, subject_id, _ = mani_utils.get_samples_list(sample_pair_json=f"{args.sample_pair_json}", 
+                                                    #    sample_pair_mode='pair', 
+                                                    #    src_dst=None, 
+                                                    #    img_path=img_path,
+                                                    #    n_subject=-1)
+        # 
+        # out += create_button_fn()
+        # 
+        # out += "<table>"
+        # out += "<tr> <th> Model; <pre> Image : src(top), dst(bottom) </pre> </th>"
+        # for s_id, src_dst in enumerate(subject_id):
+            # out += f"<th> <img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')} title=\"{src_dst[0]}\"> <br> <img src=/files/{data_path}/{src_dst[1].replace('jpg', 'png')} title=\"{src_dst[1]}\"> </th>"
+        # out += " <br> </tr>"
+        # 
+        # for m_id, m in enumerate(model):
+            # out += create_hide(m, m_id)
+            # 
+            # out += f"<tr>"
+            # out += f"<td> {m_id+1} : {ckpt_dict[m]['alias']} <br> </td>"
+            # for s_id, src_dst in enumerate(subject_id):
+                # if ckpt == 'json':
+                    # vis_ckpt = step = ckpt_dict[m]['step']
+                # else:
+                    # vis_ckpt = step = f'ema_{ckpt}'
+                    # 
+                # itp = ckpt_dict[m]['itp']
+                # each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/{step}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0].replace('png', 'jpg')}/dst={src_dst[1].replace('png', 'jpg')}/"
+                # frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frame}/{show}_f*.png")
+                # 
+                # out += "<td>"
+                # if len(frames) > 0:
+                    # frames = sort_by_frame(frames)
+                    # out += f"<img src=/files/{frames[-1]} title=\"{ckpt_dict[m]['alias']}\">"
+                # else:
+                    # out += "<p style=\"color:red\">Images not found!</p>"
+                # out += "</td>"
+            # out += "</tr>"
+        # out += "</table>"
+        # out += "<br> <hr>"
+        # return out
+
     @app.route('/model_comparison_from_json_lf/jf=<jf>&&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>&ckpt=<ckpt>&show=<show>/')
     def model_comparison_from_json_lf(jf, itp_method, n_frame, diff_step, sampling, ckpt, show):
         out = """<style>
                 th, tr, td{
                     border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
+                }
+                table {
+                    width: 50%
+                }
+                table.fixed {
+                    table-layout: fixed;
                 }
                 </style>"""
         f = open(f'./json_comparison/{jf}')
@@ -462,17 +520,18 @@ def create_app():
         out += create_button_fn()
         
         out += "<table>"
-        out += "<tr> <th> Model; <pre> Image : src(top), dst(bottom) </pre> </th>"
-        for s_id, src_dst in enumerate(subject_id):
-            out += f"<th> <img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')} title=\"{src_dst[0]}\"> <br> <img src=/files/{data_path}/{src_dst[1].replace('jpg', 'png')} title=\"{src_dst[1]}\"> </th>"
-        out += " <br> </tr>"
-        
+        out += "<tr> <th> Model; <pre> Image : src(left), dst(right) </pre> </th>"
+        # for s_id, src_dst in enumerate(subject_id):
         for m_id, m in enumerate(model):
+            out += f"<th> {m_id+1}." + ckpt_dict[m]['alias'] + "</th>"
+        # out += " <br> </tr>"
+        
+        for s_id, src_dst in enumerate(subject_id):
             # out += create_hide(m, m_id)
-            
             out += f"<tr>"
-            out += f"<td> {m_id+1} : {ckpt_dict[m]['alias']} <br> </td>"
-            for s_id, src_dst in enumerate(subject_id):
+            out += f"<th> {s_id+1}.<img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')} title=\"{src_dst[0]}\"><img src=/files/{data_path}/{src_dst[1].replace('jpg', 'png')} title=\"{src_dst[1]}\"> </th>"
+            # out += f"<td> {m_id+1} : {ckpt_dict[m]['alias']} <br> </td>"
+            for m_id, m in enumerate(model):
                 if ckpt == 'json':
                     vis_ckpt = step = ckpt_dict[m]['step']
                 else:

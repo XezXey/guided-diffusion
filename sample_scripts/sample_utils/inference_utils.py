@@ -24,7 +24,7 @@ class PLSampling(pl.LightningModule):
         self.diffusion = diffusion
         self.cfg = cfg
         self.args = args
-        self.const_noise = th.randn((1, 3, cfg.img_model.image_size, cfg.img_model.image_size)).cuda()
+        self.const_noise = th.randn((len(cfg.img_model.dpm_cond_img), 3, cfg.img_model.image_size, cfg.img_model.image_size)).cuda()
         
     def forward_cond_network(self, model_kwargs):
         with th.no_grad():
@@ -97,37 +97,35 @@ class PLSampling(pl.LightningModule):
 def cond_xt_fn(cond, cfg, use_render_itp, t, diffusion, noise, device='cuda'):
     #NOTE: This specifically run for ['dpm_cond_img']
     
-    def dpm_noise(x_start, p, k, noise):
+    def dpm_noise(x_start, p, k, noise, i):
         if p is None: return x_start
         share = True if p.split('-')[0] == 'share' else False
         masking = p.split('-')[-1]
+        
+        #NOTE: Repeat the noise to used following share/sep noise
+        if share:
+            noise = th.repeat_interleave(input=noise[0:1], dim=0, repeats=x_start.shape[0])
+        else:
+            noise = th.repeat_interleave(input=noise[[i]], dim=0, repeats=x_start.shape[0])
         if masking == 'dpm_noise_masking':
             img = cond['image']
             mask =  cond[f'{k}_mask'].bool()
             assert th.all(mask == cond[f'{k}_mask'])
-            if share:
-                xt = (diffusion.q_sample(img, t, noise=noise) * mask) + (-th.ones_like(img) * ~mask)
-            else:
-                xt = (diffusion.q_sample(img, t, noise=noise) * mask) + (-th.ones_like(img) * ~mask)
+            xt = (diffusion.q_sample(img, t, noise=noise) * mask) + (-th.ones_like(img) * ~mask)
         elif masking == 'dpm_noise':
-            if share:
-                xt = diffusion.q_sample(x_start, t, noise=noise)
-            else:
                 xt = diffusion.q_sample(x_start, t, noise=noise)
         else: raise NotImplementedError("[#] Only dpm_noise_masking and dpm_noise is available")
         return xt
     
     if cfg.img_model.apply_dpm_cond_img:
         dpm_cond_img = []
-        for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
+        for i, (k, p) in enumerate(zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img)):
             if ('faceseg' in k) or ('deca' in k): # if 'faceseg' in k:
                 if use_render_itp:
-                    noise_tmp = th.repeat_interleave(input=noise, dim=0, repeats=cond[f'{k}'].shape[0])
-                    xt = dpm_noise(x_start=cond[f'{k}'], p=p, k=k, noise=noise_tmp)
+                    xt = dpm_noise(x_start=cond[f'{k}'], p=p, k=k, i=i, noise=noise)
                     dpm_cond_img.append(xt)
                 else:
-                    noise_tmp = th.repeat_interleave(input=noise, dim=0, repeats=cond[f'{k}_img'].shape[0])
-                    xt = dpm_noise(x_start=cond[f'{k}_img'], p=p, k=k, noise=noise_tmp)
+                    xt = dpm_noise(x_start=cond[f'{k}_img'], p=p, k=k, i=i, noise=noise)
                     dpm_cond_img.append(xt)
             else:
                 if use_render_itp: 
