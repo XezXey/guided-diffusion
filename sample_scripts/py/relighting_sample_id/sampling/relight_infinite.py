@@ -250,13 +250,17 @@ if __name__ == '__main__':
     deca_obj = params_utils.init_deca(mask=mask)
         
     # Load image & condition
-    for i in range(args.n_subject):
-        img_idx = all_img_idx[i]
-        img_name = all_img_name[i]
+    dup_list = []
+    while True:
+        img_idx = np.random.choice(all_img_idx, size=2, replace=False)
+        img_name = [all_img_name[all_img_idx.index(img_idx[0])], all_img_name[all_img_idx.index(img_idx[1])]]
+        
+        if img_name in dup_list: continue
+        else: dup_list.append(img_name)
         
         dat = th.utils.data.Subset(dataset, indices=img_idx)
         subset_loader = th.utils.data.DataLoader(dat, batch_size=2,
-                                            shuffle=False, num_workers=24)
+                                            shuffle=False, num_workers=4)
                                    
         dat, model_kwargs = next(iter(subset_loader))
         print("#"*100)
@@ -350,6 +354,10 @@ if __name__ == '__main__':
             log_dict = {'sampling_args' : vars(args), 
                         'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_fn':itp_fn_str, 'itp':itp_str}}
             json.dump(log_dict, fj)
+            
+        del dat
+        del model_kwargs
+        del subset_loader
             
             
     # Free memory!!!

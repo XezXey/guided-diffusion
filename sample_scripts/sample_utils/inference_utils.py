@@ -29,9 +29,9 @@ class PLSampling(pl.LightningModule):
     def forward_cond_network(self, model_kwargs):
         with th.no_grad():
             if self.cfg.img_cond_model.apply:
-                dat = model_kwargs['cond_img'].cuda()
+                x = model_kwargs['cond_img'].cuda().float()
                 img_cond = self.model_dict[self.cfg.img_cond_model.name](
-                    x=dat.float(),
+                    x=x,
                     emb=None,
                 )
                 # Override the condition
