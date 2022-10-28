@@ -22,6 +22,11 @@ img_cond_model:
 relighting:
   use_SH: False
 
+train:
+  weight_decay: 0.0
+  sampling_interval: 25000
+  save_interval: 10000
+
 train_misc:
   exp_name: "Retraining_BG"
-  cfg_name: "All_in_UNet"
+  cfg_name: "UNet_Face_share_dpm_noise"

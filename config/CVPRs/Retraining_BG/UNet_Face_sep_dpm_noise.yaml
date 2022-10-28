@@ -3,14 +3,14 @@ img_model:
   arch: "UNetCond"
   image_size: 128
   in_image: ['raw']
-  in_channels: 9
+  in_channels: 6
   out_channels: 3
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
   # Image-Condition directly to UNet(DPM)
-  dpm_cond_img: ['deca_masked_face_images_woclip', 'faceseg_bg_noface&nohair']
-  prep_dpm_cond_img: [Null, Null]
-  noise_dpm_cond_img: [Null, Null]
+  dpm_cond_img: ['deca_masked_face_images_woclip']
+  prep_dpm_cond_img: [Null]
+  noise_dpm_cond_img: ['sep-dpm_noise']
   apply_dpm_cond_img: True
 
 param_model:
@@ -22,6 +22,11 @@ img_cond_model:
 relighting:
   use_SH: False
 
+train:
+  weight_decay: 0.0
+  sampling_interval: 25000
+  save_interval: 10000
+
 train_misc:
-  exp_name: "Adding_BG_various_way"
-  cfg_name: "UNet_Masked_Face_woclip+UNet_Bg"
+  exp_name: "Retraining_BG"
+  cfg_name: "UNet_Face_sep_dpm_noise"

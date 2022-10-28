@@ -98,7 +98,8 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     if cfg.img_model.apply_dpm_cond_img:
         cond['image'] = th.stack([cond['image'][src_idx]] * n_step, dim=0)
         for k in cfg.img_model.dpm_cond_img:
-            cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
+            if 'faceseg' in k:
+                cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
         
     cond, _ = inference_utils.build_condition_image(cond=cond, misc=misc)
     cond = inference_utils.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
@@ -151,13 +152,10 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
                     )
 
     # Reverse 
+    cond_rev = copy.deepcopy(cond)
+    cond_rev = dict_slice(in_d=cond_rev, keys=cond_rev.keys(), n=1) # Slice only 1st image out for inversion
     if cfg.img_cond_model.apply:
-        cond_rev = copy.deepcopy(cond)
-        cond_rev['cond_img'] = cond_rev['cond_img'][0:1, ...]
         cond_rev = pl_sampling.forward_cond_network(model_kwargs=cond_rev)
-        cond_rev = dict_slice(in_d=cond_rev, keys=cond_rev.keys(), n=1)
-        if cfg.img_model.conditioning:
-            cond_rev['cond_params'] = cond_rev['cond_params'][0:1, ...]
         
     reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
     noise_map = reverse_ddim_sample['final_output']['sample']
@@ -172,6 +170,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
 
     # Relight!
     cond['use_render_itp'] = True
+    cond_relight = copy.deepcopy(cond)
     if cfg.img_cond_model.apply:
         cond_relight = pl_sampling.forward_cond_network(model_kwargs=cond)
         
@@ -179,7 +178,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     rev_mean_first = [x[:1] for x in rev_mean]
     
     relight_out = pl_sampling.forward_proc(
-        noise=th.repeat_interleave(noise_map, repeats=cond_relight["cond_img"].shape[0], dim=0),
+        noise=th.repeat_interleave(noise_map, repeats=n_step, dim=0),
         model_kwargs=cond_relight,
         store_intermediate=False,
         add_mean=rev_mean_first)

@@ -97,7 +97,7 @@ class PLSampling(pl.LightningModule):
 def cond_xt_fn(cond, cfg, use_render_itp, t, diffusion, noise, device='cuda'):
     #NOTE: This specifically run for ['dpm_cond_img']
     
-    def faceseg_dpm_noise(x_start, p, k, noise):
+    def dpm_noise(x_start, p, k, noise):
         if p is None: return x_start
         share = True if p.split('-')[0] == 'share' else False
         masking = p.split('-')[-1]
@@ -120,14 +120,14 @@ def cond_xt_fn(cond, cfg, use_render_itp, t, diffusion, noise, device='cuda'):
     if cfg.img_model.apply_dpm_cond_img:
         dpm_cond_img = []
         for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
-            if 'faceseg' in k:
+            if ('faceseg' in k) or ('deca' in k): # if 'faceseg' in k:
                 if use_render_itp:
                     noise_tmp = th.repeat_interleave(input=noise, dim=0, repeats=cond[f'{k}'].shape[0])
-                    xt = faceseg_dpm_noise(x_start=cond[f'{k}'], p=p, k=k, noise=noise_tmp)
+                    xt = dpm_noise(x_start=cond[f'{k}'], p=p, k=k, noise=noise_tmp)
                     dpm_cond_img.append(xt)
                 else:
                     noise_tmp = th.repeat_interleave(input=noise, dim=0, repeats=cond[f'{k}_img'].shape[0])
-                    xt = faceseg_dpm_noise(x_start=cond[f'{k}_img'], p=p, k=k, noise=noise_tmp)
+                    xt = dpm_noise(x_start=cond[f'{k}_img'], p=p, k=k, noise=noise_tmp)
                     dpm_cond_img.append(xt)
             else:
                 if use_render_itp: 
@@ -287,6 +287,6 @@ def build_condition_image(cond, misc):
                 rendered_tmp.append(r_tmp)
                 
             rendered_tmp = np.stack(rendered_tmp, axis=0)
-            cond[cond_img_name] = th.tensor(rendered_tmp)
+            cond[cond_img_name] = th.tensor(rendered_tmp).cuda()
             
     return cond, clip_ren
