@@ -257,7 +257,6 @@ if __name__ == '__main__':
         
         if img_name in dup_list: continue
         else: dup_list.append(img_name)
-        
         dat = th.utils.data.Subset(dataset, indices=img_idx)
         subset_loader = th.utils.data.DataLoader(dat, batch_size=2,
                                             shuffle=False, num_workers=4)
