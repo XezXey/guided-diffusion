@@ -3,10 +3,12 @@ img_model:
   arch: "UNetCond"
   image_size: 128
   in_image: ['raw']
+  prep_in_image: [Null]
   in_channels: 3
   out_channels: 3
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
+  apply_dpm_cond_img: False 
 
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'shadow']
