@@ -501,7 +501,7 @@ def create_app():
                     border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
                 }
                 table {
-                    width: 50%
+                    width: 60%
                 }
                 table.fixed {
                     table-layout: fixed;
@@ -529,7 +529,7 @@ def create_app():
         for s_id, src_dst in enumerate(subject_id):
             # out += create_hide(m, m_id)
             out += f"<tr>"
-            out += f"<th> {s_id+1}.<img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')} title=\"{src_dst[0]}\"><img src=/files/{data_path}/{src_dst[1].replace('jpg', 'png')} title=\"{src_dst[1]}\"> </th>"
+            out += f"<th style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.({src_dst[0].split('.')[0]},{src_dst[1].split('.')[0]})<img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')} title=\"{src_dst[0]}\"><img src=/files/{data_path}/{src_dst[1].replace('jpg', 'png')} title=\"{src_dst[1]}\"> </th>"
             # out += f"<td> {m_id+1} : {ckpt_dict[m]['alias']} <br> </td>"
             for m_id, m in enumerate(model):
                 if ckpt == 'json':

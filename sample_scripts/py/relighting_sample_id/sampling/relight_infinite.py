@@ -33,6 +33,7 @@ parser.add_argument('--gpu_id', type=str, default="0")
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--save_vid', action='store_true', default=False)
 parser.add_argument('--fps', action='store_true', default=False)
+parser.add_argument('--resume_sj', nargs='+', default=[])
 
 args = parser.parse_args()
 
@@ -248,19 +249,22 @@ if __name__ == '__main__':
         mask = params_utils.load_flame_mask()
     else: mask=None
     deca_obj = params_utils.init_deca(mask=mask)
-        
+
     # Load image & condition
+    found_resume = False
     dup_list = []
     while True:
         img_idx = np.random.choice(all_img_idx, size=2, replace=False)
         img_name = [all_img_name[all_img_idx.index(img_idx[0])], all_img_name[all_img_idx.index(img_idx[1])]]
-        
+
         if img_name in dup_list: continue
         else: dup_list.append(img_name)
+
+
         dat = th.utils.data.Subset(dataset, indices=img_idx)
         subset_loader = th.utils.data.DataLoader(dat, batch_size=2,
                                             shuffle=False, num_workers=4)
-                                   
+
         dat, model_kwargs = next(iter(subset_loader))
         print("#"*100)
         # Indexing
@@ -271,7 +275,11 @@ if __name__ == '__main__':
         # LOOPER SAMPLING
         n_step = args.itp_step
         print(f"[#] Set = {args.set}, Src-id = {src_id}, Dst-id = {dst_id}")
-        
+        if img_name != args.resume_sj and not found_resume:
+          continue
+        else:
+          found_resume = True
+
         pl_sampling = inference_utils.PLSampling(model_dict=model_dict,
                                                     diffusion=diffusion,
                                                     reverse_fn=diffusion.ddim_reverse_sample_loop,
@@ -279,7 +287,7 @@ if __name__ == '__main__':
                                                     denoised_fn=None,
                                                     cfg=cfg,
                                                     args=args)
-        
+
         model_kwargs = inference_utils.prepare_cond_sampling(cond=model_kwargs, cfg=cfg)
         model_kwargs['cfg'] = cfg
         model_kwargs['use_cond_xt_fn'] = False
@@ -291,11 +299,11 @@ if __name__ == '__main__':
                     if 'dpm_noise_masking' in p:
                         model_kwargs[f'{k}_mask'] = model_kwargs[f'{k}_mask'].to(device)
                         model_kwargs['image'] = model_kwargs['image'].to(device)
-           
+
         itp_fn = mani_utils.slerp if args.slerp else mani_utils.lerp
         itp_fn_str = 'Slerp' if itp_fn == mani_utils.slerp else 'Lerp'
         itp_str = '_'.join(args.itp)
-        
+
         model_kwargs['use_render_itp'] = True
         out_relit, out_render = relight(dat = dat,
                                     model_kwargs=model_kwargs,
@@ -303,21 +311,21 @@ if __name__ == '__main__':
                                     itp_func=itp_fn,
                                     n_step = n_step
                                 )
-        
+
         #NOTE: Save result
         out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
         os.makedirs(out_dir_relit, exist_ok=True)
         save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
         os.makedirs(save_res_dir, exist_ok=True)
-        
+
         f_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0
         vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=f_relit)
-        
+
         if args.eval_dir is not None:
             os.makedirs(f"{args.eval_dir}", exist_ok=True)
             torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{args.eval_dir}/input={src_id}#pred={dst_id}.png")
-            
-        
+
+
         is_render = True if out_render is not None else False
         if is_render:
             clip_ren = True if 'wclip' in dataset.condition_image[0] else False 
@@ -325,7 +333,7 @@ if __name__ == '__main__':
                 vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5)
             else:
                 vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
-                
+
         if args.save_vid:
             """
             save the video
@@ -348,16 +356,15 @@ if __name__ == '__main__':
                 else:
                     vid_render = (vid_render.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
                     torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
-                
+
         with open(f'{save_res_dir}/res_desc.json', 'w') as fj:
-            log_dict = {'sampling_args' : vars(args), 
+            log_dict = {'sampling_args' : vars(args),
                         'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_fn':itp_fn_str, 'itp':itp_str}}
             json.dump(log_dict, fj)
-            
+
         del dat
         del model_kwargs
         del subset_loader
-            
-            
+
     # Free memory!!!
-    del deca_obj               
+    del deca_obj

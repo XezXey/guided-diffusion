@@ -52,8 +52,8 @@ experiment_scripts/rotate_light/normals
 experiment_scripts/rotate_light/alpha
 experiment_scripts/rotate_light/.ipynb_checkpoints
 experiment_scripts/equal_condition/*.npy
-experiment_scripts/generate_samples_json/light_left/*
-experiment_scripts/generate_samples_json/light_right/*
+experiment_scripts/generate_samples_json/from_image_folders/light_left/*
+experiment_scripts/generate_samples_json/from_image_folders/light_right/*
 
 visualize_scripts/flask_vispage/node_server
 preprocess_scripts/ITW
