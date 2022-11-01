@@ -16,7 +16,7 @@ parser.add_argument('--itp_step', type=int, default=15)
 parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
 # Samples selection
-parser.add_argument('--n_subject', type=int, default=-1)
+parser.add_argument('--idx', nargs='+', default=[])
 parser.add_argument('--sample_pair_json', type=str, default=None)
 parser.add_argument('--sample_pair_mode', type=str, default=None)
 parser.add_argument('--src_dst', nargs='+', default=[], help='list of src and dst image')
@@ -62,7 +62,7 @@ from guided_diffusion.tensor_util import (
 from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
 
 # Sample utils
-sys.path.insert(0, '../../')
+sys.path.insert(0, '../')
 from sample_utils import (
     ckpt_utils, 
     params_utils, 
@@ -246,18 +246,23 @@ if __name__ == '__main__':
     
     data_size = dataset.__len__()
     img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
-    all_img_idx, all_img_name, args.n_subject = mani_utils.get_samples_list(args.sample_pair_json, 
+    all_img_idx, all_img_name, n_subject = mani_utils.get_samples_list(args.sample_pair_json, 
                                                                             args.sample_pair_mode, 
                                                                             args.src_dst, img_path, 
-                                                                            args.n_subject)
+                                                                            -1)
     #NOTE: Initialize a DECA renderer
     if np.any(['deca_masked' in n for n in list(filter(None, dataset.condition_image))]):
         mask = params_utils.load_flame_mask()
     else: mask=None
     deca_obj = params_utils.init_deca(mask=mask)
         
-    # Load image & condition
-    for i in range(args.n_subject):
+    # Run from start->end idx
+    start, end = int(args.idx[0]), int(args.idx[1])
+    print(f"[#] Run from index of {start} to {end}...")
+    if end > data_size:
+        end = data_size
+        
+    for i in range(start, end):
         img_idx = all_img_idx[i]
         img_name = all_img_name[i]
         

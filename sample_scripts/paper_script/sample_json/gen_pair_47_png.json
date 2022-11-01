@@ -1,0 +1,85 @@
+{
+    "seed": 47,
+    "pair": {
+        "pair_1": {
+            "src": "67432.png",
+            "dst": "65444.png"
+        },
+        "pair_2": {
+            "src": "65448.png",
+            "dst": "68654.png"
+        },
+        "pair_3": {
+            "src": "67543.png",
+            "dst": "63391.png"
+        },
+        "pair_4": {
+            "src": "61175.png",
+            "dst": "68359.png"
+        },
+        "pair_5": {
+            "src": "64678.png",
+            "dst": "61403.png"
+        },
+        "pair_6": {
+            "src": "68320.png",
+            "dst": "67371.png"
+        },
+        "pair_7": {
+            "src": "64422.png",
+            "dst": "60307.png"
+        },
+        "pair_8": {
+            "src": "67691.png",
+            "dst": "60980.png"
+        },
+        "pair_9": {
+            "src": "61004.png",
+            "dst": "62308.png"
+        },
+        "pair_10": {
+            "src": "62080.png",
+            "dst": "66643.png"
+        },
+        "pair_11": {
+            "src": "62376.png",
+            "dst": "67714.png"
+        },
+        "pair_12": {
+            "src": "65651.png",
+            "dst": "66447.png"
+        },
+        "pair_13": {
+            "src": "68388.png",
+            "dst": "61298.png"
+        },
+        "pair_14": {
+            "src": "67341.png",
+            "dst": "69973.png"
+        },
+        "pair_15": {
+            "src": "68149.png",
+            "dst": "68058.png"
+        },
+        "pair_16": {
+            "src": "63215.png",
+            "dst": "60360.png"
+        },
+        "pair_17": {
+            "src": "61574.png",
+            "dst": "66422.png"
+        },
+        "pair_18": {
+            "src": "60111.png",
+            "dst": "63616.png"
+        },
+        "pair_19": {
+            "src": "67177.png",
+            "dst": "64040.png"
+        },
+        "pair_20": {
+            "src": "68909.png",
+            "dst": "68137.png"
+        }
+    }
+}

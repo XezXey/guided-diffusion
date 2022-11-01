@@ -50,7 +50,7 @@ import copy
 import time
 import torchvision
 import pytorch_lightning as pl
-sys.path.insert(0, '../')
+sys.path.insert(0, '../../../')
 from guided_diffusion.script_util import (
     seed_all,
 )
