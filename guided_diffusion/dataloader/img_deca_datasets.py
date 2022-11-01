@@ -139,12 +139,16 @@ def load_data_img_deca(
                 raise NotImplementedError(f"The {in_image_type}-image type not found.")
 
         in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
+        # print(in_image[in_image_type])
+        # print("#"*100)
+        # exit()
     
     deca_params, avg_dict = load_deca_params(deca_dir + set_, cfg)
 
     # For raw image
     in_image['raw'] = _list_image_files_recursively(f"{data_dir}/{set_}")
     in_image['raw'] = image_path_list_to_dict(in_image['raw'])
+    # print(in_image['raw'])
 
     img_dataset = DECADataset(
         resolution=image_size,
@@ -185,8 +189,10 @@ def image_path_list_to_dict(path_list):
     img_paths_dict = {}
     for path in path_list:
         img_name = path.split('/')[-1]
-        if '_' in img_name:
-            img_name = img_name.split('_')[-1]
+        # if '_' in img_name:
+            # img_name = img_name.split('_')[-1]
+        if 'anno_' in img_name:
+            img_name = img_name.split('anno_')[-1]
         img_paths_dict[img_name] = path
     return img_paths_dict
 

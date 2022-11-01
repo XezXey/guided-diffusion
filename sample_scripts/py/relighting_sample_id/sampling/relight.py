@@ -213,6 +213,12 @@ if __name__ == '__main__':
         img_ext = '.jpg'
         cfg.dataset.training_data = 'ffhq_256_with_anno'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
+    elif args.dataset == 'mp':
+        img_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/mp_aligned/"
+        deca_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/params/"
+        img_ext = '.png'
+        cfg.dataset.training_data = 'MultiPIE'
+        cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/mp_aligned/'
     else: raise ValueError
 
     cfg.dataset.deca_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
@@ -234,6 +240,7 @@ if __name__ == '__main__':
         rmv_params=cfg.param_model.rmv_params,
         set_=args.set,
         cfg=cfg,
+        img_ext=img_ext,
         mode='sampling'
     )
     

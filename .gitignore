@@ -69,3 +69,12 @@ sample_scripts/py/relighting_sample_id/sampling/relight_050000/
 sample_scripts/py/relighting_sample_id/sampling/ovr_img/
 sample_scripts/py/relighting_sample_id/sampling/norm/
 sample_scripts/py/relighting_sample_id/sampling/vis_img/
+
+evaluations/gt/*
+evaluations/pred/*
+preprocess_scripts/Mp
+preprocess_scripts/MP_Probl
+preprocess_scripts/MP_Probl_b4
+preprocess_scripts/use_avglms
+preprocess_scripts/lms
+preprocess_scripts/use_lms
