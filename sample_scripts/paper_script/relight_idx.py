@@ -258,9 +258,10 @@ if __name__ == '__main__':
         
     # Run from start->end idx
     start, end = int(args.idx[0]), int(args.idx[1])
+    if end > n_subject:
+        end = n_subject 
+    if start >= n_subject: raise ValueError("[#] Start beyond the sample index")
     print(f"[#] Run from index of {start} to {end}...")
-    if end > data_size:
-        end = data_size
         
     for i in range(start, end):
         img_idx = all_img_idx[i]
