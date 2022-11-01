@@ -70,8 +70,8 @@ sample_scripts/py/relighting_sample_id/sampling/ovr_img/
 sample_scripts/py/relighting_sample_id/sampling/norm/
 sample_scripts/py/relighting_sample_id/sampling/vis_img/
 
-evaluations/gt/*
-evaluations/pred/*
+evaluations/FFHQ/*
+evaluations/MP/*
 preprocess_scripts/Mp
 preprocess_scripts/MP_Probl
 preprocess_scripts/MP_Probl_b4
