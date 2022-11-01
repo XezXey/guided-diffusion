@@ -280,7 +280,7 @@ if __name__ == '__main__':
         dst_id = img_name[1]
         # LOOPER SAMPLING
         n_step = args.itp_step
-        print(f"[#] Set = {args.set}, Src-id = {src_id}, Dst-id = {dst_id}")
+        print(f"[#] Current idx = {i}, Set = {args.set}, Src-id = {src_id}, Dst-id = {dst_id}")
         
         pl_sampling = inference_utils.PLSampling(model_dict=model_dict,
                                                     diffusion=diffusion,
@@ -324,9 +324,9 @@ if __name__ == '__main__':
         vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=f_relit)
         
         if args.eval_dir is not None:
-            args.eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}"
-            os.makedirs(args.eval_dir, exist_ok=True)
-            torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{args.eval_dir}/input={src_id}#pred={dst_id}.png")
+            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}"
+            os.makedirs(eval_dir, exist_ok=True)
+            torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{eval_dir}/input={src_id}#pred={dst_id}.png")
             
         
         is_render = True if out_render is not None else False
