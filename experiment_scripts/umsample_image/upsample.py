@@ -6,6 +6,7 @@ import argparse
 from PIL import Image
 import torchvision
 import tqdm
+from pathlib import Path
 
 
 def _list_image_files_recursively(data_dir):
@@ -45,8 +46,9 @@ if __name__ == '__main__':
         img_up = upsample(img_arr)
         
         if args.out_dir is None:
-            os.makedirs(f'{src_dir}/upsample/', exist_ok=True)
-            outfile = f'{src_dir}/upsample/{name}'
+            save_path = Path(src_dir).parents[0]
+            os.makedirs(f'{save_path}/upsample/', exist_ok=True)
+            outfile = f'{save_path}/upsample/{name}'
         else: 
             os.makedirs(f'{args.out_dir}/upsample', exist_ok=True)
             outfile = f'{args.out_dir}/upsample/{name}'

@@ -84,10 +84,10 @@ class Evaluator():
                 
                 # Each image score
                 self.img_score_dict['each_image'][name_] = {
-                    'lpips':str(lpips_score.cpu().numpy()[0]),
-                    'ssim':str(ssim_score.cpu().numpy()[0]), 
-                    'dssim':str(dssim_score[0]),
-                    'mse':str(mse_score[0]),
+                    'lpips':str(lpips_score.cpu().numpy()),
+                    'ssim':str(ssim_score.cpu().numpy()), 
+                    'dssim':str(dssim_score.cpu().numpy()),
+                    'mse':str(mse_score.cpu().numpy()),
                 }
             
     def print_score(self):
@@ -107,7 +107,6 @@ class Evaluator():
         with open(f'{save_path}/eval_score.json', 'w') as jf:
             json.dump(self.img_score_dict, jf, indent=4)
             
-    
 def main():
     
     print("[#] DPM - Relit Evaluation")

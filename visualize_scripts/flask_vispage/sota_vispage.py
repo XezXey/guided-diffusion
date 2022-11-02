@@ -55,26 +55,40 @@ def create_app():
         
         score_file = {}
         for m_id, m in enumerate(model):
-            out += f"<th> {m_id+1}." + cmp_dict[m]['alias'] + "</th>"
-            score_file[m] = json.load(f'{args.sample_dir}/{m}/eval_score.json')
+            out += f"<th style=\"font-size:10px;white-space: nowrap;\"> {m_id+1}." + cmp_dict[m]['alias']
+            try :
+                if cmp_dict[m]['misc'] == 'sota':
+                    with open(f'{args.sample_dir}/{m}/eval_score.json', 'r') as fp:
+                        score_file[m] = json.load(fp)
+                elif cmp_dict[m]['misc'] == 'ours':
+                    with open(f"{args.sample_dir}/Ours/{m}/{cmp_dict[m]['step']}/eval_score.json", 'r') as fp:
+                        score_file[m] = json.load(fp)
+            except :
+                out += " (No Eval File.)"
+            out += "</th>"
             
         for s_id, src_dst in enumerate(subject_id):
             out += "<tr>"
-            out += f"<th style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.({src_dst[0].split('.')[0]} => {src_dst[1].split('.')[0]})<img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')} title=\"{src_dst[0]}\"><img src=/files/{data_path}/{src_dst[1].replace('jpg', 'png')} title=\"{src_dst[1]}\"> </th>"
+            out += f"<th style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.({src_dst[0].split('.')[0]} => {src_dst[1].split('.')[0]}) <br> <br> <br> <br> <br> <img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')} title=\"{src_dst[0]}\"><img src=/files/{data_path}/{src_dst[1].replace('jpg', 'png')} title=\"{src_dst[1]}\"> </th>"
         
             # SOTA
             img_name = f"input={src_dst[0]}" + "%23" + f"pred={src_dst[1]}.png"
             for m_id, m in enumerate(model):
+                try:
+                    mse = "%0.5f" % float(score_file[m]['each_image'][f'{src_dst[1]}']['mse'])
+                    dssim = "%0.5f" % float(score_file[m]['each_image'][f'{src_dst[1]}']['dssim'])
+                    lpips = "%0.5f" % float(score_file[m]['each_image'][f'{src_dst[1]}']['lpips'])
+                except: mse = dssim = lpips = 'NaN'
                 if cmp_dict[m]['misc'] == "sota":
                     img_path = f"{args.sample_dir}/{m}/out/{img_name}"
                     out += f"<td>"
-                    out += f"MSE = , DSSIM = , LPIPS = "
+                    out += f"MSE = {mse} <br> DSSIM = {dssim} <br> LPIPS = {lpips} <br>"
                     out += f"<img src=/files/{img_path} title=\"{cmp_dict[m]['alias']}\">"
                     out += "</td>"
-                if cmp_dict[m]['misc'] == "ours":
+                elif cmp_dict[m]['misc'] == "ours": 
                     img_path = f"{args.sample_dir}/Ours/{m}/{cmp_dict[m]['step']}/upsample/{img_name}"
                     out += f"<td>"
-                    out += f"MSE = , DSSIM = , LPIPS = "
+                    out += f"MSE = {mse} <br> DSSIM = {dssim} <br> LPIPS = {lpips} <br>"
                     out += f"<img src=/files/{img_path} title=\"{cmp_dict[m]['alias']}\">"
                     out += "</td>"
                     

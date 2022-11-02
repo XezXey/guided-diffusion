@@ -324,7 +324,7 @@ if __name__ == '__main__':
         vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=f_relit)
         
         if args.eval_dir is not None:
-            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}"
+            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out"
             os.makedirs(eval_dir, exist_ok=True)
             torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{eval_dir}/input={src_id}#pred={dst_id}.png")
             
