@@ -1,0 +1,15 @@
+{
+    "ShadowM_Hou21" :  {
+        "alias" : "Hou et al. (CVPR'21)",
+        "misc" : "sota"
+    },
+    "GeoConFR_Hou22" :  {
+        "alias":"Hou et al. (CVPR'22)",
+        "misc" : "sota"
+    },
+    "ours_128_Face+Bg+shadow" :  {
+        "step":"ema_050000", 
+        "alias":"Ours (Face+Bg)",
+        "misc" : "ours"
+    }
+}

@@ -336,7 +336,7 @@ def create_app():
     @app.route('/model_comparison_from_json/')
     def model_comparison_from_json_selector():
         out = ""
-        json_files = glob.glob('./json_comparison/*.json')
+        json_files = glob.glob('./json_comparison/experiment/*.json')
         link_based = "itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse&ckpt=050000&show=res"
         for jf in json_files:
             jf = jf.split('/')[-1]
@@ -353,7 +353,7 @@ def create_app():
                 }
                 </style>"""
         out+= ckpt
-        f = open(f'./json_comparison/{jf}')
+        f = open(f'./json_comparison/experiment/{jf}')
         ckpt_dict = json.load(f)
         model = list(ckpt_dict.keys())
         
@@ -507,7 +507,7 @@ def create_app():
                     table-layout: fixed;
                 }
                 </style>"""
-        f = open(f'./json_comparison/{jf}')
+        f = open(f'./json_comparison/experiment/{jf}')
         ckpt_dict = json.load(f)
         model = list(ckpt_dict.keys())
         
@@ -556,7 +556,7 @@ def create_app():
     @app.route('/model_comparison_from_json_lf/')
     def model_comparison_from_json_selector_lf():
         out = ""
-        json_files = glob.glob('./json_comparison/*.json')
+        json_files = glob.glob('./json_comparison/experiment/*.json')
         link_based = "itp_method=Slerp&diff_step=1000&n_frame=5&sampling=reverse&ckpt=050000&show=res"
         for jf in json_files:
             jf = jf.split('/')[-1]
