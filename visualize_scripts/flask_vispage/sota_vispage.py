@@ -53,8 +53,10 @@ def create_app():
         out += "<table>"
         out += "<tr> <th> Model; <pre> Image : src(left), dst(right) </pre> </th>"
         
+        score_file = {}
         for m_id, m in enumerate(model):
             out += f"<th> {m_id+1}." + cmp_dict[m]['alias'] + "</th>"
+            score_file[m] = json.load(f'{args.sample_dir}/{m}/eval_score.json')
             
         for s_id, src_dst in enumerate(subject_id):
             out += "<tr>"
@@ -64,13 +66,15 @@ def create_app():
             img_name = f"input={src_dst[0]}" + "%23" + f"pred={src_dst[1]}.png"
             for m_id, m in enumerate(model):
                 if cmp_dict[m]['misc'] == "sota":
-                    img_path = f"{args.sample_dir}/{m}/{img_name}"
-                    out += f"<td>" #{img_path}"
+                    img_path = f"{args.sample_dir}/{m}/out/{img_name}"
+                    out += f"<td>"
+                    out += f"MSE = , DSSIM = , LPIPS = "
                     out += f"<img src=/files/{img_path} title=\"{cmp_dict[m]['alias']}\">"
                     out += "</td>"
                 if cmp_dict[m]['misc'] == "ours":
-                    img_path = f"{args.sample_dir}/{m}/{cmp_dict[m]['step']}/upsample/{img_name}"
-                    out += f"<td>" #{img_path}"
+                    img_path = f"{args.sample_dir}/Ours/{m}/{cmp_dict[m]['step']}/upsample/{img_name}"
+                    out += f"<td>"
+                    out += f"MSE = , DSSIM = , LPIPS = "
                     out += f"<img src=/files/{img_path} title=\"{cmp_dict[m]['alias']}\">"
                     out += "</td>"
                     

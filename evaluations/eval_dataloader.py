@@ -99,7 +99,7 @@ class EvalDataset(Dataset):
         return len(self.pred_path)
 
     def __getitem__(self, idx):
-        # query_img_name = list(self.gt_path.keys())[idx]
+        #NOTE: Use ground truth image name for query the prediction
         query_img_name = list(self.pred_path.keys())[idx]
         gt = self.load_image(self.gt_path[query_img_name])
         pred = self.load_image(self.pred_path[query_img_name])
