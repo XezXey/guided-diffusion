@@ -18,12 +18,6 @@ from torch.utils.data import DataLoader, Dataset
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-# from .img_util import (
-#     resize_arr,
-#     center_crop_arr,
-#     random_crop_arr
-# )
-
 def _list_image_files_recursively(data_dir):
     results = []
     for entry in sorted(bf.listdir(data_dir)):
@@ -35,27 +29,40 @@ def _list_image_files_recursively(data_dir):
             results.extend(_list_image_files_recursively(full_path))
     return results
 
+
 def image_path_list_to_dict(path_list):
     img_paths_dict = {}
     for path in path_list:
         img_name = path.split('/')[-1]
-        if '_' in img_name:
-            img_name = img_name.split('_')[-1]
+        if 'anno_' in img_name:
+            img_name = img_name.split('anno_')[-1]
+        img_paths_dict[img_name] = path
+    return img_paths_dict
+
+def pred_image_path_list_to_dict(path_list):
+    img_paths_dict = {}
+    for path in path_list:
+        img_name = path.split('/')[-1]
+        img_name =  img_name.split('#pred=')[-1][:-4]   # Remove .png
         img_paths_dict[img_name] = path
     return img_paths_dict
 
 
-def eval_loader(gt_path, pred_path, batch_size, deterministic=True):
-    assert gt_path != pred_path
+def eval_loader(gt_path, pred_path, mask_path, batch_size, deterministic=True):
     pred_path = _list_image_files_recursively(f"{pred_path}/")
-    pred_path = image_path_list_to_dict(pred_path)
-    
+    pred_path = pred_image_path_list_to_dict(pred_path)
+    # print(len(pred_path))
+    # batch_size = len(pred_path)
     gt_path = _list_image_files_recursively(f"{gt_path}/")
     gt_path = image_path_list_to_dict(gt_path)
+    
+    mask_path = _list_image_files_recursively(f"{mask_path}/")
+    mask_path = image_path_list_to_dict(mask_path)
     
     eval_dataset = EvalDataset(
         gt_path=gt_path,
         pred_path=pred_path,
+        mask_path=mask_path
     )
     
     if deterministic:
@@ -78,26 +85,31 @@ class EvalDataset(Dataset):
         self,
         gt_path,
         pred_path,
+        mask_path,
+        img_ext='.png',
         **kwargs,
     ):
         super().__init__()
         self.gt_path = gt_path
-        print(self.gt_path)
         self.pred_path = pred_path
-        print(self.pred_path)
+        self.mask_path = mask_path
+        self.img_ext = img_ext
         
     def __len__(self):
-        return len(self.gt_path)
+        return len(self.pred_path)
 
     def __getitem__(self, idx):
-        query_img_name = list(self.gt_path.keys())[idx]
+        # query_img_name = list(self.gt_path.keys())[idx]
+        query_img_name = list(self.pred_path.keys())[idx]
         gt = self.load_image(self.gt_path[query_img_name])
         pred = self.load_image(self.pred_path[query_img_name])
+        mask = self.load_face_segment('faceseg_face', query_img_name)
         
         out_dict = {
             'img_name': query_img_name,
-            'gt':np.array(gt).transpose(2, 1, 0) / 255.0,
-            'pred':np.array(pred).transpose(2, 1, 0) / 255.0,
+            'gt':np.array(gt).transpose(2, 0, 1) / 255.0,
+            'pred':np.array(pred).transpose(2, 0, 1) / 255.0,
+            'mask':np.array(mask).transpose(2, 0, 1),
         }
         
         return out_dict
@@ -108,3 +120,63 @@ class EvalDataset(Dataset):
             pil_image.load()
         pil_image = pil_image.convert("RGB")
         return pil_image
+    
+    def load_face_segment(self, segment_part, query_img_name):
+        face_segment_anno = self.load_image(self.mask_path[query_img_name.replace(self.img_ext, '.png')])
+
+        face_segment_anno = np.array(face_segment_anno)
+        bg = (face_segment_anno == 0)
+        skin = (face_segment_anno == 1)
+        l_brow = (face_segment_anno == 2)
+        r_brow = (face_segment_anno == 3)
+        l_eye = (face_segment_anno == 4)
+        r_eye = (face_segment_anno == 5)
+        eye_g = (face_segment_anno == 6)
+        l_ear = (face_segment_anno == 7)
+        r_ear = (face_segment_anno == 8)
+        ear_r = (face_segment_anno == 9)
+        nose = (face_segment_anno == 10)
+        mouth = (face_segment_anno == 11)
+        u_lip = (face_segment_anno == 12)
+        l_lip = (face_segment_anno == 13)
+        neck = (face_segment_anno == 14)
+        neck_l = (face_segment_anno == 15)
+        cloth = (face_segment_anno == 16)
+        hair = (face_segment_anno == 17)
+        hat = (face_segment_anno == 18)
+        face = np.logical_or.reduce((skin, l_brow, r_brow, l_eye, r_eye, eye_g, l_ear, r_ear, ear_r, nose, mouth, u_lip, l_lip))
+
+        if segment_part == 'faceseg_face':
+            seg_m = face
+        elif segment_part == 'faceseg_head':
+            seg_m = (face | neck | hair)
+        elif segment_part == 'faceseg_nohead':
+            seg_m = ~(face | neck | hair)
+        elif segment_part == 'faceseg_face&hair':
+            seg_m = ~bg
+        elif segment_part == 'faceseg_bg_noface&nohair':
+            seg_m = (bg | hat | neck | neck_l | cloth) 
+        elif segment_part == 'faceseg_bg&ears_noface&nohair':
+            seg_m = (bg | hat | neck | neck_l | cloth) | (l_ear | r_ear | ear_r)
+        elif segment_part == 'faceseg_bg':
+            seg_m = bg
+        elif segment_part == 'faceseg_bg&noface':
+            seg_m = (bg | hair | hat | neck | neck_l | cloth)
+        elif segment_part == 'faceseg_hair':
+            seg_m = hair
+        elif segment_part == 'faceseg_faceskin':
+            seg_m = skin
+        elif segment_part == 'faceseg_faceskin&nose':
+            seg_m = (skin | nose)
+        elif segment_part == 'faceseg_face_noglasses':
+            seg_m = (~eye_g & face)
+        elif segment_part == 'faceseg_face_noglasses_noeyes':
+            seg_m = (~(l_eye | r_eye) & ~eye_g & face)
+        elif segment_part == 'faceseg_eyes&glasses':
+            seg_m = (l_eye | r_eye | eye_g)
+        elif segment_part == 'faceseg_eyes':
+            seg_m = (l_eye | r_eye)
+        else: raise NotImplementedError(f"Segment part: {segment_part} is not found!")
+        
+        out = seg_m
+        return out
