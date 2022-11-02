@@ -1,6 +1,7 @@
 import torch as th
 import numpy as np
 import argparse
+import lpips
 import matplotlib.pyplot as plt
 from eval_dataloader import eval_loader
 
@@ -8,10 +9,8 @@ class Evaluator():
     def __init__(self, device='cuda'):
         # LPIPS
         from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
-        self.lpips = LearnedPerceptualImagePatchSimilarity(net_type='vgg', normalize=True).to(device)
-        # MSE
-        # from torchmetrics import MeanSquaredError
-        # self.mse = MeanSquaredError()
+        # self.lpips = LearnedPerceptualImagePatchSimilarity(net_type='vgg', normalize=True).to(device)
+        self.lpips = lpips.LPIPS(net='vgg', spatial=True).to(device)
         
         # SSIM & DSSIM
         from torchmetrics import StructuralSimilarityIndexMeasure
@@ -35,21 +34,12 @@ class Evaluator():
         ssim_score = th.sum(ssim_map * mask) / th.sum(mask);
         dssim_score = (1 - ssim_score) / 2 
         return ssim_score, dssim_score
+
+    def compute_lpips(self, gt, pred, mask):
         
-    def evaluate(self, pred, gt):
-        #LPIPS 
-        lpips_score = self.lpips(img1=pred, img2=gt)
-        
-        #SSIM
-        ssim_score, ssim_map = self.ssim(pred, gt)
-        
-        #MSE
-        mse_score = self.mse(pred, gt)
-        
-        return {'lpips':lpips_score,
-                'ssim':ssim_score, 
-                'mse':mse_score
-        }
+        lpips_score = self.lpips.forward(gt, pred)
+        lpips_score = th.sum(mask * lpips_score) / th.sum(mask)
+        return lpips_score
         
     def evaluate_each(self, pred, gt, mask=None):
         assert pred.shape[0] == gt.shape[0]
@@ -60,8 +50,9 @@ class Evaluator():
                 pred_ = pred[[i]]
                 gt_ = gt[[i]] 
                 mask_ = mask[[i]] 
-                #TODO: LPIPS with mask
-                lpips_score = self.lpips(img1=pred_, img2=gt_)
+                
+                # LPIPS
+                lpips_score = self.compute_lpips(pred=pred_, gt=gt_, mask=mask_)
                 
                 # SSIM & DSSIM
                 ssim_score, dssim_score = self.compute_ssim_dssim(pred=pred_, gt=gt_, mask=mask_)
@@ -112,14 +103,14 @@ def main():
         sub_mask = sub_batch['mask'].float()
         if args.upsampling:
             sub_pred = upsample(sub_pred)
-        plot = (th.cat((sub_gt[0].permute(1, 2, 0), sub_pred[0].permute(1, 2, 0), sub_mask[0].permute(1, 2, 0)), dim=1).cpu().numpy() * 255).astype(np.uint8)
-        plt.imshow(plot)
-        plt.title('GT Vs. Prediction')
-        plt.savefig('./tmp_img/gg.png')
+        # plot = (th.cat((sub_gt[0].permute(1, 2, 0), sub_pred[0].permute(1, 2, 0), sub_mask[0].permute(1, 2, 0)), dim=1).cpu().numpy() * 255).astype(np.uint8)
+        # plt.imshow(plot)
+        # plt.title('GT Vs. Prediction')
+        # plt.savefig('./tmp_img/gg.png')
         eval.evaluate_each(pred=sub_pred.cuda(), gt=sub_gt.cuda(), mask=sub_mask.cuda())
-        sub_pred = sub_pred.detach()
-        sub_gt = sub_gt.detach()
-        sub_mask = sub_mask.detach()
+        # sub_pred = sub_pred.detach()
+        # sub_gt = sub_gt.detach()
+        # sub_mask = sub_mask.detach()
         
     eval.print_score()
     

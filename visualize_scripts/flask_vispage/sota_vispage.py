@@ -69,7 +69,7 @@ def create_app():
                     out += f"<img src=/files/{img_path} title=\"{cmp_dict[m]['alias']}\">"
                     out += "</td>"
                 if cmp_dict[m]['misc'] == "ours":
-                    img_path = f"{args.sample_dir}/{m}/{cmp_dict[m]['step']}/{img_name}"
+                    img_path = f"{args.sample_dir}/{m}/{cmp_dict[m]['step']}/upsample/{img_name}"
                     out += f"<td>" #{img_path}"
                     out += f"<img src=/files/{img_path} title=\"{cmp_dict[m]['alias']}\">"
                     out += "</td>"

@@ -9,7 +9,12 @@
     },
     "ours_128_Face+Bg+shadow" :  {
         "step":"ema_050000", 
-        "alias":"Ours (Face+Bg)",
+        "alias":"Ours : Face+Bg)",
+        "misc" : "ours"
+    },
+    "ours_128_Face+UNet_Bg_share_noise_masking+shadow" : {
+        "step":"ema_050000", 
+        "alias":"Ours : Face + UNet(Bg - share noise masking)",
         "misc" : "ours"
     }
 }
