@@ -21,7 +21,7 @@ args = parser.parse_args()
 class Evaluator():
     def __init__(self, device='cuda'):
         # LPIPS
-        from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
+        # from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
         # self.lpips = LearnedPerceptualImagePatchSimilarity(net_type='vgg', normalize=True).to(device)
         self.lpips = lpips.LPIPS(net='alex', spatial=True).to(device)
         
@@ -69,6 +69,8 @@ class Evaluator():
                 
                 # LPIPS
                 lpips_score = self.compute_lpips(pred=pred_, gt=gt_, mask=mask_)
+                print(pred_.shape, gt_.shape)
+                exit()
                 
                 # SSIM & DSSIM
                 ssim_score, dssim_score = self.compute_ssim_dssim(pred=pred_, gt=gt_, mask=mask_)

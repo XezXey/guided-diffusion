@@ -1514,6 +1514,32 @@
             "cwd": "/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/sampling/",
             "justMyCode": true
         },
+        {
+            "name": "Python: relight_idx",
+            "type": "python",
+            "request": "launch",
+            "program": "relight_idx.py",
+            "args": ["--set", "valid", 
+                    "--step", "050000",
+                    "--out_dir", "/data/mint/sampling/multipie_debugging/", 
+                    "--cfg_name", "Masked_Face_woclip+BgNoHead+shadow.yaml", 
+                    "--log_dir", "Masked_Face_woclip+BgNoHead+shadow", 
+                    "--diffusion_steps", "1000",
+                    "--seed", "47",
+                    "--sample_pair_json", "./sample_json/multipie_testset.json",
+                    "--sample_pair_mode", "pair",
+                    "--itp", "render_face",
+                    "--itp_step", "2",
+                    "--gpu_id", "2",
+                    "--lerp",
+                    "--idx", "149", "150",
+                    "--dataset", "mp"
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/paper_script/",
+            "justMyCode": true
+        },
+
 
 
 

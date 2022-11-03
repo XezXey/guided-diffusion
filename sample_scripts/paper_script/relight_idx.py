@@ -172,7 +172,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     cond['use_render_itp'] = True
     cond_relight = copy.deepcopy(cond)
     if cfg.img_cond_model.apply:
-        cond_relight = pl_sampling.forward_cond_network(model_kwargs=cond)
+        cond_relight = pl_sampling.forward_cond_network(model_kwargs=cond_relight)
         
     assert noise_map.shape[0] == 1
     rev_mean_first = [x[:1] for x in rev_mean]

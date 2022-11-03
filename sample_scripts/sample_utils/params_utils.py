@@ -66,7 +66,7 @@ def load_flame_mask(part='face'):
 def init_deca(useTex=False, extractTex=True, device='cuda', 
               deca_mode='only_renderer', mask=None, deca_obj=None):
     
-    sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+    sys.path.insert(1, '/home/mint/guided-diffusion/preprocess_scripts/Relighting_preprocessing_tools/DECA/')
     from decalib import deca
     from decalib.utils.config import cfg as deca_cfg
     deca_cfg.model.use_tex = useTex
@@ -76,7 +76,7 @@ def init_deca(useTex=False, extractTex=True, device='cuda',
     return deca_obj
 
 def render_deca(deca_params, idx, n, render_mode='shape', 
-                useTex=False, extractTex=True, device='cuda', 
+                useTex=False, extractTex=False, device='cuda', 
                 avg_dict=None, rotate_normals=False, use_detail=False,
                 deca_mode='only_renderer', mask=None, repeat=True,
                 deca_obj=None):
@@ -95,7 +95,7 @@ def render_deca(deca_params, idx, n, render_mode='shape',
     #warnings.filterwarnings("ignore")
     # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
     if deca_obj is None:
-        sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+        sys.path.insert(1, '/home/mint/guided-diffusion/preprocess_scripts/Relighting_preprocessing_tools/DECA/')
         from decalib import deca
         from decalib.utils.config import cfg as deca_cfg
         deca_cfg.model.use_tex = useTex
@@ -106,14 +106,15 @@ def render_deca(deca_params, idx, n, render_mode='shape',
         deca_obj = deca_obj
         
     from decalib.datasets import datasets 
-    testdata = datasets.TestData(deca_params['raw_image_path'])
+    testdata = datasets.TestData([deca_params['raw_image_path'][0]], iscrop=True, face_detector='fan', sample_step=10)
     if repeat:
         codedict = {'shape':deca_params['shape'][[idx]].repeat(n, 1).to(device).float(),
                     'pose':deca_params['pose'][[idx]].repeat(n, 1).to(device).float(),
                     'exp':deca_params['exp'][[idx]].repeat(n, 1).to(device).float(),
                     'cam':deca_params['cam'][[idx]].repeat(n, 1).to(device).float(),
                     'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
-                    'tform':deca_params['tform'][[idx]].repeat(n, 1).to(device).reshape(-1, 3, 3).float(),
+                    # 'tform':deca_params['tform'][[idx]].repeat(n, 1).to(device).reshape(-1, 3, 3).float(),
+                    'tform':testdata[idx]['tform'][None].repeat(n, 1, 1).to(device).float(),
                     'images':testdata[idx]['image'].to(device)[None,...].float().repeat(n, 1, 1, 1),
                     'tex':deca_params['albedo'][[idx]].repeat(n, 1).to(device).float(),
                     'detail':deca_params['detail'][[idx]].repeat(n, 1).to(device).float(),
@@ -125,7 +126,8 @@ def render_deca(deca_params, idx, n, render_mode='shape',
                     'exp':th.tensor(deca_params['exp']).to(device).float(),
                     'cam':th.tensor(deca_params['cam']).to(device).float(),
                     'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
-                    'tform':th.tensor(deca_params['tform']).to(device).reshape(-1, 3, 3).float(),
+                    # 'tform':th.tensor(deca_params['tform']).to(device).reshape(-1, 3, 3).float(),
+                    'tform':testdata[idx]['tform'][None].to(device).float(),
                     'images':th.stack([testdata[i]['image'] for i in range(len(deca_params['raw_image_path']))]).to(device).float(),
                     'tex':th.tensor(deca_params['albedo']).to(device).float(),
                     'detail':(deca_params['detail']).to(device).float(),
