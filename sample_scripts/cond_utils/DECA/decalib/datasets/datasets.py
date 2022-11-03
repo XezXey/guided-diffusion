@@ -93,7 +93,7 @@ class TestData(Dataset):
 
     def __getitem__(self, index):
         imagepath = self.imagepath_list[index]
-        imagename = os.path.splitext(os.path.split(imagepath)[-1])[0]
+        imagename, imageext = os.path.splitext(os.path.split(imagepath)[-1])[0], os.path.splitext(os.path.split(imagepath)[-1])[1]
         image = np.array(imread(imagepath))
         if len(image.shape) == 2:
             image = image[:,:,None].repeat(1,1,3)
@@ -138,6 +138,7 @@ class TestData(Dataset):
         dst_image = dst_image.transpose(2,0,1)
         return {'image': torch.tensor(dst_image).float(),
                 'imagename': imagename,
+                'imageext': imageext,
                 'tform': torch.tensor(tform.params).float(),
                 'original_image': torch.tensor(image.transpose(2,0,1)).float(),
                 }
