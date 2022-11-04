@@ -218,6 +218,7 @@ if __name__ == '__main__':
         deca_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/params/"
         img_ext = '.png'
         cfg.dataset.training_data = 'MultiPIE'
+        cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/mp_aligned/'
     else: raise ValueError
 

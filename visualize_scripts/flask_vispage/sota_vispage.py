@@ -85,8 +85,8 @@ def create_app():
                     out += f"MSE = {mse} <br> DSSIM = {dssim} <br> LPIPS = {lpips} <br>"
                     out += f"<img src=/files/{img_path} title=\"{cmp_dict[m]['alias']}\">"
                     out += "</td>"
-                elif cmp_dict[m]['misc'] == "ours": 
-                    img_path = f"{args.sample_dir}/Ours/{m}/{cmp_dict[m]['step']}/upsample/{img_name}"
+                elif cmp_dict[m]['misc'] == "ours":
+                    img_path = f"{args.sample_dir}/Ours/{m}/{cmp_dict[m]['step']}/{cmp_dict[m]['img_dir']}/{img_name}"
                     out += f"<td>"
                     out += f"MSE = {mse} <br> DSSIM = {dssim} <br> LPIPS = {lpips} <br>"
                     out += f"<img src=/files/{img_path} title=\"{cmp_dict[m]['alias']}\">"

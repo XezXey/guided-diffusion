@@ -51,7 +51,14 @@ class Evaluator():
         return ssim_score, dssim_score
 
     def compute_lpips(self, gt, pred, mask):
-        
+        gt = (gt.clone() * 2) - 1
+        pred = (pred.clone() * 2) - 1
+        # print(th.max(pred))
+        # print(th.min(pred))
+
+        # print(th.max(gt))
+        # print(th.min(gt))
+        # exit()
         lpips_score = self.lpips.forward(gt, pred)
         lpips_score = th.sum(mask * lpips_score) / th.sum(mask)
         return lpips_score
@@ -63,14 +70,13 @@ class Evaluator():
         with th.no_grad():
             for i in range(B):  # Per image
                 pred_ = pred[[i]]
-                gt_ = gt[[i]] 
-                mask_ = mask[[i]] 
+                gt_ = gt[[i]]
+                mask_ = mask[[i]]
+                assert mask_.shape[1] == 3
                 name_ = name[i]
                 
                 # LPIPS
                 lpips_score = self.compute_lpips(pred=pred_, gt=gt_, mask=mask_)
-                print(pred_.shape, gt_.shape)
-                exit()
                 
                 # SSIM & DSSIM
                 ssim_score, dssim_score = self.compute_ssim_dssim(pred=pred_, gt=gt_, mask=mask_)

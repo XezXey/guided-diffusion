@@ -2,16 +2,15 @@ img_model:
   name: "ImgCond"
   arch: "UNetCond_SpatialCondition_Hadamart"
   image_size: 128
-  in_image: ['raw'] 
+  in_image: ['raw']
   in_channels: 6
   out_channels: 3
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
-  hadamart_prep: "Tanh"
   # Image-Condition directly to UNet(DPM)
-  dpm_cond_img: ['faceseg_nohead']
+  dpm_cond_img: ['deca_masked_face_images_woclip']
   prep_dpm_cond_img: [Null]
-  noise_dpm_cond_img: ['sep-dpm_noise_masking']
+  noise_dpm_cond_img: [Null]
   apply_dpm_cond_img: True
 
 param_model:
@@ -20,7 +19,7 @@ param_model:
 img_cond_model:
   apply: True
   arch: "EncoderUNet_SpatialCondition"
-  in_image: ['deca_masked_face_images_woclip']
+  in_image: ['faceseg_nohead']
   in_channels: 3
   image_size: 128
   out_channels: 128
@@ -37,8 +36,12 @@ train:
   sampling_interval: 25000
   save_interval: 10000
 
+dataset:
+  deca_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
+  data_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
+  face_segment_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment/"
+  deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
+
 train_misc:
-  exp_name: "Retraining_BG"
-  cfg_name: "Masked_Face_woclip+UNet_BgNoHead_sep_dpm_noise_masking+shadow"
-
-
+  exp_name: "LightConditioingAblation"
+  cfg_name: "UNet_Masked_Face_woclip+BgNoHead+shadow"
