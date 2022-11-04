@@ -214,9 +214,9 @@ if __name__ == '__main__':
         cfg.dataset.training_data = 'ffhq_256_with_anno'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
     elif args.dataset in ['mp_valid', 'mp_test']:
-        if args.dataset == 'mp_test'
+        if args.dataset == 'mp_test':
             sub_f = '/MultiPIE_testset/'
-        elif args.dataset == 'mp_valid'
+        elif args.dataset == 'mp_valid':
             sub_f = '/MultiPIE_validset/'
         else: raise ValueError
         img_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/{sub_f}/mp_aligned/"

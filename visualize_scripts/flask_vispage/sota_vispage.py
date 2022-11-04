@@ -91,7 +91,7 @@ def create_app():
                     out += f"MSE = {mse} <br> DSSIM = {dssim} <br> LPIPS = {lpips} <br>"
                     out += f"<img src=/files/{img_path} title=\"{cmp_dict[m]['alias']}\">"
                     out += "</td>"
-                    
+
             out += "</tr>"
         out += "</table>"
         out += "<br> <hr>"
@@ -114,13 +114,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--sample_dir', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
     parser.add_argument('--sample_pair_json', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
+    parser.add_argument('--dataset_path', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
     parser.add_argument('--set_', default='valid')
     parser.add_argument('--port', required=True)
     parser.add_argument('--host', default='0.0.0.0')
     args = parser.parse_args()
     
-    
-    data_path = f"/data/mint/DPM_Dataset/MultiPIE/mp_aligned/{args.set_}/"
+    # f"/data/mint/DPM_Dataset/MultiPIE_testset/mp_aligned/{args.set_}/"
+    data_path = args.dataset_path
+    print(data_path)
     dataset_img_path = file_utils._list_image_files_recursively(data_path)
     app = create_app()
     app.run(host=args.host, port=args.port, debug=True, threaded=False)

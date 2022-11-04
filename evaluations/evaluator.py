@@ -34,7 +34,8 @@ class Evaluator():
             'lpips':[],
             'ssim':[], 
             'dssim':[], 
-            'mse':[]
+            'mse':[],
+            'n_samples': 0
         }
         
         self.img_score_dict = {'each_image':{}}
@@ -89,6 +90,7 @@ class Evaluator():
                 self.score_dict['ssim'].append(ssim_score)
                 self.score_dict['dssim'].append(dssim_score)
                 self.score_dict['mse'].append(mse_score)
+                self.score_dict['n_samples'] += 1
                 
                 # Each image score
                 self.img_score_dict['each_image'][name_] = {
@@ -100,7 +102,9 @@ class Evaluator():
             
     def print_score(self):
         print("[#] Evaluation Score")
+        print(f"[#] Total samples = {self.score_dict['n_samples']}")
         for k, v in self.score_dict.items():
+            if k == 'n_samples': continue
             v = th.tensor(v)
             print(f'\t {k} : {th.mean(v)} +- {th.std(v)}')
             
@@ -109,8 +113,11 @@ class Evaluator():
         self.img_score_dict['eval_score'] = {}
         print("[#] Saving Evaluation Score...")
         for k, v in self.score_dict.items():
-            v = th.tensor(v)
-            self.img_score_dict['eval_score'][k] = f'{th.mean(v)} +- {th.std(v)}'
+            if k == 'n_samples':
+              self.img_score_dict['eval_score'][k] = f'{v}'
+            else:
+              v = th.tensor(v)
+              self.img_score_dict['eval_score'][k] = f'{th.mean(v)} +- {th.std(v)}'
         save_path = Path(args.pred).parents[0]
         with open(f'{save_path}/eval_score.json', 'w') as jf:
             json.dump(self.img_score_dict, jf, indent=4)
@@ -146,7 +153,6 @@ def main():
         sub_pred = sub_pred.detach()
         sub_gt = sub_gt.detach()
         sub_mask = sub_mask.detach()
-    
     
     eval.print_score()
     eval.save_score()
