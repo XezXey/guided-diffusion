@@ -29,7 +29,7 @@ relighting:
 
 train:
   weight_decay: 0.0
-  sampling_interval: 25000
+  sampling_interval: 100000
   save_interval: 5000
 
 dataset:
