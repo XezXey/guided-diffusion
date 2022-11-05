@@ -64,7 +64,6 @@ def eval_loader(gt_path, pred_path, mask_path, batch_size, face_part, n_eval, de
     for gt_k in gt_path.keys():
         if gt_k in pred_path.keys():
             final_gt_path[gt_k] = gt_path[gt_k]
-    
     eval_dataset = EvalDataset(
         gt_path=final_gt_path,
         pred_path=pred_path,

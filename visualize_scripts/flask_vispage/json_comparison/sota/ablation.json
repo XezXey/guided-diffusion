@@ -1,0 +1,27 @@
+{
+    "ours_128_Masked_Face_woclip+BgNoHead+only_shadow" :  {
+        "step":"ema_050000", 
+        "alias":"Ours : Shadow",
+        "misc" : "ours",
+        "img_dir" : "out/validset/"
+    },
+    "ours_128_Masked_Face_woclip+BgNoHead+shadow+deca" :  {
+        "step":"ema_050000", 
+        "alias":"Ours : DECA + Shadow",
+        "misc" : "ours",
+        "img_dir" : "out/validset/"
+    },
+    "ours_128_Masked_Face_woclip+BgNoHead+shadow+arcface" :  {
+        "step":"ema_050000", 
+        "alias":"Ours : Arcface + Shadow",
+        "misc" : "ours",
+        "img_dir" : "out/validset/"
+    },
+    "ours_128_Masked_Face_woclip+BgNoHead+shadow" :  {
+        "step":"ema_050000", 
+        "alias":"Ours : DECA + Arcface + Shadow",
+        "misc" : "ours",
+        "img_dir" : "out/validset/"
+    }
+
+}

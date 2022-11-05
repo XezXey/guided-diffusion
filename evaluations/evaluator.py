@@ -142,7 +142,6 @@ def main():
                                 )
     eval = Evaluator()
     
-    score_dict = None
     for sub_batch in loader:
         print(f"[#] Evaluating : {sub_batch['img_name']}")
         sub_gt = sub_batch['gt'].float()
