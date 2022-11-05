@@ -212,6 +212,7 @@ if __name__ == '__main__':
         img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
         deca_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
         img_ext = '.jpg'
+        cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
         cfg.dataset.training_data = 'ffhq_256_with_anno'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
     elif args.dataset in ['mp_valid', 'mp_test']:
