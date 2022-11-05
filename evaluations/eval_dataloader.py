@@ -48,7 +48,7 @@ def pred_image_path_list_to_dict(path_list):
     return img_paths_dict
 
 
-def eval_loader(gt_path, pred_path, mask_path, batch_size, deterministic=True):
+def eval_loader(gt_path, pred_path, mask_path, batch_size, face_part, n_eval, deterministic=True):
     pred_path = _list_image_files_recursively(f"{pred_path}/")
     pred_path = pred_image_path_list_to_dict(pred_path)
     # print(len(pred_path))
@@ -59,10 +59,18 @@ def eval_loader(gt_path, pred_path, mask_path, batch_size, deterministic=True):
     mask_path = _list_image_files_recursively(f"{mask_path}/")
     mask_path = image_path_list_to_dict(mask_path)
     
+    # Filtering gt out to match only the existing prediction.
+    final_gt_path = {}
+    for gt_k in gt_path.keys():
+        if gt_k in pred_path.keys():
+            final_gt_path[gt_k] = gt_path[gt_k]
+    
     eval_dataset = EvalDataset(
-        gt_path=gt_path,
+        gt_path=final_gt_path,
         pred_path=pred_path,
-        mask_path=mask_path
+        mask_path=mask_path,
+        face_part=face_part,
+        n_eval=n_eval
     )
     
     if deterministic:
@@ -86,24 +94,31 @@ class EvalDataset(Dataset):
         gt_path,
         pred_path,
         mask_path,
+        face_part,
+        n_eval,
         img_ext='.png',
-        **kwargs,
     ):
         super().__init__()
         self.gt_path = gt_path
         self.pred_path = pred_path
         self.mask_path = mask_path
         self.img_ext = img_ext
+        self.face_part = face_part
+        self.n_eval = n_eval
         
     def __len__(self):
-        return len(self.pred_path)
+        if self.n_eval is None:
+            return len(self.gt_path)
+        else:
+            return self.n_eval
 
     def __getitem__(self, idx):
         #NOTE: Use ground truth image name for query the prediction
-        query_img_name = list(self.pred_path.keys())[idx]
+        query_img_name = list(self.gt_path.keys())[idx]
+        
         gt = self.load_image(self.gt_path[query_img_name])
         pred = self.load_image(self.pred_path[query_img_name])
-        mask = self.load_face_segment('faceseg_face', query_img_name)
+        mask = self.load_face_segment(self.face_part, query_img_name)
         
         out_dict = {
             'img_name': query_img_name,
@@ -148,6 +163,8 @@ class EvalDataset(Dataset):
 
         if segment_part == 'faceseg_face':
             seg_m = face
+        elif segment_part == 'faceseg_face_noears':
+            seg_m = (~(l_ear | r_ear) & face)
         elif segment_part == 'faceseg_head':
             seg_m = (face | neck | hair)
         elif segment_part == 'faceseg_nohead':

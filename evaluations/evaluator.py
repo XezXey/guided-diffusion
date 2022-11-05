@@ -7,14 +7,19 @@ from eval_dataloader import eval_loader
 import os
 from pathlib import Path
 import json
+import torchvision
+import PIL
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gt", help="path to groundtruth folder")
 parser.add_argument("--pred", help="path to prediction folder")
 parser.add_argument("--mask", help="path to mask folder")
+parser.add_argument("--postfix", help="postfix add to eval json", default='')
+parser.add_argument("--face_part", help="facepart to eval", default='faceseg_face')
+parser.add_argument("--ds_mask", help="facepart to eval", action='store_true', default=False)
+parser.add_argument("--n_eval", help="n to eval", type=int, default=None)
 parser.add_argument("--batch_size", type=int, help="batch size")
-parser.add_argument("--upsampling", action='store_true', default=False)
 
 args = parser.parse_args()
 
@@ -109,7 +114,7 @@ class Evaluator():
             print(f'\t {k} : {th.mean(v)} +- {th.std(v)}')
             
     def save_score(self):
-        self.img_score_dict['running_command'] = f"--gt {args.gt} --pred {args.pred} --mask {args.mask} --batch_size {args.batch_size}, --upsampling {args.upsampling}"
+        self.img_score_dict['running_command'] = f"--gt {args.gt} --pred {args.pred} --mask {args.mask} --batch_size {args.batch_size}"
         self.img_score_dict['eval_score'] = {}
         print("[#] Saving Evaluation Score...")
         for k, v in self.score_dict.items():
@@ -119,7 +124,7 @@ class Evaluator():
               v = th.tensor(v)
               self.img_score_dict['eval_score'][k] = f'{th.mean(v)} +- {th.std(v)}'
         save_path = Path(args.pred).parents[0]
-        with open(f'{save_path}/eval_score.json', 'w') as jf:
+        with open(f'{save_path}/eval_score{args.postfix}.json', 'w') as jf:
             json.dump(self.img_score_dict, jf, indent=4)
             
 def main():
@@ -131,10 +136,11 @@ def main():
     loader, dataset = eval_loader(gt_path=args.gt, 
                                   pred_path=args.pred, 
                                   mask_path=args.mask,
-                                  batch_size=args.batch_size
+                                  batch_size=args.batch_size,
+                                  face_part=args.face_part,
+                                  n_eval=args.n_eval,
                                 )
     eval = Evaluator()
-    upsample = th.nn.UpsamplingBilinear2d(scale_factor=2)
     
     score_dict = None
     for sub_batch in loader:
@@ -142,13 +148,14 @@ def main():
         sub_gt = sub_batch['gt'].float()
         sub_pred = sub_batch['pred'].float()
         sub_mask = sub_batch['mask'].float()
+        if args.ds_mask:
+            resize = torchvision.transforms.Resize(size=(128, 128), interpolation=PIL.Image.NEAREST)
+            sub_mask = resize(sub_mask)
         sub_name = sub_batch['img_name']
-        if args.upsampling:
-            sub_pred = upsample(sub_pred)
-        # plot = (th.cat((sub_gt[0].permute(1, 2, 0), sub_pred[0].permute(1, 2, 0), sub_mask[0].permute(1, 2, 0)), dim=1).cpu().numpy() * 255).astype(np.uint8)
-        # plt.imshow(plot)
-        # plt.title('GT Vs. Prediction')
-        # plt.savefig('./tmp_img/gg.png')
+        plot = (th.cat((sub_gt[0].permute(1, 2, 0), sub_pred[0].permute(1, 2, 0), sub_mask[0].permute(1, 2, 0)), dim=1).cpu().numpy() * 255).astype(np.uint8)
+        plt.imshow(plot)
+        plt.title('GT Vs. Prediction')
+        plt.savefig('./tmp_img/gg.png')
         eval.evaluate_each(pred=sub_pred.cuda(), gt=sub_gt.cuda(), mask=sub_mask.cuda(), name=sub_name)
         sub_pred = sub_pred.detach()
         sub_gt = sub_gt.detach()
