@@ -19,6 +19,7 @@ parser.add_argument("--postfix", help="postfix add to eval json", default='')
 parser.add_argument("--face_part", help="facepart to eval", default='faceseg_face')
 parser.add_argument("--ds_mask", help="facepart to eval", action='store_true', default=False)
 parser.add_argument("--n_eval", help="n to eval", type=int, default=None)
+parser.add_argument("--out_score_dir", help="out eval file", type=str, required=True)
 parser.add_argument("--batch_size", type=int, help="batch size")
 
 args = parser.parse_args()
@@ -123,8 +124,13 @@ class Evaluator():
             else:
               v = th.tensor(v)
               self.img_score_dict['eval_score'][k] = f'{th.mean(v)} +- {th.std(v)}'
+        # Save at prediction folder
         save_path = Path(args.pred).parents[0]
         with open(f'{save_path}/eval_score{args.postfix}.json', 'w') as jf:
+            json.dump(self.img_score_dict, jf, indent=4)
+            
+        os.makedirs(args.out_score_dir, exist_ok=True)
+        with open(f'{args.out_score_dir}/eval_score{args.postfix}.json', 'w') as jf:
             json.dump(self.img_score_dict, jf, indent=4)
             
 def main():

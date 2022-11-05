@@ -61,7 +61,7 @@ def create_app():
                     with open(f'{args.sample_dir}/{m}/eval_score.json', 'r') as fp:
                         score_file[m] = json.load(fp)
                 elif cmp_dict[m]['misc'] == 'ours':
-                    with open(f"{args.sample_dir}/Ours/{m}/{cmp_dict[m]['step']}/eval_score.json", 'r') as fp:
+                    with open(f"{args.sample_dir}/Ours/{m}/{cmp_dict[m]['step']}/eval_score_n200.json", 'r') as fp:
                         score_file[m] = json.load(fp)
             except :
                 out += " (No Eval File.)"
