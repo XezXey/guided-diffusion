@@ -10,7 +10,7 @@ img_model:
   hadamart_prep: "Tanh"
 
 param_model:
-  params_selector: ['faceemb', 'shadow']
+  params_selector: ['light', 'faceemb', 'shadow']
 
 img_cond_model:
   apply: True
