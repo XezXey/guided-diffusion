@@ -1,6 +1,7 @@
 img_model:
   name: "ImgCond"
   arch: "UNetCond_SpatialCondition_Hadamart"
+  hadamart_prep: "Tanh"
   image_size: 128
   in_image: ['raw']
   in_channels: 6
