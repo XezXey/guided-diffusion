@@ -21,6 +21,7 @@ parser.add_argument("--ds_mask", help="facepart to eval", action='store_true', d
 parser.add_argument("--n_eval", help="n to eval", type=int, default=None)
 parser.add_argument("--out_score_dir", help="out eval file", type=str, required=True)
 parser.add_argument("--batch_size", type=int, help="batch size")
+parser.add_argument("--save_for_dssim", help="Save for compute DSSIM w/ Matlab later", default=None)
 
 args = parser.parse_args()
 
@@ -52,8 +53,23 @@ class Evaluator():
         return out
 
     def compute_ssim_dssim(self, gt, pred, mask):
+        # print(th.max(mask))
+        # print(mask.shape, gt.shape, pred.shape)
+        # print(th.min(mask))
+        # print(th.unique(mask))
         _, ssim_map = self.ssim(pred, gt)
-        ssim_score = th.sum(ssim_map * mask) / th.sum(mask);
+        # ssim_map = (ssim_map + 1)/2
+        ssim_score = th.sum(ssim_map * mask) / th.sum(mask)
+        # print(ssim_map)
+        # print(th.max(ssim_map))
+        # print(th.min(ssim_map))
+        
+        # plot = (((ssim_map[0]+1) * 0.5).permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
+        # plt.imshow(plot)
+        # plt.title('GT Vs. Prediction')
+        # plt.savefig('./tmp_img/ssim_map.png')
+        # exit()
+        
         dssim_score = (1 - ssim_score) / 2 
         return ssim_score, dssim_score
 
@@ -105,6 +121,17 @@ class Evaluator():
                     'dssim':str(dssim_score.cpu().numpy()),
                     'mse':str(mse_score.cpu().numpy()),
                 }
+                #NOTE: Saving the image for DSSIM
+                if args.save_for_dssim is not None:
+                    gt_path = f'{args.save_for_dssim}/{args.postfix}/gt/'
+                    pred_path = f'{args.save_for_dssim}/{args.postfix}/pred/'
+                    mask_path = f'{args.save_for_dssim}/{args.postfix}/mask/'
+                    os.makedirs(gt_path, exist_ok=True)
+                    os.makedirs(pred_path, exist_ok=True)
+                    os.makedirs(mask_path, exist_ok=True)
+                    torchvision.utils.save_image(tensor=gt_, fp=f'{gt_path}/{name_}')
+                    torchvision.utils.save_image(tensor=pred_, fp=f'{pred_path}/{name_}')
+                    torchvision.utils.save_image(tensor=mask_, fp=f'{mask_path}/{name_}')
             
     def print_score(self):
         print("[#] Evaluation Score")
@@ -157,10 +184,10 @@ def main():
             resize = torchvision.transforms.Resize(size=(128, 128), interpolation=PIL.Image.NEAREST)
             sub_mask = resize(sub_mask)
         sub_name = sub_batch['img_name']
-        plot = (th.cat((sub_gt[0].permute(1, 2, 0), sub_pred[0].permute(1, 2, 0), sub_mask[0].permute(1, 2, 0)), dim=1).cpu().numpy() * 255).astype(np.uint8)
-        plt.imshow(plot)
-        plt.title('GT Vs. Prediction')
-        plt.savefig('./tmp_img/gg.png')
+        # plot = (th.cat((sub_gt[0].permute(1, 2, 0), sub_pred[0].permute(1, 2, 0), sub_mask[0].permute(1, 2, 0)), dim=1).cpu().numpy() * 255).astype(np.uint8)
+        # plt.imshow(plot)
+        # plt.title('GT Vs. Prediction')
+        # plt.savefig('./tmp_img/gg.png')
         eval.evaluate_each(pred=sub_pred.cuda(), gt=sub_gt.cuda(), mask=sub_mask.cuda(), name=sub_name)
         sub_pred = sub_pred.detach()
         sub_gt = sub_gt.detach()
@@ -168,8 +195,6 @@ def main():
     
     eval.print_score()
     eval.save_score()
-    
-
  
    
 if __name__ == "__main__":
