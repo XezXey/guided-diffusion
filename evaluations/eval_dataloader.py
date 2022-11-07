@@ -162,6 +162,8 @@ class EvalDataset(Dataset):
 
         if segment_part == 'faceseg_face':
             seg_m = face
+        elif segment_part == 'faceseg_face_neck':
+            seg_m = (face | neck)
         elif segment_part == 'faceseg_face_noears':
             seg_m = (~(l_ear | r_ear) & face)
         elif segment_part == 'faceseg_face_noears_noeyes':

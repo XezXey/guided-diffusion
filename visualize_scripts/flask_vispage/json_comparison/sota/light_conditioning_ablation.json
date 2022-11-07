@@ -1,0 +1,32 @@
+{
+    "ours_128_UNet_Masked_Face_woclip+BgNoHead+shadow" :  {
+        "step":"ema_040000", 
+        "alias":"Ours : UNet(Face) - 40k",
+        "misc" : "ours",
+        "img_dir" : "out/"
+    },
+    "ours_128_UNet_Masked_Face_woclip+BgNoHead+shadow" :  {
+        "step":"ema_050000", 
+        "alias":"Ours : UNet(Face) - 50k",
+        "misc" : "ours",
+        "img_dir" : "out/"
+    },
+    "ours_128_UNet_Masked_Face_woclip+BgNoHead+shadow" :  {
+        "step":"ema_060000", 
+        "alias":"Ours : UNet(Face) - 60k",
+        "misc" : "ours",
+        "img_dir" : "out/"
+    },
+    "ours_128_DiffAE+BgNoHead+shadow" :  {
+        "step":"ema_050000", 
+        "alias":"Ours : Light(Non-spatial) - 50k",
+        "misc" : "ours",
+        "img_dir" : "out/"
+    },
+    "ours_128_Masked_Face_woclip+BgNoHead+shadow" :  {
+        "step":"ema_050000", 
+        "alias":"Ours : Enc(Face+Bg)",
+        "misc" : "ours",
+        "img_dir" : "out/validset/"
+    }
+}
