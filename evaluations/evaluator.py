@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--gt", help="path to groundtruth folder")
 parser.add_argument("--pred", help="path to prediction folder")
 parser.add_argument("--mask", help="path to mask folder")
+parser.add_argument("--lpips_net", default="alex")
 parser.add_argument("--postfix", help="postfix add to eval json", default='')
 parser.add_argument("--face_part", help="facepart to eval", default='faceseg_face')
 parser.add_argument("--ds_mask", help="facepart to eval", action='store_true', default=False)
@@ -30,7 +31,7 @@ class Evaluator():
         # LPIPS
         # from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
         # self.lpips = LearnedPerceptualImagePatchSimilarity(net_type='vgg', normalize=True).to(device)
-        self.lpips = lpips.LPIPS(net='alex', spatial=True).to(device)
+        self.lpips = lpips.LPIPS(net=args.lpips_net, spatial=True).to(device)
         
         # SSIM & DSSIM
         from torchmetrics import StructuralSimilarityIndexMeasure
@@ -184,10 +185,12 @@ def main():
             resize = torchvision.transforms.Resize(size=(128, 128), interpolation=PIL.Image.NEAREST)
             sub_mask = resize(sub_mask)
         sub_name = sub_batch['img_name']
-        # plot = (th.cat((sub_gt[0].permute(1, 2, 0), sub_pred[0].permute(1, 2, 0), sub_mask[0].permute(1, 2, 0)), dim=1).cpu().numpy() * 255).astype(np.uint8)
-        # plt.imshow(plot)
-        # plt.title('GT Vs. Prediction')
-        # plt.savefig('./tmp_img/gg.png')
+        plot = (th.cat((sub_gt[0].permute(1, 2, 0), sub_pred[0].permute(1, 2, 0), sub_mask[0].permute(1, 2, 0)), dim=1).cpu().numpy() * 255).astype(np.uint8)
+        plt.imshow(plot)
+        plt.title('GT Vs. Prediction')
+        plt.savefig('./tmp_img/gg.png')
+        # input()
+        # continue
         eval.evaluate_each(pred=sub_pred.cuda(), gt=sub_gt.cuda(), mask=sub_mask.cuda(), name=sub_name)
         sub_pred = sub_pred.detach()
         sub_gt = sub_gt.detach()

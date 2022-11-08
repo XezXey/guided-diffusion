@@ -64,6 +64,16 @@ def eval_loader(gt_path, pred_path, mask_path, batch_size, face_part, n_eval, de
     for gt_k in gt_path.keys():
         if gt_k in pred_path.keys():
             final_gt_path[gt_k] = gt_path[gt_k]
+            
+            
+    
+    # a = list(final_gt_path.keys())[0]
+    # b = list(final_gt_path.keys())[1]
+    # c = list(final_gt_path.keys())[2]
+    # print(final_gt_path[a], pred_path[a])
+    # print(final_gt_path[b], pred_path[b])
+    # print(final_gt_path[c], pred_path[c])
+    # exit()
     eval_dataset = EvalDataset(
         gt_path=final_gt_path,
         pred_path=pred_path,
