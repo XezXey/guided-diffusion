@@ -33,7 +33,7 @@ def interchange_cond_img(cond, src_idx, dst_idx, itc_img_key, cfg):
     cond['cond_img'] = th.cat(cond_img, dim=1)  # BxCxHxW
     return cond
 
-def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn):
+def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn, add_shadow=False):
     '''
     Interpolate the condition following the keys in interp_set
     :params src_idx: the source index of condition
@@ -52,8 +52,10 @@ def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn):
         assert src_idx < len(cond[itp]) and dst_idx < len(cond[itp])
         
         if itp == 'shadow':
-            # interp = np.linspace(-8, -1, n_step)[..., None]
-            interp = np.linspace(5, -8, n_step)[..., None]
+            if add_shadow:
+                interp = np.linspace(-8, 5, n_step)[..., None]
+            else:
+                interp = np.linspace(5, -8, n_step)[..., None]
         else:
             if isinstance(cond[itp], list):
                 #NOTE: interpolate the condition (list-type)

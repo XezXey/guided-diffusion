@@ -15,6 +15,7 @@ parser.add_argument('--itp', nargs='+', default=None)
 parser.add_argument('--itp_step', type=int, default=15)
 parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
+parser.add_argument('--add_shadow', action='store_true', default=False)
 # Samples selection
 parser.add_argument('--idx', nargs='+', default=[])
 parser.add_argument('--sample_pair_json', type=str, default=None)
@@ -121,7 +122,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
         interp_set = args.itp
         
     # Interpolate non-spatial
-    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func, add_shadow=args.add_shadow)
     cond.update(interp_cond)
         
     # Repeated non-spatial
