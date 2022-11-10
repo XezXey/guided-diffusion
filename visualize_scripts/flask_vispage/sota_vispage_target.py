@@ -80,7 +80,7 @@ def create_app():
                     lpips = "%0.5f" % float(score_file[m]['each_image'][f'{src_dst[1]}']['lpips'])
                 except: mse = dssim = lpips = 'NaN'
                 if cmp_dict[m]['misc'] == "sota":
-                    img_path = f"{args.sample_dir}/{m}/out/{img_name}"
+                    img_path = f"{args.sample_dir}/{m}/{cmp_dict[m]['img_dir']}/{img_name}"
                     out += f"<td>"
                     out += f"MSE = {mse} <br> DSSIM = {dssim} <br> LPIPS = {lpips} <br>"
                     out += f"<img src=/files/{img_path} title=\"{cmp_dict[m]['alias']}\">"

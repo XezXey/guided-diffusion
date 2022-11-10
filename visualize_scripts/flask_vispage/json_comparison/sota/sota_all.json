@@ -1,0 +1,54 @@
+{
+    "ShadowM_Hou21" :  {
+        "alias" : "Hou et al. (CVPR'21)",
+        "misc" : "sota",
+        "img_dir" : "out"
+    },
+    "GeoConFR_Hou22" :  {
+        "alias":"Hou et al. (CVPR'22)",
+        "misc" : "sota",
+        "img_dir" : "out"
+    },
+    "ours_DiffAE+shadow" : {
+        "step":"ema_050000", 
+        "alias":"128x128 => DiffAE",
+        "misc" : "ours",
+        "img_dir" : "upsample"
+    },
+    "ours_128_Masked_Face_woclip+shadow" : {
+        "step":"ema_050000", 
+        "alias":"128x128 => Ours : Face",
+        "misc" : "ours",
+        "img_dir" : "upsample"
+    },
+    "ours_128_Masked_Face_woclip+BgNoHead+shadow" :  {
+        "step":"ema_050000", 
+        "alias":"Ours : Face+Bg",
+        "misc" : "ours",
+        "img_dir" : "upsample"
+    },
+    "ours_128_Masked_Face_woclip+UNet_BgNoHead_sep_dpm_noise_masking+shadow" : {
+        "step":"ema_050000", 
+        "alias":"128x128 => Ours : Face + UNet(Bg - sep noise masking)",
+        "misc" : "ours",
+        "img_dir" : "upsample"
+    },
+    "ours_128_Masked_Face_woclip+UNet_BgNoHead_share_dpm_noise_masking+shadow.yaml" : {
+        "step":"ema_050000", 
+        "alias":"128x128 => Ours : Face + UNet(Bg - share noise masking)",
+        "misc" : "ours",
+        "img_dir" : "upsample"
+    },
+    "ours_256_Masked_Face_woclip+BgNoHead+shadow" : {
+        "step":"ema_075000", 
+        "alias":"256x256 => Ours : Face + Bg",
+        "misc" : "ours",
+        "img_dir" : "out"
+    },
+    "ours_256_Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_shadow_256" : {
+        "step":"ema_080000", 
+        "alias":"256x256 => Ours : Face + UNet(Bg - share noise masking)",
+        "misc" : "ours",
+        "img_dir" : "out"
+    }
+}

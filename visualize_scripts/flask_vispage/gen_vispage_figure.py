@@ -132,8 +132,10 @@ def create_app():
             for ckpt in checkpoint:
                 out += "<tr>"
                 out += f"<td>{ckpt.split('/')[-1]}</td> "
-                frames = glob.glob(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{diff_step}/n_frames={n_frame}/{show}_f*.png")
-                # frames = glob.glob(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0].replace('png', 'jpg')}/dst={src_dst[1].replace('png', 'jpg')}/{itp_method}_{diff_step}/n_frames={n_frame}/{show}_f*.png")
+                print("FFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+                print(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{diff_step}/n_frames={n_frame}/{show}_f*.png")
+                # frames = glob.glob(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/{itp_method}_{diff_step}/n_frames={n_frame}/{show}_f*.png")
+                frames = glob.glob(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0].replace('png', 'jpg')}/dst={src_dst[1].replace('png', 'jpg')}/{itp_method}_{diff_step}/n_frames={n_frame}/{show}_f*.png")
                 # frames = glob.glob(f"{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0].replace('jpg', 'png')}/dst={src_dst[1].replace('jpg', 'png')}/{itp_method}_{diff_step}/n_frames={n_frame}/{show}_f*.png")
                 
                 

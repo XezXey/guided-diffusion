@@ -1,19 +1,19 @@
 {
-    "ShadowM_Hou21" :  {
+    "ShadowM_Hou21_testset2" :  {
         "alias" : "Hou et al. (CVPR'21)",
         "misc" : "sota",
-        "img_dir" : "out"
+        "img_dir" : "testset2/testset2_eval/"
     },
-    "GeoConFR_Hou22" :  {
+    "GeoConFR_Hou22_testset2" :  {
         "alias":"Hou et al. (CVPR'22)",
         "misc" : "sota",
-        "img_dir" : "out"
+        "img_dir" : "testset2"
     },
-    "ours_256_Masked_Face_woclip+BgNoHead+shadow_256" : {
+    "ours_256_Masked_Face_woclip+BgNoHead+shadow_256_testset2" : {
         "step":"ema_085000", 
         "alias":"256x256 => Ours : Face + Bg",
         "misc" : "ours",
-        "img_dir" : "out"
+        "img_dir" : "out/testset2"
     }
 
 }

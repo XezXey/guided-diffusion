@@ -1,0 +1,15 @@
+ {
+    "log=Masked_Face_woclip+BgNoHead+shadow+arcface_cfg=Masked_Face_woclip+BgNoHead+shadow+arcface.yaml_mean_matching" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Arcface",
+        "n_frames":"2"
+    },
+    "log=Masked_Face_woclip+BgNoHead_cfg=Masked_Face_woclip+BgNoHead.yaml_mean_matching" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"DECA + Arcface",
+        "n_frames":"5"
+    }
+    
+}

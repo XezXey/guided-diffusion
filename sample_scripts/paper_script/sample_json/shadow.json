@@ -1,0 +1,24 @@
+{
+    "pair": {
+        "pair1": {
+            "src": "60065.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair2": {
+            "src": "60035.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair3": {
+            "src": "60084.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair4": {
+            "src": "64889.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair5": {
+            "src": "60037.jpg",
+            "dst": "60000.jpg"
+        }
+    }
+}
