@@ -1,0 +1,9 @@
+ {
+    "log=Masked_Face_woclip+BgNoHead_cfg=Masked_Face_woclip+BgNoHead.yaml_mean_matching" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Ours",
+        "n_frames":"5"
+    }
+    
+}
