@@ -15,6 +15,7 @@ parser.add_argument('--itp', nargs='+', default=None)
 parser.add_argument('--itp_step', type=int, default=15)
 parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
+parser.add_argument('--add_shadow', action='store_true', default=False)
 # Samples selection
 parser.add_argument('--n_subject', type=int, default=-1)
 parser.add_argument('--sample_pair_json', type=str, default=None)
