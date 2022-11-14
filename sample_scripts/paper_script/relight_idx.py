@@ -365,6 +365,7 @@ if __name__ == '__main__':
             torchvision.io.write_video(video_array=vid_relit, filename=f"{save_res_dir}/res.mp4", fps=args.fps)
             if is_render:
                 out_render = out_render[:, :3]
+                vis_render = out_render
                 # vid_render = th.cat((out_render, th.flip(out_render, dims=[0])))
                 clip_ren = False #if 'wclip' in dataset.condition_image else True
                 if clip_ren:
