@@ -358,13 +358,13 @@ if __name__ == '__main__':
                 fps : video fps
             """
             #NOTE: save_video, w/ shape = TxHxWxC and value range = [0, 255]
-            vid_relit = th.cat((out_relit, th.flip(out_relit, dims=[0])))
+            # vid_relit = th.cat((out_relit, th.flip(out_relit, dims=[0])))
             vid_relit = vid_relit.permute(0, 2, 3, 1)
             vid_relit = ((vid_relit + 1)*127.5).clamp_(0, 255).type(th.ByteTensor)
             torchvision.io.write_video(video_array=vid_relit, filename=f"{save_res_dir}/res.mp4", fps=args.fps)
             if is_render:
                 out_render = out_render[:, :3]
-                vid_render = th.cat((out_render, th.flip(out_render, dims=[0])))
+                # vid_render = th.cat((out_render, th.flip(out_render, dims=[0])))
                 clip_ren = True if 'wclip' in dataset.condition_image else True
                 if clip_ren:
                     vid_render = ((vid_render.permute(0, 2, 3, 1) + 1) * 127.5).clamp_(0, 255).type(th.ByteTensor)
