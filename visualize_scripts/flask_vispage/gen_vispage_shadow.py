@@ -12,6 +12,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--exp_dir', required=True)
 parser.add_argument('--sample_dir', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
 parser.add_argument('--sample_pair_json', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
+parser.add_argument('--addshadow_dir', default="/FFHQ_Hope_addshadow/")
+parser.add_argument('--rmvshadow_dir', default="/FFHQ_Hope_rmvshadow/")
 parser.add_argument('--set_', default='valid')
 parser.add_argument('--res', default=128)
 parser.add_argument('--port', required=True)
@@ -111,28 +113,32 @@ def create_app():
             out += f"<tr>"
             if int(args.res) == 256:
                 out += f"<th style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.{src_dst[0].split('.')[0]} <img src=/files/{data_path}/{src_dst[0]} title=\"{src_dst[0]}\"> </th>"
-            else:
-                out += f"<th style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.({src_dst[0].split('.')[0]},{src_dst[1].split('.')[0]})<img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')} title=\"{src_dst[0]}\"><img src=/files/{data_path}/{src_dst[1].replace('jpg', 'png')} title=\"{src_dst[1]}\"> </th>"
+                
             for m_id, m in enumerate(model):
                 if ckpt == 'json':
                     vis_ckpt = step = ckpt_dict[m]['step']
                 else:
                     vis_ckpt = step = f'ema_{ckpt}'
-                    
                 itp = ckpt_dict[m]['itp']
                 n_frames = ckpt_dict[m]['n_frames']
-                if int(args.res) == 256:
-                    each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/{step}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/"
-                else:
-                    each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/{step}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0].replace('png', 'jpg')}/dst={src_dst[1].replace('png', 'jpg')}/"
-                frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/{show}_f*.png")
+                each_model_add = f"{args.sample_dir}/{args.exp_dir}/{args.addshadow_dir}/{m}/{step}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/"
+                each_model_rmv = f"{args.sample_dir}/{args.exp_dir}/{args.rmvshadow_dir}/{m}/{step}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/"
+                frames_add = glob.glob(f"{each_model_add}/{itp_method}_{diff_step}/n_frames={n_frames}/{show}_f*.png")
+                frames_rmv = glob.glob(f"{each_model_rmv}/{itp_method}_{diff_step}/n_frames={n_frames}/{show}_f*.png")
                 
                 out += "<td>"
-                if len(frames) > 0:
-                    frames = sort_by_frame(frames)
-                    out += f"<img src=/files/{frames[-1]} title=\"{ckpt_dict[m]['alias']}\">"
-                else:
-                    out += "<p style=\"color:red\">Images not found!</p>"
+                shadow_out = [frames_rmv, frames_add]
+                for i, so_f in enumerate(shadow_out):
+                    if len(so_f) > 0:
+                        frames = sort_by_frame(so_f)
+                        if i == 0:
+                            frames = frames[::-1]
+                        elif i == 1:
+                            frames = frames[1:]
+                        for f in frames:
+                            out += f"<img src=/files/{f} title=\"{ckpt_dict[m]['alias']}\">"
+                    else:
+                        out += "<p style=\"color:red\">Images not found!</p>"
                 out += "</td>"
             out += "</tr>"
         out += "</table>"

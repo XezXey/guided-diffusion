@@ -560,20 +560,20 @@ def create_app():
                 itp = ckpt_dict[m]['itp']
                 n_frames = ckpt_dict[m]['n_frames']
                 if int(args.res) == 256:
-                    print("GGGGGGGGGGGGGGGGG")
-                    print(ckpt_dict[m]['step'])
-                    print(step)
+                    # print("GGGGGGGGGGGGGGGGG")
+                    # print(ckpt_dict[m]['step'])
+                    # print(step)
                     each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/{step}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/"
                 else:
                     each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/{step}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0].replace('png', 'jpg')}/dst={src_dst[1].replace('png', 'jpg')}/"
-                print("GGODDL")
-                print(each_model)
+                # print("GGODDL")
+                # print(each_model)
                 
                 frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/{show}_f*.png")
-                print("HELP")
-                print(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/")
-                print(frames)
-                print("PLS HELP")
+                # print("HELP")
+                # print(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/")
+                # print(frames)
+                # print("PLS HELP")
                 
                 
                 out += "<td>"

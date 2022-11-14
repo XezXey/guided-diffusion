@@ -19,6 +19,22 @@
         "pair5": {
             "src": "60037.jpg",
             "dst": "60000.jpg"
+        },
+        "pair6": {
+            "src": "68396.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair7": {
+            "src": "60862.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair8": {
+            "src": "65169.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair9": {
+            "src": "62989.jpg",
+            "dst": "60000.jpg"
         }
     }
 }
