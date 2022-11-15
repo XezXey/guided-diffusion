@@ -46,10 +46,34 @@ def save_obj(renderer, filename, opdict):
     # save coarse mesh
     util.write_obj(filename, vertices, faces, colors=colors)
 
+# def get_R_normals(n_step):
+#     src = np.array([0, 0, 2.50])
+#     dst = np.array([0, 0, 6.50])
+#     rvec = np.linspace(src, dst, n_step)
+#     R = [cv2.Rodrigues(rvec[i])[0] for i in range(rvec.shape[0])]
+#     R = np.stack(R, axis=0)
+#     return R
+
 def get_R_normals(n_step):
-    src = np.array([0, 0, 0])
-    dst = np.array([0, 0, 6.50])
-    rvec = np.linspace(src, dst, n_step)
+    if n_step % 2 == 0:
+        fh = sh = n_step//2
+    else:
+        fh = int(n_step//2)
+        sh = fh + 1
+        
+    src = np.array([0, 6.50, 0])
+    dst = np.array([0, 2.50, 0])
+    rvec_f = np.linspace(src, dst, fh)
+    
+    src = rvec_f[-1]
+    dst = np.array([0, rvec_f[-1][1], -8.00])
+    rvec_s = np.linspace(rvec_f[-1], dst, sh)
+    # print(rvec_f.shape, rvec_s.shape)
+    rvec = np.concatenate((rvec_f, rvec_s), axis=0)
+    # print(rvec_f)
+    # print(rvec_s)
+    # print(rvec)
+    # print(rvec.shape)
     R = [cv2.Rodrigues(rvec[i])[0] for i in range(rvec.shape[0])]
     R = np.stack(R, axis=0)
     return R
