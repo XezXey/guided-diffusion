@@ -11,6 +11,238 @@
         "pair3": {
             "src": "60922.jpg",
             "dst": "60000.jpg"
+        },
+        "pair4": {
+            "src": "68753.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair5": {
+            "src": "60012.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair6": {
+            "src": "60020.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair7": {
+            "src": "60040.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair8": {
+            "src": "60079.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair9": {
+            "src": "60161.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair10": {
+            "src": "60164.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair11": {
+            "src": "60169.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair12": {
+            "src": "60176.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair13": {
+            "src": "60182.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair14": {
+            "src": "60187.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair15": {
+            "src": "60198.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair16": {
+            "src": "60230.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair17": {
+            "src": "60240.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair18": {
+            "src": "60284.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair19": {
+            "src": "60291.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair20": {
+            "src": "60334.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair21": {
+            "src": "60364.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair22": {
+            "src": "60365.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair23": {
+            "src": "60400.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair24": {
+            "src": "60404.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair25": {
+            "src": "60441.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair26": {
+            "src": "60459.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair27": {
+            "src": "60489.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair28": {
+            "src": "60510.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair29": {
+            "src": "60601.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair30": {
+            "src": "60614.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair31": {
+            "src": "60634.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair32": {
+            "src": "60656.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair33": {
+            "src": "60095.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair34": {
+            "src": "60688.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair35": {
+            "src": "60728.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair36": {
+            "src": "60765.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair37": {
+            "src": "60848.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair38": {
+            "src": "60862.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair39": {
+            "src": "60902.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair40": {
+            "src": "61070.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair41": {
+            "src": "61079.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair42": {
+            "src": "61107.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair43": {
+            "src": "61244.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair44": {
+            "src": "61326.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair45": {
+            "src": "61366.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair46": {
+            "src": "61522.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair47": {
+            "src": "61520.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair49": {
+            "src": "62737.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair50": {
+            "src": "62759.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair51": {
+            "src": "62821.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair52": {
+            "src": "62842.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair53": {
+            "src": "62863.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair54": {
+            "src": "66008.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair55": {
+            "src": "62695.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair56": {
+            "src": "64586.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair57": {
+            "src": "64584.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair58": {
+            "src": "66010.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair59": {
+            "src": "66226.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair60": {
+            "src": "61681.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair61": {
+            "src": "67069.jpg",
+            "dst": "60000.jpg"
+        },
+        "pair62": {
+            "src": "63879.jpg",
+            "dst": "60000.jpg"
         }
     }
 }

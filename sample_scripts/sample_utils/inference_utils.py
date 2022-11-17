@@ -226,6 +226,13 @@ def build_condition_image(cond, misc):
             #NOTE: Render w/ Rotated normals
             cond.update(mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light']))
             cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
+            # print(cond['light'], args.scale_sh)
+            lb = cond['light'].copy()
+            # lr_shading = int(n_step//2)
+            cond['light'][3:17] *= args.scale_sh
+            # cond['light'] *= args.scale_sh
+            print(f"[#] Mean light after scale with {args.scale_sh}: {np.mean(lb)} -> {np.mean(cond['light'])}")
+            # print(cond['light'], args.scale_sh)
         elif 'render_face' in args.interpolate:
             #NOTE: Render w/ interpolated light
             interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)

@@ -132,11 +132,14 @@ def create_app():
                     if len(so_f) > 0:
                         frames = sort_by_frame(so_f)
                         if i == 0:
-                            frames = frames[::-1]
+                            # frames = frames[::-1]
+                            frames = frames
                         elif i == 1:
-                            frames = frames[1:]
+                            # frames = frames[1:]
+                            frames = frames
                         for f in frames:
                             out += f"<img src=/files/{f} title=\"{ckpt_dict[m]['alias']}\">"
+                        out += "<br>"
                     else:
                         out += "<p style=\"color:red\">Images not found!</p>"
                 out += "</td>"
