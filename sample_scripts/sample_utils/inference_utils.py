@@ -228,8 +228,9 @@ def build_condition_image(cond, misc):
             cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
             # print(cond['light'], args.scale_sh)
             lb = cond['light'].copy()
-            # lr_shading = int(n_step//2)
-            cond['light'][3:17] *= args.scale_sh
+            lr_shading = int(n_step//2)
+            cond['light'][3:lr_shading+3] *= args.scale_sh
+            # cond['light'][3:17] *= args.scale_sh
             # cond['light'] *= args.scale_sh
             print(f"[#] Mean light after scale with {args.scale_sh}: {np.mean(lb)} -> {np.mean(cond['light'])}")
             # print(cond['light'], args.scale_sh)
