@@ -223,13 +223,30 @@ def build_condition_image(cond, misc):
     if np.any(['deca' in i for i in condition_img]):
         # Render the face
         if args.rotate_normals:
-            #NOTE: Render w/ Rotated normals
+            #NOTE: Render w/ Rotated normals; cond['light'] shape = B x 27
             cond.update(mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light']))
             cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
-            # print(cond['light'], args.scale_sh)
+            print(cond['light'].shape, args.scale_sh)
             lb = cond['light'].copy()
             lr_shading = int(n_step//2)
-            cond['light'][3:lr_shading+3] *= args.scale_sh
+            cond['light'][3:lr_shading] *= args.scale_sh
+            if args.add_sh is not None:
+                cond['light'][3:lr_shading+3, 0:3] += args.add_sh
+            if args.diffuse_sh is not None:
+                cond['light'][3:lr_shading+3, 0:3] += args.diffuse_sh
+                cond['light'][3:lr_shading+3, 3:] -= args.diffuse_sh
+            if args.diffuse_perc is not None:
+                for i, sh_idx in enumerate(np.arange(0, 27, 3)):
+                    # print(sh_idx)
+                    if i == 0:
+                        # print("b4:", cond['light'][3:lr_shading+3, sh_idx:sh_idx+3])
+                        cond['light'][3:lr_shading+3, sh_idx:sh_idx+3] -= (np.mean(cond['light'][3:lr_shading+3, sh_idx:sh_idx+3], axis=1, keepdims=True) * args.diffuse_perc)
+                        # print("af:", cond['light'][3:lr_shading+3, sh_idx:sh_idx+3])
+                    else:
+                        # np.mean(x[3:20, 0:3], axis=1, keepdims=True)
+                        # print("b4:", cond['light'][3:lr_shading+3, sh_idx:sh_idx+3])
+                        cond['light'][3:lr_shading+3, sh_idx:sh_idx+3] += (np.mean(cond['light'][3:lr_shading+3, sh_idx:sh_idx+3], axis=1, keepdims=True) * args.diffuse_perc)
+                        # print("af:", cond['light'][3:lr_shading+3, sh_idx:sh_idx+3])
             # cond['light'][3:17] *= args.scale_sh
             # cond['light'] *= args.scale_sh
             print(f"[#] Mean light after scale with {args.scale_sh}: {np.mean(lb)} -> {np.mean(cond['light'])}")

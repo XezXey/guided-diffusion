@@ -62,11 +62,13 @@ def get_R_normals(n_step):
         sh = fh + 1
         
     src = np.array([0, 6.50, 0])
-    dst = np.array([0, 2.50, 0])
+    # dst = np.array([0, 2.50, 0])
+    dst = np.array([0, 1.00, 0])
     rvec_f = np.linspace(src, dst, fh)
     
     src = rvec_f[-1]
-    dst = np.array([0, rvec_f[-1][1], -8.00])
+    # dst = np.array([0, rvec_f[-1][1], -8.00])
+    dst = np.array([0, 2.50, -8.00])
     rvec_s = np.linspace(rvec_f[-1], dst, sh)
     # print(rvec_f.shape, rvec_s.shape)
     rvec = np.concatenate((rvec_f, rvec_s), axis=0)
