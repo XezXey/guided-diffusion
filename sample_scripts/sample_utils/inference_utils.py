@@ -229,7 +229,8 @@ def build_condition_image(cond, misc):
             print(cond['light'].shape, args.scale_sh)
             lb = cond['light'].copy()
             lr_shading = int(n_step//2)
-            cond['light'][3:lr_shading] *= args.scale_sh
+            # cond['light'][3:lr_shading] *= args.scale_sh
+            cond['light'] *= args.scale_sh
             if args.add_sh is not None:
                 cond['light'][3:lr_shading+3, 0:3] += args.add_sh
             if args.diffuse_sh is not None:
