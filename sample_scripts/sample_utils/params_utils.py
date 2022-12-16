@@ -140,6 +140,7 @@ def render_deca(deca_params, idx, n, render_mode='shape',
     if repeat:
         codedict = {'shape':deca_params['shape'][[idx]].repeat(n, 1).to(device).float(),
                     'pose':deca_params['pose'][[idx]].repeat(n, 1).to(device).float(),
+                    # 'pose':th.tensor(deca_params['pose']).to(device).float(),
                     'exp':deca_params['exp'][[idx]].repeat(n, 1).to(device).float(),
                     'cam':deca_params['cam'][[idx]].repeat(n, 1).to(device).float(),
                     'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
@@ -149,6 +150,9 @@ def render_deca(deca_params, idx, n, render_mode='shape',
                     'tex':deca_params['albedo'][[idx]].repeat(n, 1).to(device).float(),
                     'detail':deca_params['detail'][[idx]].repeat(n, 1).to(device).float(),
         }
+        # print(codedict['pose'])
+        # print(codedict['light'])
+        # exit()
         original_image = deca_params['raw_image'][[idx]].to(device).float().repeat(n, 1, 1, 1) / 255.0
     else:
         codedict = {'shape':th.tensor(deca_params['shape']).to(device).float(),

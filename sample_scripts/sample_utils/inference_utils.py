@@ -226,7 +226,6 @@ def build_condition_image(cond, misc):
             #NOTE: Render w/ Rotated normals; cond['light'] shape = B x 27
             cond.update(mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light']))
             cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
-            print(cond['light'].shape, args.scale_sh)
             lb = cond['light'].copy()
             lr_shading = int(n_step//2)
             # cond['light'][3:lr_shading] *= args.scale_sh
@@ -240,18 +239,10 @@ def build_condition_image(cond, misc):
                 for i, sh_idx in enumerate(np.arange(0, 27, 3)):
                     # print(sh_idx)
                     if i == 0:
-                        # print("b4:", cond['light'][3:lr_shading+3, sh_idx:sh_idx+3])
                         cond['light'][3:lr_shading+3, sh_idx:sh_idx+3] -= (np.mean(cond['light'][3:lr_shading+3, sh_idx:sh_idx+3], axis=1, keepdims=True) * args.diffuse_perc)
-                        # print("af:", cond['light'][3:lr_shading+3, sh_idx:sh_idx+3])
                     else:
-                        # np.mean(x[3:20, 0:3], axis=1, keepdims=True)
-                        # print("b4:", cond['light'][3:lr_shading+3, sh_idx:sh_idx+3])
                         cond['light'][3:lr_shading+3, sh_idx:sh_idx+3] += (np.mean(cond['light'][3:lr_shading+3, sh_idx:sh_idx+3], axis=1, keepdims=True) * args.diffuse_perc)
-                        # print("af:", cond['light'][3:lr_shading+3, sh_idx:sh_idx+3])
-            # cond['light'][3:17] *= args.scale_sh
-            # cond['light'] *= args.scale_sh
             print(f"[#] Mean light after scale with {args.scale_sh}: {np.mean(lb)} -> {np.mean(cond['light'])}")
-            # print(cond['light'], args.scale_sh)
         elif 'render_face' in args.interpolate:
             #NOTE: Render w/ interpolated light
             interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
@@ -267,6 +258,9 @@ def build_condition_image(cond, misc):
             #NOTE: Render w/ same light
             repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
             cond.update(repeated_cond)
+            interp_cond = mani_utils.iter_interp_cond(cond, interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+            interp_cond['pose'] = th.tensor(interp_cond['pose'])
+            cond.update(interp_cond)
         
         start = time.time()
         if np.any(['deca_masked' in n for n in condition_img]):
