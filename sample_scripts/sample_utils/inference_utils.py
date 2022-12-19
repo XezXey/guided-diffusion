@@ -243,6 +243,8 @@ def build_condition_image(cond, misc):
                     else:
                         cond['light'][3:lr_shading+3, sh_idx:sh_idx+3] += (np.mean(cond['light'][3:lr_shading+3, sh_idx:sh_idx+3], axis=1, keepdims=True) * args.diffuse_perc)
             print(f"[#] Mean light after scale with {args.scale_sh}: {np.mean(lb)} -> {np.mean(cond['light'])}")
+        elif args.sh_grid_size is not None:
+            cond['light'] = params_utils.grid_sh(n_grid=args.sh_grid_size, s=args.sh_span).reshape(-1, 27)
         elif 'render_face' in args.interpolate:
             #NOTE: Render w/ interpolated light
             interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
@@ -258,9 +260,9 @@ def build_condition_image(cond, misc):
             #NOTE: Render w/ same light
             repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
             cond.update(repeated_cond)
-            interp_cond = mani_utils.iter_interp_cond(cond, interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
-            interp_cond['pose'] = th.tensor(interp_cond['pose'])
-            cond.update(interp_cond)
+            # interp_cond = mani_utils.iter_interp_cond(cond, interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+            # interp_cond['pose'] = th.tensor(interp_cond['pose'])
+            # cond.update(interp_cond)
         
         start = time.time()
         if np.any(['deca_masked' in n for n in condition_img]):

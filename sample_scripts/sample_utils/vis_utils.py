@@ -157,5 +157,27 @@ def convert2rgb(img, bound):
         convert_img = (img + 0.5) * 255.0
     return convert_img
 
-def test_lib_save_image():
-    pass
+def spiralOrder(m, n):
+    
+    rowStart, rowEnd = 0, m - 1
+    colStart, colEnd = 0, n - 1
+    idx = []
+    while rowStart < rowEnd and colStart < colEnd:
+        for i in range(colStart, colEnd + 1):
+            idx.append([rowStart, i])
+        rowStart += 1
+
+        for i in range(rowStart, rowEnd + 1):
+            idx.append([i, colEnd])
+        colEnd -= 1
+
+        if rowStart < rowEnd:
+            for i in range(colEnd, colStart - 1, -1):
+                idx.append([rowEnd, i])
+            rowEnd -= 1
+
+        if colStart < colEnd:
+            for i in range(rowEnd, rowStart - 1, -1):
+                idx.append([i, colStart])
+            colStart += 1
+    return idx

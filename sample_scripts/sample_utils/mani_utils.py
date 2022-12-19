@@ -33,7 +33,7 @@ def interchange_cond_img(cond, src_idx, dst_idx, itc_img_key, cfg):
     cond['cond_img'] = th.cat(cond_img, dim=1)  # BxCxHxW
     return cond
 
-def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn, add_shadow=False):
+def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn, add_shadow=False, vary_shadow=None):
     '''
     Interpolate the condition following the keys in interp_set
     :params src_idx: the source index of condition
@@ -52,12 +52,35 @@ def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn, add_
         assert src_idx < len(cond[itp]) and dst_idx < len(cond[itp])
         
         if itp == 'shadow':
-            if add_shadow:
-                # interp = np.linspace(-8, 5, n_step)[..., None]
-                interp = np.linspace(cond[itp][src_idx][0], cond[itp][src_idx][0]+5, n_step)[..., None]
+            if vary_shadow:
+                import json
+                with open(cond['misc']['args'].sample_pair_json, 'r') as f:
+                    sample_pairs = json.load(f)[cond['misc']['args'].sample_pair_mode]
+                    pair_idx = list(sample_pairs.keys())[cond['sample_idx']]
+                    assert sample_pairs[pair_idx]['src'] == cond['image_name'][src_idx]
+                    min_c = sample_pairs[pair_idx]['rmv_shadow_bound']
+                    max_c = sample_pairs[pair_idx]['add_shadow_bound']
+                    min_c = np.linspace(min_c, cond[itp][src_idx][0], n_step//2)[..., None]
+                    max_c = np.linspace(cond[itp][src_idx][0], max_c, n_step//2)[..., None]
+                    interp = np.concatenate((max_c[0:1, :], min_c, max_c[1:, :]), axis=0)
+                    print(min_c.shape, max_c.shape, interp.shape)
+                    print(f"[#] Shadow = {cond[itp][src_idx][0]}")
+                    print(f"[#] Varying shadow ({vary_shadow}) with : \n{interp}")
+                
+            #     assert len(vary_shadow) == 2
+            #     min_c, max_c = vary_shadow
+            #     min_c = np.linspace(min_c, cond[itp][src_idx][0], n_step//2)[..., None]
+            #     max_c = np.linspace(cond[itp][src_idx][0], max_c, n_step//2)[..., None]
+            #     interp = np.concatenate((min_c, max_c), axis=0)
+            #     print(min_c.shape, max_c.shape, interp.shape)
+            #     print(f"[#] Shadow = {cond[itp][src_idx][0]}")
+            #     print(f"[#] Varying shadow ({vary_shadow}) with : \n{interp}")
             else:
-                interp = np.linspace(cond[itp][src_idx][0], -15, n_step)[..., None]
-            print(f"Interpolating shadow with : {interp}, Adding shadow = {add_shadow}")
+                if add_shadow:
+                    interp = np.linspace(cond[itp][src_idx][0], cond[itp][src_idx][0]+5, n_step)[..., None]
+                else:
+                    interp = np.linspace(cond[itp][src_idx][0], -15, n_step)[..., None]
+                print(f"Interpolating shadow with : \n{interp}, Adding shadow = {add_shadow}")
         else:
             if isinstance(cond[itp], list):
                 #NOTE: interpolate the condition (list-type)

@@ -80,6 +80,26 @@ def get_R_normals(n_step):
     R = np.stack(R, axis=0)
     return R
 
+def grid_sh(n_grid, sh=None, s=1):
+    sh_light = []
+    print(s, n_grid)
+    for lx in np.linspace(-s, s, n_grid):
+        for ly in np.linspace(s, 0, n_grid):
+            l = np.array((lx, ly, 1))
+            l = l / np.linalg.norm(l)
+            
+            if sh is not None:
+                tmp_light = sh.copy()
+            else:
+                tmp_light = np.zeros((1, 9, 3))
+            tmp_light[0:1, 0:1, :] = 3.5
+            tmp_light[0:1, 1:2, :] = l[0]
+            tmp_light[0:1, 2:3, :] = l[1]
+            tmp_light[0:1, 3:4, :] = l[2]
+            sh_light.append(tmp_light)
+    sh_light = np.concatenate(sh_light, axis=0)
+    return sh_light
+
 def load_flame_mask(part='face'):
     f_mask = np.load('/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/data/FLAME_masks_face-id.pkl', allow_pickle=True, encoding='latin1')
     v_mask = np.load('/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/data/FLAME_masks.pkl', allow_pickle=True, encoding='latin1')
@@ -238,10 +258,9 @@ def load_params(path, params_key):
     :params params_s: the dict-like of {'0.jpg':}
     '''
 
-    anno_path = glob.glob(f'{path}/*.txt')
     params = {}
     for k in params_key:
-        for p in anno_path:
+        for p in glob.glob(f'{path}/*{k}-anno.txt'):
             # Params
             if k in p:
                 print(f'Key=> {k} : Filename=>{p}')

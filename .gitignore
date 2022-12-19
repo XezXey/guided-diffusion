@@ -78,3 +78,5 @@ preprocess_scripts/use_avglms
 preprocess_scripts/lms
 preprocess_scripts/use_lms
 experiment_scripts/rotate_light/ren.mp4
+experiment_scripts/rotate_light/face/
+
