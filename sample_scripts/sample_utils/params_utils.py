@@ -82,17 +82,18 @@ def get_R_normals(n_step):
 
 def grid_sh(n_grid, sh=None, s=1):
     sh_light = []
-    print(s, n_grid)
+    print(f"[#] Buiding grid sh with : span={s}, n_grid={n_grid}")
+    print(f"[#] Given sh : \n{sh.reshape(-1, 9, 3)}")
     for lx in np.linspace(-s, s, n_grid):
         for ly in np.linspace(s, 0, n_grid):
             l = np.array((lx, ly, 1))
             l = l / np.linalg.norm(l)
             
             if sh is not None:
-                tmp_light = sh.copy()
+                tmp_light = sh.cpu().numpy().copy().reshape(-1, 9, 3)
             else:
                 tmp_light = np.zeros((1, 9, 3))
-            tmp_light[0:1, 0:1, :] = 3.5
+            tmp_light[0:1, 0:1, :] /= 2
             tmp_light[0:1, 1:2, :] = l[0]
             tmp_light[0:1, 2:3, :] = l[1]
             tmp_light[0:1, 3:4, :] = l[2]
