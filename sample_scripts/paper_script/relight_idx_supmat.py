@@ -27,6 +27,8 @@ parser.add_argument('--render_mode', type=str, default="shape")
 parser.add_argument('--rotate_normals', action='store_true', default=False)
 parser.add_argument('--scale_sh', type=float, default=1.0)
 parser.add_argument('--add_sh', type=float, default=None)
+parser.add_argument('--sh_grid_size', type=int, default=None)
+parser.add_argument('--sh_span', type=float, default=None)
 parser.add_argument('--diffuse_sh', type=float, default=None)
 parser.add_argument('--diffuse_perc', type=float, default=None)
 # Diffusion
