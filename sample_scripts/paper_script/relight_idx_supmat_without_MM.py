@@ -177,6 +177,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     if cfg.img_cond_model.apply:
         cond_rev = pl_sampling.forward_cond_network(model_kwargs=cond_rev)
         
+    print("[#] Inversion...")
     reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=False)
     noise_map = reverse_ddim_sample['final_output']['sample']
     
