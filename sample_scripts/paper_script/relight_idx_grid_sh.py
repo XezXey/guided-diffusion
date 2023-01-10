@@ -84,6 +84,7 @@ device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 e
 
 def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     condition_img = list(filter(None, dataset.condition_image))
+    n_step += 1
     args.interpolate = args.itp
     misc = {'condition_img':condition_img,
             'src_idx':src_idx,
@@ -177,6 +178,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     if cfg.img_cond_model.apply:
         cond_rev = pl_sampling.forward_cond_network(model_kwargs=cond_rev)
         
+    print("[#] Apply Mean-matching...")
     reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
     noise_map = reverse_ddim_sample['final_output']['sample']
     rev_mean = reverse_ddim_sample['intermediate']
@@ -191,7 +193,8 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     assert noise_map.shape[0] == 1
     rev_mean_first = [x[:1] for x in rev_mean]
     
-    sub_step = ext_sub_step(n_step)
+    print("[#] Relighting...")
+    sub_step = ext_sub_step(n_step+1)
     relit_out = []
     for i in range(len(sub_step)-1):
         print(f"[#] Sub step relight : {sub_step[i]} to {sub_step[i+1]}")
@@ -202,7 +205,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         mean_match_ratio = copy.deepcopy(rev_mean_first)
         cond['use_render_itp'] = True
         cond_relight = copy.deepcopy(cond)
-        cond_relit = dict_slice_se(in_d=cond_relight, keys=cond_relight.keys(), s=start, e=end) # Slice only 1st image out for inversion
+        cond_relit = dict_slice_se(in_d=cond_relight, keys=cond_relight.keys(), s=start, e=end)
         if cfg.img_cond_model.apply:
             cond_relit = pl_sampling.forward_cond_network(model_kwargs=cond_relit)
         
@@ -369,8 +372,16 @@ if __name__ == '__main__':
         
         print("Out relit frames : ", out_relit.shape)
         print("Out render frames : ", out_render.shape)
-        relit_frames = out_relit.reshape(n_grid, n_grid, C, H, W)
-        render_frames = out_render[:, 0:3, ...].permute(0, 2, 3, 1)
+        
+        
+        inv_frame = out_relit[0:1, ...]
+        torchvision.utils.save_image(tensor=inv_frame, fp=f"{save_res_dir}/res_inversion.png")
+        inv_render_frame = out_render[0:1, 0:3, ...][0]
+        inv_render_frame = (inv_render_frame.mul(255).add_(0.5).clamp_(0, 255)/255.0).float()
+        torchvision.utils.save_image(tensor=(inv_render_frame), fp=f"{save_res_dir}/ren_inversion.png")
+        
+        relit_frames = out_relit[1:, ...].reshape(n_grid, n_grid, C, H, W)
+        render_frames = out_render[1:, 0:3, ...].permute(0, 2, 3, 1)
         render_frames = render_frames.reshape(n_grid, n_grid, H, W, C)
         for ili, li in enumerate(np.linspace(-s, s, n_grid)):
             for ilj, lj in enumerate(np.linspace(-s, 0, n_grid)):
@@ -383,8 +394,6 @@ if __name__ == '__main__':
                 frame = (frame.mul(255).add_(0.5).clamp_(0, 255)/255.0).float()
                 
                 torchvision.utils.save_image(tensor=(frame), fp=f"{save_res_dir}/ren_{ilj:02d}_{ili:02d}.png")
-                
-                # vis_utils.save_images(path=f"{}", fn="res", frames=f_relit)
         
         if args.save_vid:
             """

@@ -143,7 +143,7 @@ class Evaluator():
             print(f'\t {k} : {th.mean(v)} +- {th.std(v)}')
             
     def save_score(self):
-        self.img_score_dict['running_command'] = f"--gt {args.gt} --pred {args.pred} --mask {args.mask} --batch_size {args.batch_size}"
+        self.img_score_dict['running_command'] = f"--gt {args.gt} --pred {args.pred} --mask {args.mask} --batch_size {args.batch_size} --face_part {args.face_part}"
         self.img_score_dict['eval_score'] = {}
         print("[#] Saving Evaluation Score...")
         for k, v in self.score_dict.items():

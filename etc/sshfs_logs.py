@@ -15,7 +15,7 @@ args = parser.parse_args()
 def mounting(from_path, to_path):
     assert os.path.isabs(to_path)
     for id in args.vid:
-        print(f"========== V{id} (mint@10.204.100.1{int(id+10)} / mint@10.0.0.{int(id+10)}) ==========")
+        print(f"========== V{id} (mint@10.204.100.1{id:02d} / mint@10.0.0.{id:02d}) ==========")
         mount_path = f'{to_path}/v{id}'
         
         if not os.path.exists(mount_path):
@@ -28,9 +28,9 @@ def mounting(from_path, to_path):
             print("... Done!")
 
         if args.local:
-            ip = f"10.0.0.{int(id+10)}"
+            ip = f"10.0.0.{id:02d}"
         else:
-            ip = f"10.204.100.1{int(id+10)}"
+            ip = f"10.204.100.1{id:02d}"
         
         cmd = f"sshfs mint@{ip}:{from_path} {mount_path}"
         print(f'''
