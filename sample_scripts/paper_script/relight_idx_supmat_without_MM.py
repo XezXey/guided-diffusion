@@ -182,6 +182,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     
     assert noise_map.shape[0] == 1
     
+    print("[#] Relighting...")
     sub_step = ext_sub_step(n_step)
     relit_out = []
     for i in range(len(sub_step)-1):
