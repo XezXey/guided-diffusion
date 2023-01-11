@@ -1,0 +1,14 @@
+ {
+    "log=Masked_Face_woclip+BgNoHead+shadow_cfg=Masked_Face_woclip+BgNoHead+shadow.yaml_without_MM": {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Ours w/o MM",
+        "n_frames":"2"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_cfg=Masked_Face_woclip+BgNoHead+shadow.yaml_with_MM": {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Ours w/ MM",
+        "n_frames":"2"
+    }
+}
