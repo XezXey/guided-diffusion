@@ -1,0 +1,28 @@
+{
+    "pair": {
+        "pair1": {
+            "src": "aj_ake.png",
+            "dst": "66376.jpg"
+        },
+        "pair2": {
+            "src": "aj_ake.png",
+            "dst": "67930.jpg"
+        },
+        "pair3": {
+            "src": "aj_ake.png",
+            "dst": "kostas.png"
+        },
+        "pair4": {
+            "src": "aj_ake.png",
+            "dst": "ted_crop.png"
+        },
+        "pair5": {
+            "src": "aj_ake.png",
+            "dst": "62733.jpg"
+        },
+        "pair6": {
+            "src": "aj_ake.png",
+            "dst": "66248.jpg"
+        }
+    }
+}

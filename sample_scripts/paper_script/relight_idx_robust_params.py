@@ -41,6 +41,7 @@ parser.add_argument('--gpu_id', type=str, default="0")
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--save_vid', action='store_true', default=False)
 parser.add_argument('--fps', action='store_true', default=False)
+parser.add_argument('--noisy_cond', nargs='+', required=True, help='Takes [path_to_stat_file, noise_level], Perturb the condition by noise_level * sd')
 
 args = parser.parse_args()
 
@@ -109,7 +110,18 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
         for k in cfg.img_model.dpm_cond_img:
             if 'faceseg' in k:
                 cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
-        
+    
+    
+    if args.noisy_cond is not None:
+        assert len(args.noisy_cond) == 2
+        noise_lvl = args.noisy_cond[1]
+        with open(args.noisy_cond[0], 'r') as stat_f:
+            stat_params = json.load(stat_f)
+        for nk in stat_params.keys():
+            # print('bf:', cond[nk])
+            cond[nk] = cond[nk] + (np.array(stat_params[nk]['sd']) * float(noise_lvl))
+            # print('af:', cond[nk])
+       
     cond, _ = inference_utils.build_condition_image(cond=cond, misc=misc)
     cond = inference_utils.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
     cond['cfg'] = cfg
@@ -122,7 +134,6 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
                     cond[f'{k}_mask'] = cond[f'{k}_mask'].to(device)
                     cond['image'] = cond['image'].to(device)
     
-
     if 'render_face' in args.itp:
         interp_set = args.itp.copy()
         interp_set.remove('render_face')
@@ -236,7 +247,6 @@ if __name__ == '__main__':
 
     # Load dataset
     if args.dataset == 'itw':
-        cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
         img_dataset_path = f"/data/mint/DPM_Dataset/ITW/itw_images_aligned/"
         deca_dataset_path = f"/data/mint/DPM_Dataset/ITW/params/"
         img_ext = '.png'
