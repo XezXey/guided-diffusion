@@ -1,0 +1,58 @@
+{
+    "pair": {
+        "pair1": {
+            "src": "66008.jpg",
+            "dst": "60000.jpg",
+            "rmv_shadow_bound": -3.275064386024723,
+            "add_shadow_bound": 5.653507042546705
+        },
+        "pair2": {
+            "src": "66010.jpg",
+            "dst": "60000.jpg",
+            "rmv_shadow_bound": -4.259540886971481,
+            "add_shadow_bound": 2.5261733987428046
+        },
+        "pair3": {
+            "src": "62737.jpg",
+            "dst": "60000.jpg",
+            "rmv_shadow_bound": 2.7302791473601227,
+            "add_shadow_bound": 9.87313629021726
+        },
+        "pair4": {
+            "src": "60728.jpg",
+            "dst": "60000.jpg",
+            "rmv_shadow_bound": -0.5193465278067659,
+            "add_shadow_bound": 8.052082043621802
+        },
+        "pair5": {
+            "src": "60187.jpg",
+            "dst": "60000.jpg",
+            "rmv_shadow_bound": -2.1295689993140487,
+            "add_shadow_bound": 6.441859572114522
+        },
+        "pair6": {
+            "src": "68753.jpg",
+            "dst": "60000.jpg",
+            "rmv_shadow_bound": 0.3242943577958197,
+            "add_shadow_bound": 7.467151500652959
+        },
+        "pair7": {
+            "src": "60510.jpg",
+            "dst": "60000.jpg",
+            "rmv_shadow_bound": -4.343192170621744,
+            "add_shadow_bound": 4.228236400806827
+        },
+        "pair8": {
+            "src": "60198.jpg",
+            "dst": "60000.jpg",
+            "rmv_shadow_bound": 0.1364998612618047,
+            "add_shadow_bound": 7.993642718404658
+        },
+        "pair9": {
+            "src": "64889.jpg",
+            "dst": "60000.jpg",
+            "rmv_shadow_bound": -4.471922723828243,
+            "add_shadow_bound": 5.1709344190288995
+        }
+    }
+}

@@ -113,13 +113,14 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     
     
     if args.noisy_cond is not None:
-        assert len(args.noisy_cond) == 2
         noise_lvl = args.noisy_cond[1]
+        noise_at = args.noisy_cond[2:]
         with open(args.noisy_cond[0], 'r') as stat_f:
             stat_params = json.load(stat_f)
-        for nk in stat_params.keys():
+        
+        for nk in noise_at:
             # print('bf:', cond[nk])
-            cond[nk] = cond[nk] + (np.array(stat_params[nk]['sd']) * float(noise_lvl))
+            cond[nk] = cond[nk] + np.random.normal(0, (np.array(stat_params[nk]['sd']) * float(noise_lvl)))
             # print('af:', cond[nk])
        
     cond, _ = inference_utils.build_condition_image(cond=cond, misc=misc)

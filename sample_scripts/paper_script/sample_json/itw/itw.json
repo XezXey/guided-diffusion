@@ -79,6 +79,30 @@
         "pair20": {
             "src": "aj_ake.png",
             "dst": "ted_crop.png"
+        },
+        "pair21": {
+            "src": "aj_ake.png",
+            "dst": "67400.jpg"
+        },
+        "pair22": {
+            "src": "aj_ake.png",
+            "dst": "66809.jpg"
+        },
+        "pair23": {
+            "src": "aj_ake.png",
+            "dst": "68497.jpg"
+        },
+        "pair24": {
+            "src": "aj_ake.png",
+            "dst": "62768.jpg"
+        },
+        "pair25": {
+            "src": "aj_ake.png",
+            "dst": "63648.jpg"
+        },
+        "pair26": {
+            "src": "aj_ake.png",
+            "dst": "64337.jpg"
         }
 
     }
