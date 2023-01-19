@@ -113,6 +113,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     
     
     if args.noisy_cond is not None:
+        print(f"[#] Perturb with {args.noisy_cond}")
         noise_lvl = args.noisy_cond[1]
         noise_at = args.noisy_cond[2:]
         with open(args.noisy_cond[0], 'r') as stat_f:
