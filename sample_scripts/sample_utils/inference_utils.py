@@ -245,7 +245,7 @@ def build_condition_image(cond, misc):
             print(f"[#] Mean light after scale with {args.scale_sh}: {np.mean(lb)} -> {np.mean(cond['light'])}")
         elif args.sh_grid_size is not None:
             #NOTE: Render w/ grid light 
-            cond['light'] = params_utils.grid_sh(sh=cond['light'][src_idx], n_grid=args.sh_grid_size, s=args.sh_span).reshape(-1, 27)
+            cond['light'] = params_utils.grid_sh(sh=cond['light'][src_idx], n_grid=args.sh_grid_size, s=args.sh_span, sh_scale=args.sh_scale, use_sh=args.use_sh).reshape(-1, 27)
         elif 'render_face' in args.interpolate:
             #NOTE: Render w/ interpolated light
             interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)

@@ -80,25 +80,35 @@ def get_R_normals(n_step):
     R = np.stack(R, axis=0)
     return R
 
-def grid_sh(n_grid, sh=None, s=1):
+def grid_sh(n_grid, sh=None, s=1, sh_scale=1.0, use_sh=False):
     sh_light = []
-    sh_original = sh
+    sh_original = sh.cpu().numpy().copy().reshape(-1, 9, 3)
     print(f"[#] Buiding grid sh with : span={s}, n_grid={n_grid}")
-    print(f"[#] Given sh : \n{sh_original.reshape(-1, 9, 3)}")
-    for lx in np.linspace(-s, s, n_grid):
-        for ly in np.linspace(s, 0, n_grid):
+    print(f"[#] Given sh : \n{sh_original}")
+    for ix, lx in enumerate(np.linspace(-s, s, n_grid)):
+        for iy, ly in enumerate(np.linspace(s, 0, n_grid)):
             l = np.array((lx, ly, 1))
             l = l / np.linalg.norm(l)
             
-            if sh_original is not None:
-                tmp_light = sh_original.cpu().numpy().copy().reshape(-1, 9, 3)
+            if use_sh:
+                tmp_light = sh_original.copy()
             else:
                 tmp_light = np.zeros((1, 9, 3))
-            # tmp_light[0:1, 0:1, :] /= 2
+                tmp_light[0:1, 0:1, :] = sh_original[0:1, 0:1, :] * sh_scale
+                
+            # if iy in [1, 2, 3]:
+                # print("IN", iy)
+                # print(tmp_light)
+                # tmp_light = tmp_light * sh_scale 
+                # print(tmp_light)
+            
             tmp_light[0:1, 1:2, :] = l[0]
             tmp_light[0:1, 2:3, :] = l[1]
             tmp_light[0:1, 3:4, :] = l[2]
+            if iy in [1, 2, 3]:
+                tmp_light = tmp_light * sh_scale 
             sh_light.append(tmp_light)
+        # exit()
     sh_light = np.concatenate(sh_light, axis=0)
     sh_light = np.concatenate((sh_original.reshape(-1, 9, 3), sh_light))
     return sh_light
