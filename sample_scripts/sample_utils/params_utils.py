@@ -105,8 +105,8 @@ def grid_sh(n_grid, sh=None, s=1, sh_scale=1.0, use_sh=False):
             tmp_light[0:1, 1:2, :] = l[0]
             tmp_light[0:1, 2:3, :] = l[1]
             tmp_light[0:1, 3:4, :] = l[2]
-            if iy in [1, 2, 3]:
-                tmp_light = tmp_light * sh_scale 
+            # if iy in [0, 1, 2, 3]:
+            tmp_light = tmp_light * sh_scale 
             sh_light.append(tmp_light)
         # exit()
     sh_light = np.concatenate(sh_light, axis=0)
