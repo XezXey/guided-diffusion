@@ -1,4 +1,10 @@
 {
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml": {
+        "step":"ema_085000", 
+        "itp":"shadow", 
+        "alias":"Ours",
+        "n_frames":"15"
+    },
     "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_mean_matching": {
         "step":"ema_085000", 
         "itp":"shadow", 
