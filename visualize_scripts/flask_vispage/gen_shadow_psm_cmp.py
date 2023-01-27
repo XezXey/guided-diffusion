@@ -143,15 +143,18 @@ def create_app():
                         <div class="slidecontainer">
                             <input type="range" min="0" max="{n_frames_sld}" value="0" class="slider" id="sel_{s_id}"
                             oninput="changeImage({s_id}, {frames})">
+                            <span id=sel_lab_{s_id}></span>
                         </div>
                         """
                         out += (
                             "<script>"
                             "function changeImage(id, frames) {"
                                 "var slider = document.getElementById('sel_' + id);"
+                                "var sliderVal = document.getElementById('sel_lab_' + id);"
                                 "var image = document.getElementById('ours_' + id);"
                                 "var index = slider.value;"
                                 "image.src = '/files/' + frames[index];"
+                                "sliderVal.innerHTML = index;"
                             "}"
                         "</script>"
                         )
