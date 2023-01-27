@@ -1,0 +1,32 @@
+{
+    "pair":{
+        "pair1": {
+            "src": "in-1.png",
+            "dst": "60084.png"
+        },
+        "pair2": {
+            "src": "in-3.png",
+            "dst": "60084.png"
+        },
+        "pair3": {
+            "src": "in-4.png",
+            "dst": "60084.png"
+        },
+        "pair4": {
+            "src": "in-8.png",
+            "dst": "60084.png"
+        },
+        "pair5": {
+            "src": "in-9.png",
+            "dst": "60084.png"
+        },
+        "pair6": {
+            "src": "in-14.png",
+            "dst": "60084.png"
+        },
+        "pair7": {
+            "src": "in-16.png",
+            "dst": "60084.png"
+        }
+    }
+}

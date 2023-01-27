@@ -355,7 +355,6 @@ class DECADataset(Dataset):
                 condition_image[in_image_type] = self.face_segment(in_image_type, query_img_name)
             elif 'deca' in in_image_type:
                 if "woclip" in in_image_type:
-                    print("GGG", query_img_name)
                     condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
                 else:
                     condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))

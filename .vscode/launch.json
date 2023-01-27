@@ -13,6 +13,21 @@
 //  |_____/ \___|_.__/ \__,_|\__, |\__, |\___|_|    (_)    |_|_|  \__,_|_|_| |_|_|_| |_|\__, |
 //                            __/ | __/ |                                                __/ |
 //                           |___/ |___/                                                |___/ 
+
+        {
+            "name": "Python: train_unet_no_dpm",
+            "type": "python",
+            "request": "launch",
+            "program": "./train_scripts/image_train_no_dpm.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/ours_no_dpm",
+                    "--train.batch_size", "2",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/CVPRs/Rebuttal/ours_no_dpm_128.yaml",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        }, 
         {
             "name": "Python: train_deca_shape",
             "type": "python",
