@@ -208,6 +208,9 @@ class DECA(nn.Module):
             trans_verts = transform_points(trans_verts, tform, points_scale, [h, w])
             landmarks2d = transform_points(landmarks2d, tform, points_scale, [h, w])
             landmarks3d = transform_points(landmarks3d, tform, points_scale, [h, w])
+            opdict['trans_verts_orig'] = trans_verts
+            opdict['landmarks2d_orig'] = landmarks2d
+            opdict['landmarks3d_orig'] = landmarks3d
             background = original_image
             images = original_image
         else:

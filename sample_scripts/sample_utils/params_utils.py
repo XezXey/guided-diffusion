@@ -214,7 +214,7 @@ def render_deca(deca_params, idx, n, render_mode='shape',
         tform = th.tensor(avg_dict['tform'])[None, ...].repeat(n, 1).to(device).reshape(-1, 3, 3).float()
         tform_inv = th.inverse(tform).transpose(1,2)
     else: raise NotImplementedError
-    _, orig_visdict = deca_obj.decode(codedict, 
+    orig_opdict, orig_visdict = deca_obj.decode(codedict, 
                                   render_orig=True, 
                                   original_image=original_image, 
                                   tform=tform_inv, 
@@ -223,6 +223,7 @@ def render_deca(deca_params, idx, n, render_mode='shape',
                                   use_detail=use_detail,
                                   rotate_normals=rotate_normals,
                                   )  
+    orig_visdict.update(orig_opdict)
     rendered_image = orig_visdict['shape_images']
     return rendered_image, orig_visdict
     
