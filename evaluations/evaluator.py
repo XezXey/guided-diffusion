@@ -50,7 +50,7 @@ class Evaluator():
         
     def compute_mse(self, gt, pred, mask):
         err = ((pred-gt)*mask)**2
-        out = th.sum(err) / th.sum(mask)
+        out = th.sum(err) / (th.sum(mask))
         return out
 
     def compute_ssim_dssim(self, gt, pred, mask):

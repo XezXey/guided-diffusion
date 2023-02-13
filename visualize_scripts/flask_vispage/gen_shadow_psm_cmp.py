@@ -14,6 +14,7 @@ parser.add_argument('--sample_dir', default="/home/mint/guided-diffusion/sample_
 parser.add_argument('--sample_pair_json', default="/home/mint/guided-diffusion/sample_scripts/py/relighting_sample_id/ddim_reverse_interpolate")
 parser.add_argument('--addshadow_dir', default="/FFHQ_Hope_addshadow/")
 parser.add_argument('--rmvshadow_dir', default="/FFHQ_Hope_rmvshadow/")
+parser.add_argument('--median', nargs='+', default=None)
 parser.add_argument('--set_', default='valid')
 parser.add_argument('--res', default=128)
 parser.add_argument('--port', required=True)
@@ -98,17 +99,21 @@ def create_app():
                                                        src_dst=None, 
                                                        img_path=img_path,
                                                        n_subject=-1)
-        print("GG", subject_id)
+        print("GG", args.median)
         out += create_button_fn()
         
         out += "<table>"
         out += "<tr> <th> Image name </th> <th> Potrait Shadow Manipulation (baseline) </th>"
         out += "<th> Input </th>"
         # for s_id, src_dst in enumerate(subject_id):
+        if args.median is not None:
+            for m_id, m in enumerate(model):
+                for a in args.median:
+                    out += f"<th> {m_id+1}." + ckpt_dict[m]['alias'] + f"({a})" + "</th>"
+                
         for m_id, m in enumerate(model):
             out += f"<th> {m_id+1}." + ckpt_dict[m]['alias'] + "(Selected)" + "</th>"
             out += f"<th> {m_id+1}." + ckpt_dict[m]['alias'] + "(All)" + "</th>"
-        # out += " <br> </tr>"
         
         cmp_path = f"/home/mint/guided-diffusion/preprocess_scripts/PSM_rebuttal/aligned/"
         
@@ -120,11 +125,32 @@ def create_app():
             out += f"<th style=\"font-size:10px;white-space: nowrap;vertical-align: bottom;\"> <img src=/files/{cmp_path}/{cmp_name} title=\"{cmp_name}\"> </th>"
  
             show_name = cmp_name.split('_')[0] + '.png'
+            preselect = {'in-14.png':12, 'in-16.png':16, 'in-1.png':8, 'in-3.png':15, 'in-4.png':13, 'in-8.png':15, 'in-9.png':11}
             for _, src_dst in enumerate(subject_id):
                 if show_name in src_dst[0]:
+                    print("GAGG", preselect[show_name])
                     # Input image
                     out += f"<th style=\"font-size:10px;white-space: nowrap;vertical-align: bottom;\"> <img src=/files/{data_path}/{src_dst[0]} title=\"{src_dst[0]}\"> </th>"
 
+                    # Ours Median
+                    if args.median is not None:
+                        for m_id, m in enumerate(model):
+                            for a in args.median:
+                                if ckpt == 'json':
+                                    step = ckpt_dict[m]['step']
+                                else:
+                                    step = f'ema_{ckpt}'
+                                itp = ckpt_dict[m]['itp']
+                                n_frames = 5
+                                each_model_rmv = f"{args.sample_dir}/{args.exp_dir}/{a}/{m}/{step}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0]}/dst={src_dst[1]}/"
+                                if os.path.exists(each_model_rmv):
+                                    frames_rmv = glob.glob(f"{each_model_rmv}/{itp_method}_{diff_step}/n_frames={n_frames}/{show}_f*.png")
+                                    frames_med = sort_by_frame(frames_rmv)
+                                    
+                                    out += "<td style=\"vertical-align: bottom;\">"
+                                    out += f"<img src=/files/{frames_med[-1]}>"
+                                    out += "</td>"
+                                else: continue
                     # Ours
                     for m_id, m in enumerate(model):
                         if ckpt == 'json':
@@ -141,7 +167,7 @@ def create_app():
                         out += "<td>"
                         out += f"""
                         <div class="slidecontainer">
-                            <input type="range" min="0" max="{n_frames_sld}" value="0" class="slider" id="sel_{s_id}"
+                            <input type="range" min="0" max="{n_frames_sld}" value="{preselect[show_name]}" class="slider" id="sel_{s_id}"
                             oninput="changeImage({s_id}, {frames})">
                             <span id=sel_lab_{s_id}></span>
                         </div>
@@ -158,7 +184,7 @@ def create_app():
                             "}"
                         "</script>"
                         )
-                        out += f"<img id=\"ours_{s_id}\" src=/files/{frames[0]} title=\"{ckpt_dict[m]['alias']}\">"
+                        out += f"<img id=\"ours_{s_id}\" src=/files/{frames[preselect[show_name]]} title=\"{ckpt_dict[m]['alias']}\">"
                         out += "</td>"
                         out += "<td style=\"vertical-align: bottom;\">"
                         if len(frames) > 0:

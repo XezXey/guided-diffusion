@@ -2,7 +2,7 @@ import pytorch_lightning as pl
 import torch as th
 import numpy as np
 import blobfile as bf
-import mani_utils, inference_utils, params_utils
+import mani_utils, params_utils
 import cv2, PIL
 import time
 

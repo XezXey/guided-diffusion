@@ -79,7 +79,9 @@ def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn, add_
                 if add_shadow:
                     interp = np.linspace(cond[itp][src_idx][0], cond[itp][src_idx][0]+5, n_step)[..., None]
                 else:
-                    interp = np.linspace(cond[itp][src_idx][0], -15, n_step)[..., None]
+                    interp = np.linspace(cond[itp][src_idx][0], -1, n_step)[..., None]
+                    # interp = np.linspace(cond[itp][src_idx][0], -0.6889376355155438, n_step)[..., None]
+                    # interp = np.linspace(cond[itp][src_idx][0], -15, n_step)[..., None] # Original used in paper
                 print(f"Interpolating shadow with : \n{interp}, Adding shadow = {add_shadow}")
         else:
             if isinstance(cond[itp], list):
