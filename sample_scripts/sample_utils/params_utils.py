@@ -80,13 +80,18 @@ def get_R_normals(n_step):
     R = np.stack(R, axis=0)
     return R
 
-def grid_sh(n_grid, sh=None, s=1, sh_scale=1.0, use_sh=False):
+def grid_sh(n_grid, sh=None, sx=[-1, 1], sy=[1, 0], sh_scale=1.0, use_sh=False):
     sh_light = []
     sh_original = sh.cpu().numpy().copy().reshape(-1, 9, 3)
-    print(f"[#] Buiding grid sh with : span={s}, n_grid={n_grid}")
+    print(f"[#] Buiding grid sh with : span_x={sx}, span_y={sy}, n_grid={n_grid}")
     print(f"[#] Given sh : \n{sh_original}")
-    for ix, lx in enumerate(np.linspace(-s, s, n_grid)):
-        for iy, ly in enumerate(np.linspace(s, 0, n_grid)):
+    # sx is from left(negative) -> right(positive)
+    # sy is from top(positive) -> bottom(negative)
+    # print(sx, sy)
+    # print(np.linspace(sx[0], sx[1], n_grid))
+    # exit()
+    for ix, lx in enumerate(np.linspace(sx[0], sx[1], n_grid)):
+        for iy, ly in enumerate(np.linspace(sy[0], sy[1], n_grid)):
             l = np.array((lx, ly, 1))
             l = l / np.linalg.norm(l)
             
@@ -111,6 +116,7 @@ def grid_sh(n_grid, sh=None, s=1, sh_scale=1.0, use_sh=False):
         # exit()
     sh_light = np.concatenate(sh_light, axis=0)
     sh_light = np.concatenate((sh_original.reshape(-1, 9, 3), sh_light))
+    print(f"[#] Out grid sh : \n{sh_light.shape}")
     return sh_light
 
 def load_flame_mask(part='face'):

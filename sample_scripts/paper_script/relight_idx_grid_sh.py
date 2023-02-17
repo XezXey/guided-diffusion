@@ -27,7 +27,8 @@ parser.add_argument('--render_mode', type=str, default="shape")
 parser.add_argument('--rotate_normals', action='store_true', default=False)
 parser.add_argument('--add_sh', type=float, default=None)
 parser.add_argument('--sh_grid_size', type=int, default=None)
-parser.add_argument('--sh_span', type=float, default=None)
+parser.add_argument('--sh_span_y', type=float, nargs='+', default=[])
+parser.add_argument('--sh_span_x', type=float, nargs='+', default=[])
 parser.add_argument('--sh_scale', type=float, default=1.0)
 parser.add_argument('--use_sh', action='store_true', default=False)
 parser.add_argument('--diffuse_sh', type=float, default=None)
@@ -369,7 +370,8 @@ if __name__ == '__main__':
         
         B, C, H, W = out_relit.shape
         n_grid = args.sh_grid_size
-        s = args.sh_span
+        sx = args.sh_span_x
+        sy = args.sh_span_y
         
         print("Out relit frames : ", out_relit.shape)
         print("Out render frames : ", out_render.shape)
@@ -384,8 +386,9 @@ if __name__ == '__main__':
         relit_frames = out_relit[1:, ...].reshape(n_grid, n_grid, C, H, W)
         render_frames = out_render[1:, 0:3, ...].permute(0, 2, 3, 1)
         render_frames = render_frames.reshape(n_grid, n_grid, H, W, C)
-        for ili, li in enumerate(np.linspace(-s, s, n_grid)):
-            for ilj, lj in enumerate(np.linspace(-s, 0, n_grid)):
+        
+        for ili, li in enumerate(np.linspace(sx[0], sx[1], n_grid)):
+            for ilj, lj in enumerate(np.linspace(sy[0], sy[1], n_grid)):
                 # Relit
                 frame = relit_frames[ili, ilj].cpu().detach()
                 torchvision.utils.save_image(tensor=(frame), fp=f"{save_res_dir}/res_{ilj:02d}_{ili:02d}.png")
