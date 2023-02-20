@@ -26,6 +26,7 @@ from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--s_e', nargs='+', type=int, default=None)
+parser.add_argument('--set_', type=str, required=True)
 args = parser.parse_args()
 
 def sh_to_ld(sh):
@@ -91,7 +92,7 @@ if __name__ == '__main__':
     ckpt_loader = ckpt_utils.CkptLoader(log_dir="Masked_Face_woclip+BgNoHead+shadow_256", cfg_name="Masked_Face_woclip+BgNoHead+shadow_256.yaml")
     cfg = ckpt_loader.cfg
     cfg.img_model.image_size = 256
-    set_ = 'valid'
+    set_ = args.set_
     # Load dataset
     dataset = 'ffhq'
     img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
