@@ -170,7 +170,7 @@ if __name__ == '__main__':
     deca_cfg.model.use_tex = True 
     deca = DECA(config = deca_cfg, device='cuda', mode='shape', mask=mask)
 
-    img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/valid/")
+    img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{set_}/")
     if args.s_e is None:
         img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=[name.split('/')[-1] for name in img_path])
     else:
