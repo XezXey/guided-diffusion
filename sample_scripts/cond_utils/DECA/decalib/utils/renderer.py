@@ -451,12 +451,12 @@ class SRenderY(nn.Module):
         attributes = util.face_vertices(z, self.faces.expand(batch_size, -1, -1))
         # rasterize
         transformed_vertices[:,:,2] = transformed_vertices[:,:,2] + 10
-        rendering = self.rasterizer(transformed_vertices, self.faces.expand(batch_size, -1, -1), attributes)
+        rendering = self.rasterizer(transformed_vertices, self.faces.expand(batch_size, -1, -1), attributes, h=256, w=256)
 
         ####
         alpha_images = rendering[:, -1, :, :][:, None, :, :].detach()
         depth_images = rendering[:, :1, :, :]
-        return depth_images
+        return depth_images, alpha_images
     
     def render_colors(self, transformed_vertices, colors):
         '''
