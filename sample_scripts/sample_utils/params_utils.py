@@ -195,7 +195,7 @@ def render_shadow_mask(sh_light, cam, verts, deca):
     #     torchvision.utils.save_image(shadow_mask[[i]]/255.0, f'inf{i}.png')
     #     torchvision.utils.save_image(shadow_mask[[i]], f'inf2{i}.png')
     # torchvision.utils.save_image(shadow_mask[:, None, ...]/255.0, f'infall.png')
-    return shadow_mask
+    return th.clip(shadow_mask, 0, 255.0)/255.0
 
 def render_deca(deca_params, idx, n, render_mode='shape', 
                 useTex=False, extractTex=False, device='cuda', 

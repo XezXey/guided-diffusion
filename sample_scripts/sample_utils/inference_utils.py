@@ -338,15 +338,19 @@ def build_condition_image(cond, misc):
             for j in range(n_step):
                 sm_tmp = shadow_mask[j].mul(255).add_(0.5).clamp_(0, 255)
                 sm_tmp = sm_tmp.repeat_interleave(repeats=3, dim=0)
-                sm_tmp = np.transpose(sm_tmp.cpu().numpy(), (1, 2, 0))
+                sm_tmp = np.transpose(sm_tmp.cpu().numpy(), (1, 2, 0))  # HxWxC
                 sm_tmp = sm_tmp.astype(np.uint8)
                 sm_tmp = dataset.augmentation(PIL.Image.fromarray(sm_tmp))
                 sm_tmp = dataset.prep_cond_img(sm_tmp, cond_img_name, i)
-                sm_tmp = np.transpose(sm_tmp, (2, 0, 1))
+                sm_tmp = np.transpose(sm_tmp, (2, 0, 1))    # CxHxW
                 sm_tmp = (sm_tmp / 127.5) - 1
-                shadow_mask_tmp.append(sm_tmp)
+                shadow_mask_tmp.append(sm_tmp[[0], ...])
             shadow_mask_tmp = np.stack(shadow_mask_tmp, axis=0)
             cond[cond_img_name] = th.tensor(shadow_mask_tmp).cuda()
-    print(cond.keys())
-    exit()
+            # print(cond['shadow_mask'].shape)
+            # print(th.min(cond['shadow_mask']))
+            # print(th.max(cond['shadow_mask']))
+            # import torchvision
+            # torchvision.utils.save_image((cond['shadow_mask']+1)*127.5/255.0, 'ggez.png')
+            # exit()
     return cond, clip_ren

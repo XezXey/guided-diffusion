@@ -380,9 +380,13 @@ if __name__ == '__main__':
         if is_render:
             clip_ren = True if 'wclip' in dataset.condition_image[0] else False 
             if clip_ren:
-                vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5)
+                vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=(out_render[:, 0:3] + 1) * 0.5)
             else:
                 vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
+                
+        # Save shadow mask
+        vis_utils.save_images(path=f"{save_res_dir}", fn="shadm", frames=(out_render[:, 3:4] + 1) * 0.5)
+        
                 
         if args.save_vid:
             """
@@ -400,8 +404,7 @@ if __name__ == '__main__':
             torchvision.io.write_video(video_array=vid_relit, filename=f"{save_res_dir}/res.mp4", fps=args.fps)
             torchvision.io.write_video(video_array=vid_relit_rt, filename=f"{save_res_dir}/res_rt.mp4", fps=args.fps)
             if is_render:
-                out_render = out_render[:, :3]
-                vid_render = out_render
+                vid_render = out_render[:, :3]
                 # vid_render = th.cat((out_render, th.flip(out_render, dims=[0])))
                 clip_ren = False #if 'wclip' in dataset.condition_image else True
                 if clip_ren:
@@ -412,6 +415,16 @@ if __name__ == '__main__':
                     torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
                     vid_render_rt = th.cat((vid_render, th.flip(vid_render, dims=[0])))
                     torchvision.io.write_video(video_array=vid_render_rt, filename=f"{save_res_dir}/ren_rt.mp4", fps=args.fps)
+                    
+            # Save shadow mask
+            vid_render = out_render[:, 3:4]
+            print(vid_render.shape)
+            vid_render = (((vid_render + 1) * 0.5).permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
+            vid_render = vid_render.repeat_interleave(repeats=3, dim=-1)
+            print(vid_render.shape)
+            torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/shadm.mp4", fps=args.fps)
+            vid_render_rt = th.cat((vid_render, th.flip(vid_render, dims=[0])))
+            torchvision.io.write_video(video_array=vid_render_rt, filename=f"{save_res_dir}/shadm_rt.mp4", fps=args.fps)
                 
         with open(f'{save_res_dir}/res_desc.json', 'w') as fj:
             log_dict = {'sampling_args' : vars(args), 
