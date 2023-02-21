@@ -408,3 +408,15 @@ def get_samples_list(sample_pair_json, sample_pair_mode, src_dst, img_path, n_su
         all_img_name = [[img_path[r[0]].split('/')[-1], img_path[r[1]].split('/')[-1]] for r in all_img_idx]
     
     return all_img_idx, all_img_name, n_subject
+
+def ext_sub_step(n_step, batch_size=5):
+    sub_step = []
+    bz = batch_size
+    tmp = n_step
+    while tmp > 0:
+        if tmp - bz > 0:
+            sub_step.append(bz)
+        else:
+            sub_step.append(tmp)
+        tmp -= bz
+    return np.cumsum([0] + sub_step)

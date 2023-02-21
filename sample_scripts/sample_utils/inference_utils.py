@@ -210,6 +210,7 @@ def build_condition_image(cond, misc):
     src_idx = misc['src_idx']
     dst_idx = misc['dst_idx']
     n_step = misc['n_step']
+    batch_size = misc['batch_size']
     avg_dict = misc['avg_dict']
     dataset = misc['dataset']
     args = misc['args']
@@ -219,6 +220,7 @@ def build_condition_image(cond, misc):
     deca_obj = misc['deca_obj']
     clip_ren = None
     
+    # Handling the render face
     if np.any(['deca' in i for i in condition_img]):
         # Render the face
         if args.rotate_normals:
@@ -264,20 +266,44 @@ def build_condition_image(cond, misc):
             # interp_cond['pose'] = th.tensor(interp_cond['pose'])
             # cond.update(interp_cond)
         
-        start = time.time()
+        start_t = time.time()
         if np.any(['deca_masked' in n for n in condition_img]):
             mask = params_utils.load_flame_mask()
         else: mask=None
-        deca_rendered, _ = params_utils.render_deca(deca_params=cond, 
-                                                    idx=src_idx, n=n_step, 
-                                                    avg_dict=avg_dict, 
-                                                    render_mode=args.render_mode, 
-                                                    rotate_normals=args.rotate_normals, 
-                                                    mask=mask,
-                                                    deca_obj=deca_obj)
-        print("Rendering time : ", time.time() - start)
+        
+        #TODO: Render DECA in minibatch
+        sub_step = mani_utils.ext_sub_step(n_step, batch_size)
+        all_render = []
+        all_shadow_mask = []
+        for i in range(len(sub_step)-1):
+            print(f"[#] Sub step rendering : {sub_step[i]} to {sub_step[i+1]}")
+            start = sub_step[i]
+            end = sub_step[i+1]
+            sub_cond = cond.copy()
+            sub_cond['light'] = sub_cond['light'][start:end, :]
+            # Deca rendered : B x 3 x H x W
+            deca_rendered, orig_visdict = params_utils.render_deca(deca_params=sub_cond, 
+                                                                idx=src_idx, n=end-start, 
+                                                                avg_dict=avg_dict, 
+                                                                render_mode=args.render_mode, 
+                                                                rotate_normals=args.rotate_normals, 
+                                                                mask=mask,
+                                                                deca_obj=deca_obj,
+                                                                repeat=True)
+            # Shadow_mask : B x H x W
+            shadow_mask = params_utils.render_shadow_mask(
+                                            sh_light=sub_cond['light'], 
+                                            cam=sub_cond['cam'][src_idx],
+                                            verts=orig_visdict['trans_verts_orig'], 
+                                            deca=deca_obj)
+            all_render.append(deca_rendered)
+            all_shadow_mask.append(shadow_mask[:, None, ...])
+        print("Rendering time : ", time.time() - start_t)
+        deca_rendered = th.cat(all_render, dim=0)
+        shadow_mask = th.cat(all_shadow_mask, dim=0)
         
     #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'
+    print("Conditoning with image : ", condition_img)
     for i, cond_img_name in enumerate(condition_img):
         if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name):
             bg_tmp = [cond[f"{cond_img_name}_img"][src_idx]] * n_step
@@ -305,8 +331,20 @@ def build_condition_image(cond, misc):
                     r_tmp = (r_tmp / 127.5) - 1
                     clip_ren = True
                 rendered_tmp.append(r_tmp)
-                
             rendered_tmp = np.stack(rendered_tmp, axis=0)
             cond[cond_img_name] = th.tensor(rendered_tmp).cuda()
-            
+        elif 'shadow_mask' in cond_img_name:
+            shadow_mask_tmp = []
+            for j in range(n_step):
+                sm_tmp = shadow_mask[j].mul(255).add_(0.5).clamp_(0, 255)
+                sm_tmp = np.transpose(sm_tmp.cpu().numpy(), (1, 2, 0))
+                sm_tmp = sm_tmp.astype(np.uint8)
+                sm_tmp = dataset.augmentation(PIL.Image.fromarray(sm_tmp))
+                sm_tmp = dataset.prep_cond_img(sm_tmp, cond_img_name, i)
+                sm_tmp = np.transpose(sm_tmp, (2, 0, 1))
+                sm_tmp = (r_tmp / 127.5) - 1
+            shadow_mask_tmp = np.stack(shadow_mask_tmp, axis=0)
+            cond[cond_img_name] = th.tensor(shadow_mask_tmp).cuda()
+    print(cond.keys())
+    exit()
     return cond, clip_ren

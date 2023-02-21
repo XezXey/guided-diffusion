@@ -142,6 +142,61 @@ def init_deca(useTex=False, extractTex=True, device='cuda',
     deca_obj = deca.DECA(config = deca_cfg, device=device, mode=deca_mode, mask=mask)
     return deca_obj
 
+def sh_to_ld(sh):
+    #NOTE: Roughly Convert the SH to light direction
+    sh = sh.reshape(-1, 9, 3)
+    ld = th.mean(sh[0:1, 1:4, :], dim=2)
+    return ld
+
+def render_shadow_mask(sh_light, cam, verts, deca):
+    sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+    from decalib.utils import util
+    
+    shadow_mask_all = []
+    if verts.shape[0] >= 2:
+        tmp = []
+        for i in range(1, verts.shape[0]):
+            tmp.append(th.allclose(verts[[0]], verts[[i]]))
+        assert all(tmp);
+        
+    depth_image, alpha_image = deca.render.render_depth(verts.cuda())   # Depth : B x 1 x H x W
+    _, _, h, w = depth_image.shape
+    depth_grid = np.meshgrid(np.arange(h), np.arange(w), indexing='xy')
+    depth_grid = np.repeat(np.stack((depth_grid), axis=-1)[None, ...], repeats=sh_light.shape[0], axis=0)   # B x H x W x 2
+    depth_grid = np.concatenate((depth_grid, depth_image.permute(0, 2, 3, 1)[..., 0:1].cpu().numpy()), axis=-1) # B x H x W x 3
+    depth_grid[..., 2] *= 256
+    depth_grid = th.tensor(depth_grid).cuda()
+    shadow_mask = th.clone(depth_grid[:, :, :, 2])
+    # print(shadow_mask.shape, sh_light.shape)
+    for i in range(sh_light.shape[0]):
+        each_depth_grid = depth_grid[i].clone()
+        #NOTE: Render the shadow mask from light direction
+        ld = sh_to_ld(sh=th.tensor(sh_light[[i]])).cuda()
+        ld = util.batch_orth_proj(ld[None, ...], cam[None, ...].cuda()); ld[:,:,1:] = -ld[:,:,1:]    # This fn takes pts=Bx3, cam=Bx3
+        ray = ld.view(3).cuda()
+        ray[2] *= 0.5
+        n = 256
+        ray = ray / th.norm(ray)
+        mxaxis = max(abs(ray[0]), abs(ray[1]))
+        shift = ray / mxaxis * th.arange(n).view(n, 1).cuda()
+        coords = each_depth_grid.view(1, n, n, 3) + shift.view(n, 1, 1, 3)
+
+        output = th.nn.functional.grid_sample(
+            th.tensor(np.tile(each_depth_grid[:, :, 2].view(1, 1, n, n).cpu().numpy(), [n, 1, 1, 1])).cuda(),
+            coords[..., :2] / (n - 1) * 2 - 1,
+            align_corners=True)
+        diff = coords[..., 2] - output[:, 0] 
+        shadow_mask[i] *= (th.min(diff, dim=0)[0] > -0.1) * 0.5 + 0.5
+        
+    #     print(shadow_mask.shape)
+    #     print(th.max(shadow_mask))
+    #     print(th.min(shadow_mask))
+    #     import torchvision
+    #     torchvision.utils.save_image(shadow_mask[[i]]/255.0, f'inf{i}.png')
+    #     torchvision.utils.save_image(shadow_mask[[i]], f'inf2{i}.png')
+    # torchvision.utils.save_image(shadow_mask[:, None, ...]/255.0, f'infall.png')
+    return shadow_mask
+
 def render_deca(deca_params, idx, n, render_mode='shape', 
                 useTex=False, extractTex=False, device='cuda', 
                 avg_dict=None, rotate_normals=False, use_detail=False,
