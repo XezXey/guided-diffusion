@@ -194,6 +194,8 @@ if __name__ == '__main__':
         ld = util.batch_orth_proj(th.tensor(ld), model_kwargs['cam']); ld[:,:,1:] = -ld[:,:,1:]
         # print("[#] Transformed light direction : ", ld)
         depth_image, alpha_image = deca.render.render_depth(orig_visdict['trans_verts_orig'])
+        print(orig_visdict['trans_verts_orig'].shape)
+        exit()
         depth_image = depth_image.repeat(1,3,1,1)
         alpha_image = alpha_image.repeat(1,3,1,1)
         _, _, h, w = depth_image.shape

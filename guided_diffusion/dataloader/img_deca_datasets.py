@@ -134,6 +134,8 @@ def load_data_img_deca(
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.laplacian_dir}/{set_}/")
                 in_image['laplacian_mask'] = _list_image_files_recursively(f"{cfg.dataset.laplacian_mask_dir}/{set_}/")
                 in_image['laplacian_mask'] = image_path_list_to_dict(in_image['laplacian_mask'])
+            elif 'shadow_mask' in in_image_type:
+                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_mask_dir}/{set_}/")
             elif 'raw' in in_image_type: continue
             else:
                 raise NotImplementedError(f"The {in_image_type}-image type not found.")
@@ -261,6 +263,12 @@ class DECADataset(Dataset):
             elif k == 'raw':
                 each_cond_img = (raw_img / 127.5) - 1
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+            elif k == 'shadow_mask':
+                each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
+                each_cond_img = self.prep_cond_img(each_cond_img, k, i)
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                each_cond_img = (each_cond_img / 127.5) - 1
+                out_dict[f'{k}_img'] = each_cond_img[[0], ...]  # The shadow mask has the same value across 3-channels
             elif 'woclip' in k:
                 #NOTE: Input is the npy array -> Used cv2.resize() to handle
                 each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_AREA)
@@ -347,7 +355,6 @@ class DECADataset(Dataset):
                     
     def load_condition_image(self, raw_pil_image, query_img_name):
         self.img_ext = f".{query_img_name.split('.')[-1]}"
-        # print("GGG", self.img_ext)
         condition_image = {}
         for in_image_type in self.condition_image:
             if in_image_type is None:continue
@@ -360,6 +367,8 @@ class DECADataset(Dataset):
                     condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
             elif 'laplacian' in in_image_type:
                 condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
+            elif 'shadow_mask' in in_image_type:
+                    condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
             else: raise ValueError(f"Not supported type of condition image : {in_image_type}")

@@ -15,6 +15,21 @@
 //                           |___/ |___/                                                |___/ 
 
         {
+            "name": "Python: train_shadow_mask",
+            "type": "python",
+            "request": "launch",
+            "env": {"CUDA_VISIBLE_DEVICES":"1", "WANDB_MODE":"offline"},
+            "program": "./train_scripts/image_train.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/ours_smask",
+                    "--train.batch_size", "5",
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/Add_ray_casting/Masked_Face_woclip+Smask+BgNoHead+shadow.yaml",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/",
+            "justMyCode": true
+        }, 
+        {
             "name": "Python: train_unet_no_dpm",
             "type": "python",
             "request": "launch",

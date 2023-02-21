@@ -108,7 +108,8 @@ img_cond_model_img_type = {'raw':3,
                             'deca_albedo_shape_images':3, 
                             'deca_albedo_template_shape_images':3, 
                             'deca_masked_face_images_wclip':3, 
-                            'deca_masked_face_images_woclip':3, 
+                            'deca_masked_face_images_woclip':3,
+                            'shadow_mask':1,
                             'faceseg_face':3, 
                             'faceseg_faceskin&nose':3, 
                             'faceseg_bg&noface':3,
@@ -175,6 +176,7 @@ cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_d
 cfg.dataset.deca_rendered_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
 cfg.dataset.laplacian_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
 cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
+cfg.dataset.shadow_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_masks/"
 
 # ---------------------------------------------------------------------------- #
 # Options for training

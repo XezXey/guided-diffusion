@@ -499,7 +499,10 @@ class TrainLoop(LightningModule):
             s = 0
             for c in self.cfg.img_model.each_in_channels:
                 e = s + c
-                cond_img.append(cond['dpm_cond_img'][:, s:e, ...])
+                if c == 1:  
+                    cond_img.append(th.repeat_interleave(cond['dpm_cond_img'][:, s:e, ...], dim=1, repeats=3))
+                else:
+                    cond_img.append(cond['dpm_cond_img'][:, s:e, ...])
                 s += c
             cond_img = th.cat((cond_img), dim=0)
             cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.
@@ -513,7 +516,10 @@ class TrainLoop(LightningModule):
             s = 0
             for c in self.cfg.img_cond_model.each_in_channels:
                 e = s + c
-                cond_img.append(cond['cond_img'][:, s:e, ...])
+                if c == 1:  
+                    cond_img.append(th.repeat_interleave(cond['cond_img'][:, s:e, ...], dim=1, repeats=3))
+                else:
+                    cond_img.append(cond['cond_img'][:, s:e, ...])
                 s += c
             cond_img = th.cat((cond_img), dim=0)
             cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.

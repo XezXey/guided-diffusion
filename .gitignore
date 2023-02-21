@@ -55,8 +55,9 @@ experiment_scripts/equal_condition/*.npy
 experiment_scripts/generate_samples_json/from_image_folders/light_left/*
 experiment_scripts/generate_samples_json/from_image_folders/light_right/*
 experiment_scripts/generate_verts/output
+experiment_scripts/generate_verts/output_dev
 experiment_scripts/ray_tracing/output
-experiment_scripts/raytracing_shadow/out
+experiment_scripts/raytracing_shadow_example/out
 
 visualize_scripts/flask_vispage/node_server
 preprocess_scripts/ITW

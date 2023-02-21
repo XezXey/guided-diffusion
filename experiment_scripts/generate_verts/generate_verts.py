@@ -179,7 +179,7 @@ if __name__ == '__main__':
     dat = th.utils.data.Subset(dataset, indices=img_idx)
     subset_loader = th.utils.data.DataLoader(dat, batch_size=1,
                                         shuffle=False, num_workers=24)
-    os.makedirs('./output', exist_ok=True)
+    os.makedirs(f'./output/{set_}', exist_ok=True)
     import tqdm
     subset_loader = iter(subset_loader)
     t = tqdm.trange(len(subset_loader), desc="Generate the shadow mask...")
@@ -210,5 +210,5 @@ if __name__ == '__main__':
         t.set_description(text)
         t.refresh()
     for k in out_dict.keys():
-        np.save(arr=out_dict[k], file=f'./output/ffhq-{set_}-{k}-anno-s{args.s_e[0]}_e{args.s_e[1]}.npy')
+        np.save(arr=out_dict[k], file=f'./output/{set_}/ffhq-{set_}-{k}-anno-s{args.s_e[0]}_e{args.s_e[1]}.npy')
     
