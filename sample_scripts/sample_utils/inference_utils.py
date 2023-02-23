@@ -302,12 +302,12 @@ def build_condition_image(cond, misc):
         
         if args.fixed_render:
             print("[#] Fixed the Deca renderer")
-            deca_rendered = th.cat(all_render[0].repeat_interleave(repeats=len(all_render), dim=0), dim=0)
+            deca_rendered = all_render[0].repeat_interleave(repeats=len(all_render), dim=0)
         else:
             deca_rendered = th.cat(all_render, dim=0)
         if args.fixed_shadow_mask:
             print("[#] Fixed the Shadow mask")
-            shadow_mask = th.cat(all_shadow_mask[0].repeat_interleave(repeats=len(all_render), dim=0), dim=0)
+            shadow_mask = all_shadow_mask[0].repeat_interleave(repeats=len(all_render), dim=0)
         else:
             shadow_mask = th.cat(all_shadow_mask, dim=0)
         
