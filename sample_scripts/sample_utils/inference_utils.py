@@ -299,8 +299,15 @@ def build_condition_image(cond, misc):
             all_render.append(deca_rendered)
             all_shadow_mask.append(shadow_mask[:, None, ...])
         print("Rendering time : ", time.time() - start_t)
-        deca_rendered = th.cat(all_render, dim=0)
-        shadow_mask = th.cat(all_shadow_mask, dim=0)
+        
+        if args.fixed_render:
+            deca_rendered = th.cat(all_render[[0].repeat_interleave(repeats=len(all_render), dim=0), ...], dim=0)
+        else:
+            deca_rendered = th.cat(all_render, dim=0)
+        if args.fixed_shadow_mask:
+            shadow_mask = th.cat(all_shadow_mask[[0].repeat_interleave(repeats=len(all_render), dim=0), ...], dim=0)
+        else:
+            shadow_mask = th.cat(all_shadow_mask, dim=0)
         
     #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'
     print("Conditoning with image : ", condition_img)
