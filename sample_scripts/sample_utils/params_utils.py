@@ -287,8 +287,6 @@ def render_deca(deca_params, idx, n, render_mode='shape',
     orig_visdict.update(orig_opdict)
     rendered_image = orig_visdict['shape_images']
     return rendered_image, orig_visdict
-    
-
 
 def read_params(path):
     params = pd.read_csv(path, header=None, sep=" ", index_col=False, lineterminator='\n')
