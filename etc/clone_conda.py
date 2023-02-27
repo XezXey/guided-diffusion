@@ -24,9 +24,9 @@ if __name__ == '__main__':
     else: print("[#] Found conda/miniconda...")
     
     if args.gpu_model in ['a4000', 'rtx3090']:
-        ip = '10.204.100.122'
+        ip = '10.204.100.112'
     elif args.gpu_model in ['rtx2080']:
-        ip = '10.204.100.119'
+        ip = '10.204.100.109'
     else: raise ValueError(f"Unknown gpu model : {args.gpu_model}")
     
     if len(os.listdir(f'/home/mint/{conda_ssh_dir}/')) != 0:
