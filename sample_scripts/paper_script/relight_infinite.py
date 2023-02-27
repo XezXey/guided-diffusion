@@ -207,6 +207,7 @@ if __name__ == '__main__':
         img_dataset_path = f"/data/mint/DPM_Dataset/ITW/itw_images_aligned/"
         deca_dataset_path = f"/data/mint/DPM_Dataset/ITW/params/"
         img_ext = '.png'
+        cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
         cfg.dataset.training_data = 'ITW'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/itw_images_aligned/'
     elif args.dataset == 'ffhq':
