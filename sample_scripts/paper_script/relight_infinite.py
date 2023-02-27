@@ -88,7 +88,8 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
             'itp_func':itp_func,
             'img_size':cfg.img_model.image_size,
             'deca_obj':deca_obj,
-            'cfg':cfg
+            'cfg':cfg,
+            'batch_size':args.batch_size
             }  
     
     if itp_func is not None:
