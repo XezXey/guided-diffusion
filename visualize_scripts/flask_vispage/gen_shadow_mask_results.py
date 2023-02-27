@@ -50,13 +50,12 @@ def create_app():
     def shadow(jf, itp_method, diff_step, sampling, ckpt, show):
         out = """<style>
                 th, tr, td{
-                    border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
+                    border:1px solid black;margin-left:auto;text-align: left;
                 }
                 table {
                     width: 100%
-                }
-                table.fixed {
                     table-layout: fixed;
+                    white-space: nowrap;
                 }
                 </style>"""
         f = open(f'./json_comparison/shadow_mask/{jf}')
@@ -79,14 +78,14 @@ def create_app():
         
         for s_id, src_dst in enumerate(subject_id):
             # out += create_hide(m, m_id)
+            show_shadow = False
+            show_render = False
             out += f"<tr>"
             if int(args.res) == 256:
                 # out += f"<th rowspan=\"4\" style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.{src_dst[0].split('.')[0]}, {src_dst[1].split('.')[0]} <img src=/files/{data_path}/{src_dst[0]} title=\"{src_dst[0]}\"> <img src=/files/{data_path}/{src_dst[1]} title=\"{src_dst[1]}\"> </th>"
                 # For 128
-                print(src_dst[0])
-                
                 data_edit_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_128/{args.set_}/"
-                out += f"<th rowspan=\"5\" style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.{src_dst[0].split('.')[0]}, {src_dst[1].split('.')[0]} <img src=/files/{data_edit_path}/{src_dst[0].replace('.jpg', '.png')} title=\"{src_dst[0]}\"> <img src=/files/{data_edit_path}/{src_dst[1].replace('.jpg', '.png')} title=\"{src_dst[1]}\"> </th>"
+                out += f"<th rowspan=\"6\" style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.{src_dst[0].split('.')[0]}, {src_dst[1].split('.')[0]} <img src=/files/{data_edit_path}/{src_dst[0].replace('.jpg', '.png')} title=\"{src_dst[0]}\"> <img src=/files/{data_edit_path}/{src_dst[1].replace('.jpg', '.png')} title=\"{src_dst[1]}\"> </th>"
             # elif int(args.res) == 128:
                 
             for m_id, m in enumerate(model):
@@ -125,63 +124,68 @@ def create_app():
                 out += "</td>"
                 out += "</tr>"
                 
-                if "Smask" in m:
-                    out += "<tr>"
-                    out += "<td>"
-                    
-                    vid_path = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/shadm_rt.mp4")
-                    if len(vid_path) == 0:
-                        out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
-                        continue
-                    else:
-                        out += f"""
-                        <video width=\"128\" height=\"128\" autoplay muted controls loop> 
-                            <source src=\"/files/{vid_path[0]}\" type=\"video/mp4\">
-                            Your browser does not support the video tag.
-                            </video>
-                        """
-                    
-                    frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/shadm_f*.png")
-                    
-                    if len(frames) >= 1:
-                        frames = sort_by_frame(frames)
-                        for f in frames:
-                            out += f"<img src=/files/{f} title=\"{ckpt_dict[m]['alias']}\">"
-                        out += "<br>"
-                    else:
-                        out += "<p style=\"color:red\">Images not found!</p>"
-                    out += "</td>"
-                    out += "</tr>"
+                if not show_shadow:
+                    if "Smask" in m:
+                        out += "<tr>"
+                        out += "<td>"
+                        
+                        vid_path = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/shadm_rt.mp4")
+                        if len(vid_path) == 0:
+                            out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
+                            continue
+                        else:
+                            out += f"""
+                            <video width=\"128\" height=\"128\" autoplay muted controls loop> 
+                                <source src=\"/files/{vid_path[0]}\" type=\"video/mp4\">
+                                Your browser does not support the video tag.
+                                </video>
+                            """
+                        
+                        frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/shadm_f*.png")
+                        
+                        if len(frames) >= 1:
+                            frames = sort_by_frame(frames)
+                            for f in frames:
+                                out += f"<img src=/files/{f} title=\"{ckpt_dict[m]['alias']}\">"
+                            out += "<br>"
+                        else:
+                            out += "<p style=\"color:red\">Images not found!</p>"
+                        out += "</td>"
+                        out += "</tr>"
+                        show_shadow = True 
                  
             out += "<tr>"
             out += "<td>"
-            # Render Face   
-            vid_path = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/ren_rt.mp4")
-            if len(vid_path) == 0:
-                out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
-                continue
-            else:
-                out += f"""
-                <video width=\"128\" height=\"128\" autoplay muted controls loop> 
-                    <source src=\"/files/{vid_path[0]}\" type=\"video/mp4\">
-                    Your browser does not support the video tag.
-                    </video>
-                """
-            
-            frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/ren_f*.png")
-            
-            if len(frames) >= 1:
-                frames = sort_by_frame(frames)
-                for f in frames:
-                    out += f"<img src=/files/{f} title=\"{ckpt_dict[m]['alias']}\">"
-                out += "<br>"
-            else:
-                out += "<p style=\"color:red\">Images not found!</p>"
-            out += "</td>"
-            out += "</tr>"
+            if not show_render:
+                # Render Face   
+                vid_path = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/ren_rt.mp4")
+                if len(vid_path) == 0:
+                    out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
+                    continue
+                else:
+                    out += f"""
+                    <video width=\"128\" height=\"128\" autoplay muted controls loop> 
+                        <source src=\"/files/{vid_path[0]}\" type=\"video/mp4\">
+                        Your browser does not support the video tag.
+                        </video>
+                    """
                 
+                frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/ren_f*.png")
+                
+                if len(frames) >= 1:
+                    frames = sort_by_frame(frames)
+                    for f in frames:
+                        out += f"<img src=/files/{f} title=\"{ckpt_dict[m]['alias']}\">"
+                    out += "<br>"
+                else:
+                    out += "<p style=\"color:red\">Images not found!</p>"
+                out += "</td>"
+                out += "</tr>"
                     
-            out += "</tr>"
+                out += "</tr>"
+                
+                show_render = True
+            
         out += "</table>"
         out += "<br> <hr>"
         return out

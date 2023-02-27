@@ -10,5 +10,17 @@
         "itp":"render_face", 
         "alias":"Ours w/ shadow mask",
         "n_frames":"15"
+    },
+    "log=Masked_Face_woclip+Smask+BgNoHead+shadow_128_cfg=Masked_Face_woclip+Smask+BgNoHead+shadow_128.yaml_fixed_render": {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Ours w/ shadow mask (Fixed render)",
+        "n_frames":"15"
+    },
+    "log=Masked_Face_woclip+Smask+BgNoHead+shadow_128_cfg=Masked_Face_woclip+Smask+BgNoHead+shadow_128.yaml_fixed_shadow": {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Ours w/ shadow mask (Fixed shadow)",
+        "n_frames":"15"
     }
 }

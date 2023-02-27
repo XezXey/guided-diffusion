@@ -221,7 +221,7 @@ def build_condition_image(cond, misc):
     clip_ren = None
     
     # Handling the render face
-    if np.any(['deca' in i for i in condition_img]):
+    if np.any(['deca' in i for i in condition_img]) or np.any(['shadow_mask' in i for i in condition_img]):
         # Render the face
         if args.rotate_normals:
             #NOTE: Render w/ Rotated normals; cond['light'] shape = B x 27
@@ -267,7 +267,7 @@ def build_condition_image(cond, misc):
             # cond.update(interp_cond)
         
         start_t = time.time()
-        if np.any(['deca_masked' in n for n in condition_img]):
+        if np.any(['deca_masked' in n for n in condition_img]) or np.any(['shadow_mask' in n for n in condition_img]):
             mask = params_utils.load_flame_mask()
         else: mask=None
         

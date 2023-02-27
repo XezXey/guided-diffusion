@@ -389,6 +389,7 @@ if __name__ == '__main__':
                 
         # Save shadow mask
         vis_utils.save_images(path=f"{save_res_dir}", fn="shadm", frames=(out_render[:, 3:4] + 1) * 0.5)
+        # vis_utils.save_images(path=f"{save_res_dir}", fn="shadm", frames=(out_render[:, 0:1] + 1) * 0.5)
         
                 
         if args.save_vid:
@@ -421,6 +422,7 @@ if __name__ == '__main__':
                     
             # Save shadow mask
             vid_render = out_render[:, 3:4]
+            # vid_render = out_render[:, 0:1] # Shadow mask only
             print(vid_render.shape)
             vid_render = (((vid_render + 1) * 0.5).permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
             vid_render = vid_render.repeat_interleave(repeats=3, dim=-1)
