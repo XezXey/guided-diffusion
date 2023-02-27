@@ -85,7 +85,7 @@ def create_app():
                 # out += f"<th rowspan=\"4\" style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.{src_dst[0].split('.')[0]}, {src_dst[1].split('.')[0]} <img src=/files/{data_path}/{src_dst[0]} title=\"{src_dst[0]}\"> <img src=/files/{data_path}/{src_dst[1]} title=\"{src_dst[1]}\"> </th>"
                 # For 128
                 data_edit_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_128/{args.set_}/"
-                out += f"<th rowspan=\"6\" style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.{src_dst[0].split('.')[0]}, {src_dst[1].split('.')[0]} <img src=/files/{data_edit_path}/{src_dst[0].replace('.jpg', '.png')} title=\"{src_dst[0]}\"> <img src=/files/{data_edit_path}/{src_dst[1].replace('.jpg', '.png')} title=\"{src_dst[1]}\"> </th>"
+                out += f"<th rowspan=\"8\" style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.{src_dst[0].split('.')[0]}, {src_dst[1].split('.')[0]} <img src=/files/{data_edit_path}/{src_dst[0].replace('.jpg', '.png')} title=\"{src_dst[0]}\"> <img src=/files/{data_edit_path}/{src_dst[1].replace('.jpg', '.png')} title=\"{src_dst[1]}\"> </th>"
             # elif int(args.res) == 128:
                 
             for m_id, m in enumerate(model):
