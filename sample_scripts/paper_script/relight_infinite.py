@@ -290,7 +290,7 @@ if __name__ == '__main__':
         # LOOPER SAMPLING
         n_step = args.itp_step
         print(f"[#] Set = {args.set}, Src-id = {src_id}, Dst-id = {dst_id}")
-        if img_name != args.resume_sj and not found_resume:
+        if (img_name != args.resume_sj) and (not found_resume) and (dip_list != []):
           continue
         else:
           found_resume = True
