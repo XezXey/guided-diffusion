@@ -310,8 +310,6 @@ class SRenderY(nn.Module):
             sh_coeff: [bz, 9, 3]
         '''
         N = normal_images
-        print(N.shape)
-        exit()
         sh = torch.stack([
                 N[:,0]*0.+1., N[:,0], N[:,1], \
                 N[:,2], N[:,0]*N[:,1], N[:,0]*N[:,2], 
