@@ -13,6 +13,7 @@ parser.add_argument('--log_dir', type=str, required=True)
 # Interpolation
 parser.add_argument('--itp', nargs='+', default=None)
 parser.add_argument('--itp_step', type=int, default=15)
+parser.add_argument('--batch_size', type=int, default=15)
 parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--add_shadow', action='store_true', default=False)
@@ -24,6 +25,12 @@ parser.add_argument('--src_dst', nargs='+', default=[], help='list of src and ds
 # Rendering
 parser.add_argument('--render_mode', type=str, default="shape")
 parser.add_argument('--rotate_normals', action='store_true', default=False)
+parser.add_argument('--scale_sh', type=float, default=1.0)
+parser.add_argument('--add_sh', type=float, default=None)
+parser.add_argument('--sh_grid_size', type=int, default=None)
+parser.add_argument('--sh_span', type=float, default=None)
+parser.add_argument('--diffuse_sh', type=float, default=None)
+parser.add_argument('--diffuse_perc', type=float, default=None)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 # Misc.
@@ -35,6 +42,9 @@ parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--save_vid', action='store_true', default=False)
 parser.add_argument('--fps', action='store_true', default=False)
 parser.add_argument('--resume_sj', nargs='+', default=[])
+# Experiment
+parser.add_argument('--fixed_render', action='store_true', default=False)
+parser.add_argument('--fixed_shadow', action='store_true', default=False)
 
 args = parser.parse_args()
 
@@ -56,9 +66,11 @@ sys.path.insert(0, '../../')
 from guided_diffusion.script_util import (
     seed_all,
 )
+
 from guided_diffusion.tensor_util import (
     make_deepcopyable,
-    dict_slice
+    dict_slice,
+    dict_slice_se
 )
 
 from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
@@ -141,6 +153,18 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     
     return cond
     
+def ext_sub_step(n_step):
+    sub_step = []
+    bz = args.batch_size
+    tmp = n_step
+    while tmp > 0:
+        if tmp - bz > 0:
+            sub_step.append(bz)
+        else:
+            sub_step.append(tmp)
+        tmp -= bz
+    return np.cumsum([0] + sub_step)
+
 
 def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     '''
@@ -160,6 +184,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     if cfg.img_cond_model.apply:
         cond_rev = pl_sampling.forward_cond_network(model_kwargs=cond_rev)
         
+    print("[#] Apply Mean-matching...")
     reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
     noise_map = reverse_ddim_sample['final_output']['sample']
     rev_mean = reverse_ddim_sample['intermediate']
@@ -171,22 +196,35 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         store_intermediate=False,
         rev_mean=rev_mean)
 
-    # Relight!
-    cond['use_render_itp'] = True
-    cond_relight = copy.deepcopy(cond)
-    if cfg.img_cond_model.apply:
-        cond_relight = pl_sampling.forward_cond_network(model_kwargs=cond)
-        
     assert noise_map.shape[0] == 1
     rev_mean_first = [x[:1] for x in rev_mean]
     
-    relight_out = pl_sampling.forward_proc(
-        noise=th.repeat_interleave(noise_map, repeats=n_step, dim=0),
-        model_kwargs=cond_relight,
-        store_intermediate=False,
-        add_mean=rev_mean_first)
+    print("[#] Relighting...")
+    sub_step = ext_sub_step(n_step)
+    relit_out = []
+    for i in range(len(sub_step)-1):
+        print(f"[#] Sub step relight : {sub_step[i]} to {sub_step[i+1]}")
+        start = sub_step[i]
+        end = sub_step[i+1]
+        
+        # Relight!
+        mean_match_ratio = copy.deepcopy(rev_mean_first)
+        cond['use_render_itp'] = True
+        cond_relight = copy.deepcopy(cond)
+        cond_relit = dict_slice_se(in_d=cond_relight, keys=cond_relight.keys(), s=start, e=end) # Slice only 1st image out for inversion
+        if cfg.img_cond_model.apply:
+            cond_relit = pl_sampling.forward_cond_network(model_kwargs=cond_relit)
+        
+        relight_out = pl_sampling.forward_proc(
+            noise=th.repeat_interleave(noise_map, repeats=end-start, dim=0),
+            model_kwargs=cond_relit,
+            store_intermediate=False,
+            add_mean=mean_match_ratio)
+        
+        relit_out.append(relight_out["final_output"]["sample"].detach().cpu().numpy())
+    relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
     
-    return relight_out["final_output"]["sample"], cond['cond_img']
+    return relit_out, cond['cond_img']
 
 if __name__ == '__main__':
     seed_all(args.seed)
