@@ -123,7 +123,8 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
         with open(args.noisy_cond[0], 'r') as stat_f:
             stat_params = json.load(stat_f)
         
-        if noise_at == 'all':
+        if noise_at == ['all']:
+            print("[#] Apply noise to all Deca-params...")
             noise_at = ['shape', 'pose', 'exp', 'cam']
             
         for nk in noise_at:
