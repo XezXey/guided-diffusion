@@ -6,6 +6,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, required=True)
 parser.add_argument('--sub_dataset', type=str, required=True)
 parser.add_argument('--set', type=str, required=True)
+# Mean-matching
+parser.add_argument('--apply_mm', action='store_true', default=False)
 # Model/Config
 parser.add_argument('--step', type=str, required=True)
 parser.add_argument('--ckpt_selector', type=str, default='ema')
@@ -183,20 +185,25 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     if cfg.img_cond_model.apply:
         cond_rev = pl_sampling.forward_cond_network(model_kwargs=cond_rev)
         
-    print("[#] Apply Mean-matching...")
-    reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
-    noise_map = reverse_ddim_sample['final_output']['sample']
-    rev_mean = reverse_ddim_sample['intermediate']
-    
-    #NOTE: rev_mean WILL BE MODIFIED; This is for computing the ratio of inversion (brightness correction).
-    sample_ddim = pl_sampling.forward_proc(
-        noise=noise_map,
-        model_kwargs=cond_rev,
-        store_intermediate=False,
-        rev_mean=rev_mean)
+    if args.apply_mm:
+        print("[#] Apply Mean-matching...")
+        reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
+        noise_map = reverse_ddim_sample['final_output']['sample']
+        rev_mean = reverse_ddim_sample['intermediate']
+        
+        #NOTE: rev_mean WILL BE MODIFIED; This is for computing the ratio of inversion (brightness correction).
+        sample_ddim = pl_sampling.forward_proc(
+            noise=noise_map,
+            model_kwargs=cond_rev,
+            store_intermediate=False,
+            rev_mean=rev_mean)
 
-    assert noise_map.shape[0] == 1
-    rev_mean_first = [x[:1] for x in rev_mean]
+        assert noise_map.shape[0] == 1
+        rev_mean_first = [x[:1] for x in rev_mean]
+    else:
+        print("[#] Inversion (without Mean-matching)...")
+        reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=False)
+        noise_map = reverse_ddim_sample['final_output']['sample']
     
     print("[#] Relighting...")
     sub_step = ext_sub_step(n_step)
@@ -207,7 +214,10 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         end = sub_step[i+1]
         
         # Relight!
-        mean_match_ratio = copy.deepcopy(rev_mean_first)
+        if args.apply_mm:
+            mean_match_ratio = copy.deepcopy(rev_mean_first)
+        else:
+            mean_match_ratio = None
         cond['use_render_itp'] = True
         cond_relight = copy.deepcopy(cond)
         cond_relit = dict_slice_se(in_d=cond_relight, keys=cond_relight.keys(), s=start, e=end) # Slice only 1st image out for inversion
