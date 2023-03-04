@@ -1,0 +1,56 @@
+{
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_original_images": {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"original images",
+        "n_frames":"2"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_algined_images": {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"aligned_images",
+        "n_frames":"2"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_blur_images": {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"downsampling_images",
+        "n_frames":"2"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_black_image": {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"black_image",
+        "n_frames":"2"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_gray_image": {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"gray_image",
+        "n_frames":"2"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_orange_image": {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"orange_image",
+        "n_frames":"2"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_louve_image": {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"louve_image",
+        "n_frames":"2"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_rc_image": {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"rc_image",
+        "n_frames":"2"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_bd_image": {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"bd_image",
+        "n_frames":"2"
+    }
+}

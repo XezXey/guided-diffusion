@@ -43,6 +43,9 @@ parser.add_argument('--save_vid', action='store_true', default=False)
 parser.add_argument('--fps', action='store_true', default=False)
 parser.add_argument('--noisy_cond', nargs='+', required=True, help='Takes [path_to_stat_file, noise_level], Perturb the condition by noise_level * sd')
 
+# Experiment
+parser.add_argument('--fixed_render', action='store_true', default=False)
+
 args = parser.parse_args()
 
 import os, sys, glob
@@ -97,6 +100,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
             'img_size':cfg.img_model.image_size,
             'deca_obj':deca_obj,
             'cfg':cfg,
+            'batch_size':args.batch_size
             }  
     
     if itp_func is not None:
@@ -119,6 +123,9 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
         with open(args.noisy_cond[0], 'r') as stat_f:
             stat_params = json.load(stat_f)
         
+        if noise_at == 'all':
+            noise_at = ['shape', 'pose', 'exp', 'cam']
+            
         for nk in noise_at:
             # print('bf:', cond[nk])
             cond[nk] = cond[nk] + np.random.normal(0, (np.array(stat_params[nk]['sd']) * float(noise_lvl)))
