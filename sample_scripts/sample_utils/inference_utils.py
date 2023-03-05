@@ -320,7 +320,24 @@ def build_condition_image(cond, misc):
                 bg_tmp = th.stack(bg_tmp, axis=0)
             else:
                 bg_tmp = np.stack(bg_tmp, axis=0)
+            # mask_bg = cond['faceseg_nohead_mask'][[src_idx]]
+            # sd = 58.050383371049826/127.5
+            # val = 1
+            # rpl_bg = th.normal(mean=val, std=sd, size=bg_tmp.shape)
+            # bg_tmp = mask_bg * rpl_bg
+            # import torchvision
+            # torchvision.utils.save_image(cond['faceseg_nohead_mask'].double(), 'ggex.png')
+            # torchvision.utils.save_image(bg_tmp, 'ggex2.png')
+            # exit()
+                                              
+            # print(condition_img)
+            # print(cond['faceseg_nohead_mask'].shape)
+            # import torchvision
+            # torchvision.utils.save_image(cond['faceseg_nohead_mask'].double(), 'ggex.png')
+            # print(cond.keys())
+            # exit()
             cond[f"{cond_img_name}"] = th.tensor(bg_tmp)
+            
         elif 'deca' in cond_img_name:
             rendered_tmp = []
             for j in range(n_step):

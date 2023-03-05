@@ -5,6 +5,18 @@
         "alias":"original images",
         "n_frames":"3"
     },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_original_images_noisebg": {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"original images",
+        "n_frames":"2"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_original_images_noisebg2": {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"original images",
+        "n_frames":"2"
+    },
     "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_louve_images": {
         "step":"ema_085000", 
         "itp":"render_face", 
