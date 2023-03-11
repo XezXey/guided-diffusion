@@ -115,6 +115,20 @@ def save_images(path, fn, frames):
     for i in range(frames.shape[0]):
         frame = frames[i].cpu().detach()
         torchvision.utils.save_image(tensor=(frame), fp=f"{path}/{fn}_frame{i}.png")
+        
+def save_images_with_fn(path, fn, frames, fn_list):
+    """
+    save the images
+    Args:
+        frames (list of tensor): range = [0, 255] (uint8), and shape = [T x H x W x C]
+        path : save path
+        fn : filename to save
+    """
+    
+    for i in range(frames.shape[0]):
+        frame = frames[i].cpu().detach()
+        frame_idx = fn_list[i].split('/')[-1].split('.')[0]
+        torchvision.utils.save_image(tensor=(frame), fp=f"{path}/{fn}_{frame_idx}.png")
 
 def save_intermediate(path, out, proc, image_name, bound):
     

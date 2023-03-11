@@ -1,4 +1,6 @@
-# from __future__ import print_function 
+from __future__ import print_function 
+import warnings
+warnings.filterwarnings("ignore")
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -15,16 +17,11 @@ parser.add_argument('--cfg_name', type=str, required=True)
 parser.add_argument('--log_dir', type=str, required=True)
 # Interpolation
 parser.add_argument('--itp', nargs='+', default=None)
-parser.add_argument('--itp_step', type=int, default=15)
 parser.add_argument('--batch_size', type=int, default=15)
-parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--add_shadow', action='store_true', default=False)
 # Samples selection
 parser.add_argument('--idx', nargs='+', default=[])
-parser.add_argument('--sample_pair_json', type=str, default=None)
-parser.add_argument('--sample_pair_mode', type=str, default=None)
-parser.add_argument('--src_dst', nargs='+', default=[], help='list of src and dst image')
 # Rendering
 parser.add_argument('--render_mode', type=str, default="shape")
 parser.add_argument('--rotate_normals', action='store_true', default=False)
@@ -34,6 +31,7 @@ parser.add_argument('--sh_grid_size', type=int, default=None)
 parser.add_argument('--sh_span', type=float, default=None)
 parser.add_argument('--diffuse_sh', type=float, default=None)
 parser.add_argument('--diffuse_perc', type=float, default=None)
+parser.add_argument('--light', type=str, required=True)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 # Misc.
@@ -89,61 +87,35 @@ from sample_utils import (
 )
 device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
 
-def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
+def mod_light(model_kwargs, start_f, end_f):
+    mod_light = np.loadtxt(args.light).reshape(-1, 9, 3)
+    mod_light = np.repeat(mod_light, repeats=model_kwargs['light'].shape[0], axis=0)
+    mod_light = th.tensor(mod_light)
+    model_kwargs['mod_light'] = mod_light
+    return model_kwargs
+
+def make_condition(cond):
+    '''
+    Create the condition
+     - cond_img : deca_rendered, faceseg
+     - cond_params : non-spatial (e.g., arcface, shape, pose, exp, cam)
+    '''
     condition_img = list(filter(None, dataset.condition_image))
-    args.interpolate = args.itp
     misc = {'condition_img':condition_img,
-            'src_idx':src_idx,
-            'dst_idx':dst_idx,
-            'n_step':n_step,
             'avg_dict':avg_dict,
             'dataset':dataset,
             'args':args,
-            'itp_func':itp_func,
             'img_size':cfg.img_model.image_size,
             'deca_obj':deca_obj,
             'cfg':cfg,
             'batch_size':args.batch_size
             }  
     
-    if itp_func is not None:
-        cond['use_render_itp'] = False 
-    else:
-        cond['use_render_itp'] = True
+    cond['use_render_itp'] = True
         
-    # This is for the noise_dpm_cond_img
-    if cfg.img_model.apply_dpm_cond_img:
-        cond['image'] = th.stack([cond['image'][src_idx]] * n_step, dim=0)
-        for k in cfg.img_model.dpm_cond_img:
-            if 'faceseg' in k:
-                cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
-        
-    cond, _ = inference_utils.build_condition_image(cond=cond, misc=misc)
+    cond, _ = inference_utils.build_condition_image_for_vids(cond=cond, misc=misc)
     cond = inference_utils.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
     cond['cfg'] = cfg
-    if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):
-        cond['use_cond_xt_fn'] = True
-        for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
-            cond[f'{k}_img'] = cond[f'{k}_img'].to(device)
-            if p is not None:
-                if 'dpm_noise_masking' in p:
-                    cond[f'{k}_mask'] = cond[f'{k}_mask'].to(device)
-                    cond['image'] = cond['image'].to(device)
-    
-
-    if 'render_face' in args.itp:
-        interp_set = args.itp.copy()
-        interp_set.remove('render_face')
-    else:
-        interp_set = args.itp
-        
-    # Interpolate non-spatial
-    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func, add_shadow=args.add_shadow)
-    cond.update(interp_cond)
-        
-    # Repeated non-spatial
-    repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.itp + ['light', 'img_latent']))
-    cond.update(repeated_cond)
 
     # Finalize the cond_params
     cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
@@ -167,27 +139,23 @@ def ext_sub_step(n_step):
         tmp -= bz
     return np.cumsum([0] + sub_step)
 
-def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
+def relight(dat, model_kwargs):
     '''
     Relighting the image
     Output : Tensor (B x C x H x W); range = -1 to 1
     '''
     # Rendering
     cond = copy.deepcopy(model_kwargs)
-    cond = make_condition(cond=cond, 
-                        src_idx=src_idx, dst_idx=dst_idx, 
-                        n_step=n_step, itp_func=itp_func
-                    )
+    cond = make_condition(cond=cond)
 
-    # Reverse 
+    # Reverse with source condition
     cond_rev = copy.deepcopy(cond)
-    cond_rev = dict_slice(in_d=cond_rev, keys=cond_rev.keys(), n=1) # Slice only 1st image out for inversion
     if cfg.img_cond_model.apply:
         cond_rev = pl_sampling.forward_cond_network(model_kwargs=cond_rev)
         
     if args.apply_mm:
         print("[#] Apply Mean-matching...")
-        reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
+        reverse_ddim_sample = pl_sampling.reverse_proc(x=dat, model_kwargs=cond_rev, store_mean=True)
         noise_map = reverse_ddim_sample['final_output']['sample']
         rev_mean = reverse_ddim_sample['intermediate']
         
@@ -198,42 +166,42 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
             store_intermediate=False,
             rev_mean=rev_mean)
 
-        assert noise_map.shape[0] == 1
-        rev_mean_first = [x[:1] for x in rev_mean]
+        # assert noise_map.shape[0] == 1
+        # rev_mean_first = [x[:1] for x in rev_mean]
+        rev_mean_first = rev_mean
     else:
         print("[#] Inversion (without Mean-matching)...")
-        reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=False)
+        reverse_ddim_sample = pl_sampling.reverse_proc(x=dat, model_kwargs=cond_rev, store_mean=False, store_intermediate=False)
         noise_map = reverse_ddim_sample['final_output']['sample']
     
+    # Create the condition to relight the image (e.g. deca_rendered)
+    cond_relit = copy.deepcopy(model_kwargs)
+    cond_relit['light'] = cond_relit['mod_light']
+    # Replace light
+    cond_relit = make_condition(cond=cond_relit)
+
     print("[#] Relighting...")
-    sub_step = ext_sub_step(n_step)
     relit_out = []
-    for i in range(len(sub_step)-1):
-        print(f"[#] Sub step relight : {sub_step[i]} to {sub_step[i+1]}")
-        start = sub_step[i]
-        end = sub_step[i+1]
-        
-        # Relight!
-        if args.apply_mm:
-            mean_match_ratio = copy.deepcopy(rev_mean_first)
-        else:
-            mean_match_ratio = None
-        cond['use_render_itp'] = True
-        cond_relight = copy.deepcopy(cond)
-        cond_relit = dict_slice_se(in_d=cond_relight, keys=cond_relight.keys(), s=start, e=end) # Slice only 1st image out for inversion
-        if cfg.img_cond_model.apply:
-            cond_relit = pl_sampling.forward_cond_network(model_kwargs=cond_relit)
-        
-        relight_out = pl_sampling.forward_proc(
-            noise=th.repeat_interleave(noise_map, repeats=end-start, dim=0),
-            model_kwargs=cond_relit,
-            store_intermediate=False,
-            add_mean=mean_match_ratio)
-        
-        relit_out.append(relight_out["final_output"]["sample"].detach().cpu().numpy())
+    
+    # Relight!
+    if args.apply_mm:
+        mean_match_ratio = copy.deepcopy(rev_mean_first)
+    else:
+        mean_match_ratio = None
+    cond_relit['use_render_itp'] = True
+    if cfg.img_cond_model.apply:
+        cond_relit = pl_sampling.forward_cond_network(model_kwargs=cond_relit)
+    
+    relight_out = pl_sampling.forward_proc(
+        noise=noise_map,
+        model_kwargs=cond_relit,
+        store_intermediate=False,
+        add_mean=mean_match_ratio)
+    
+    relit_out.append(relight_out["final_output"]["sample"].detach().cpu().numpy())
     relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
     
-    return relit_out, cond['cond_img']
+    return relit_out, cond['cond_img'], cond_relit['cond_img']
 
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -251,13 +219,13 @@ if __name__ == '__main__':
     model_dict = inference_utils.eval_mode(model_dict)
 
     # Load dataset
-    if args.dataset == 'debugging_ffhq':
-        cfg.dataset.root_path = f'/home/mint/guided-diffusion/experiment_scripts/ITW_debugging/debugging_img/'
-        img_dataset_path = f'/home/mint/guided-diffusion/experiment_scripts/ITW_debugging/debugging_img/{args.sub_dataset}/images/'
-        deca_dataset_path = f'/home/mint/guided-diffusion/experiment_scripts/ITW_debugging/debugging_img/{args.sub_dataset}/params/'
+    if args.dataset == 'Videos':
+        cfg.dataset.root_path = f'/data/mint/DPM_Dataset/Videos/'
+        img_dataset_path = f"/data/mint/DPM_Dataset/Videos/{args.sub_dataset}/aligned_images"
+        deca_dataset_path = f"/data/mint/DPM_Dataset/Videos/{args.sub_dataset}/params/"
         img_ext = '.jpg'
         cfg.dataset.training_data = args.sub_dataset
-        cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/images/'
+        cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/aligned_images/'
     elif args.dataset == 'lumos':
         cfg.dataset.root_path = f'/home/mint/guided-diffusion/experiment_scripts/LUMOS/'
         img_dataset_path = f'/home/mint/guided-diffusion/experiment_scripts/LUMOS/{args.sub_dataset}/images/'
@@ -292,10 +260,7 @@ if __name__ == '__main__':
     
     data_size = dataset.__len__()
     img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
-    all_img_idx, all_img_name, n_subject = mani_utils.get_samples_list(args.sample_pair_json, 
-                                                                            args.sample_pair_mode, 
-                                                                            args.src_dst, img_path, 
-                                                                            -1)
+    n_frames = len(img_path)
     #NOTE: Initialize a DECA renderer
     if np.any(['deca_masked' in n for n in list(filter(None, dataset.condition_image))]):
         mask = params_utils.load_flame_mask()
@@ -304,29 +269,37 @@ if __name__ == '__main__':
         
     # Run from start->end idx
     start, end = int(args.idx[0]), int(args.idx[1])
-    if end > n_subject:
-        end = n_subject 
-    if start >= n_subject: raise ValueError("[#] Start beyond the sample index")
-    print(f"[#] Run from index of {start} to {end}...")
+    if end > n_frames:
+        end = n_frames 
+    if start >= n_frames: raise ValueError("[#] Start beyond the sample index")
+    
+    print(f"[#] Videos Relighting...{args.sub_dataset}")
+    sub_step = ext_sub_step(end - start)
+    for i in range(len(sub_step)-1):
+        print(f"[#] Run from index of {start} to {end}...")
+        print(f"[#] Sub step relight : {sub_step[i]} to {sub_step[i+1]}")
+        start_f = sub_step[i] + start
+        end_f = sub_step[i+1] + start
         
-    for i in range(start, end):
-        img_idx = all_img_idx[i]
-        img_name = all_img_name[i]
-        
+        img_idx = list(range(start_f, end_f))
+        # print(img_idx)
         dat = th.utils.data.Subset(dataset, indices=img_idx)
-        subset_loader = th.utils.data.DataLoader(dat, batch_size=2,
+        subset_loader = th.utils.data.DataLoader(dat, batch_size=args.batch_size,
                                             shuffle=False, num_workers=24)
                                    
         dat, model_kwargs = next(iter(subset_loader))
-        print("#"*100)
+        # print(dat.shape, model_kwargs.keys())
+        # print(model_kwargs['image_name'])
+        # print("#"*100)
+        # continue
         # Indexing
-        src_idx = 0
-        dst_idx = 1
-        src_id = img_name[0]
-        dst_id = img_name[1]
+        # src_idx = 0
+        # dst_idx = 1
+        # src_id = img_name[0]
+        # dst_id = img_name[1]
         # LOOPER SAMPLING
-        n_step = args.itp_step
-        print(f"[#] Current idx = {i}, Set = {args.set}, Src-id = {src_id}, Dst-id = {dst_id}")
+        print(f"[#] Current idx = {i}, Set = {args.set}, Light file = {args.light}")
+        print(f"[#] Frame = {model_kwargs['image_name']}")
         
         pl_sampling = inference_utils.PLSampling(model_dict=model_dict,
                                                     diffusion=diffusion,
@@ -348,42 +321,38 @@ if __name__ == '__main__':
                         model_kwargs[f'{k}_mask'] = model_kwargs[f'{k}_mask'].to(device)
                         model_kwargs['image'] = model_kwargs['image'].to(device)
            
-        itp_fn = mani_utils.slerp if args.slerp else mani_utils.lerp
-        itp_fn_str = 'Slerp' if itp_fn == mani_utils.slerp else 'Lerp'
-        itp_str = '_'.join(args.itp)
-        
         model_kwargs['use_render_itp'] = True
-        out_relit, out_render = relight(dat = dat,
-                                    model_kwargs=model_kwargs,
-                                    src_idx=src_idx, dst_idx=dst_idx,
-                                    itp_func=itp_fn,
-                                    n_step = n_step
-                                )
+        
+        # change light
+        model_kwargs = mod_light(model_kwargs, start_f, end_f)
+        out_relit, out_render, out_render_relit = relight(dat = dat, model_kwargs=model_kwargs)
+        fn_list = model_kwargs['image_name']
         
         #NOTE: Save result
-        out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
+        light_name = args.light.split('/')[-1].split('.')[0]
+        out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/reverse_sampling/"
         os.makedirs(out_dir_relit, exist_ok=True)
-        save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
+        save_res_dir = f"{out_dir_relit}/src={args.sub_dataset}/light={light_name}/diff={args.diffusion_steps}/"
         os.makedirs(save_res_dir, exist_ok=True)
         
         f_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0
-        vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=f_relit)
-        
-        if args.eval_dir is not None:
-            # if args.dataset in ['mp_valid', 'mp_test']
-            # eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/{args.dataset}/"
-            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/"
-            os.makedirs(eval_dir, exist_ok=True)
-            torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{eval_dir}/input={src_id}#pred={dst_id}.png")
-            
+        vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="res", frames=f_relit, fn_list=fn_list)
         
         is_render = True if out_render is not None else False
         if is_render:
             clip_ren = True if 'wclip' in dataset.condition_image[0] else False 
             if clip_ren:
-                vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5)
+                vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5, fn_list=fn_list)
             else:
-                vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
+                vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0, fn_list=fn_list)
+                
+        is_render = True if out_render_relit is not None else False
+        if is_render:
+            clip_ren = True if 'wclip' in dataset.condition_image[0] else False 
+            if clip_ren:
+                vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren_relit", frames=(out_render_relit + 1) * 0.5, fn_list=fn_list)
+            else:
+                vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren_relit", frames=out_render_relit[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0, fn_list=fn_list)
                 
         if args.save_vid:
             """
@@ -414,11 +383,5 @@ if __name__ == '__main__':
                     vid_render_rt = th.cat((vid_render, th.flip(vid_render, dims=[0])))
                     torchvision.io.write_video(video_array=vid_render_rt, filename=f"{save_res_dir}/ren_rt.mp4", fps=args.fps)
                 
-        with open(f'{save_res_dir}/res_desc.json', 'w') as fj:
-            log_dict = {'sampling_args' : vars(args), 
-                        'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_fn':itp_fn_str, 'itp':itp_str}}
-            json.dump(log_dict, fj)
-            
-            
     # Free memory!!!
     del deca_obj               

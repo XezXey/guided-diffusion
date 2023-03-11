@@ -518,7 +518,11 @@ def create_app():
                 # print("GGODDL")
                 # print(each_model)
                 
-                frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/{show}_f*.png")
+                # frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/{show}_f*.png")
+                for nf in [2, 5]:
+                    frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={nf}/{show}_f*.png")
+                    if len(frames) > 0:
+                        break
                 # print("HELP")
                 # print(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/")
                 # print(frames)

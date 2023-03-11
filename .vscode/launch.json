@@ -1569,6 +1569,33 @@
             "cwd": "/home/mint/guided-diffusion/sample_scripts/paper_script/",
             "justMyCode": true
         },
+        {
+            "name": "Python: relight_videos",
+            "type": "python",
+            "request": "launch",
+            "program": "relight_videos.py",
+            "args": [
+                "--dataset", "Videos",
+                "--sub_dataset", "Maverick_1",
+                "--set", "valid",
+                "--step", "085000", 
+                "--out_dir", "/data/mint/sampling/Videos",
+                "--cfg_name", "Masked_Face_woclip+BgNoHead+shadow_256.yaml",
+                "--log_dir", "Masked_Face_woclip+BgNoHead+shadow_256",
+                "--diffusion_steps", "20",
+                "--light", "./light_file/60623_light.txt",
+                "--seed", "47", 
+                "--itp", "render_face",
+                "--batch_size", "5",
+                "--gpu_id", "1",
+                "--idx", "0", "11",
+                "--save_vid", 
+                // "--apply_mm",
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/paper_script/",
+            "justMyCode": true
+        },
 
 
 

@@ -1,0 +1,52 @@
+{
+    "pair": {
+        "pair2": {
+            "src": "60074.jpg",
+            "dst": "ts60074.png"
+        },
+        "pair4": {
+            "src": "60074.jpg",
+            "dst": "tls60074.png"
+        },
+        "pair6": {
+            "src": "60473.jpg",
+            "dst": "ts60473.png"
+        },
+        "pair8": {
+            "src": "60473.jpg",
+            "dst": "tls60473.png"
+        },
+        "pair10": {
+            "src": "62842.jpg",
+            "dst": "ts62842.png"
+        },
+        "pair12": {
+            "src": "62842.jpg",
+            "dst": "tls62842.png"
+        },
+        "pair14": {
+            "src": "64528.jpg",
+            "dst": "ts64528.png"
+        },
+        "pair16": {
+            "src": "64528.jpg",
+            "dst": "tls64528.png"
+        },
+        "pair18": {
+            "src": "65686.jpg",
+            "dst": "ts65686.png"
+        },
+        "pair20": {
+            "src": "65686.jpg",
+            "dst": "tls65686.png"
+        },
+        "pair22": {
+            "src": "68710.jpg",
+            "dst": "ts68710.png"
+        },
+        "pair24": {
+            "src": "68710.jpg",
+            "dst": "tls68710.png"
+        }
+    }
+}
