@@ -340,7 +340,7 @@ if __name__ == '__main__':
             fn_list = model_kwargs['image_name']
 
             #NOTE: Save result
-            light_name = args.light.split('/')[-1].split('.')[0]
+            light_name = test_light.split('.')[0]
             out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/reverse_sampling/"
             os.makedirs(out_dir_relit, exist_ok=True)
             save_res_dir = f"{out_dir_relit}/src={args.sub_dataset}/light={light_name}/diff={args.diffusion_steps}/"
