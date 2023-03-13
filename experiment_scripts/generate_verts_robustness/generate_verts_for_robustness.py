@@ -182,4 +182,4 @@ for _ in t:
         # plt.imshow(all_render)
         plt.savefig(f'./output/valid/render/{each_img_name}_{p}.png')
         # plt.show()
-np.save(file=f'./output/valid/verts_valid_s={s_e[0]}_e={s_e[1]}.npy', arr=out_dict)
+np.save(file=f'./output/valid/verts_valid_s={args.s_e[0]}_e={args.s_e[1]}.npy', arr=out_dict)
