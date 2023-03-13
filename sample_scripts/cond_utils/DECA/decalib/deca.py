@@ -273,8 +273,8 @@ class DECA(nn.Module):
             opdict['uv_texture_gt'] = uv_texture_gt
             visdict = {
                 'inputs': images, 
-                'landmarks2d_images': util.tensor_vis_landmarks(images, landmarks2d),
-                'landmarks3d_images': util.tensor_vis_landmarks(images, landmarks3d),
+                # 'landmarks2d_images': util.tensor_vis_landmarks(images, landmarks2d),
+                # 'landmarks3d_images': util.tensor_vis_landmarks(images, landmarks3d),
                 'landmarks2d':landmarks2d,
                 'landmarks3d': landmarks3d,
                 'shape_images': shape_images,
