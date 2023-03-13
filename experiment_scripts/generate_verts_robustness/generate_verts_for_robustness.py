@@ -29,6 +29,11 @@ from sample_scripts.sample_utils import (
 )
 from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--s_e', nargs='+', type=int, default=None)
+args = parser.parse_args()
+
+
 def add_noise(cond, noise_at, noise_lvl):
     
     if noise_at == ['all']:
@@ -112,12 +117,12 @@ with open('/home/mint/guided-diffusion/experiment_scripts/statistic_test/stat_ff
     import json
     stat_params = json.load(stat_f)
     
-s_e = [0, 3]
+# s_e = [0, 3]
 img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{set_}/")
-if s_e is None:
+if args.s_e is None:
     img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=[name.split('/')[-1] for name in img_path])
 else:
-    img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=[name.split('/')[-1] for name in img_path][s_e[0]:s_e[1]])
+    img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=[name.split('/')[-1] for name in img_path][args.s_e[0]:args.s_e[1]])
 
 dat = th.utils.data.Subset(dataset, indices=img_idx)
 subset_loader = th.utils.data.DataLoader(dat, batch_size=1,
@@ -128,7 +133,7 @@ subset_loader = iter(subset_loader)
 t = tqdm.trange(len(subset_loader), desc="Generate the verts...")
 
 out_dict = {}
-noise_lvl = [0, 0.1, 0.5, 1, 1.5, 2, 3, 5]
+noise_lvl = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 1, 1.5, 2, 3, 5]
 params = ['shape', 'pose', 'exp', 'cam']
 for _ in t:
     _, model_kwargs = next(subset_loader)
@@ -174,7 +179,7 @@ for _ in t:
             t.refresh()
             
         all_render = np.concatenate(all_render, axis=1)
-        plt.imshow(all_render)
+        # plt.imshow(all_render)
         plt.savefig(f'./output/valid/render/{each_img_name}_{p}.png')
-        plt.show()
-np.save(file=f'./output/valid/verts_valid.npy', arr=out_dict)
+        # plt.show()
+np.save(file=f'./output/valid/verts_valid_s={s_e[0]}_e={s_e[1]}.npy', arr=out_dict)
