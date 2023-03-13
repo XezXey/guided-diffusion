@@ -196,6 +196,7 @@ class SRenderY(nn.Module):
             print("[#] DECA : SRenderY applied mask")
             faces = faces[:, mask['f_mask'], :]
             uvfaces = uvfaces[:, mask['f_mask'], :]
+            self.verts_tmp = verts
 
         # faces
         dense_triangles = util.generate_triangles(uv_size, uv_size)

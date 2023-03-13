@@ -88,3 +88,4 @@ experiment_scripts/videos_relight/videos/
 experiment_scripts/ITW_debugging/debugging_img/
 experiment_scripts/LUMOS/lumos
 
+/experiment_scripts/generate_verts_robustness/output
