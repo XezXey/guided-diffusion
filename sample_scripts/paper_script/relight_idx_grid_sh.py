@@ -44,6 +44,9 @@ parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--save_vid', action='store_true', default=False)
 parser.add_argument('--fps', action='store_true', default=False)
 
+# Experiment
+parser.add_argument('--fixed_render', action='store_true', default=False)
+
 args = parser.parse_args()
 
 import os, sys, glob
