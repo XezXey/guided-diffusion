@@ -1633,6 +1633,23 @@
             "cwd": "/home/mint/guided-diffusion/experiment_scripts/dealignment_ffhq/",
             "justMyCode": true
         },
+        {
+            "name": "Python: unalign_ffhq",
+            "type": "python",
+            "request": "launch",
+            "program": "unalign.py",
+            "args": [
+                "-i", "/data/mint/DPM_Dataset/Videos/Anakin_2/images/",
+                "-o", "./videos/aligned/",
+                "-r", "/data/mint/ICCV_Supplement/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml/ema_085000/valid/reverse_sampling/src=Anakin_2/light=67250_light/diff=1000/",
+                "-c", "./videos/composite/",
+                "-cmp", "./videos/compare_rmv_border/"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/experiment_scripts/dealignment_ffhq/",
+            "justMyCode": true
+        },
+
     ]
 }
 

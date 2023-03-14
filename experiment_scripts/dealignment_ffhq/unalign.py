@@ -53,42 +53,6 @@ def laplacian_blending(imgs, masks, level):
 
   return prev_lvl
 
-def laplacian_blend_2(img1, img2, mask, num_levels=6):
-    # generate Gaussian pyramids for both images and the mask
-    img1_pyr = [img1.astype(np.float32)]
-    img2_pyr = [img2.astype(np.float32)]
-    mask_pyr = [mask.astype(np.float32)]
-    for i in range(1, num_levels):
-        img1_pyr.append(cv2.pyrDown(img1_pyr[i-1]))
-        img2_pyr.append(cv2.pyrDown(img2_pyr[i-1]))
-        mask_pyr.append(cv2.pyrDown(mask_pyr[i-1]))
-
-    # generate Laplacian pyramids for both images
-    img1_lap_pyr = [img1_pyr[num_levels-1]]
-    img2_lap_pyr = [img2_pyr[num_levels-1]]
-    for i in range(num_levels-1, 0, -1):
-        img1_up = cv2.pyrUp(img1_pyr[i])
-        img2_up = cv2.pyrUp(img2_pyr[i])
-        img1_lap = img1_pyr[i-1] - img1_up[:img1_pyr[i-1].shape[0], :img1_pyr[i-1].shape[1]]
-        img2_lap = img2_pyr[i-1] - img2_up[:img2_pyr[i-1].shape[0], :img2_pyr[i-1].shape[1]]
-        img1_lap_pyr.append(img1_lap)
-        img2_lap_pyr.append(img2_lap)
-
-    # generate Laplacian pyramid for the blended image
-    blended_lap_pyr = []
-    for i in range(num_levels):
-        blended_lap = img1_lap_pyr[i] * mask_pyr[i] + img2_lap_pyr[i] * (1 - mask_pyr[i])
-        blended_lap_pyr.append(blended_lap)
-
-    # reconstruct the blended image from its Laplacian pyramid
-    blended = blended_lap_pyr[num_levels-1]
-    for i in range(num_levels-2, -1, -1):
-        blended = cv2.pyrUp(blended)
-        blended = blended[:blended_lap_pyr[i].shape[0], :blended_lap_pyr[i].shape[1]]
-        blended += blended_lap_pyr[i]
-
-    return blended.astype(np.uint8)
-
 
 def image_align(src_file,
                 dst_file,
@@ -145,14 +109,16 @@ def image_align(src_file,
     img = img.convert('RGB')
     original_img = copy.deepcopy(img)
     original_img.save('./out/gg.png', 'PNG')
+    print("Original image : ", original_img.size)
 
     # Shrink.
     shrink = int(np.floor(qsize / output_size * 0.5))
-    # print("Shrink : ", shrink)
     if shrink > 1:
+        print("[#] Performing shrink...")
         rsize = (int(np.rint(float(img.size[0]) / shrink)),
                  int(np.rint(float(img.size[1]) / shrink)))
         img = img.resize(rsize, PIL.Image.ANTIALIAS)
+        print("Shrinking : ", img.size)
         quad /= shrink
         qsize /= shrink
 
@@ -171,6 +137,7 @@ def image_align(src_file,
     
     # print("Crop_2 : ", crop)
     if crop[2] - crop[0] < img.size[0] or crop[3] - crop[1] < img.size[1]:
+        print("[#] Performing crop...")
         img = img.crop(crop)
         img.save('./out/after_crop.png', 'PNG')
         quad -= crop[0:2]
@@ -184,6 +151,7 @@ def image_align(src_file,
                        0), max(pad[2] - img.size[0] + border,
                                0), max(pad[3] - img.size[1] + border, 0))
     if enable_padding and max(pad) > border - 4:
+        print("[#] Perform padding...")
         pad = np.maximum(pad, int(np.rint(qsize * 0.3)))
         img = np.pad(np.float32(img),
                      ((pad[1], pad[3]), (pad[0], pad[2]), (0, 0)), 'reflect')
@@ -208,11 +176,11 @@ def image_align(src_file,
     # print(quad.shape)
     # print("ORIGINAL IMAGE SIZE : ", original_img.size)
     # print(np.array(quad).flatten())
-    quad_tmp = np.concatenate((quad, quad[0:1, :]), axis=0)
+    quad_tmp = (np.concatenate((quad, quad[0:1, :]), axis=0) + crop[0:2]) * shrink
     
     # Drawing
-    # draw = PIL.ImageDraw.Draw(original_img)
-    # draw.line([tuple(q) for q in quad_tmp+crop[0:2]], fill='red', width=10)
+    draw = PIL.ImageDraw.Draw(original_img)
+    draw.line([tuple(q) for q in quad_tmp], fill='red', width=10)
     # original_img.save('./out/apply_marker.png', 'PNG')
     
     # img.save('./out/before_transf.png', 'PNG')
@@ -233,14 +201,22 @@ def image_align(src_file,
                             [transform_size, transform_size], 
                             [transform_size, 0]]).astype(np.float32)
     inv_quad = cv2.getPerspectiveTransform(np.array(transf_coor), 
-                                           np.array(quad_tmp[:-1]+crop[0:2]).astype(np.float32), 
+                                           np.array(quad_tmp[:-1]).astype(np.float32), 
                                            )
     inv_transformed = cv2.warpPerspective(np.array(r_img), inv_quad, original_img.size)
-    mask = (np.array(inv_transformed) == 0)
-    # print("GGG", mask.shape)
-    mask = PIL.Image.fromarray(np.clip(mask*255.0, 0, 255).astype(np.uint8))
-    print(np.max(np.array(mask)), np.min(np.array(mask)))
-    mask.save('./out/mask.png', 'PNG')
+    inv_transformed = PIL.Image.fromarray(inv_transformed)
+    inv_transformed.save('./out/inverse_transf_2.png', 'PNG')
+    exit()
+    
+    mask = np.mean(np.array(inv_transformed), axis=-1)
+    mask = (mask == 0)
+    mask = cv2.dilate((mask).astype(np.uint8), np.ones((3, 3)).astype(np.uint8), iterations=5)
+    mask = np.stack([mask]*3, axis=-1)
+    
+    # mask_save = PIL.Image.fromarray(np.clip(mask*255, 0, 255).astype(np.uint8), 'RGB')
+    # print(np.max(np.array(mask)), np.min(np.array(mask)), np.unique(mask))
+    # mask_save.save('./out/masky_dilate2.png', 'PNG')
+    
     # mask_dilate = cv2.dilate(np.array(mask).astype(np.uint8), kernel=(5, 5), iterations=10)
     # mask_dilate = cv2.GaussianBlur(mask_dilate, (3,3), 0)
     # ret, mask_dilate = cv2.threshold(mask_dilate, 127, 255, cv2.THRESH_BINARY)
@@ -252,10 +228,13 @@ def image_align(src_file,
     # inv_transformed.save('./out/inverse_transf.png', 'PNG')
     
     # Place back to original image
-    mask = np.array(inv_transformed) == 0
-    composite = (~mask * np.array(inv_transformed)) + (mask * np.array(original_img))
-    PIL.Image.fromarray(composite).save('./composite.png', 'PNG')
+    composite = ((1-mask) * np.array(inv_transformed)) + (mask * np.array(original_img))
+    
+    PIL.Image.fromarray(composite).save('./composite_img.png', 'PNG')
     PIL.Image.fromarray(composite).save(composite_file, 'PNG')
+    
+    blended_out = laplacian_blending(imgs=[np.array(original_img)/255.0, composite/255.0], masks=[mask*1.0, 1.0-mask], level=9)
+    PIL.Image.fromarray(np.clip(blended_out*255.0, 0, 255).astype(np.uint8)).save('./out/lap_blend.png', 'PNG')
     
     compare = np.concatenate((original_img, composite), axis=0)
     PIL.Image.fromarray(compare).save(compare_file, 'PNG')
@@ -263,16 +242,6 @@ def image_align(src_file,
     original_img.save('org.png', 'PNG')
     PIL.Image.fromarray(inv_transformed).save('inv_transf.png', 'PNG')
     
-    # LAP
-    blended_out = laplacian_blending(imgs=[np.array(original_img), composite], masks=[mask, 1-mask], level=2)
-    PIL.Image.fromarray(np.clip(blended_out, 0, 255).astype(np.uint8)).save('./out/lap_blend.png', 'PNG')
-    
-    print(np.array(original_img).shape, composite.shape, mask.shape)
-    blended_out = laplacian_blend_2(img1=np.array(original_img), 
-                                       img2=composite, 
-                                       mask=mask,
-                                       num_levels=2)
-    PIL.Image.fromarray(np.clip(blended_out, 0, 255).astype(np.uint8)).save('./out/lap_blend2.png', 'PNG')
     
     # img.save('./out/after_transf.png', 'PNG')
     if output_size < transform_size:
@@ -280,7 +249,6 @@ def image_align(src_file,
 
     # Save aligned image.
     img.save(dst_file, 'PNG')
-    exit()
 
 
 class LandmarksDetector:
