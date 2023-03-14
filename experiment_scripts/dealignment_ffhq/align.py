@@ -134,7 +134,7 @@ def image_align(src_file,
     # Transform.
     print(quad)
     print(quad.shape)
-    print(original_img.size)
+    print("ORIGINAL IMAGE SIZE : ", original_img.size)
     print(np.array(quad).flatten())
     quad_tmp = np.concatenate((quad, quad[0:1, :]), axis=0)
     print(quad_tmp)
@@ -163,15 +163,20 @@ def image_align(src_file,
                                            np.array(quad_tmp[:-1]+crop[0:2]).astype(np.float32), 
                                            )
     inv_transformed = cv2.warpPerspective(np.array(r_img), inv_quad, original_img.size)
-    mask = np.repeat((np.array(inv_transformed) == 0)[..., None].astype(np.uint8), repeats=3, axis=-1)
-    print(mask)
-    # mask = PIL.Image.fromarray(mask)
-    # mask.save('./out/mask.png', 'PNG')
+    mask = (np.array(inv_transformed) == 0)
+    print("GGG", mask.shape)
+    mask = PIL.Image.fromarray((mask*255.0).astype(np.uint8))
+    mask.save('./out/mask.png', 'PNG')
     
     # inv_transformed = cv2.warpPerspective(np.array(r_img), inv_quad, (960, 960))
     # convert the resulting image back to a PIL image
     inv_transformed = PIL.Image.fromarray(inv_transformed)
     inv_transformed.save('./out/inverse_transf.png', 'PNG')
+    
+    mask = (np.array(inv_transformed) == 0)
+    composite = (~mask * np.array(inv_transformed)) + (mask * np.array(original_img))
+    PIL.Image.fromarray(composite).save('./out/composite.png', 'PNG')
+    
     
     # Place back to original image
     
