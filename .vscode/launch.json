@@ -1620,5 +1620,19 @@
             "cwd": "/home/mint/guided-diffusion/visualize_scripts/flask_vispage/",
             "justMyCode": true
         },
+        {
+            "name": "Python: align_ffhq",
+            "type": "python",
+            "request": "launch",
+            "program": "align.py",
+            "args": [
+                "-i", "./img",
+                "-o", "./out",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/experiment_scripts/dealignment_ffhq/",
+            "justMyCode": true
+        },
     ]
 }
+
