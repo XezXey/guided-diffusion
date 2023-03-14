@@ -88,6 +88,9 @@ def image_align(src_file,
     mouth_avg = (mouth_left + mouth_right) * 0.5
     eye_to_mouth = mouth_avg - eye_avg
 
+    do_pad = False
+    do_crop = False
+    do_shrink = False
     # Choose oriented crop rectangle.
     # print("Eye to mouth : ", eye_to_mouth)
     # print("Eye to mouth (np.flipud) : ", np.flipud(eye_to_mouth))
@@ -114,6 +117,7 @@ def image_align(src_file,
     # Shrink.
     shrink = int(np.floor(qsize / output_size * 0.5))
     if shrink > 1:
+        do_shrink = True
         print("[#] Performing shrink...")
         rsize = (int(np.rint(float(img.size[0]) / shrink)),
                  int(np.rint(float(img.size[1]) / shrink)))
@@ -137,6 +141,7 @@ def image_align(src_file,
     
     # print("Crop_2 : ", crop)
     if crop[2] - crop[0] < img.size[0] or crop[3] - crop[1] < img.size[1]:
+        do_crop = True
         print("[#] Performing crop...")
         img = img.crop(crop)
         img.save('./out/after_crop.png', 'PNG')
@@ -151,6 +156,7 @@ def image_align(src_file,
                        0), max(pad[2] - img.size[0] + border,
                                0), max(pad[3] - img.size[1] + border, 0))
     if enable_padding and max(pad) > border - 4:
+        do_pad = True
         print("[#] Perform padding...")
         pad = np.maximum(pad, int(np.rint(qsize * 0.3)))
         img = np.pad(np.float32(img),
@@ -176,11 +182,17 @@ def image_align(src_file,
     # print(quad.shape)
     # print("ORIGINAL IMAGE SIZE : ", original_img.size)
     # print(np.array(quad).flatten())
-    quad_tmp = (np.concatenate((quad, quad[0:1, :]), axis=0) + crop[0:2]) * shrink
+    quad_tmp = np.concatenate((quad, quad[0:1, :]), axis=0)
+    if do_pad:
+        quad_tmp -= pad[:2]
+    if do_crop:
+        quad_tmp += crop[0:2]
+    if do_shrink:
+        quad_tmp *= shrink
     
     # Drawing
-    draw = PIL.ImageDraw.Draw(original_img)
-    draw.line([tuple(q) for q in quad_tmp], fill='red', width=10)
+    # draw = PIL.ImageDraw.Draw(original_img)
+    # draw.line([tuple(q) for q in quad_tmp], fill='red', width=10)
     # original_img.save('./out/apply_marker.png', 'PNG')
     
     # img.save('./out/before_transf.png', 'PNG')
@@ -206,12 +218,18 @@ def image_align(src_file,
     inv_transformed = cv2.warpPerspective(np.array(r_img), inv_quad, original_img.size)
     inv_transformed = PIL.Image.fromarray(inv_transformed)
     inv_transformed.save('./out/inverse_transf_2.png', 'PNG')
-    exit()
     
     mask = np.mean(np.array(inv_transformed), axis=-1)
     mask = (mask == 0)
-    mask = cv2.dilate((mask).astype(np.uint8), np.ones((3, 3)).astype(np.uint8), iterations=5)
+    mask = cv2.dilate((mask).astype(np.uint8), np.ones((3, 3)).astype(np.uint8), iterations=10)
+    center = (int(np.array(original_img).shape[1]/2), int(np.array(original_img).shape[0]/2))
+    im_clone = cv2.seamlessClone(np.array(original_img), np.array(inv_transformed), mask*255, center, cv2.NORMAL_CLONE)
+    
+    im_clone = PIL.Image.fromarray(im_clone)
+    im_clone.save('./im_clone.png', 'PNG')
+    # exit()
     mask = np.stack([mask]*3, axis=-1)
+    
     
     # mask_save = PIL.Image.fromarray(np.clip(mask*255, 0, 255).astype(np.uint8), 'RGB')
     # print(np.max(np.array(mask)), np.min(np.array(mask)), np.unique(mask))
@@ -228,19 +246,20 @@ def image_align(src_file,
     # inv_transformed.save('./out/inverse_transf.png', 'PNG')
     
     # Place back to original image
-    composite = ((1-mask) * np.array(inv_transformed)) + (mask * np.array(original_img))
+    composite = np.array(im_clone)
+    # composite = ((1-mask) * np.array(inv_transformed)) + (mask * np.array(original_img))
     
     PIL.Image.fromarray(composite).save('./composite_img.png', 'PNG')
     PIL.Image.fromarray(composite).save(composite_file, 'PNG')
     
     blended_out = laplacian_blending(imgs=[np.array(original_img)/255.0, composite/255.0], masks=[mask*1.0, 1.0-mask], level=9)
-    PIL.Image.fromarray(np.clip(blended_out*255.0, 0, 255).astype(np.uint8)).save('./out/lap_blend.png', 'PNG')
+    PIL.Image.fromarray(np.clip(blended_out*255.0, 0, 255).astype(np.uint8)).save('./out/lap_blend_seam_Queen.png', 'PNG')
     
-    compare = np.concatenate((original_img, composite), axis=0)
+    compare = np.concatenate((original_img, np.clip(blended_out*255.0, 0, 255).astype(np.uint8)), axis=0)
     PIL.Image.fromarray(compare).save(compare_file, 'PNG')
     
     original_img.save('org.png', 'PNG')
-    PIL.Image.fromarray(inv_transformed).save('inv_transf.png', 'PNG')
+    inv_transformed.save('inv_transf.png', 'PNG')
     
     
     # img.save('./out/after_transf.png', 'PNG')
