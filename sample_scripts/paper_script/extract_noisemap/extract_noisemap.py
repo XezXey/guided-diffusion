@@ -35,6 +35,7 @@ parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--gpu_id', type=str, default="0")
 parser.add_argument('--postfix', type=str, default='')
+parser.add_argument('--fixed_light', type=str, default=None)
 
 # Experiment
 parser.add_argument('--fixed_render', action='store_true', default=False)
@@ -79,6 +80,15 @@ from sample_utils import (
     mani_utils,
 )
 device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
+
+def mod_light(model_kwargs, start_f, end_f):
+    if args.fixed_light is not None:
+        print(f"[#] Modifying light with {args.fixed_light}")
+        mod_light = np.loadtxt(args.fixed_light).reshape(-1, 9, 3)
+        mod_light = np.repeat(mod_light, repeats=model_kwargs['light'].shape[0], axis=0)
+        mod_light = th.tensor(mod_light)
+        model_kwargs['light'] = mod_light
+    return model_kwargs
 
 def make_condition(cond):
     '''
@@ -131,6 +141,8 @@ def extract_noisemap(dat, model_kwargs):
     Output : Tensor (B x C x H x W); range = -1 to 1
     '''
     # Rendering
+    # print(model_kwargs['light'])
+    # exit()
     cond = copy.deepcopy(model_kwargs)
     cond = make_condition(cond=cond)
 
@@ -269,11 +281,12 @@ if __name__ == '__main__':
         model_kwargs['use_render_itp'] = True
         
         # change light
+        model_kwargs = mod_light(model_kwargs, start_f, end_f)
         noise_map, mean_match_ratio = extract_noisemap(dat = dat, model_kwargs=model_kwargs)
         fn_list = model_kwargs['image_name']
         
         #NOTE: Save result
-        out_dir_noisemap = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/inversion/diff={args.diffusion_steps}/"
+        out_dir_noisemap = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/inversion{args.postfix}/diff={args.diffusion_steps}/"
         os.makedirs(out_dir_noisemap, exist_ok=True)
         for f_idx in range(len(fn_list)):
             each_nm = noise_map[[f_idx]]

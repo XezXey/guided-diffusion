@@ -23,6 +23,7 @@ parser.add_argument('--add_shadow', action='store_true', default=False)
 # Samples selection
 parser.add_argument('--idx', nargs='+', default=[])
 # Rendering
+parser.add_argument('--vid_sh_scale', type=float, default=1.0)
 parser.add_argument('--render_mode', type=str, default="shape")
 parser.add_argument('--rotate_normals', action='store_true', default=False)
 parser.add_argument('--scale_sh', type=float, default=1.0)
@@ -187,7 +188,7 @@ def relight(dat, model_kwargs, noise_map, mm_ratio):
 
     # Create the condition to relight the image (e.g. deca_rendered)
     cond_relit = copy.deepcopy(model_kwargs)
-    cond_relit['light'] = cond_relit['mod_light']
+    cond_relit['light'] = cond_relit['mod_light'] * args.vid_sh_scale
     # Replace light
     cond_relit = make_condition(cond=cond_relit)
 
