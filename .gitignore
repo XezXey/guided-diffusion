@@ -87,10 +87,12 @@ experiment_scripts/dealignment_ffhq/ffhq_env/
 experiment_scripts/dealignment_ffhq/out/
 experiment_scripts/dealignment_ffhq/videos/
 experiment_scripts/videos_relight/videos/
+experiment_scripts/videos_relight/videos/
 experiment_scripts/videos_relight/out/
-experiment_scripts/videos_relight/*.mp4
+experiment_scripts/videos_relight/
 experiment_scripts/ITW_debugging/debugging_img/
 experiment_scripts/LUMOS/lumos
 experiment_scripts/smooth_rotate_light/*
+experiment_scripts/rotate_SH/mint_sh_rotate
 
 /experiment_scripts/generate_verts_robustness/output
