@@ -96,3 +96,12 @@ experiment_scripts/smooth_rotate_light/*
 experiment_scripts/rotate_SH/mint_sh_rotate
 
 /experiment_scripts/generate_verts_robustness/output
+experiment_scripts/rotate_SH/60922_spl.npy
+experiment_scripts/rotate_SH/out.mp4
+experiment_scripts/rotate_SH/output1.mp4
+experiment_scripts/rotate_SH/output2.mp4
+experiment_scripts/rotate_SH/output3.mp4
+experiment_scripts/rotate_SH/output4.mp4
+experiment_scripts/rotate_SH/rotate_sh.ipynb
+experiment_scripts/rotate_SH/rotsh.mp4
+experiment_scripts/rotate_SH/videos.txt

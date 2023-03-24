@@ -16,13 +16,13 @@ parser.add_argument('--ckpt_selector', type=str, default='ema')
 parser.add_argument('--cfg_name', type=str, required=True)
 parser.add_argument('--log_dir', type=str, required=True)
 # Interpolation
+parser.add_argument('--itp', nargs='+', default=None)
 parser.add_argument('--batch_size', type=int, default=15)
 parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--add_shadow', action='store_true', default=False)
 # Samples selection
 parser.add_argument('--idx', nargs='+', default=[])
 # Rendering
-parser.add_argument('--vid_sh_scale', type=float, default=1.0)
 parser.add_argument('--render_mode', type=str, default="shape")
 parser.add_argument('--rotate_normals', action='store_true', default=False)
 parser.add_argument('--scale_sh', type=float, default=1.0)
@@ -31,6 +31,7 @@ parser.add_argument('--sh_grid_size', type=int, default=None)
 parser.add_argument('--sh_span', type=float, default=None)
 parser.add_argument('--diffuse_sh', type=float, default=None)
 parser.add_argument('--diffuse_perc', type=float, default=None)
+parser.add_argument('--light', type=str, required=True)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 # Misc.
@@ -45,7 +46,6 @@ parser.add_argument('--fps', action='store_true', default=False)
 # Experiment
 parser.add_argument('--fixed_render', action='store_true', default=False)
 parser.add_argument('--fixed_shadow', action='store_true', default=False)
-parser.add_argument('--light_to_test', type=str, required=True)
 
 args = parser.parse_args()
 
@@ -93,20 +93,6 @@ def mod_light(model_kwargs, start_f, end_f):
     mod_light = th.tensor(mod_light)
     model_kwargs['mod_light'] = mod_light
     return model_kwargs
-
-def mod_light_to_test(model_kwargs, mod_light):
-    mod_light = np.array(mod_light).reshape(-1, 9, 3)
-    mod_light = np.repeat(mod_light, repeats=model_kwargs['light'].shape[0], axis=0)
-    mod_light = th.tensor(mod_light)
-    model_kwargs['mod_light'] = mod_light
-    return model_kwargs
-
-
-def read_params(path):
-    params = pd.read_csv(path, header=None, sep=" ", index_col=False, lineterminator='\n')
-    params.rename(columns={0:'img_name'}, inplace=True)
-    params = params.set_index('img_name').T.to_dict('list')
-    return params
 
 def load_noisemap(fn_list):
     print("[#] Loading noise map & mean-matching ratio")
@@ -187,7 +173,7 @@ def relight(dat, model_kwargs, noise_map, mm_ratio):
 
     # Create the condition to relight the image (e.g. deca_rendered)
     cond_relit = copy.deepcopy(model_kwargs)
-    cond_relit['light'] = cond_relit['mod_light'] * args.vid_sh_scale
+    cond_relit['light'] = cond_relit['mod_light']
     # Replace light
     cond_relit = make_condition(cond=cond_relit)
 
@@ -285,118 +271,115 @@ if __name__ == '__main__':
     if start >= n_frames: raise ValueError("[#] Start beyond the sample index")
     
     print(f"[#] Videos Relighting...{args.sub_dataset}")
-    
-    # Loading light to test
-    light_target = read_params('/data/mint/DPM_Dataset/ffhq_256_with_anno/params/valid/ffhq-valid-light-anno.txt')
-    
-    if '.jpg' not in args.light_to_test:
-        test_light_sj = args.light_to_test
-        with open(args.light_to_test, 'r') as fp:
-            test_light_sj = json.load(fp)['list']
-    else:
-        test_light_sj = [args.light_to_test]
-    
-    for test_light in test_light_sj:
-        print(f"[#####] Testing {args.sub_dataset} with {test_light}...")
-        sub_step = ext_sub_step(end - start)
-        for i in range(len(sub_step)-1):
-            print(f"[#] Run from index of {start} to {end}...")
-            print(f"[#] Sub step relight : {sub_step[i]} to {sub_step[i+1]}")
-            start_f = sub_step[i] + start
-            end_f = sub_step[i+1] + start
-
-            img_idx = list(range(start_f, end_f))
-            dat = th.utils.data.Subset(dataset, indices=img_idx)
-            subset_loader = th.utils.data.DataLoader(dat, batch_size=args.batch_size,
-                                                shuffle=False, num_workers=24)
-
-            dat, model_kwargs = next(iter(subset_loader))
-            # LOOPER SAMPLING
-            print(f"[#] Current idx = {i}, Set = {args.set}, Light from = {test_light}")
-            print(f"[#] Frame = {model_kwargs['image_name']}")
-
-            pl_sampling = inference_utils.PLSampling(model_dict=model_dict,
-                                                        diffusion=diffusion,
-                                                        reverse_fn=diffusion.ddim_reverse_sample_loop,
-                                                        forward_fn=diffusion.ddim_sample_loop,
-                                                        denoised_fn=None,
-                                                        cfg=cfg,
-                                                        args=args)
-
-            model_kwargs = inference_utils.prepare_cond_sampling(cond=model_kwargs, cfg=cfg)
-            model_kwargs['cfg'] = cfg
-            model_kwargs['use_cond_xt_fn'] = False
-            if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):
-                model_kwargs['use_cond_xt_fn'] = True
-                for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
-                    model_kwargs[f'{k}_img'] = model_kwargs[f'{k}_img'].to(device)
-                    if p is not None:
-                        if 'dpm_noise_masking' in p:
-                            model_kwargs[f'{k}_mask'] = model_kwargs[f'{k}_mask'].to(device)
-                            model_kwargs['image'] = model_kwargs['image'].to(device)
-
-            model_kwargs['use_render_itp'] = True
-
-            # change light
-            model_kwargs = mod_light_to_test(model_kwargs=model_kwargs, mod_light=light_target[test_light])
-            noise_map, mm_ratio = load_noisemap(model_kwargs['image_name'])
-            out_relit, out_render, out_render_relit = relight(dat = dat, model_kwargs=model_kwargs, noise_map=noise_map, mm_ratio=mm_ratio)
-            fn_list = model_kwargs['image_name']
-
-            #NOTE: Save result
-            light_name = test_light.split('.')[0]
-            out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/reverse_sampling/"
-            os.makedirs(out_dir_relit, exist_ok=True)
-            save_res_dir = f"{out_dir_relit}/src={args.sub_dataset}/light={light_name}/diff={args.diffusion_steps}/"
-            os.makedirs(save_res_dir, exist_ok=True)
-
-            f_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0
-            vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="res", frames=f_relit, fn_list=fn_list)
-
-            is_render = True if out_render is not None else False
+    sub_step = ext_sub_step(end - start)
+    for i in range(len(sub_step)-1):
+        print(f"[#] Run from index of {start} to {end}...")
+        print(f"[#] Sub step relight : {sub_step[i]} to {sub_step[i+1]}")
+        start_f = sub_step[i] + start
+        end_f = sub_step[i+1] + start
+        
+        img_idx = list(range(start_f, end_f))
+        # print(img_idx)
+        dat = th.utils.data.Subset(dataset, indices=img_idx)
+        subset_loader = th.utils.data.DataLoader(dat, batch_size=args.batch_size,
+                                            shuffle=False, num_workers=24)
+                                   
+        dat, model_kwargs = next(iter(subset_loader))
+        # print(dat.shape, model_kwargs.keys())
+        # print(model_kwargs['image_name'])
+        # print("#"*100)
+        # continue
+        # Indexing
+        # src_idx = 0
+        # dst_idx = 1
+        # src_id = img_name[0]
+        # dst_id = img_name[1]
+        # LOOPER SAMPLING
+        print(f"[#] Current idx = {i}, Set = {args.set}, Light file = {args.light}")
+        print(f"[#] Frame = {model_kwargs['image_name']}")
+        
+        pl_sampling = inference_utils.PLSampling(model_dict=model_dict,
+                                                    diffusion=diffusion,
+                                                    reverse_fn=diffusion.ddim_reverse_sample_loop,
+                                                    forward_fn=diffusion.ddim_sample_loop,
+                                                    denoised_fn=None,
+                                                    cfg=cfg,
+                                                    args=args)
+        
+        model_kwargs = inference_utils.prepare_cond_sampling(cond=model_kwargs, cfg=cfg)
+        model_kwargs['cfg'] = cfg
+        model_kwargs['use_cond_xt_fn'] = False
+        if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):
+            model_kwargs['use_cond_xt_fn'] = True
+            for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
+                model_kwargs[f'{k}_img'] = model_kwargs[f'{k}_img'].to(device)
+                if p is not None:
+                    if 'dpm_noise_masking' in p:
+                        model_kwargs[f'{k}_mask'] = model_kwargs[f'{k}_mask'].to(device)
+                        model_kwargs['image'] = model_kwargs['image'].to(device)
+           
+        model_kwargs['use_render_itp'] = True
+        
+        # change light
+        model_kwargs = mod_light(model_kwargs, start_f, end_f)
+        noise_map, mm_ratio = load_noisemap(model_kwargs['image_name'])
+        out_relit, out_render, out_render_relit = relight(dat = dat, model_kwargs=model_kwargs, noise_map=noise_map, mm_ratio=mm_ratio)
+        fn_list = model_kwargs['image_name']
+        
+        #NOTE: Save result
+        light_name = args.light.split('/')[-1].split('.')[0]
+        out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/reverse_sampling/"
+        os.makedirs(out_dir_relit, exist_ok=True)
+        save_res_dir = f"{out_dir_relit}/src={args.sub_dataset}/light={light_name}/diff={args.diffusion_steps}/"
+        os.makedirs(save_res_dir, exist_ok=True)
+        
+        f_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0
+        vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="res", frames=f_relit, fn_list=fn_list)
+        
+        is_render = True if out_render is not None else False
+        if is_render:
+            clip_ren = True if 'wclip' in dataset.condition_image[0] else False 
+            if clip_ren:
+                vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5, fn_list=fn_list)
+            else:
+                vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0, fn_list=fn_list)
+                
+        is_render = True if out_render_relit is not None else False
+        if is_render:
+            clip_ren = True if 'wclip' in dataset.condition_image[0] else False 
+            if clip_ren:
+                vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren_relit", frames=(out_render_relit + 1) * 0.5, fn_list=fn_list)
+            else:
+                vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren_relit", frames=out_render_relit[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0, fn_list=fn_list)
+                
+        if args.save_vid:
+            """
+            save the video
+            Args:
+                frames (list of tensor): range = [0, 255] (uint8), and shape = [T x H x W x C]
+                fn : path + filename to save
+                fps : video fps
+            """
+            #NOTE: save_video, w/ shape = TxHxWxC and value range = [0, 255]
+            vid_relit = out_relit
+            vid_relit = vid_relit.permute(0, 2, 3, 1)
+            vid_relit = ((vid_relit + 1)*127.5).clamp_(0, 255).type(th.ByteTensor)
+            vid_relit_rt = th.cat((vid_relit, th.flip(vid_relit, dims=[0])))
+            torchvision.io.write_video(video_array=vid_relit, filename=f"{save_res_dir}/res.mp4", fps=args.fps)
+            torchvision.io.write_video(video_array=vid_relit_rt, filename=f"{save_res_dir}/res_rt.mp4", fps=args.fps)
             if is_render:
-                clip_ren = True if 'wclip' in dataset.condition_image[0] else False 
+                out_render = out_render[:, :3]
+                vid_render = out_render
+                # vid_render = th.cat((out_render, th.flip(out_render, dims=[0])))
+                clip_ren = False #if 'wclip' in dataset.condition_image else True
                 if clip_ren:
-                    vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5, fn_list=fn_list)
+                    vid_render = ((vid_render.permute(0, 2, 3, 1) + 1) * 127.5).clamp_(0, 255).type(th.ByteTensor)
+                    torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
                 else:
-                    vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0, fn_list=fn_list)
-
-            is_render = True if out_render_relit is not None else False
-            if is_render:
-                clip_ren = True if 'wclip' in dataset.condition_image[0] else False 
-                if clip_ren:
-                    vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren_relit", frames=(out_render_relit + 1) * 0.5, fn_list=fn_list)
-                else:
-                    vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren_relit", frames=out_render_relit[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0, fn_list=fn_list)
-
-            if args.save_vid:
-                """
-                save the video
-                Args:
-                    frames (list of tensor): range = [0, 255] (uint8), and shape = [T x H x W x C]
-                    fn : path + filename to save
-                    fps : video fps
-                """
-                #NOTE: save_video, w/ shape = TxHxWxC and value range = [0, 255]
-                vid_relit = out_relit
-                vid_relit = vid_relit.permute(0, 2, 3, 1)
-                vid_relit = ((vid_relit + 1)*127.5).clamp_(0, 255).type(th.ByteTensor)
-                vid_relit_rt = th.cat((vid_relit, th.flip(vid_relit, dims=[0])))
-                torchvision.io.write_video(video_array=vid_relit, filename=f"{save_res_dir}/res.mp4", fps=args.fps)
-                torchvision.io.write_video(video_array=vid_relit_rt, filename=f"{save_res_dir}/res_rt.mp4", fps=args.fps)
-                if is_render:
-                    out_render = out_render[:, :3]
-                    vid_render = out_render
-                    # vid_render = th.cat((out_render, th.flip(out_render, dims=[0])))
-                    clip_ren = False #if 'wclip' in dataset.condition_image else True
-                    if clip_ren:
-                        vid_render = ((vid_render.permute(0, 2, 3, 1) + 1) * 127.5).clamp_(0, 255).type(th.ByteTensor)
-                        torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
-                    else:
-                        vid_render = (vid_render.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
-                        torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
-                        vid_render_rt = th.cat((vid_render, th.flip(vid_render, dims=[0])))
-                        torchvision.io.write_video(video_array=vid_render_rt, filename=f"{save_res_dir}/ren_rt.mp4", fps=args.fps)
-
+                    vid_render = (vid_render.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
+                    torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
+                    vid_render_rt = th.cat((vid_render, th.flip(vid_render, dims=[0])))
+                    torchvision.io.write_video(video_array=vid_render_rt, filename=f"{save_res_dir}/ren_rt.mp4", fps=args.fps)
+                
     # Free memory!!!
     del deca_obj               

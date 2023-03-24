@@ -1596,6 +1596,33 @@
             "cwd": "/home/mint/guided-diffusion/sample_scripts/paper_script/",
             "justMyCode": true
         },
+        {
+            "name": "Python: relight_rotateSH",
+            "type": "python",
+            "request": "launch",
+            "program": "./relight_rotateSH/relight_rotateSH.py",
+            "args": [
+                "--dataset", "ffhq",
+                "--set", "valid",
+                "--step", "085000", 
+                "--out_dir", "/data/mint/sampling/rotateSH",
+                "--cfg_name", "Masked_Face_woclip+BgNoHead+shadow_256.yaml",
+                "--log_dir", "Masked_Face_woclip+BgNoHead+shadow_256",
+                "--diffusion_steps", "20",
+                "--light", "./relight_rotateSH/light_file/sample_light.txt",
+                "--seed", "47", 
+                "--batch_size", "2",
+                "--gpu_id", "0",
+                "--idx", "0", "1",
+                "--save_vid", 
+                "--apply_mm",
+                "--sample_pair_json", "./sample_json/teason/iccv_rotate_light.json",
+                "--sample_pair_mode", "pair"
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/guided-diffusion/sample_scripts/paper_script/",
+            "justMyCode": true
+        },
 
 
 

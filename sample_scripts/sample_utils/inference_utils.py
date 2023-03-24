@@ -178,8 +178,12 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
     :param noise: noise map used in DPM
     :param t: timestep
     :param model_kwargs: model_kwargs dict
+    ###Note: 
+     - cond[f'{k}'_img] is the original one from dataloader
+     - cond[f'{k}'] is the original one render & build_condition_image() fn
     """
     
+    print(cond.keys())
     if cfg.img_model.apply_dpm_cond_img:
         dpm_cond_img = []
         for k in cfg.img_model.dpm_cond_img:
@@ -199,6 +203,7 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
                 tmp_img = cond[f'{k}']
             else: 
                 tmp_img = cond[f'{k}_img']
+            print(k, tmp_img.shape)
             cond_img.append(tmp_img.to(device))
         cond['cond_img'] = th.cat((cond_img), dim=1).to(device)
     else:
@@ -421,6 +426,91 @@ def build_condition_image_for_vids(cond, misc):
         if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name):
             bg_tmp = cond[f"{cond_img_name}_img"]
             cond[f"{cond_img_name}"] = th.tensor(bg_tmp)
+            
+        elif 'deca' in cond_img_name:
+            rendered_tmp = []
+            for j in range(deca_rendered.shape[0]):
+                if 'woclip' in cond_img_name:
+                    #NOTE: Input is the npy array -> Used cv2.resize() to handle
+                    r_tmp = deca_rendered[j].cpu().numpy().transpose((1, 2, 0))
+                    r_tmp = cv2.resize(r_tmp, (img_size, img_size), cv2.INTER_AREA)
+                    r_tmp = np.transpose(r_tmp, (2, 0, 1))
+                    clip_ren = False
+                else:
+                    r_tmp = deca_rendered[j].mul(255).add_(0.5).clamp_(0, 255)
+                    r_tmp = np.transpose(r_tmp.cpu().numpy(), (1, 2, 0))
+                    r_tmp = r_tmp.astype(np.uint8)
+                    r_tmp = dataset.augmentation(PIL.Image.fromarray(r_tmp))
+                    r_tmp = dataset.prep_cond_img(r_tmp, cond_img_name, i)
+                    r_tmp = np.transpose(r_tmp, (2, 0, 1))
+                    r_tmp = (r_tmp / 127.5) - 1
+                    clip_ren = True
+                rendered_tmp.append(r_tmp)
+            rendered_tmp = np.stack(rendered_tmp, axis=0)
+            cond[cond_img_name] = th.tensor(rendered_tmp).cuda()
+    return cond, clip_ren
+
+def build_condition_image_rotateSH(cond, misc):
+    src_idx = misc['src_idx']
+    sub_step = misc['sub_step']
+    batch_size = misc['batch_size']
+    avg_dict = misc['avg_dict']
+    dataset = misc['dataset']
+    args = misc['args']
+    condition_img = misc['condition_img']
+    img_size = misc['img_size']
+    deca_obj = misc['deca_obj']
+    clip_ren = None
+    
+    # Handling the render face
+    if np.any(['deca' in i for i in condition_img]):
+        
+        start_t = time.time()
+        if np.any(['deca_masked' in n for n in condition_img]):
+            mask = params_utils.load_flame_mask()
+        else: mask=None
+        
+        all_render = []
+        print(f"[#] Rendering ({sub_step} steps)...")
+        # Deca rendered : B x 3 x H x W
+        deca_rendered, orig_visdict = params_utils.render_deca_rotateSH(
+                                                            deca_params=cond, 
+                                                            avg_dict=avg_dict, 
+                                                            render_mode=args.render_mode, 
+                                                            rotate_normals=args.rotate_normals, 
+                                                            mask=mask,
+                                                            deca_obj=deca_obj)
+        all_render.append(deca_rendered)
+        print("Rendering time : ", time.time() - start_t)
+        deca_rendered = th.cat(all_render, dim=0)
+        
+    #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'
+    print("Conditoning with image : ", condition_img)
+    for i, cond_img_name in enumerate(condition_img):
+        if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name):
+            bg_tmp = [cond[f"{cond_img_name}_img"][src_idx]] * sub_step
+            if th.is_tensor(cond[f"{cond_img_name}_img"][src_idx]):
+                bg_tmp = th.stack(bg_tmp, axis=0)
+            else:
+                bg_tmp = np.stack(bg_tmp, axis=0)
+            cond[f"{cond_img_name}"] = th.tensor(bg_tmp)
+            
+            
+            # bg_tmp = cond[f"{cond_img_name}_img"]
+            # cond[f"{cond_img_name}"] = th.tensor(bg_tmp)
+            
+            # # faceseg_use = f"{cond_img_name}_img" if f"{cond_img_name}_img" in list(cond.keys()) else f"{cond_img_name}"
+            
+            # # bg_tmp = [cond[f"{faceseg_use}"][src_idx]] * sub_step
+            # # if th.is_tensor(cond[f"{faceseg_use}"][src_idx]):
+            # #     bg_tmp = th.stack(bg_tmp, axis=0)
+            # # else:
+            # #     bg_tmp = np.stack(bg_tmp, axis=0)
+            # bg_tmp = [cond[f"{cond_img_name}_img"][src_idx]] * sub_step
+            # if th.is_tensor(cond[f"{cond_img_name}_img"][src_idx]):
+            #     bg_tmp = th.stack(bg_tmp, axis=0)
+            # else:
+            #     bg_tmp = np.stack(bg_tmp, axis=0)
             
         elif 'deca' in cond_img_name:
             rendered_tmp = []
