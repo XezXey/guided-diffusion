@@ -33,7 +33,7 @@ parser.add_argument('--sh_span', type=float, default=None)
 parser.add_argument('--diffuse_sh', type=float, default=None)
 parser.add_argument('--diffuse_perc', type=float, default=None)
 parser.add_argument('--light', type=str, required=True)
-parser.add_argument('--light_idx', type=str, default=None)
+parser.add_argument('--light_idx', nargs='+', default=None)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 # Misc.
@@ -94,7 +94,14 @@ def mod_light(model_kwargs):
         mod_light = np.loadtxt(args.light).reshape(-1, 9, 3)
     elif '.npy' in args.light:
         mod_light = np.load(args.light, allow_pickle=True).reshape(-1, 9, 3)
+        
     mod_light = th.tensor(mod_light)
+    
+    if args.light_idx is not None:
+        assert len(args.light_idx) == 2 and int(args.light_idx[0]) < mod_light.shape[0]
+        mod_light = mod_light[int(args.light_idx[0]):int(args.light_idx[1])]
+    else:
+        args.light_idx = [0, mod_light.shape[0]]
     model_kwargs['mod_light'] = mod_light
     # print(model_kwargs['light'])
     # print(model_kwargs['mod_light'])
@@ -344,7 +351,7 @@ if __name__ == '__main__':
         # change light
         model_kwargs = mod_light(model_kwargs)
         out_relit, out_render, out_render_relit = relight(dat = dat, model_kwargs=model_kwargs)
-        fn_list = model_kwargs['image_name']
+        fn_list = [f'frame{i}' for i in range(int(args.light_idx[0]), int(args.light_idx[1]))]
         
         #NOTE: Save result
         light_name = args.light.split('/')[-1].split('.')[0]
@@ -354,8 +361,8 @@ if __name__ == '__main__':
         os.makedirs(save_res_dir, exist_ok=True)
         
         f_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0
-        # vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="res", frames=f_relit, fn_list=fn_list)
-        vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=f_relit)
+        # vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=f_relit)
+        vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="res", frames=f_relit, fn_list=fn_list)
         
         is_render = True if out_render is not None else False
         if is_render:
@@ -364,7 +371,7 @@ if __name__ == '__main__':
                 # vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5, fn_list=fn_list)
                 vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5)
             else:
-                vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0, fn_list=fn_list)
+                vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0, fn_list=model_kwargs['image_name'])
                 
         is_render = True if out_render_relit is not None else False
         if is_render:
@@ -373,8 +380,8 @@ if __name__ == '__main__':
                 # vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren_relit", frames=(out_render_relit + 1) * 0.5, fn_list=fn_list)
                 vis_utils.save_images(path=f"{save_res_dir}", fn="ren_relit", frames=(out_render_relit + 1) * 0.5)
             else:
-                # vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren_relit", frames=out_render_relit[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0, fn_list=fn_list)
-                vis_utils.save_images(path=f"{save_res_dir}", fn="ren_relit", frames=out_render_relit[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
+                vis_utils.save_images_with_fn(path=f"{save_res_dir}", fn="ren_relit", frames=out_render_relit[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0, fn_list=fn_list)
+                # vis_utils.save_images(path=f"{save_res_dir}", fn="ren_relit", frames=out_render_relit[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
                 
         if args.save_vid:
             """
