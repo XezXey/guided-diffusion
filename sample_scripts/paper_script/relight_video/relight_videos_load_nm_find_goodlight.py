@@ -45,7 +45,8 @@ parser.add_argument('--fps', action='store_true', default=False)
 # Experiment
 parser.add_argument('--fixed_render', action='store_true', default=False)
 parser.add_argument('--fixed_shadow', action='store_true', default=False)
-parser.add_argument('--light_to_test', type=str, required=True)
+# parser.add_argument('--light_to_test', type=str, required=True)
+parser.add_argument('--light_to_test', nargs='+', required=True)
 
 args = parser.parse_args()
 
@@ -289,13 +290,14 @@ if __name__ == '__main__':
     # Loading light to test
     light_target = read_params('/data/mint/DPM_Dataset/ffhq_256_with_anno/params/valid/ffhq-valid-light-anno.txt')
     
-    if '.jpg' not in args.light_to_test:
-        test_light_sj = args.light_to_test
+    if len(args.light_to_test) == 0 and '.jpg' not in args.light_to_test[0]:
+        test_light_sj = args.light_to_test[0]
         with open(args.light_to_test, 'r') as fp:
             test_light_sj = json.load(fp)['list']
     else:
-        test_light_sj = [args.light_to_test]
+        test_light_sj = args.light_to_test
     
+    print("Testing light : ", test_light_sj)
     for test_light in test_light_sj:
         print(f"[#####] Testing {args.sub_dataset} with {test_light}...")
         sub_step = ext_sub_step(end - start)
