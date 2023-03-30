@@ -102,7 +102,6 @@ def mod_light_to_test(model_kwargs, mod_light):
     model_kwargs['mod_light'] = mod_light
     return model_kwargs
 
-
 def read_params(path):
     params = pd.read_csv(path, header=None, sep=" ", index_col=False, lineterminator='\n')
     params.rename(columns={0:'img_name'}, inplace=True)

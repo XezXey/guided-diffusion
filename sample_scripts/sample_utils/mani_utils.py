@@ -105,6 +105,44 @@ def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn, add_
 
     return out_interp 
 
+
+def iter_interp_cond_lightfile(cond, src_idx, n_step, itp_src, itp_dst, interp_fn):
+    '''
+    Interpolate the condition following the keys in interp_set
+    :params src_idx: the source index of condition
+    :params dst_idx: the destination index of condition
+    :params n_step: the number of interpolation step
+    :params interp_fn: interpolation function e.g. lerp(), slerp()
+    :params interp_set: list contains keys of params to be interpolated e.g. ['light', 'shape']
+    
+    :return interp_cond: interpolated between src->dst in dict-like 
+        e.g. {'light': tensor of [n_step x ...], 'shape': tensor of [n_step x ...]}
+    '''
+    out_interp = {}
+
+    assert (itp_src in cond.keys()) and (itp_dst in cond.keys())
+    if itp_src == 'light':
+        if isinstance(cond[itp_src], list):
+            #NOTE: interpolate the condition (list-type)
+            interp = []
+            for i in range(len(cond[itp_src])):
+                assert cond[itp_src][i][[src_idx]].shape == cond[itp_dst][i].shape
+                interp_temp = interp_cond(src_cond=cond[itp_src][i][[src_idx]],
+                                dst_cond=cond[itp_dst][i],
+                                n_step=n_step,
+                                interp_fn=interp_fn)
+                interp.append(interp_temp)
+        elif th.is_tensor(cond[itp_src]) or isinstance(cond[itp_src], np.ndarray):
+            #NOTE: interpolate the condition (tensor-type)
+            interp = interp_cond(src_cond=cond[itp_src][[src_idx]],
+                                dst_cond=cond[itp_dst],
+                                n_step=n_step,
+                                interp_fn=interp_fn)
+        else: raise NotImplementedError
+    out_interp[itp_src] = interp
+
+    return out_interp 
+
 def interchange_cond(cond, interchange, base_idx, n):
     '''
     Condition parameters interchange

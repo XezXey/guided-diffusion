@@ -86,6 +86,17 @@ experiment_scripts/rotate_light/face/
 experiment_scripts/dealignment_ffhq/ffhq_env/
 experiment_scripts/dealignment_ffhq/out/
 experiment_scripts/dealignment_ffhq/videos/
+experiment_scripts/dealignment_ffhq/clone/
+experiment_scripts/dealignment_ffhq/final_videos/
+experiment_scripts/dealignment_ffhq/final_videos_tmp/
+experiment_scripts/dealignment_ffhq/good_videos/
+experiment_scripts/dealignment_ffhq/own_blending/
+experiment_scripts/dealignment_ffhq/seamless/
+experiment_scripts/dealignment_ffhq/supasorn/
+experiment_scripts/dealignment_ffhq/simple/
+experiment_scripts/dealignment_ffhq/temp/
+experiment_scripts/dealignment_ffhq/*.zip
+
 experiment_scripts/videos_relight/videos/
 experiment_scripts/videos_relight/videos/
 experiment_scripts/videos_relight/out/
@@ -95,7 +106,7 @@ experiment_scripts/LUMOS/lumos
 experiment_scripts/smooth_rotate_light/*
 experiment_scripts/rotate_SH/mint_sh_rotate
 
-/experiment_scripts/generate_verts_robustness/output
+experiment_scripts/generate_verts_robustness/output
 experiment_scripts/rotate_SH/60922_spl.npy
 experiment_scripts/rotate_SH/out.mp4
 experiment_scripts/rotate_SH/output1.mp4
@@ -105,3 +116,4 @@ experiment_scripts/rotate_SH/output4.mp4
 experiment_scripts/rotate_SH/rotate_sh.ipynb
 experiment_scripts/rotate_SH/rotsh.mp4
 experiment_scripts/rotate_SH/videos.txt
+

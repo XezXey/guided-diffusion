@@ -40,20 +40,25 @@ def image_align(src_file,
     # Calculate auxiliary vectors.
     eye_left = np.mean(lm_eye_left, axis=0)
     eye_right = np.mean(lm_eye_right, axis=0)
-    print("Eye left : ", eye_left)
-    print("Eye right : ", eye_right)
+    # print("Eye left : ", eye_left)
+    # print("Eye right : ", eye_right)
     eye_avg = (eye_left + eye_right) * 0.5
     eye_to_eye = eye_right - eye_left
     mouth_left = lm_mouth_outer[0]
     mouth_right = lm_mouth_outer[6]
     mouth_avg = (mouth_left + mouth_right) * 0.5
     eye_to_mouth = mouth_avg - eye_avg
+    
+
+    do_pad = False
+    do_crop = False
+    do_shrink = False
 
     # Choose oriented crop rectangle.
-    print("Eye to mouth : ", eye_to_mouth)
-    print("Eye to mouth (np.flipud) : ", np.flipud(eye_to_mouth))
+    # print("Eye to mouth : ", eye_to_mouth)
+    # print("Eye to mouth (np.flipud) : ", np.flipud(eye_to_mouth))
     x = eye_to_eye - np.flipud(eye_to_mouth) * [-1, 1]
-    print(x)
+    # print(x)
     x /= np.hypot(*x)   # Unpacking x; e.g. x = [1, 2], *x = 1, 2
     x *= max(np.hypot(*eye_to_eye) * 2.0, np.hypot(*eye_to_mouth) * 1.8)
     y = np.flipud(x) * [-1, 1]
@@ -74,8 +79,9 @@ def image_align(src_file,
 
     # Shrink.
     shrink = int(np.floor(qsize / output_size * 0.5))
-    print("Shrink : ", shrink)
+    # print("Shrink : ", shrink)
     if shrink > 1:
+        do_shrink = True
         rsize = (int(np.rint(float(img.size[0]) / shrink)),
                  int(np.rint(float(img.size[1]) / shrink)))
         img = img.resize(rsize, PIL.Image.ANTIALIAS)
@@ -85,18 +91,19 @@ def image_align(src_file,
     # Crop.
     border = max(int(np.rint(qsize * 0.1)), 3)
     
-    print("Border : ", border)
+    # print("Border : ", border)
     # crop is [x1, y1, x2, y2]
     crop = (int(np.floor(min(quad[:, 0]))), int(np.floor(min(quad[:, 1]))),
             int(np.ceil(max(quad[:, 0]))), int(np.ceil(max(quad[:, 1]))))
     
-    print("Crop_1 : ", crop)
+    # print("Crop_1 : ", crop)
     crop = (max(crop[0] - border, 0), max(crop[1] - border, 0),
             min(crop[2] + border,
                 img.size[0]), min(crop[3] + border, img.size[1]))
     
-    print("Crop_2 : ", crop)
+    # print("Crop_2 : ", crop)
     if crop[2] - crop[0] < img.size[0] or crop[3] - crop[1] < img.size[1]:
+        do_crop = True
         img = img.crop(crop)
         img.save('./out/after_crop.png', 'PNG')
         quad -= crop[0:2]
@@ -104,14 +111,15 @@ def image_align(src_file,
     # Pad.
     pad = (int(np.floor(min(quad[:, 0]))), int(np.floor(min(quad[:, 1]))),
            int(np.ceil(max(quad[:, 0]))), int(np.ceil(max(quad[:, 1]))))
-    print("Pad : ", pad)
+    # print("Pad : ", pad)
     pad = (max(-pad[0] + border,
                0), max(-pad[1] + border,
                        0), max(pad[2] - img.size[0] + border,
                                0), max(pad[3] - img.size[1] + border, 0))
-    print("Pad : ", pad)
-    print(enable_padding)
+    # print("Pad : ", pad)
+    # print(enable_padding)
     if enable_padding and max(pad) > border - 4:
+        do_pad = True
         pad = np.maximum(pad, int(np.rint(qsize * 0.3)))
         img = np.pad(np.float32(img),
                      ((pad[1], pad[3]), (pad[0], pad[2]), (0, 0)), 'reflect')
@@ -132,61 +140,72 @@ def image_align(src_file,
         quad += pad[:2]
 
     # Transform.
-    print(quad)
-    print(quad.shape)
-    print("ORIGINAL IMAGE SIZE : ", original_img.size)
-    print(np.array(quad).flatten())
-    quad_tmp = np.concatenate((quad, quad[0:1, :]), axis=0)
-    print(quad_tmp)
-    draw = PIL.ImageDraw.Draw(original_img)
-    draw.line([tuple(q) for q in quad_tmp+crop[0:2]], fill='red', width=10)
-    original_img.save('./out/apply_marker.png', 'PNG')
+    # print(quad)
+    # print(quad.shape)
+    # print("ORIGINAL IMAGE SIZE : ", original_img.size)
+    # print(np.array(quad).flatten())
+    # quad_tmp = np.concatenate((quad, quad[0:1, :]), axis=0)
+    # print(quad_tmp)
+    # draw = PIL.ImageDraw.Draw(original_img)
+    # draw.line([tuple(q) for q in quad_tmp+crop[0:2]], fill='red', width=10)
+    # original_img.save('./out/apply_marker.png', 'PNG')
     
-    img.save('./out/before_transf.png', 'PNG')
-    print(np.array(img).shape)
-    img = img.transform((transform_size, transform_size), PIL.Image.QUAD,
-                        (quad + 0.5).flatten(), PIL.Image.BILINEAR)
-    print("G", np.array(img).shape)
+    # img.save('./out/before_transf.png', 'PNG')
+    # print(np.array(img).shape)
+    # img = img.transform((transform_size, transform_size), PIL.Image.QUAD,
+                        # (quad + 0.5).flatten(), PIL.Image.BILINEAR)
+    # print("G", np.array(img).shape)
     
-    # Reverse back
-    r_img = PIL.Image.open('./anakin.png')
-    r_img = r_img.convert('RGB')
-    print(r_img.size)
-    r_img = r_img.resize((transform_size, transform_size), PIL.Image.ANTIALIAS)
-    r_img.save('./out/r_img_resize.png', 'PNG')
-    print(r_img.size)
-    transf_coor = np.array([[0, 0], 
-                            [0, transform_size], 
-                            [transform_size, transform_size], 
-                            [transform_size, 0]]).astype(np.float32)
-    inv_quad = cv2.getPerspectiveTransform(np.array(transf_coor), 
-                                           np.array(quad_tmp[:-1]+crop[0:2]).astype(np.float32), 
-                                           )
-    inv_transformed = cv2.warpPerspective(np.array(r_img), inv_quad, original_img.size)
-    mask = (np.array(inv_transformed) == 0)
-    print("GGG", mask.shape)
-    mask = PIL.Image.fromarray((mask*255.0).astype(np.uint8))
-    mask.save('./out/mask.png', 'PNG')
+    # # Reverse back
+    # r_img = PIL.Image.open('./anakin.png')
+    # r_img = r_img.convert('RGB')
+    # print(r_img.size)
+    # r_img = r_img.resize((transform_size, transform_size), PIL.Image.ANTIALIAS)
+    # r_img.save('./out/r_img_resize.png', 'PNG')
+    # print(r_img.size)
+    # transf_coor = np.array([[0, 0], 
+                            # [0, transform_size], 
+                            # [transform_size, transform_size], 
+                            # [transform_size, 0]]).astype(np.float32)
+    # inv_quad = cv2.getPerspectiveTransform(np.array(transf_coor), 
+                                        #    np.array(quad_tmp[:-1]+crop[0:2]).astype(np.float32), 
+                                        #    )
+    # inv_transformed = cv2.warpPerspective(np.array(r_img), inv_quad, original_img.size)
+    # mask = (np.array(inv_transformed) == 0)
+    # print("GGG", mask.shape)
+    # mask = PIL.Image.fromarray((mask*255.0).astype(np.uint8))
+    # mask.save('./out/mask.png', 'PNG')
     
     # inv_transformed = cv2.warpPerspective(np.array(r_img), inv_quad, (960, 960))
-    # convert the resulting image back to a PIL image
-    inv_transformed = PIL.Image.fromarray(inv_transformed)
-    inv_transformed.save('./out/inverse_transf.png', 'PNG')
+    # # convert the resulting image back to a PIL image
+    # inv_transformed = PIL.Image.fromarray(inv_transformed)
+    # inv_transformed.save('./out/inverse_transf.png', 'PNG')
     
-    mask = (np.array(inv_transformed) == 0)
-    composite = (~mask * np.array(inv_transformed)) + (mask * np.array(original_img))
-    PIL.Image.fromarray(composite).save('./out/composite.png', 'PNG')
+    # mask = (np.array(inv_transformed) == 0)
+    # composite = (~mask * np.array(inv_transformed)) + (mask * np.array(original_img))
+    # PIL.Image.fromarray(composite).save('./out/composite.png', 'PNG')
     
     
     # Place back to original image
     
     
-    img.save('./out/after_transf.png', 'PNG')
+    # img.save('./out/after_transf.png', 'PNG')
     if output_size < transform_size:
         img = img.resize((output_size, output_size), PIL.Image.ANTIALIAS)
 
     # Save aligned image.
     img.save(dst_file, 'PNG')
+    
+    return {
+        'quad' : quad,
+        'pad' : pad if do_pad else None,
+        'do_pad' : do_pad,
+        'crop' : crop if do_crop else None,
+        'do_crop' : do_crop,
+        'shrink' : shrink if do_shrink else None,
+        'do_shrink' : do_shrink,
+        'face_landmark': face_landmarks
+    }
 
 
 class LandmarksDetector:
@@ -227,10 +246,11 @@ def work_landmark(raw_img_path, img_name, face_landmarks):
     print("Aligning : ", aligned_face_path)
     # if os.path.exists(aligned_face_path):
     #     return
-    image_align(raw_img_path,
-                aligned_face_path,
-                face_landmarks,
-                output_size=256)
+    align_params = image_align(raw_img_path,
+                    aligned_face_path,
+                    face_landmarks,
+                    output_size=256)
+    return align_params
 
 
 def get_file(src, tgt):
@@ -296,9 +316,9 @@ if __name__ == "__main__":
         # with Pool(8) as pool:
         #     res = []
     landmarks_detector = LandmarksDetector(landmarks_model_path)
+    align_params = {}
     for img_name in tqdm(files):
         raw_img_path = os.path.join(RAW_IMAGES_DIR, img_name)
-        # print('img_name:', img_name)
         # continue
         for i, face_landmarks in enumerate(
                 landmarks_detector.get_landmarks(raw_img_path),
@@ -309,7 +329,9 @@ if __name__ == "__main__":
             # aligned_face_path = os.path.join(ALIGNED_IMAGES_DIR, face_img_name)
             # image_align(raw_img_path, aligned_face_path, face_landmarks, output_size=256)
 
-            work_landmark(raw_img_path, img_name, face_landmarks)
+            if i == 1:
+                align_params[img_name] = work_landmark(raw_img_path, img_name, face_landmarks)
+            
                 # progress.update()
 
                     # job = pool.apply_async(
@@ -322,4 +344,7 @@ if __name__ == "__main__":
 
             # pool.close()
             # pool.join()
+            
+    np.save(file=f"{'/'.join(RAW_IMAGES_DIR.split('/')[:-1])}/{RAW_IMAGES_DIR.split('/')[-2]}_align_params.npy", arr=align_params)
+    # print(align_params)
     print(f"output aligned images at: {ALIGNED_IMAGES_DIR}")
