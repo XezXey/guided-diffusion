@@ -1,0 +1,40 @@
+{
+    "pair": {
+        "pair1": {
+            "src": "jr1.png",
+            "dst": "69867.png"
+        },
+        "pair2": {
+            "src": "jr1.png",
+            "dst": "68578.png"
+        },
+        "pair3": {
+            "src": "jr1.png",
+            "dst": "69380.png"
+        },
+        "pair4": {
+            "src": "jr2.png",
+            "dst": "69867.png"
+        },
+        "pair5": {
+            "src": "jr2.png",
+            "dst": "68578.png"
+        },
+        "pair6": {
+            "src": "jr2.png",
+            "dst": "69380.png"
+        },
+        "pair7": {
+            "src": "jr3.png",
+            "dst": "69867.png"
+        },
+        "pair8": {
+            "src": "jr3.png",
+            "dst": "68578.png"
+        },
+        "pair9": {
+            "src": "jr3.png",
+            "dst": "69380.png"
+        }
+    }
+}

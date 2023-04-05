@@ -1,0 +1,8 @@
+ {
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml" :  {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"Ours",
+        "n_frames":"2"
+    }
+}
