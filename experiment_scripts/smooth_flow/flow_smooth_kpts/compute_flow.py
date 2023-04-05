@@ -10,7 +10,9 @@ import sys
 import os
 import subprocess
 from tqdm import tqdm
+
 # Adding the pyflow path directories
+sys.path.append('./pyflow')
 import pyflow
 import matplotlib.pyplot as plt
 import cv2

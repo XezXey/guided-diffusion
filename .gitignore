@@ -104,6 +104,7 @@ experiment_scripts/videos_relight/
 experiment_scripts/ITW_debugging/debugging_img/
 experiment_scripts/LUMOS/lumos
 experiment_scripts/smooth_rotate_light/*
+experiment_scripts/
 experiment_scripts/rotate_SH/mint_sh_rotate
 
 experiment_scripts/generate_verts_robustness/output
@@ -117,3 +118,4 @@ experiment_scripts/rotate_SH/rotate_sh.ipynb
 experiment_scripts/rotate_SH/rotsh.mp4
 experiment_scripts/rotate_SH/videos.txt
 
+experiment_scripts/smooth_flow/flow_smooth_kpts/examples/
