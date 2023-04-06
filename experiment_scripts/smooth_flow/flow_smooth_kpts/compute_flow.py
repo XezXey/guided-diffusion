@@ -27,6 +27,7 @@ parser.add_argument('--output_savepath', dest='output_savepath', help='Save path
 parser.add_argument('--video_name', dest='video_name', help='current process video', required=True)
 parser.add_argument('--config_opticalflow_path', dest='config_opticalflow_path', help='path to a config_opticalflow.ini file')
 parser.add_argument('--chunk_size', dest='chunk_size', type=int, help='Chunking for multiprocess')
+parser.add_argument('--idx', nargs='+', default=[])
 args = parser.parse_args()
 
 # Flow Options:
@@ -84,7 +85,7 @@ def compute_flow(i, im1, im2, normalize, output_optical_flow_path_fw, output_opt
             }
         }
 
-def optical_flow_estimation(frames_idx, images, config_opticalflow, output_path='./', normalize=True):
+def optical_flow_estimation(frames_idx, images, config_opticalflow, start, end, output_path='./', normalize=True):
   # Assign the value of parameters from dict.
   global alpha, ratio, minWidth
   alpha = config_opticalflow['alpha']
@@ -98,6 +99,8 @@ def optical_flow_estimation(frames_idx, images, config_opticalflow, output_path=
   
   # Create the directory
   os.makedirs(output_optical_flow_path, exist_ok=True)
+  os.makedirs(output_optical_flow_path + '/sub/', exist_ok=True)
+  os.makedirs(output_optical_flow_path + '/all/', exist_ok=True)
   os.makedirs(output_optical_flow_path_fw, exist_ok=True)
   os.makedirs(output_optical_flow_path_bw, exist_ok=True)
 
@@ -124,9 +127,8 @@ def optical_flow_estimation(frames_idx, images, config_opticalflow, output_path=
   for ic in tqdm(input_chunks):
       results = pooling.starmap(compute_flow, ic)
       flows_res.update({k: v for d in results for k, v in d.items()})
-      np.save(file=f'{output_optical_flow_path}/{args.video_name}_sub_flows_{count}.npy', arr=results)
-      count+=1
-  
+      np.save(file=f'{output_optical_flow_path}/sub/{args.video_name}_sub_flows_s{start}_e{end}_{count}.npy', arr=results)
+      count += 1
   
   flows_fw = []
   flows_bw = []
@@ -141,7 +143,7 @@ def optical_flow_estimation(frames_idx, images, config_opticalflow, output_path=
   print("Forward Sequence FLOWS : ", flows_bw.shape)
   print("Backward Sequence FLOWS : ", flows_fw.shape)
   print("Saving optical_flow_estimation to : ", output_optical_flow_path)
-  np.save(file=f'{output_optical_flow_path}/{args.video_name}_flows.npy', arr=flows_res)
+  np.save(file=f'{output_optical_flow_path}/all/{args.video_name}_flows_s{start}_e{end}.npy', arr=flows_res)
 
 def read_images(image_dir):
   print("[#] Reading images...")
@@ -166,7 +168,21 @@ if __name__ == '__main__':
   alpha_list = config['CONFIG_OPTICALFLOW']['alpha'].split('\n')
   ratio_list = config['CONFIG_OPTICALFLOW']['ratio'].split('\n')
   minWidth_list = config['CONFIG_OPTICALFLOW']['minWidth'].split('\n')
+  
+  start, end = int(args.idx[0]), int(args.idx[1])
   images, frames_idx = read_images(image_dir)
+  # Run from start->end idx
+  n_frames = len(images)
+  if end > n_frames:
+      end = n_frames 
+  if start >= n_frames: raise ValueError("[#] Start beyond the sample index")
+  
+  frames_idx = frames_idx[start:end]
+  images = images[start:end]
+  
+  print(start, end)
+  print("[#] Processing frame at index : ", frames_idx)
+  
   for alpha in alpha_list:
     for ratio in ratio_list:
       for minWidth in minWidth_list:
@@ -174,5 +190,5 @@ if __name__ == '__main__':
         config_opticalflow = {'alpha':float(alpha),
                               'ratio':float(ratio),
                               'minWidth':float(minWidth)}
-        optical_flow_estimation(frames_idx, images, config_opticalflow, output_path)
+        optical_flow_estimation(frames_idx=frames_idx, images=images, config_opticalflow=config_opticalflow, start=start, end=end, output_path=output_path)
 

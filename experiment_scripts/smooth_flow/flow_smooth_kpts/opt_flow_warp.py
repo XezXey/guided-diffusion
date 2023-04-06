@@ -154,10 +154,10 @@ def bilinear_interp(flow, x, y):
     x2, y2 = np.clip([x2, y2], [0, 0], [W-1, H-1])
     
     # Get the neighboring pixels and compute the weighted average
-    pixel3 = flow[y1, x1]
-    pixel4 = flow[y1, x2] + 10
-    pixel1 = flow[y2, x1]
-    pixel2 = flow[y2, x2] + 10
+    pixel1 = flow[y1, x1]
+    pixel2 = flow[y1, x2]
+    pixel3 = flow[y2, x1]
+    pixel4 = flow[y2, x2]
     interp_pixel = w1*pixel1 + w2*pixel2 + w3*pixel3 + w4*pixel4
     
     return interp_pixel
@@ -311,8 +311,18 @@ if __name__ == "__main__":
   if args.save_vis:
     # Save the visualization
     import align_lib
-    data_dir = '/data/mint/DPM_Dataset/Videos/joker_3/images/'
+    data_dir = '/data/mint/DPM_Dataset/Videos/tommy_2/images/'
     frames = sorted(kpts.keys(), key=lambda x:int(x[5:-4]))
+    
+    aligned_vis = []
+    for f in frames:
+        aligned_img = align_lib.image_align(src_file=data_dir + f,
+                                  face_landmarks=load_kpts[f]['face_landmark'], 
+                                  output_size=256)
+        aligned_vis.append(aligned_img)
+
+    align_lib.save_video(aligned_vis, name='aligned', fps=25)
+    
     aligned_vis = []
     for f in frames:
         aligned_img = align_lib.image_align(src_file=data_dir + f,
