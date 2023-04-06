@@ -3,6 +3,7 @@ import argparse
 import glob, os
 import cv2
 import numpy as np
+import tqdm
 from PIL import Image
 
 parser = argparse.ArgumentParser(
@@ -10,7 +11,9 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--image_dir', dest='image_dir', help='Input the image directories', required=True)
 parser.add_argument('--flows', dest='flows', help='Input the path to flow .npy format file', required=True)
 parser.add_argument('--kpts', dest='kpts', help='Input the path to flow .npy format file', required=True)
+parser.add_argument('--video_name', dest='video_name', help='Input the video name', required=True)
 parser.add_argument('--save_vis', action='store_true', dest='save_vis', help='Input the path to flow .npy format file', default=False)
+parser.add_argument('--save_align', type=str, dest='save_align', default=None)
 args = parser.parse_args()
 
 def computeChain(flow_list, init_kpts):
@@ -162,62 +165,20 @@ def bilinear_interp(flow, x, y):
     
     return interp_pixel
 
-# def bilinear_interpolation(flow, x_pos, y_pos):
-#     '''Interpolate (x, y) from values associated with four points.
-#     Four points are in list of four triplets : (x_pos, y_pos, value)
-#     - x_pos and y_pos is the pixels position on the images
-#     - flow is the matrix at x_pos and y_pos to be a reference for interpolated point.
-#     Ex : x_pos = 12, y_pos = 5.5
-#          # flow is the matrix of source to be interpolated
-#          # Need to form in 4 points that a rectangle shape
-#          flow_location = [(10, 4, 100), === [(x1, y1, value_x1y1),
-#                           (20, 4, 200), ===  (x2, y1, value_x2y1),
-#                           (10, 6, 150), ===  (x1, y2, value_x1y2),
-#                           (20, 6, 300)] ===  (x2, y2, value_x2y2)]
-#         Reference : https://en.wikipedia.org/wiki/Bilinear_interpolation
-
-#     '''
-#     # Create a flow_location : clip the value from 0-flow.shape[0-or-1]-1
-#     # x1, y1 : Not lower than 0
-#     # x2, y2 : Not exceed img size
-#     x1 = np.clip(int((np.floor(x_pos))), 0, flow.shape[1]-1)
-#     x2 = np.clip(x1 + 1, 0, flow.shape[1]-1)
-#     y1 = np.clip(int((np.floor(y_pos))), 0, flow.shape[0]-1)
-#     y2 = np.clip(y1 + 1, 0, flow.shape[0]-1)
-#     x_pos = np.clip(x_pos, 0, flow.shape[1]-1)
-#     y_pos = np.clip(y_pos, 0, flow.shape[0]-1)
-
-#     # Last pixels will be the problem that exceed the image size
-#     if x1 == flow.shape[0]-1:
-#         x1 = flow.shape[0]-2
-#     if y1 == flow.shape[0]-1:
-#         y1 = flow.shape[0]-2
-
-#     # print("X : ", x_pos, x1, x2)
-#     # print("Y : ", y_pos, y1, y2)
-#     flow_area = [(x1, y1, flow[x1][y1]),
-#                  (x2, y1, flow[x2][y1]),
-#                  (x1, y2, flow[x1][y2]),
-#                  (x2, y2, flow[x2][y2])]
-
-#     # print("Flow interesting area : ", flow_area)threshold_slow
-#     flow_area = sorted(flow_area)
-#     (x1, y1, q11), (_x1, y2, q12), (x2, _y1, q21), (_x2, _y2, q22) = flow_area
-
-#     if x1!=_x1 or x2!= _x2 or y1!=_y1 or y2!=_y2:
-#         raise ValueError('Given grid do not form a rectangle.')
-#     if not x1 <= x_pos <= x2 or not y1 <= y_pos <= y2:
-#         raise ValueError('(x, y) that want to interpolated is not within the rectangle')
-
-#     return (q11 * (x2-x_pos) * (y2-y_pos) +
-#             q21 * (x_pos-x1) * (y2-y_pos) +
-#             q12 * (x2-x_pos) * (y_pos-y1) +
-#             q22 * (x_pos-x1) * (y_pos-y1)
-#             / ((x2-x1) * (y2-y1)) + 0.0)
-  
 if __name__ == "__main__":
   # Load flows
-  flows = np.load(args.flows, allow_pickle=True).item()
+  if os.path.isdir(args.flows):
+    flows = {}
+    for f in tqdm.tqdm(glob.glob(f'{args.flows}/*.npy')):
+      tmp = np.load(f, allow_pickle=True).item()
+      # print(tmp.keys())
+      # exit()
+      flows.update(tmp)
+  else:
+    flows = np.load(args.flows, allow_pickle=True).item()
+  # print(flows.keys())
+  # print(len(flows.keys()))
+  # exit()
   # flows = np.load(args.flows, allow_pickle=True).tolist()
   # flows = {k: v for d in flows for k, v in d.items()}
     
@@ -256,6 +217,8 @@ if __name__ == "__main__":
     
     fw_v_list = [f"{fw_v_list[i].split('.')[0]}_{fw_v_list[i+1].split('.')[0]}" for i in range(len(fw_v_list)-1)]
     bw_v_list = [f"{bw_v_list[i].split('.')[0]}_{bw_v_list[i+1].split('.')[0]}" for i in range(len(bw_v_list)-1)]
+    
+    # Load only usaged flows
     
     print("[#] fw_flows_voters (use forward flow) : ", fw_v_list)
     print("[#] bw_flows_voters (use backward flow): ", bw_v_list)
@@ -308,10 +271,33 @@ if __name__ == "__main__":
     
   # print(smooth_kpts.keys())
   
+  if args.save_align is not None:
+    
+    import align_lib
+    import shutil
+    data_dir = f'/data/mint/DPM_Dataset/Videos/{args.video_name}/images/'
+    frames = sorted(kpts.keys(), key=lambda x:int(x[5:-4]))
+    save_path = f'{args.save_align}/aligned_images/valid/'
+    copy_path = f'{args.save_align}/images/'
+    os.makedirs(args.save_align, exist_ok=True)
+    os.makedirs(copy_path, exist_ok=True)
+    os.makedirs(save_path, exist_ok=True)
+    
+    for f in frames:
+        aligned_img = align_lib.image_align(src_file=data_dir + f,
+                                  face_landmarks=smooth_kpts[f], 
+                                  output_size=256)
+        aligned_img.save(f'{save_path}/{f}')
+        # Image.fromarray(aligned_img).save(f'{save_path}/{f}')
+        shutil.copyfile(src=data_dir + f, dst=copy_path + f)
+  
   if args.save_vis:
     # Save the visualization
+    
     import align_lib
-    data_dir = '/data/mint/DPM_Dataset/Videos/tommy_2/images/'
+    path = f'./examples/{args.video_name}/'
+    os.makedirs(path, exist_ok=True)
+    data_dir = f'/data/mint/DPM_Dataset/Videos/{args.video_name}/images/'
     frames = sorted(kpts.keys(), key=lambda x:int(x[5:-4]))
     
     aligned_vis = []
@@ -321,7 +307,8 @@ if __name__ == "__main__":
                                   output_size=256)
         aligned_vis.append(aligned_img)
 
-    align_lib.save_video(aligned_vis, name='aligned', fps=25)
+    align_lib.save_video(aligned_vis, path=f'{path}/aligned.mp4', fps=25)
+    
     
     aligned_vis = []
     for f in frames:
@@ -330,7 +317,7 @@ if __name__ == "__main__":
                                   output_size=256)
         aligned_vis.append(aligned_img)
 
-    align_lib.save_video(aligned_vis, name='smth_aligned_fixed', fps=25)
+    align_lib.save_video(aligned_vis, path=f'{path}/smth_aligned_fixed.mp4', fps=25)
   
     kpts_vis = []
     for f in frames:
@@ -338,7 +325,7 @@ if __name__ == "__main__":
         lmk = align_lib.draw_face_landmarks(img, kpts[f])
         kpts_vis.append(lmk)
 
-    align_lib.save_video(kpts_vis, name='lmk')
+    align_lib.save_video(kpts_vis, path=f'{path}/lmk.mp4')
   
     kpts_vis = []
     for f in frames:
@@ -346,7 +333,7 @@ if __name__ == "__main__":
         lmk = align_lib.draw_face_landmarks(img, smooth_kpts[f])
         kpts_vis.append(lmk)
 
-    align_lib.save_video(kpts_vis, name='smth_lmk_fixed')
+    align_lib.save_video(kpts_vis, path=f'{path}/smth_lmk.mp4')
   
     kpts_vis = []
     for f in frames:
@@ -354,5 +341,5 @@ if __name__ == "__main__":
         lmk = align_lib.draw_face_landmarks(img, kpts[f], smooth_kpts[f])
         kpts_vis.append(lmk)
 
-    align_lib.save_video(kpts_vis, name='cmp_lmk')
+    align_lib.save_video(kpts_vis, path=f'{path}/cmp_lmk.mp4')
   

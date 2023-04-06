@@ -9,9 +9,8 @@ import scipy
 import scipy.ndimage
 import os
 
-def save_video(list_frame, name='vid', fps=25):
-    os.makedirs('./examples', exist_ok=True)
-    torchvision.io.write_video(f'./examples/{name}.mp4', th.tensor(np.stack(list_frame)), fps=fps)
+def save_video(list_frame, path, fps=25):
+    torchvision.io.write_video(f'{path}', th.tensor(np.stack(list_frame)), fps=fps)
 
 def draw_face_landmarks(image, landmarks, landmarks2=None):
     for i, landmark in enumerate(landmarks):

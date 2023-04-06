@@ -399,7 +399,7 @@ def render_deca_videos(deca_params, render_mode='shape',
                 'tform':th.tensor(deca_params['tform']).to(device).reshape(-1, 3, 3).float(),
                 'images':th.stack([testdata[i]['image'] for i in range(len(deca_params['raw_image_path']))]).to(device).float(),
                 'tex':th.tensor(deca_params['albedo']).to(device).float(),
-                'detail':(deca_params['detail']).to(device).float(),
+                'detail':th.tensor(deca_params['detail']).to(device).float(),
     }
     original_image = deca_params['raw_image'].to(device).float() / 255.0
         
