@@ -136,7 +136,8 @@ def load_data_img_deca(
                 in_image['laplacian_mask'] = image_path_list_to_dict(in_image['laplacian_mask'])
             elif 'shadow_mask' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_mask_dir}/{set_}/")
-            elif 'raw' in in_image_type: continue
+            # elif ('raw' in in_image_type: continue
+            elif in_image_type in ['raw', 'face_structure']: continue
             else:
                 raise NotImplementedError(f"The {in_image_type}-image type not found.")
 
@@ -263,6 +264,10 @@ class DECADataset(Dataset):
             elif k == 'raw':
                 each_cond_img = (raw_img / 127.5) - 1
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+            elif k == 'face_structure':
+                each_cond_img = (raw_img / 127.5) - 1
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                out_dict[f'{k}_img'] = each_cond_img  # The shadow mask has the same value across 3-channels
             elif k == 'shadow_mask':
                 each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
                 each_cond_img = self.prep_cond_img(each_cond_img, k, i)
@@ -371,6 +376,8 @@ class DECADataset(Dataset):
                     condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
+            elif in_image_type == 'face_structure':
+                condition_image['face_structure'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
             else: raise ValueError(f"Not supported type of condition image : {in_image_type}")
         return condition_image
 

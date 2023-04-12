@@ -103,6 +103,7 @@ cfg.img_model.noise_dpm_cond_img = [None]
 
 # Additional Encoder Network
 img_cond_model_img_type = {'raw':3, 
+                           'face_structure':3,
                             'deca_shape_images':3, 
                             'deca_template_shape_images':3, 
                             'deca_albedo_shape_images':3, 
