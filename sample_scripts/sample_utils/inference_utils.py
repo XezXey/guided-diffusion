@@ -252,17 +252,17 @@ def build_condition_image(cond, misc):
         elif args.sh_grid_size is not None:
             #NOTE: Render w/ grid light 
             cond['light'] = params_utils.grid_sh(sh=cond['light'][src_idx], n_grid=args.sh_grid_size, sx=args.sh_span_x, sy=args.sh_span_y, sh_scale=args.sh_scale, use_sh=args.use_sh).reshape(-1, 27)
-        # elif 'render_face' in args.interpolate:
-        #     #NOTE: Render w/ interpolated light (Mainly use this)
-        #     interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
-        #     cond.update(interp_cond)
         elif 'render_face' in args.interpolate:
-            #NOTE: Render w/ interpolated light (For aj jumras or any itw)
-            # print(cond['light'])
-            # print(cond['mod_light'])
-            interp_cond = mani_utils.iter_interp_cond_lightfile(cond, itp_src='light', itp_dst='mod_light', src_idx=src_idx, n_step=n_step, interp_fn=itp_func)
-            # print(interp_cond)
+            #NOTE: Render w/ interpolated light (Mainly use this)
+            interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
             cond.update(interp_cond)
+        # elif 'render_face' in args.interpolate:
+        #     #NOTE: Render w/ interpolated light (For aj jumras or any itw)
+        #     # print(cond['light'])
+        #     # print(cond['mod_light'])
+        #     interp_cond = mani_utils.iter_interp_cond_lightfile(cond, itp_src='light', itp_dst='mod_light', src_idx=src_idx, n_step=n_step, interp_fn=itp_func)
+        #     # print(interp_cond)
+        #     cond.update(interp_cond)
         elif 'render_face_modSH' in args.interpolate:
             #NOTE: Render w/ interpolated light
             repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
@@ -286,7 +286,7 @@ def build_condition_image(cond, misc):
         #TODO: Render DECA in minibatch
         sub_step = mani_utils.ext_sub_step(n_step, batch_size)
         all_render = []
-        all_shadow_mask = []
+        # all_shadow_mask = []
         for i in range(len(sub_step)-1):
             print(f"[#] Sub step rendering : {sub_step[i]} to {sub_step[i+1]}")
             start = sub_step[i]
@@ -326,7 +326,7 @@ def build_condition_image(cond, misc):
     #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'
     print("Conditoning with image : ", condition_img)
     for i, cond_img_name in enumerate(condition_img):
-        if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name):
+        if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name) or ('face_structure' in cond_img_name):
             bg_tmp = [cond[f"{cond_img_name}_img"][src_idx]] * n_step
             if th.is_tensor(cond[f"{cond_img_name}_img"][src_idx]):
                 bg_tmp = th.stack(bg_tmp, axis=0)

@@ -1654,6 +1654,62 @@
             "cwd": "/home/mint/guided-diffusion/sample_scripts/paper_script/",
             "justMyCode": true
         },
+        {
+            "name": "Python: relight_difareli+unet_image",
+            "type": "python",
+            "request": "launch",
+            "program": "./relight.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"2", "WANDB_MODE":"offline"},
+            "args": [
+                "--dataset", "ffhq",
+                "--set", "valid",
+                "--step", "010000", 
+                "--out_dir", "/data/mint/sampling/without_inversion",
+                "--cfg_name", "difareli+unet_image.yaml",
+                "--log_dir", "difareli+unet_image",
+                "--diffusion_steps", "1000",
+                "--seed", "47", 
+                "--batch_size", "1",
+                "--gpu_id", "2",
+                "--idx", "0", "1",
+                "--itp", "render_face",
+                "--itp_step", "2",
+                "--save_vid", 
+                "--sample_pair_json", "./sample_json/teason/iccv_teason.json",
+                "--sample_pair_mode", "pair"
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/difareli-faster/sample_scripts/faster_inference_script/",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: relight_difareli+enc_image",
+            "type": "python",
+            "request": "launch",
+            "program": "./relight.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"2", "WANDB_MODE":"offline"},
+            "args": [
+                "--dataset", "ffhq",
+                "--set", "valid",
+                "--step", "010000", 
+                "--out_dir", "/data/mint/sampling/without_inversion",
+                "--cfg_name", "difareli+enc_image.yaml",
+                "--log_dir", "difareli+enc_image",
+                "--diffusion_steps", "1000",
+                "--seed", "47", 
+                "--batch_size", "1",
+                "--gpu_id", "2",
+                "--idx", "0", "1",
+                "--itp", "render_face",
+                "--itp_step", "2",
+                "--save_vid", 
+                "--sample_pair_json", "./sample_json/teason/iccv_teason.json",
+                "--sample_pair_mode", "pair"
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/difareli-faster/sample_scripts/faster_inference_script/",
+            "justMyCode": true
+        },
 
 
 
