@@ -46,4 +46,4 @@ dataset:
 
 train_misc:
   exp_name: "identity_without_inversion"
-  cfg_name: "difareli+image"
+  cfg_name: "difareli+unet_image"
