@@ -130,17 +130,13 @@ def load_data_img_deca(
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.deca_rendered_dir}/{in_image_type}/{set_}/")
             elif 'faceseg' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
-            elif 'laplacian' in in_image_type:
-                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.laplacian_dir}/{set_}/")
-                in_image['laplacian_mask'] = _list_image_files_recursively(f"{cfg.dataset.laplacian_mask_dir}/{set_}/")
-                in_image['laplacian_mask'] = image_path_list_to_dict(in_image['laplacian_mask'])
-            elif 'shadow_mask' in in_image_type:
-                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_mask_dir}/{set_}/")
-            elif ('raw' in in_image_type) or ('face_structure' in in_image_type): continue
+            elif in_image_type in ['raw', 'face_structure']: continue
             else:
                 raise NotImplementedError(f"The {in_image_type}-image type not found.")
 
         in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
+        # in_image[in_image_type] = image_path_list_to_sjdict(in_image[in_image_type])
+        
         # print(in_image[in_image_type])
         # print("#"*100)
         # exit()
@@ -148,13 +144,21 @@ def load_data_img_deca(
     deca_params, avg_dict = load_deca_params(deca_dir + set_, cfg)
 
     # For raw image
-    in_image['raw'] = _list_image_files_recursively(f"{data_dir}/{set_}")
-    in_image['raw'] = image_path_list_to_dict(in_image['raw'])
-    # print(in_image['raw'])
+    in_image['raw'] = image_path_list_to_dict(_list_image_files_recursively(f"{data_dir}/{set_}"))
+    sj_dict = image_path_list_to_sjdict(_list_image_files_recursively(f"{data_dir}/{set_}"))
+    # print(in_image.keys())
+    # print(sj_dict.keys())
+    # print(sj_dict['60118'])
+    # print(len(sj_dict['60118']))
+    # print(in_image['raw'][sj_dict['60118'][0]])
+    # print(in_image['raw'][sj_dict['60118'][1]])
+    # print(in_image['faceseg_nohead'][sj_dict['60118'][1]])
+    # print(in_image['deca_masked_face_images_woclip'][sj_dict['60118'][1].replace('.png', '.npy')])
 
     img_dataset = DECADataset(
         resolution=image_size,
         image_paths=in_image['raw'],
+        sj_dict=sj_dict,
         resize_mode=resize_mode,
         augment_mode=augment_mode,
         deca_params=deca_params,
@@ -191,13 +195,23 @@ def image_path_list_to_dict(path_list):
     img_paths_dict = {}
     for path in path_list:
         img_name = path.split('/')[-1]
-        # if '_' in img_name:
-            # img_name = img_name.split('_')[-1]
         if 'anno_' in img_name:
             img_name = img_name.split('anno_')[-1]
         img_paths_dict[img_name] = path
     return img_paths_dict
 
+def image_path_list_to_sjdict(path_list):
+    sj_paths_dict = {}
+    for path in path_list:
+        img_name = path.split('/')[-1]
+        sj_name = img_name.split('_')[0]
+        if 'anno_' in img_name:
+            img_name = img_name.split('anno_')[-1]
+        if sj_name not in sj_paths_dict.keys():
+            sj_paths_dict[sj_name] = [img_name]
+        else:
+            sj_paths_dict[sj_name].append(img_name)
+    return sj_paths_dict
 
 def _list_image_files_recursively(data_dir):
     results = []
@@ -215,6 +229,7 @@ class DECADataset(Dataset):
         self,
         resolution,
         image_paths,
+        sj_dict,
         resize_mode,
         augment_mode,
         deca_params,
@@ -229,6 +244,7 @@ class DECADataset(Dataset):
         super().__init__()
         self.resolution = resolution
         self.local_images = image_paths
+        self.sj_dict = sj_dict 
         self.resize_mode = resize_mode
         self.augment_mode = augment_mode
         self.deca_params = deca_params
@@ -245,46 +261,39 @@ class DECADataset(Dataset):
         print(f"[#] Bounding the input of UNet to +-{self.cfg.img_model.input_bound}")
 
     def __len__(self):
-        return len(self.local_images)
+        return len(self.sj_dict)
 
     def __getitem__(self, idx):
-        out_dict = {}
+        # Select the sj at idx
+        query_img_name = list(self.sj_dict.keys())[idx]
+        # Select the light grid from sj
+        src, dst = np.random.choice(a=np.arange(len(self.sj_dict[query_img_name])), size=2, replace=False)
+        src_arr, src_dict = self.get_data_sjdict(self.sj_dict[query_img_name][src])
+        dst_arr, dst_dict = self.get_data_sjdict(self.sj_dict[query_img_name][dst])
+        return {'arr':src_arr, 'dict':src_dict}, {'arr':dst_arr, 'dict':dst_dict}
 
+    def get_data_sjdict(self, query_img_name):
         # Raw Images in dataset
-        query_img_name = list(self.local_images.keys())[idx]
+        out_dict = {}
         raw_pil_image = self.load_image(self.local_images[query_img_name])
         raw_img = self.augmentation(pil_image=raw_pil_image)
 
         # cond_img contains the condition image from "img_cond_model.in_image + img_model.dpm_cond_img"
-        cond_img = self.load_condition_image(raw_pil_image, query_img_name) 
-        # if self.cfg.img_cond_model.apply or self.cfg.img_model.apply_dpm_cond_img:
+        cond_img = self.load_condition_image(query_img_name) 
         for i, k in enumerate(self.condition_image):
             if k is None: continue
             elif k == 'raw':
                 each_cond_img = (raw_img / 127.5) - 1
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-            elif k == 'shadow_mask':
-                each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
-                each_cond_img = self.prep_cond_img(each_cond_img, k, i)
+            elif k == 'face_structure':
+                each_cond_img = (raw_img / 127.5) - 1
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                each_cond_img = (each_cond_img / 127.5) - 1
-                out_dict[f'{k}_img'] = each_cond_img[[0], ...]  # The shadow mask has the same value across 3-channels
+                out_dict[f'{k}_img'] = each_cond_img  # The shadow mask has the same value across 3-channels
             elif 'woclip' in k:
                 #NOTE: Input is the npy array -> Used cv2.resize() to handle
                 each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_AREA)
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                 out_dict[f'{k}_img'] = each_cond_img
-            elif 'laplacian' in k:
-                laplacian_mask = np.array(self.load_image(self.kwargs['in_image_for_cond']['laplacian_mask'][query_img_name.replace(self.img_ext, '.png')]))
-                laplacian_mask = self.prep_cond_img(laplacian_mask, k, i)
-                each_cond_img = cond_img[k] * laplacian_mask
-                each_cond_img = cv2.resize(each_cond_img, (self.resolution, self.resolution), cv2.INTER_AREA)
-                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                # Store mask & img
-                out_dict[f'{k}_img'] = each_cond_img
-                laplacian_mask = cv2.resize(laplacian_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                out_dict[f'{k}_mask'] = np.transpose(laplacian_mask, (2, 0, 1))
-                assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
             elif 'faceseg' in k:
                 faceseg_mask = self.prep_cond_img(~cond_img[k], k, i)   # Invert mask for dilation
                 faceseg_mask = ~faceseg_mask    # Invert back to original mask
@@ -353,7 +362,7 @@ class DECADataset(Dataset):
                 else: raise NotImplementedError("No preprocessing found.")
         return each_cond_img
                     
-    def load_condition_image(self, raw_pil_image, query_img_name):
+    def load_condition_image(self, query_img_name):
         self.img_ext = f".{query_img_name.split('.')[-1]}"
         condition_image = {}
         for in_image_type in self.condition_image:
@@ -371,6 +380,8 @@ class DECADataset(Dataset):
                     condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
+            elif in_image_type == 'face_structure':
+                condition_image['face_structure'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
             else: raise ValueError(f"Not supported type of condition image : {in_image_type}")
         return condition_image
 
