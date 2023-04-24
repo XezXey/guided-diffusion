@@ -26,8 +26,8 @@ img_cond_model:
   out_channels: 128
   condition_dim: 256
   override_cond: "spatial_latent"
-  prep_image: [Null, Null, Null]
-  noise_dpm_cond_img: [Null, Null, Null]
+  prep_image: [Null, Null, Null, Null]
+  noise_dpm_cond_img: [Null, Null, Null, Null]
 
 relighting:
   use_SH: False
