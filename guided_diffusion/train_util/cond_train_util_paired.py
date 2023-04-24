@@ -313,35 +313,36 @@ class TrainLoop(LightningModule):
         :param model_kwargs: model_kwargs dict
         """
         out_cond = {}
-        def construct_cond_tensor(pair_cfg, src, dst):
+        def construct_cond_tensor(pair_cfg, src, dst, sj_paired):
             cond_img = []
             for k, p in pair_cfg:
                 if p is None:
                     tmp_img = cond[f'{k}_img']
-                else:
-                    if 'faceseg' in k:
-                        share = True if p.split('-')[0] == 'share' else False
-                        masking = p.split('-')[-1]
-                        if masking == 'dpm_noise_masking':
-                            mask =  cond[f'{k}_mask'].bool()
-                            assert th.all(mask == cond[f'{k}_mask'])
-                            if share:
-                                tmp_img = (self.diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
-                            else:
-                                tmp_img = (self.diffusion.q_sample(dat, t) * mask) + (-th.ones_like(dat) * ~mask)
-                        elif masking == 'dpm_noise':
-                            if share:
-                                tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t, noise=noise)
-                            else:
-                                tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t)
-                        else: raise NotImplementedError("[#] Only dpm_noise_masking and dpm_noise is available")
-                    elif 'deca' in k:
-                        share = True if p.split('-')[0] == 'share' else False
-                        if share:
-                            tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t, noise=noise)
-                        else:
-                            tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t)
-                    else: raise NotImplementedError("[#] Input Features are not available")
+                else: raise NotImplementedError
+                # else:
+                    # if 'faceseg' in k:
+                        # share = True if p.split('-')[0] == 'share' else False
+                        # masking = p.split('-')[-1]
+                        # if masking == 'dpm_noise_masking':
+                            # mask =  cond[f'{k}_mask'].bool()
+                            # assert th.all(mask == cond[f'{k}_mask'])
+                            # if share:
+                                # tmp_img = (self.diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
+                            # else:
+                                # tmp_img = (self.diffusion.q_sample(dat, t) * mask) + (-th.ones_like(dat) * ~mask)
+                        # elif masking == 'dpm_noise':
+                            # if share:
+                                # tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t, noise=noise)
+                            # else:
+                                # tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t)
+                        # else: raise NotImplementedError("[#] Only dpm_noise_masking and dpm_noise is available")
+                    # elif 'deca' in k:
+                        # share = True if p.split('-')[0] == 'share' else False
+                        # if share:
+                            # tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t, noise=noise)
+                        # else:
+                            # tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t)
+                    # else: raise NotImplementedError("[#] Input Features are not available")
                 cond_img.append(tmp_img)
 
             return th.cat((cond_img), dim=1)
@@ -349,18 +350,18 @@ class TrainLoop(LightningModule):
         if self.cfg.img_model.apply_dpm_cond_img:
             out_cond['dpm_cond_img'] = construct_cond_tensor(pair_cfg=zip(self.cfg.img_model.dpm_cond_img, 
                                                                       self.cfg.img_model.noise_dpm_cond_img),
-                                                             src=src, dst=dst)
+                                                             src=src, dst=dst, sj_paired = self.cfg.img_cond_model.sj_paired)
         else:
             out_cond['dpm_cond_img'] = None
             
         if self.cfg.img_cond_model.apply:
             out_cond['cond_img'] = construct_cond_tensor(pair_cfg=zip(self.cfg.img_cond_model.in_image, 
                                                                       self.cfg.img_cond_model.noise_dpm_cond_img),
-                                                         src=src, dst=dst)
+                                                         src=src, dst=dst, sj_paired = self.cfg.img_cond_model.sj_paired)
         else:
             out_cond['cond_img'] = None
             
-        return cond
+        return out_cond
     
     def prepare_cond_sampling(self, dat, cond):
         """

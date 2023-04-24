@@ -104,23 +104,30 @@ cfg.img_model.noise_dpm_cond_img = [None]
 # Additional Encoder Network
 img_cond_model_img_type = {'raw':3, 
                            'face_structure':3,
-                            'deca_shape_images':3, 
-                            'deca_template_shape_images':3, 
-                            'deca_albedo_shape_images':3, 
-                            'deca_albedo_template_shape_images':3, 
-                            'deca_masked_face_images_wclip':3, 
-                            'deca_masked_face_images_woclip':3,
-                            'shadow_mask':1,
-                            'faceseg_face':3, 
-                            'faceseg_faceskin&nose':3, 
-                            'faceseg_bg&noface':3,
-                            'faceseg_bg_noface&nohair':3,
-                            'faceseg_bg&ears_noface&nohair':3,
-                            'faceseg_bg':3,
-                            'faceseg_nohead':3,
-                            'faceseg_face&hair':3, 
-                            'normals':3,
-                            'laplacian_topmost_eyes':3,
+                           'deca_shape_images':3, 
+                           'deca_template_shape_images':3, 
+                           'deca_albedo_shape_images':3, 
+                           'deca_albedo_template_shape_images':3, 
+                           'deca_masked_face_images_wclip':3, 
+                           'deca_masked_face_images_woclip':3,
+                           'shadow_mask':1,
+                           'faceseg_face':3, 
+                           'faceseg_faceskin&nose':3, 
+                           'faceseg_bg&noface':3,
+                           'faceseg_bg_noface&nohair':3,
+                           'faceseg_bg&ears_noface&nohair':3,
+                           'faceseg_bg':3,
+                           'faceseg_nohead':3,
+                           'faceseg_face&hair':3, 
+                           'normals':3,
+                           'laplacian_topmost_eyes':3,
+                           # For paired training
+                           'src_deca_masked_face_images_wclip':3,
+                           'dst_deca_masked_face_images_wclip':3,
+                           'src_deca_masked_face_images_woclip':3,
+                           'dst_deca_masked_face_images_woclip':3,
+                           'src_faceseg_nohead':3,
+                           'dst_faceseg_nohead':3,
                             None:0,
 }
 cfg.img_cond_model = CN()
@@ -128,6 +135,7 @@ cfg.img_cond_model.name = "ImgEncoder"
 cfg.img_cond_model.apply = False
 cfg.img_cond_model.arch = 'EncoderUNet'
 cfg.img_cond_model.in_image = ['raw'] 
+cfg.img_cond_model.sj_paired = []
 cfg.img_cond_model.image_size = 128
 cfg.img_cond_model.num_channels = 128
 cfg.img_cond_model.in_channels = sum(img_cond_model_img_type[in_img] for in_img in cfg.img_cond_model.in_image)
