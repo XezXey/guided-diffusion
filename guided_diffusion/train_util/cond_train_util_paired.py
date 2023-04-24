@@ -282,10 +282,11 @@ class TrainLoop(LightningModule):
         
         # Losses
         model_compute_losses = functools.partial(
-            self.diffusion.training_losses,
+            self.diffusion.training_losses_paired,
             self.model_dict[self.cfg.img_model.name],
-            batch,
-            t,
+            src_xstart=src['dict']['image'],
+            dst_xstart=dst['dict']['image'],
+            t=t,
             noise=noise,
             model_kwargs=cond,
         )
@@ -315,34 +316,13 @@ class TrainLoop(LightningModule):
         out_cond = {}
         def construct_cond_tensor(pair_cfg, src, dst, sj_paired):
             cond_img = []
-            for k, p in pair_cfg:
+            for i, (k, p) in enumerate(pair_cfg):
+                if sj_paired[i] == 'src': cond = src['dict'].copy()
+                elif sj_paired[i] == 'dst': cond = dst['dict'].copy()
+                else: raise NotImplementedError
                 if p is None:
                     tmp_img = cond[f'{k}_img']
                 else: raise NotImplementedError
-                # else:
-                    # if 'faceseg' in k:
-                        # share = True if p.split('-')[0] == 'share' else False
-                        # masking = p.split('-')[-1]
-                        # if masking == 'dpm_noise_masking':
-                            # mask =  cond[f'{k}_mask'].bool()
-                            # assert th.all(mask == cond[f'{k}_mask'])
-                            # if share:
-                                # tmp_img = (self.diffusion.q_sample(dat, t, noise=noise) * mask) + (-th.ones_like(dat) * ~mask)
-                            # else:
-                                # tmp_img = (self.diffusion.q_sample(dat, t) * mask) + (-th.ones_like(dat) * ~mask)
-                        # elif masking == 'dpm_noise':
-                            # if share:
-                                # tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t, noise=noise)
-                            # else:
-                                # tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t)
-                        # else: raise NotImplementedError("[#] Only dpm_noise_masking and dpm_noise is available")
-                    # elif 'deca' in k:
-                        # share = True if p.split('-')[0] == 'share' else False
-                        # if share:
-                            # tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t, noise=noise)
-                        # else:
-                            # tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t)
-                    # else: raise NotImplementedError("[#] Input Features are not available")
                 cond_img.append(tmp_img)
 
             return th.cat((cond_img), dim=1)
@@ -350,7 +330,7 @@ class TrainLoop(LightningModule):
         if self.cfg.img_model.apply_dpm_cond_img:
             out_cond['dpm_cond_img'] = construct_cond_tensor(pair_cfg=zip(self.cfg.img_model.dpm_cond_img, 
                                                                       self.cfg.img_model.noise_dpm_cond_img),
-                                                             src=src, dst=dst, sj_paired = self.cfg.img_cond_model.sj_paired)
+                                                             src=src, dst=dst, sj_paired = self.cfg.img_model.sj_paired)
         else:
             out_cond['dpm_cond_img'] = None
             
@@ -360,10 +340,11 @@ class TrainLoop(LightningModule):
                                                          src=src, dst=dst, sj_paired = self.cfg.img_cond_model.sj_paired)
         else:
             out_cond['cond_img'] = None
-            
+        
+        out_cond['cond_params'] = src['dict']['cond_params']
         return out_cond
     
-    def prepare_cond_sampling(self, dat, cond):
+    def prepare_cond_sampling(self, src, dst):
         """
         Prepare a condition for encoder network (e.g., adding noise, share noise with DPM)
         :param noise: noise map used in DPM
@@ -371,24 +352,53 @@ class TrainLoop(LightningModule):
         :param model_kwargs: model_kwargs dict
         """
         
+        # if self.cfg.img_model.apply_dpm_cond_img:
+        #     dpm_cond_img = []
+        #     for k, p in zip(self.cfg.img_model.dpm_cond_img, self.cfg.img_model.noise_dpm_cond_img):
+        #         tmp_img = cond[f'{k}_img']
+        #         dpm_cond_img.append(tmp_img)
+        #     cond['dpm_cond_img'] = th.cat((dpm_cond_img), dim=1)
+        # else:
+        #     cond['dpm_cond_img'] = None
+            
+        # if self.cfg.img_cond_model.apply:
+        #     cond_img = []
+        #     for k, p in zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.noise_dpm_cond_img):
+        #         tmp_img = cond[f'{k}_img']
+        #         cond_img.append(tmp_img)
+        #     cond['cond_img'] = th.cat((cond_img), dim=1)
+        # else:
+        #     cond['cond_img'] = None
+            
+        cond = {}
+        def construct_cond_tensor(pair_cfg, src, dst, sj_paired):
+            cond_img = []
+            for i, (k, p) in enumerate(pair_cfg):
+                if sj_paired[i] == 'src': cond = src['dict'].copy()
+                elif sj_paired[i] == 'dst': cond = dst['dict'].copy()
+                else: raise NotImplementedError
+                if p is None:
+                    tmp_img = cond[f'{k}_img']
+                else: raise NotImplementedError
+                cond_img.append(tmp_img)
+
+            return th.cat((cond_img), dim=1)
+        
         if self.cfg.img_model.apply_dpm_cond_img:
-            dpm_cond_img = []
-            for k, p in zip(self.cfg.img_model.dpm_cond_img, self.cfg.img_model.noise_dpm_cond_img):
-                tmp_img = cond[f'{k}_img']
-                dpm_cond_img.append(tmp_img)
-            cond['dpm_cond_img'] = th.cat((dpm_cond_img), dim=1)
+            cond['dpm_cond_img'] = construct_cond_tensor(pair_cfg=zip(self.cfg.img_model.dpm_cond_img, 
+                                                                      self.cfg.img_model.noise_dpm_cond_img),
+                                                             src=src, dst=dst, sj_paired = self.cfg.img_model.sj_paired)
         else:
             cond['dpm_cond_img'] = None
             
         if self.cfg.img_cond_model.apply:
-            cond_img = []
-            for k, p in zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.noise_dpm_cond_img):
-                tmp_img = cond[f'{k}_img']
-                cond_img.append(tmp_img)
-            cond['cond_img'] = th.cat((cond_img), dim=1)
+            cond['cond_img'] = construct_cond_tensor(pair_cfg=zip(self.cfg.img_cond_model.in_image, 
+                                                                      self.cfg.img_cond_model.noise_dpm_cond_img),
+                                                         src=src, dst=dst, sj_paired = self.cfg.img_cond_model.sj_paired)
         else:
             cond['cond_img'] = None
             
+        cond['cond_params'] = src['dict']['cond_params']
         return cond
 
     @rank_zero_only
@@ -465,20 +475,23 @@ class TrainLoop(LightningModule):
 
         if self.cfg.train.same_sampling:
             # batch here is a tuple of (dat, cond); thus used batch[0], batch[1] here
-            dat, cond = next(iter(self.train_loader))
-            dat = dat.type_as(batch[0])
-            cond = tensor_util.dict_type_as(in_d=cond, target_d=batch[1], keys=cond.keys())
+            src, dst = next(iter(self.train_loader))
+            # dat = dat.type_as(batch[0])
+            src['dict'] = tensor_util.dict_type_as(in_d=src['dict'], target_d=batch[0]['dict'], keys=src['dict'].keys())
+            dst['dict'] = tensor_util.dict_type_as(in_d=dst['dict'], target_d=batch[1]['dict'], keys=dst['dict'].keys())
         else:
-            dat, cond = batch
+            src, dst = batch
 
         n = self.cfg.train.n_sampling
-        if n > dat.shape[0]:
-            n = dat.shape[0]
+        if n > src['arr'].shape[0]:
+            n = src['arr'].shape[0]
             
-        dat = dat[:n]
-        noise = th.randn((n, 3, H, W)).type_as(dat)
-        assert noise.shape == dat.shape
-        cond = self.prepare_cond_sampling(dat=batch, cond=cond)
+        src_img = src['arr'][:n].type_as(batch[0]['arr'])
+        dst_img = dst['arr'][:n].type_as(batch[1]['arr'])
+        
+        noise = th.randn((n, 3, H, W)).type_as(src_img)
+        assert noise.shape == src_img.shape
+        cond = self.prepare_cond_sampling(src=src, dst=dst)
         cond = tensor_util.dict_slice(in_d=cond, keys=cond.keys(), n=n)
         
 
@@ -486,9 +499,10 @@ class TrainLoop(LightningModule):
         if self.cfg.img_cond_model.apply:
             self.forward_cond_network(cond=cond, model_dict=sampling_model_dict)
             
-        # Source Image
-        source_img = convert2rgb(dat, bound=self.input_bound) / 255.
-        log_image_fn(key=f'{sampling_model} - conditioned_image', image=make_grid(source_img, nrow=4), step=(step_ + 1) * self.n_gpus)
+        # Source&Target Image
+        source_img = convert2rgb(src_img, bound=self.input_bound) / 255.
+        target_img = convert2rgb(dst_img, bound=self.input_bound) / 255.
+        log_image_fn(key=f'{sampling_model} - source_image', image=make_grid(th.cat((source_img, target_img), dim=0), nrow=n), step=(step_ + 1) * self.n_gpus)
         
         # Condition Image
         if cond['dpm_cond_img'] is not None:
@@ -504,7 +518,7 @@ class TrainLoop(LightningModule):
             cond_img = th.cat((cond_img), dim=0)
             cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.
             
-            log_image_fn(key=f'{sampling_model} - conditioned_image (UNet)', image=make_grid(cond_img, nrow=4), step=(step_ + 1) * self.n_gpus)
+            log_image_fn(key=f'{sampling_model} - conditioned_image (UNet)', image=make_grid(cond_img, nrow=n), step=(step_ + 1) * self.n_gpus)
             # self.t_logger.add_image(tag=f'conditioned_image (UNet)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
             # self.t_logger.log_image(key=f'{sampling_model} - conditioned_image (UNet)', images=[make_grid(cond_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
@@ -521,7 +535,7 @@ class TrainLoop(LightningModule):
             cond_img = th.cat((cond_img), dim=0)
             cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.
             
-            log_image_fn(key=f'{sampling_model} - conditioned_image (Encoder)', image=make_grid(cond_img, nrow=4), step=(step_ + 1) * self.n_gpus)
+            log_image_fn(key=f'{sampling_model} - conditioned_image (Encoder)', image=make_grid(cond_img, nrow=n), step=(step_ + 1) * self.n_gpus)
             # tb.add_image(tag=f'conditioned_image (Encoder)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
             # self.t_logger.log_image(key=f'{sampling_model} - conditioned_image (Encoder)', images=[make_grid(cond_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
@@ -534,39 +548,13 @@ class TrainLoop(LightningModule):
             noise=noise,
         )
         ddim_sample_plot = ((ddim_sample['sample'] + 1) * 127.5) / 255.
-        log_image_fn(key=f'{sampling_model} - ddim_sample', image=make_grid(ddim_sample_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
+        log_image_fn(key=f'{sampling_model} - ddim_sample', image=make_grid(ddim_sample_plot, nrow=n), step=(step_ + 1) * self.n_gpus)
         ddim_predx0_plot = ((ddim_sample['pred_xstart'] + 1) * 127.5) / 255.
-        log_image_fn(key=f'{sampling_model} - ddim_predx0', image=make_grid(ddim_predx0_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
+        log_image_fn(key=f'{sampling_model} - ddim_predx0', image=make_grid(ddim_predx0_plot, nrow=n), step=(step_ + 1) * self.n_gpus)
         
-        # Reverse Sampling
-        ddim_reverse_sample, _ = self.diffusion.ddim_reverse_sample_loop(
-            model=sampling_model_dict[self.cfg.img_model.name],
-            clip_denoised=True,
-            model_kwargs=cond,
-            x=dat,
-        )
-        
-        ddim_reverse_sample_plot = ((ddim_reverse_sample['sample'] + 1) * 127.5) / 255.
-        log_image_fn(key=f'{sampling_model} - ddim_reverse_sample (xT)', image=make_grid(ddim_reverse_sample_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
-        ddim_reverse_predx0_plot = ((ddim_reverse_sample['pred_xstart'] + 1) * 127.5) / 255.
-        log_image_fn(key=f'{sampling_model} - ddim_reverse_predx0 (xT)', image=make_grid(ddim_reverse_predx0_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
-        
-        ddim_recon_sample, _ = self.diffusion.ddim_sample_loop(
-            model=sampling_model_dict[self.cfg.img_model.name],
-            shape=(n, 3, H, W),
-            clip_denoised=True,
-            model_kwargs=cond,
-            noise=ddim_reverse_sample['sample'],
-        )
-        
-        ddim_recon_sample_plot = ((ddim_recon_sample['sample'] + 1) * 127.5) / 255.
-        log_image_fn(key=f'{sampling_model} - ddim_recon_sample (x0)', image=make_grid(ddim_recon_sample_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
-        ddim_recon_predx0_plot = ((ddim_recon_sample['pred_xstart'] + 1) * 127.5) / 255.
-        log_image_fn(key=f'{sampling_model} - ddim_recon_predx0 (x0)', image=make_grid(ddim_recon_predx0_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
-        
-
         # Save memory!
-        dat = dat.detach()
+        src_img = src_img.detach()
+        dst_img = dst_img.detach()
         cond = tensor_util.dict_detach(in_d=cond, keys=cond.keys())
         self.train_mode(model=sampling_model_dict)
 

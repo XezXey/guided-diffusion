@@ -268,8 +268,12 @@ class DECADataset(Dataset):
         query_img_name = list(self.sj_dict.keys())[idx]
         # Select the light grid from sj
         src, dst = np.random.choice(a=np.arange(len(self.sj_dict[query_img_name])), size=2, replace=False)
+        # print(src, dst)
+        # print(self.sj_dict[query_img_name][src])
+        # print(self.sj_dict[query_img_name][dst])
         src_arr, src_dict = self.get_data_sjdict(self.sj_dict[query_img_name][src])
         dst_arr, dst_dict = self.get_data_sjdict(self.sj_dict[query_img_name][dst])
+        assert src_dict['image_name'] != dst_dict['image_name']
         return {'arr':src_arr, 'dict':src_dict}, {'arr':dst_arr, 'dict':dst_dict}
 
     def get_data_sjdict(self, query_img_name):

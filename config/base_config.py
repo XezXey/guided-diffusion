@@ -100,6 +100,7 @@ cfg.img_model.dpm_cond_img = [None]
 cfg.img_model.apply_dpm_cond_img = False
 cfg.img_model.prep_dpm_cond_img = [None]
 cfg.img_model.noise_dpm_cond_img = [None]
+cfg.img_model.sj_paired = []
 
 # Additional Encoder Network
 img_cond_model_img_type = {'raw':3, 

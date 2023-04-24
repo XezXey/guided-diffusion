@@ -35,7 +35,8 @@ def dict_type_as(in_d, target_d, keys):
         if key in ['image_name', 'raw_image_path']:
             continue
         else:
-            if th.is_tensor(in_d[key]):
+            if isinstance(in_d[key], str): continue
+            elif th.is_tensor(in_d[key]):
                 in_d[key] = in_d[key].type_as(target_d[key])
             elif isinstance(in_d[key], list):
                 for i in range(len(in_d[key])):

@@ -948,6 +948,53 @@ class GaussianDiffusion:
             raise NotImplementedError(self.loss_type)
 
         return terms, output
+    
+    def training_losses_paired(self, model, src_xstart, dst_xstart, t, model_kwargs=None, noise=None):
+        """
+        Compute training losses for a single timestep.
+
+        :param model: the model to evaluate loss on.
+        :param x_start: the [N x C x ...] tensor of inputs.
+        :param t: a batch of timestep indices.
+        :param model_kwargs: if not None, a dict of extra keyword arguments to
+            pass to the model. This can be used for conditioning.
+        :param noise: if specified, the specific Gaussian noise to try to remove.
+        :return: a dict with the key "loss" containing a tensor of shape [N].
+                 Some mean or variance settings may also have other keys.
+        """
+        if model_kwargs is None:
+            model_kwargs = {}
+        if noise is None:
+            noise = th.randn_like(src_xstart)
+
+        x_t = self.q_sample(src_xstart, t, noise=noise)
+        
+        terms = {}
+        if self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
+            #NOTE: Forward pass happens here...    
+            if model_kwargs['dpm_cond_img'] is not None:
+                output = model(th.cat((x_t, model_kwargs['dpm_cond_img']), dim=1).float(), self._scale_timesteps(t).long(), **model_kwargs)
+            else:
+                output = model(x_t.float(), self._scale_timesteps(t).long(), **model_kwargs)
+            model_output = output['output']
+            target = {
+                ModelMeanType.PREVIOUS_X: self.q_posterior_mean_variance(
+                    x_start=dst_xstart, x_t=x_t, t=t
+                )[0],
+                ModelMeanType.START_X: dst_xstart,
+                ModelMeanType.EPSILON: noise,
+            }[self.model_mean_type]
+            assert model_output.shape == target.shape == dst_xstart.shape
+            terms["mse"] = mean_flat((target.type_as(model_output) - model_output) ** 2)
+            if "vb" in terms:
+                terms["loss"] = terms["mse"] + terms["vb"]
+            else:
+                terms["loss"] = terms["mse"]
+        else:
+            raise NotImplementedError(self.loss_type)
+
+        return terms, output
+
 
 
     def _prior_bpd(self, x_start):

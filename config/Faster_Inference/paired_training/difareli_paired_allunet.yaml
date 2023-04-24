@@ -1,6 +1,6 @@
 img_model:
   name: "ImgCond"
-  arch: "UNetCond_SpatialCondition_Hadamart"
+  arch: "UNetCond"
   image_size: 64
   in_image: ['raw']
   in_channels: 3
@@ -8,23 +8,18 @@ img_model:
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
   hadamart_prep: "Tanh"
-  # sj_paired_dat: []
+
+  dpm_cond_img: ['deca_masked_face_images_woclip', 'deca_masked_face_images_woclip', 'faceseg_nohead', 'face_structure']
+  sj_paired: ['src', 'dst', 'src', 'src']
+  prep_dpm_cond_img: [Null, Null, Null, Null]
+  noise_dpm_cond_img: [Null, Null, Null, Null]
+  apply_dpm_cond_img: True
 
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb', 'shadow']
 
 img_cond_model:
-  apply: True
-  arch: "EncoderUNet_SpatialCondition"
-  in_image: ['deca_masked_face_images_woclip', 'deca_masked_face_images_woclip', 'faceseg_nohead']
-  sj_paired: ['src', 'dst', 'src']
-  in_channels: 9
-  image_size: 64
-  out_channels: 128
-  condition_dim: 256
-  override_cond: "spatial_latent"
-  prep_image: [Null, Null, Null]
-  noise_dpm_cond_img: [Null, Null, Null]
+  apply: False
 
 relighting:
   use_SH: False
@@ -44,4 +39,4 @@ dataset:
 
 train_misc:
   exp_name: "paired_training"
-  cfg_name: "difareli"
+  cfg_name: "difareli_paired_allunet"

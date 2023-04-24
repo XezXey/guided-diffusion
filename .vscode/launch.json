@@ -14,7 +14,7 @@
 //                            __/ | __/ |                                                __/ |
 //                           |___/ |___/                                                |___/ 
         {
-            "name": "Python: train_difareli_paired",
+            "name": "Python: train_difareli_paired_allenc",
             "type": "python",
             "request": "launch",
             "env": {"CUDA_VISIBLE_DEVICES":"1", "WANDB_MODE":"offline"},
@@ -22,8 +22,26 @@
             "args": ["--train.log_dir", "/data/mint/model_logs/test",
                     "--train.batch_size", "5",
                     "--train.n_gpus", "1", 
+                    "--train.sampling_interval", "3", 
                     "--diffusion.diffusion_steps", "50",
-                    "--cfg", "./config/Faster_Inference/paired_training/difareli_paired.yaml",
+                    "--cfg", "./config/Faster_Inference/paired_training/difareli_paired_allenc.yaml",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/difareli-faster/",
+            "justMyCode": true
+        }, 
+        {
+            "name": "Python: train_difareli_paired_allunet",
+            "type": "python",
+            "request": "launch",
+            "env": {"CUDA_VISIBLE_DEVICES":"1", "WANDB_MODE":"offline"},
+            "program": "./train_scripts/image_train_paired.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/test",
+                    "--train.batch_size", "5",
+                    "--train.n_gpus", "1", 
+                    "--train.sampling_interval", "3", 
+                    "--diffusion.diffusion_steps", "50",
+                    "--cfg", "./config/Faster_Inference/paired_training/difareli_paired_allunet.yaml",
             ],
             "console": "integratedTerminal",
             "cwd": "/home/mint/difareli-faster/",
