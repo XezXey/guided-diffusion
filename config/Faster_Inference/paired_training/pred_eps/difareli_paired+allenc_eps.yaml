@@ -1,6 +1,3 @@
-diffusion:
-  predict_xstart: True
-
 img_model:
   name: "ImgCond"
   arch: "UNetCond_SpatialCondition_Hadamart"
@@ -20,13 +17,13 @@ img_cond_model:
   arch: "EncoderUNet_SpatialCondition"
   in_image: ['deca_masked_face_images_woclip', 'deca_masked_face_images_woclip', 'faceseg_nohead', 'face_structure']
   sj_paired: ['src', 'dst', 'src', 'src']
-  in_channels: 9
+  in_channels: 12
   image_size: 64
   out_channels: 128
   condition_dim: 256
   override_cond: "spatial_latent"
-  prep_image: [Null, Null, Null, Null]
-  noise_dpm_cond_img: [Null, Null, Null, Null]
+  prep_image: [Null, Null, Null]
+  noise_dpm_cond_img: [Null, Null, Null]
 
 relighting:
   use_SH: False
@@ -46,4 +43,4 @@ dataset:
 
 train_misc:
   exp_name: "paired_training"
-  cfg_name: "difareli_paired_allenc_xstart"
+  cfg_name: "difareli_paired_allenc_eps"
