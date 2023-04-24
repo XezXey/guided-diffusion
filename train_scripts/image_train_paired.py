@@ -25,6 +25,7 @@ def main():
     img_model, diffusion = create_img_and_diffusion(cfg)
     print(img_model)
     print("[#] Model mean type : ", diffusion.model_mean_type)
+    print("[#] Denoising on src? : ", cfg.diffusion.denoise_src)
     # Filtered out the None model
     img_model = {k: v for k, v in img_model.items() if v is not None}
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)

@@ -65,6 +65,23 @@
             "justMyCode": true
         }, 
         {
+            "name": "Python: difareli_paired+unet_face+enc_deca_eps",
+            "type": "python",
+            "request": "launch",
+            "env": {"CUDA_VISIBLE_DEVICES":"1", "WANDB_MODE":"offline"},
+            "program": "./train_scripts/image_train_paired.py",
+            "args": ["--train.log_dir", "/data/mint/model_logs/test",
+                    "--train.batch_size", "5",
+                    "--train.n_gpus", "1", 
+                    "--train.sampling_interval", "3", 
+                    "--diffusion.diffusion_steps", "50",
+                    "--cfg", "./config/Faster_Inference/paired_training/pred_eps/difareli_paired+unet_face+enc_deca_eps.yaml",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/difareli-faster/",
+            "justMyCode": true
+        }, 
+        {
             "name": "Python: train_difareli+enc_image",
             "type": "python",
             "request": "launch",

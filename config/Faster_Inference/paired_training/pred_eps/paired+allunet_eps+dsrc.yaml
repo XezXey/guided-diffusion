@@ -1,3 +1,7 @@
+diffusion:
+  predict_xstart: False
+  denoise_src: True
+
 img_model:
   name: "ImgCond"
   arch: "UNetCond"
@@ -27,16 +31,16 @@ relighting:
 train:
   weight_decay: 0.0
   sampling_interval: 10000
-  save_interval: 10000
+  save_interval: 20000
 
 dataset:
-  training_data: "generated_dataset"
-  deca_dir: "/data/mint/DPM_Dataset/generated_dataset/params/"
-  data_dir: "/data/mint/DPM_Dataset/generated_dataset/gen_images/"
-  face_segment_dir: "/data/mint/DPM_Dataset/generated_dataset/face_segment/"
-  deca_rendered_dir: "/data/mint/DPM_Dataset/generated_dataset/rendered_images/"
+  training_data: "generated_dataset_80perc"
+  deca_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc/params/"
+  data_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc/gen_images/"
+  face_segment_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc/face_segment/"
+  deca_rendered_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc/rendered_images/"
 
 
 train_misc:
   exp_name: "paired_training"
-  cfg_name: "difareli_paired_allunet_eps"
+  cfg_name: "paired+allunet_eps+dsrc"

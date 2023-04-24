@@ -240,6 +240,7 @@ cfg.diffusion.rescale_timesteps = False
 cfg.diffusion.rescale_learned_sigmas = False
 cfg.diffusion.timestep_respacing = ""
 cfg.diffusion.clip_denoised = True
+cfg.diffusion.denoise_src = True
 
 
 def get_cfg_defaults():

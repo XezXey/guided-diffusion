@@ -180,6 +180,7 @@ class TrainLoop(LightningModule):
             print(f"Loading EMA from checkpoint: {ckpt_path}...")
             state_dict = th.load(ckpt_path, map_location='cpu')
             ema_params = self.model_trainer_dict[name].state_dict_to_master_params(state_dict)
+        else: ema_params = None
 
         return ema_params
 
@@ -279,6 +280,7 @@ class TrainLoop(LightningModule):
         cond = self.prepare_cond_train(src=src, dst=dst, t=t, noise=noise)
         
         cond = self.forward_cond_network(cond)
+        cond['denoise_src'] = self.cfg.diffusion.denoise_src
         
         # Losses
         model_compute_losses = functools.partial(
@@ -547,10 +549,11 @@ class TrainLoop(LightningModule):
             model_kwargs=cond,
             noise=noise,
         )
+        # log_image_fn(key=f'{sampling_model} - source_image', image=make_grid(th.cat((source_img, target_img), dim=0), nrow=n), step=(step_ + 1) * self.n_gpus)
         ddim_sample_plot = ((ddim_sample['sample'] + 1) * 127.5) / 255.
-        log_image_fn(key=f'{sampling_model} - ddim_sample', image=make_grid(ddim_sample_plot, nrow=n), step=(step_ + 1) * self.n_gpus)
+        log_image_fn(key=f'{sampling_model} - ddim_sample', image=make_grid(th.cat((source_img, ddim_sample_plot, target_img), dim=0), nrow=n), step=(step_ + 1) * self.n_gpus)
         ddim_predx0_plot = ((ddim_sample['pred_xstart'] + 1) * 127.5) / 255.
-        log_image_fn(key=f'{sampling_model} - ddim_predx0', image=make_grid(ddim_predx0_plot, nrow=n), step=(step_ + 1) * self.n_gpus)
+        log_image_fn(key=f'{sampling_model} - ddim_predx0', image=make_grid(th.cat((source_img, ddim_predx0_plot, target_img), dim=0), nrow=n), step=(step_ + 1) * self.n_gpus)
         
         # Save memory!
         src_img = src_img.detach()
