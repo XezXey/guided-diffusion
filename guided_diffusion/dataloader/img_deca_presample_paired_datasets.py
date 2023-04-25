@@ -179,8 +179,8 @@ def load_data_img_deca(
 
     if deterministic:
         loader = DataLoader(
-            img_dataset, batch_size=batch_size, shuffle=False, num_workers=16, drop_last=True, 
-            pin_memory=True, persistent_workers=True
+            img_dataset, batch_size=batch_size, shuffle=False, num_workers=16, drop_last=True, pin_memory=True, 
+            persistent_workers=True
         )
     else:
         loader = DataLoader(
@@ -244,7 +244,6 @@ class DECADataset(Dataset):
         super().__init__()
         self.resolution = resolution
         self.local_images = image_paths
-        self.sj_dict = sj_dict 
         self.resize_mode = resize_mode
         self.augment_mode = augment_mode
         self.deca_params = deca_params
@@ -258,22 +257,46 @@ class DECADataset(Dataset):
         self.kwargs = kwargs
         self.condition_image = self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img + self.cfg.img_model.in_image
         self.prep_condition_image = self.cfg.img_cond_model.prep_image + self.cfg.img_model.prep_dpm_cond_img + self.cfg.img_model.prep_in_image
+        self.sj_dict = sj_dict 
+        self.sj_to_index_dict, self.index_to_sj_dict, self.sj_dict_swap = self.get_sj_index_dict()
         print(f"[#] Bounding the input of UNet to +-{self.cfg.img_model.input_bound}")
 
     def __len__(self):
-        return len(self.sj_dict)
+        return len(self.local_images)
 
-    def __getitem__(self, idx):
+    def get_sj_index_dict(self):
+        sj_to_index_dict = {}
+        index_to_sj_dict = {}
+        sj_dict_swap = {}
+        for sj in self.sj_dict.keys():
+            sj_list = list(self.local_images.keys())
+            sj_index = [sj_list.index(v) for v in self.sj_dict[sj]]
+            sj_to_index_dict[sj] = sj_index
+            for sji in sj_index:
+                index_to_sj_dict[sji] = sj
+            for sj_name in self.sj_dict[sj]:
+                sj_dict_swap[sj_name] = sj
+                
+        # print(sj_to_index_dict, index_to_sj_dict, sj_dict_swap)
+        
+        # idx = 9942
+        # print(sj_to_index_dict[sj_name])
+        return sj_to_index_dict, index_to_sj_dict, sj_dict_swap
+    
+    def __getitem__(self, src_idx):
         # Select the sj at idx
-        query_img_name = list(self.sj_dict.keys())[idx]
+        query_src_name = list(self.local_images.keys())[src_idx]
+        print(src_idx, query_src_name)
+        sj_name = self.sj_dict_swap[query_src_name]
+        dst_idx = self.sj_to_index_dict[sj_name].copy()
+        dst_idx.remove(src_idx)
+        dst_idx = np.random.choice(dst_idx, 1)[0]
+        query_dst_name = list(self.local_images.keys())[dst_idx]
         # Select the light grid from sj
-        src, dst = np.random.choice(a=np.arange(len(self.sj_dict[query_img_name])), size=2, replace=False)
-        # print(src, dst)
-        # print(self.sj_dict[query_img_name][src])
-        # print(self.sj_dict[query_img_name][dst])
-        src_arr, src_dict = self.get_data_sjdict(self.sj_dict[query_img_name][src])
-        dst_arr, dst_dict = self.get_data_sjdict(self.sj_dict[query_img_name][dst])
+        src_arr, src_dict = self.get_data_sjdict(query_src_name)
+        dst_arr, dst_dict = self.get_data_sjdict(query_dst_name)
         assert src_dict['image_name'] != dst_dict['image_name']
+        assert src_dict['image_name'].split('_')[0] == dst_dict['image_name'].split('_')[0]
         return {'arr':src_arr, 'dict':src_dict}, {'arr':dst_arr, 'dict':dst_dict}
 
     def get_data_sjdict(self, query_img_name):
