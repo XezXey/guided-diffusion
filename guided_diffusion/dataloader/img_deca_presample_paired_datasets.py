@@ -286,7 +286,7 @@ class DECADataset(Dataset):
     def __getitem__(self, src_idx):
         # Select the sj at idx
         query_src_name = list(self.local_images.keys())[src_idx]
-        print(src_idx, query_src_name)
+        # print(src_idx, query_src_name)
         sj_name = self.sj_dict_swap[query_src_name]
         dst_idx = self.sj_to_index_dict[sj_name].copy()
         dst_idx.remove(src_idx)
