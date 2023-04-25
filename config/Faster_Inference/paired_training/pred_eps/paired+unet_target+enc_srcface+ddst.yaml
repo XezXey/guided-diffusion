@@ -54,4 +54,4 @@ dataset:
 
 train_misc:
   exp_name: "paired_training"
-  cfg_name: "paired+allenc_eps+ddst"
+  cfg_name: "paired+unet_target+enc_srcface+ddst"
