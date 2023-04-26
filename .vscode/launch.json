@@ -1778,6 +1778,34 @@
             "cwd": "/home/mint/difareli-faster/sample_scripts/faster_inference_script/",
             "justMyCode": true
         },
+        {
+            "name": "Python: relight_paired",
+            "type": "python",
+            "request": "launch",
+            "program": "./relight_paired.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"2", "WANDB_MODE":"offline"},
+            "args": [
+                "--dataset", "ffhq",
+                "--set", "valid",
+                "--step", "040000", 
+                "--out_dir", "/data/mint/sampling/paired_training",
+                "--cfg_name", "paired+allunet_eps+ddst.yaml",
+                "--log_dir", "paired+allunet_eps+ddst",
+                "--diffusion_steps", "1000",
+                "--seed", "47", 
+                "--batch_size", "1",
+                "--gpu_id", "2",
+                "--idx", "0", "1",
+                "--itp", "render_face",
+                "--itp_step", "5",
+                "--save_vid", 
+                "--sample_pair_json", "./sample_json/teason/iccv_teason.json",
+                "--sample_pair_mode", "pair"
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/difareli-faster/sample_scripts/faster_inference_script/",
+            "justMyCode": true
+        },
 
 
 

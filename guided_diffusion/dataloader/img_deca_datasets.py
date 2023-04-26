@@ -371,6 +371,8 @@ class DECADataset(Dataset):
                     condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
+            elif in_image_type == 'face_structure':
+                condition_image['face_structure'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
             else: raise ValueError(f"Not supported type of condition image : {in_image_type}")
         return condition_image
 
