@@ -21,7 +21,7 @@ img_cond_model:
   arch: "EncoderUNet_SpatialCondition"
   in_image: ['deca_masked_face_images_woclip', 'deca_masked_face_images_woclip', 'face_structure']
   sj_paired: ['src', 'dst', 'src']
-  in_channels: 12
+  in_channels: 9
   image_size: 128
   out_channels: 128
   condition_dim: 256
