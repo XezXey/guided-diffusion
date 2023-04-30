@@ -268,8 +268,6 @@ class DECADataset(Dataset):
         return the 
         - sj_to_index_dict : {sj_name: [idx1, idx2, ...]}
             e.g. {60065: [9942, 9943, ...]}
-        - index_to_sj_dict : {idx: sj_name} 
-            e.g. {9942: 60065, 9943: 60065, ...}
         - sj_dict_swap : the swappped version of sj_dict (between key and value)
             e.g. {/<path>/60065_00_00.jpg: 60065, /<path>/60065_00_01.jpg: 60065, ...}
         '''
@@ -281,7 +279,6 @@ class DECADataset(Dataset):
             sj_to_index_dict[sj] = sj_index
             for sj_name in self.sj_dict[sj]:
                 sj_dict_swap[sj_name] = sj
-                
         return sj_to_index_dict, sj_dict_swap
     
     def __getitem__(self, src_idx):
@@ -295,6 +292,8 @@ class DECADataset(Dataset):
         # Select the light grid from sj
         src_arr, src_dict = self.get_data_sjdict(query_src_name)
         dst_arr, dst_dict = self.get_data_sjdict(query_dst_name)
+        
+        # Check different image name "But" same sj
         assert src_dict['image_name'] != dst_dict['image_name']
         assert src_dict['image_name'].split('_')[0] == dst_dict['image_name'].split('_')[0]
         return {'arr':src_arr, 'dict':src_dict}, {'arr':dst_arr, 'dict':dst_dict}
