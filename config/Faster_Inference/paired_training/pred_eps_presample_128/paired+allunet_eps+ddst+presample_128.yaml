@@ -44,4 +44,4 @@ dataset:
 
 train_misc:
   exp_name: "paired_training"
-  cfg_name: "paired+allunet_eps+ddst+presample"
+  cfg_name: "paired+allunet_eps+ddst+presample_128"
