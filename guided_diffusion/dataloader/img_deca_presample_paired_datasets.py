@@ -130,25 +130,24 @@ def load_data_img_deca(
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.deca_rendered_dir}/{in_image_type}/{set_}/")
             elif 'faceseg' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
-            elif in_image_type in ['raw', 'face_structure']: continue
+            elif 'raw' in in_image_type: 
+                in_image[in_image_type] = _list_image_files_recursively(f"{data_dir}/{set_}")
+            elif in_image_type in ['face_structure']: continue
             else:
                 raise NotImplementedError(f"The {in_image_type}-image type not found.")
 
-        in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
+        # in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
     
     deca_params, avg_dict = load_deca_params(deca_dir + set_, cfg)
 
-    # For raw image
-    in_image['raw'] = image_path_list_to_dict(_list_image_files_recursively(f"{data_dir}/{set_}"))
+    # Shuffling the data (to make the training/sampling can query the multiple sj in one batch)
+    shuffle_idx = np.arange(len(_list_image_files_recursively(f"{data_dir}/{set_}")))
+    np.random.shuffle(shuffle_idx)
+    
+    for k in in_image.keys():
+        in_image[k] = [in_image[k][i] for i in shuffle_idx]
+        in_image[k] = image_path_list_to_dict(in_image[k])
     sj_dict = image_path_list_to_sjdict(_list_image_files_recursively(f"{data_dir}/{set_}"))
-    # print(in_image.keys())
-    # print(sj_dict.keys())
-    # print(sj_dict['60118'])
-    # print(len(sj_dict['60118']))
-    # print(in_image['raw'][sj_dict['60118'][0]])
-    # print(in_image['raw'][sj_dict['60118'][1]])
-    # print(in_image['faceseg_nohead'][sj_dict['60118'][1]])
-    # print(in_image['deca_masked_face_images_woclip'][sj_dict['60118'][1].replace('.png', '.npy')])
 
     img_dataset = DECADataset(
         resolution=image_size,

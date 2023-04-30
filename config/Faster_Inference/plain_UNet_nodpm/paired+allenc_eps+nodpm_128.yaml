@@ -19,15 +19,15 @@ param_model:
 img_cond_model:
   apply: True
   arch: "EncoderUNet_SpatialCondition"
-  in_image: ['deca_masked_face_images_woclip', 'deca_masked_face_images_woclip', 'face_structure']
-  sj_paired: ['src', 'dst', 'src']
+  in_image: ['deca_masked_face_images_woclip', 'deca_masked_face_images_woclip', 'faceseg_nohead', 'face_structure']
+  sj_paired: ['src', 'dst', 'src', 'src']
   in_channels: 12
   image_size: 128
   out_channels: 128
   condition_dim: 256
   override_cond: "spatial_latent"
-  prep_image: [Null, Null, Null]
-  noise_dpm_cond_img: [Null, Null, Null]
+  prep_image: [Null, Null, Null, Null]
+  noise_dpm_cond_img: [Null, Null, Null, Null]
 
 relighting:
   use_SH: False
@@ -36,7 +36,6 @@ train:
   weight_decay: 0.0
   sampling_interval: 10000
   save_interval: 20000
-  deterministic: False
 
 dataset:
   training_data: "generated_dataset_80perc"
@@ -49,4 +48,4 @@ dataset:
 
 train_misc:
   exp_name: "paired_training"
-  cfg_name: "paired+allenc_eps+ddst+presample"
+  cfg_name: "paired+allenc_eps+nodpm_128"
