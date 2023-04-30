@@ -118,6 +118,8 @@ experiment_scripts/rotate_SH/rotsh.mp4
 experiment_scripts/rotate_SH/videos.txt
 
 experiment_scripts/smooth_flow/flow_smooth_kpts/examples/
+experiment_scripts/smooth_girdSH/vid_out_testpath
+experiment_scripts/smooth_girdSH/cmp
 
 experiment_scripts/check_smooth_light/with_cond_c
 experiment_scripts/check_smooth_light/with_cond_nc

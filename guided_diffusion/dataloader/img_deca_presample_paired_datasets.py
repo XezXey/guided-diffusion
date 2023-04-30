@@ -135,11 +135,6 @@ def load_data_img_deca(
                 raise NotImplementedError(f"The {in_image_type}-image type not found.")
 
         in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
-        # in_image[in_image_type] = image_path_list_to_sjdict(in_image[in_image_type])
-        
-        # print(in_image[in_image_type])
-        # print("#"*100)
-        # exit()
     
     deca_params, avg_dict = load_deca_params(deca_dir + set_, cfg)
 
@@ -201,6 +196,10 @@ def image_path_list_to_dict(path_list):
     return img_paths_dict
 
 def image_path_list_to_sjdict(path_list):
+    '''
+    Take the path of images and output the dict {sj_name: [img_name1, img_name2, ...]}
+    e.g. {60065 : [/<path>/60065_00_00.jpg, /<path>/60065_00_01.jpg, ...]}
+    '''
     sj_paths_dict = {}
     for path in path_list:
         img_name = path.split('/')[-1]
@@ -258,35 +257,36 @@ class DECADataset(Dataset):
         self.condition_image = self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img + self.cfg.img_model.in_image
         self.prep_condition_image = self.cfg.img_cond_model.prep_image + self.cfg.img_model.prep_dpm_cond_img + self.cfg.img_model.prep_in_image
         self.sj_dict = sj_dict 
-        self.sj_to_index_dict, self.index_to_sj_dict, self.sj_dict_swap = self.get_sj_index_dict()
+        self.sj_to_index_dict, self.sj_dict_swap = self.get_sj_index_dict()
         print(f"[#] Bounding the input of UNet to +-{self.cfg.img_model.input_bound}")
 
     def __len__(self):
         return len(self.local_images)
 
     def get_sj_index_dict(self):
+        '''
+        return the 
+        - sj_to_index_dict : {sj_name: [idx1, idx2, ...]}
+            e.g. {60065: [9942, 9943, ...]}
+        - index_to_sj_dict : {idx: sj_name} 
+            e.g. {9942: 60065, 9943: 60065, ...}
+        - sj_dict_swap : the swappped version of sj_dict (between key and value)
+            e.g. {/<path>/60065_00_00.jpg: 60065, /<path>/60065_00_01.jpg: 60065, ...}
+        '''
         sj_to_index_dict = {}
-        index_to_sj_dict = {}
         sj_dict_swap = {}
         for sj in self.sj_dict.keys():
             sj_list = list(self.local_images.keys())
             sj_index = [sj_list.index(v) for v in self.sj_dict[sj]]
             sj_to_index_dict[sj] = sj_index
-            for sji in sj_index:
-                index_to_sj_dict[sji] = sj
             for sj_name in self.sj_dict[sj]:
                 sj_dict_swap[sj_name] = sj
                 
-        # print(sj_to_index_dict, index_to_sj_dict, sj_dict_swap)
-        
-        # idx = 9942
-        # print(sj_to_index_dict[sj_name])
-        return sj_to_index_dict, index_to_sj_dict, sj_dict_swap
+        return sj_to_index_dict, sj_dict_swap
     
     def __getitem__(self, src_idx):
         # Select the sj at idx
         query_src_name = list(self.local_images.keys())[src_idx]
-        # print(src_idx, query_src_name)
         sj_name = self.sj_dict_swap[query_src_name]
         dst_idx = self.sj_to_index_dict[sj_name].copy()
         dst_idx.remove(src_idx)
@@ -471,7 +471,6 @@ class DECADataset(Dataset):
         
         out = seg_m
         return out
-        
 
     def load_image(self, path):
         with bf.BlobFile(path, "rb") as f:

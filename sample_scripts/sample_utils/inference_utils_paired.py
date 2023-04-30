@@ -335,7 +335,7 @@ def build_condition_image(cond, misc):
         else: mask=None
         
         #TODO: Render DECA in minibatch
-        sub_step = mani_utils.ext_sub_step(n_step, 1)
+        sub_step = mani_utils.ext_sub_step(n_step, batch_size)
         all_render = []
         # all_shadow_mask = []
         for i in range(len(sub_step)-1):
