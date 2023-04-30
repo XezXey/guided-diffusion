@@ -21,12 +21,14 @@ def compare_smooth_spiral(sj_name, n_frames, savepath):
     # Change path here!!!
     baseline = f'./vid_out_testpath/Masked_Face_woclip+BgNoHead+shadow_256/{cfg}/{sj_name}.mp4'
     out1 = f'./vid_out_testpath/paired+allenc_eps+ddst/{cfg}/{sj_name}.mp4'
-    out2 = f'./vid_out_testpath/paired+allunet_eps+ddst/{cfg}/{sj_name}.mp4'
-    if (not os.path.exists(baseline)) or (not os.path.exists(out1)) or (not os.path.exists(out2)):
+    out2 = f'./vid_out_testpath/paired+allenc_eps+ddst+presample/{cfg}/{sj_name}.mp4'
+    out3 = f'./vid_out_testpath/paired+allunet_eps+ddst/{cfg}/{sj_name}.mp4'
+    out4 = f'./vid_out_testpath/paired+allunet_eps+ddst+presample/{cfg}/{sj_name}.mp4'
+    if (not os.path.exists(baseline)) or (not os.path.exists(out1)) or (not os.path.exists(out2)) or (not os.path.exists(out2)):
         print(f"{sj_name} : No file...")
         return
 
-    os.system(f"ffmpeg -y -i {baseline} -i {out1} -i {out2} -filter_complex \"[0:v][1:v][2:v]hstack=3,format=yuv420p[v]\" -map \"[v]\" ./cmp/{sj_name}.mp4")
+    os.system(f"ffmpeg -y -i {baseline} -i {out1} -i {out2} -i {out3} -i {out4} -filter_complex \"[0:v][1:v][2:v][3:v][4:v]hstack=5,format=yuv420p[v]\" -map \"[v]\" ./cmp/{sj_name}.mp4")
 
 
 if __name__ == '__main__':
