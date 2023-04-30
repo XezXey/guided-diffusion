@@ -804,7 +804,7 @@ class ResBlockConditionNoTime(TimestepBlockCond):
             # print((out_norm(h) * (1 + scale) + shift).shape)
             # h = (out_norm(h) * (1 + scale) + shift) * cond.view(cond.shape[0], cond.shape[1], 1, 1).type(h.dtype)
             # print(cond[..., None, None].shape)
-            h = out_norm(h)* cond_proj[..., None, None].type(h.dtype)
+            h = out_norm(h) * cond_proj[..., None, None].type(h.dtype)
             h = out_rest(h)
             # print("[#] OUT SCALE FROM SHIFT NORM : ", h.shape)
             # print("##")

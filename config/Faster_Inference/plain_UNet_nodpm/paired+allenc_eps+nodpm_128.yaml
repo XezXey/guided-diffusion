@@ -4,7 +4,7 @@ diffusion:
 
 img_model:
   name: "ImgCond"
-  arch: "UNetCond_SpatialCondition_Hadamart"
+  arch: "UNetCond_SpatialCondition_Hadamart_No_DPM_NoTime"
   image_size: 128
   in_image: ['raw']
   in_channels: 3

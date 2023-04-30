@@ -4,7 +4,7 @@ diffusion:
 
 img_model:
   name: "ImgCond"
-  arch: "UNetCond"
+  arch: "UNetCond_SpatialCondition_Hadamart_No_DPM_NoTime"
   image_size: 128
   in_image: ['raw']
   in_channels: 3
@@ -32,7 +32,6 @@ train:
   weight_decay: 0.0
   sampling_interval: 10000
   save_interval: 20000
-  deterministic: False
 
 dataset:
   training_data: "generated_dataset_80perc"
