@@ -480,7 +480,6 @@ class TrainLoop(LightningModule):
         self.eval_mode(model=sampling_model_dict)
 
         step_ = float(self.step + self.resume_step)
-        H = W = self.cfg.img_model.image_size
 
         if self.cfg.train.same_sampling:
             # batch here is a tuple of (dat, cond); thus used batch[0], batch[1] here
@@ -498,8 +497,6 @@ class TrainLoop(LightningModule):
         src_img = src['arr'][:n].type_as(batch[0]['arr'])
         dst_img = dst['arr'][:n].type_as(batch[1]['arr'])
         
-        noise = th.randn((n, 3, H, W)).type_as(src_img)
-        assert noise.shape == src_img.shape
         cond = self.prepare_cond_sampling(src=src, dst=dst)
         cond = tensor_util.dict_slice(in_d=cond, keys=cond.keys(), n=n)
         
@@ -550,7 +547,7 @@ class TrainLoop(LightningModule):
         
         # Forward pass to UNet without DPM
         model_kwargs = cond
-        src_xstart = src['dict']['image']
+        src_xstart = src['dict']['image'][:n]
         model = sampling_model_dict[self.cfg.img_model.name]
         t = th.zeros(n).to(src_xstart.device).long()
         if model_kwargs['dpm_cond_img'] is not None:
