@@ -19,15 +19,15 @@ param_model:
 img_cond_model:
   apply: True
   arch: "EncoderUNet_SpatialCondition"
-  in_image: ['deca_masked_face_images_woclip', 'deca_masked_face_images_woclip', 'faceseg_nohead', 'face_structure']
-  sj_paired: ['src', 'dst', 'src', 'src']
-  in_channels: 12
+  in_image: ['deca_masked_face_images_woclip', 'deca_masked_face_images_woclip', 'faceseg_nohead']
+  sj_paired: ['src', 'dst', 'src']
+  in_channels: 9
   image_size: 128
   out_channels: 128
   condition_dim: 256
   override_cond: "spatial_latent"
-  prep_image: [Null, Null, Null, Null]
-  noise_dpm_cond_img: [Null, Null, Null, Null]
+  prep_image: [Null, Null, Null]
+  noise_dpm_cond_img: [Null, Null, Null]
 
 relighting:
   use_SH: False

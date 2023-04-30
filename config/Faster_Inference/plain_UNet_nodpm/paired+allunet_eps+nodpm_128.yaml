@@ -13,10 +13,10 @@ img_model:
   condition_proj_dim: 512
   hadamart_prep: "Tanh"
 
-  dpm_cond_img: ['deca_masked_face_images_woclip', 'deca_masked_face_images_woclip', 'faceseg_nohead', 'face_structure']
-  sj_paired: ['src', 'dst', 'src', 'src']
-  prep_dpm_cond_img: [Null, Null, Null, Null]
-  noise_dpm_cond_img: [Null, Null, Null, Null]
+  dpm_cond_img: ['deca_masked_face_images_woclip', 'deca_masked_face_images_woclip', 'faceseg_nohead']
+  sj_paired: ['src', 'dst', 'src']
+  prep_dpm_cond_img: [Null, Null, Null]
+  noise_dpm_cond_img: [Null, Null, Null]
   apply_dpm_cond_img: True
 
 param_model:

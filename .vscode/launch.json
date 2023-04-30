@@ -14,6 +14,40 @@
 //                            __/ | __/ |                                                __/ |
 //                           |___/ |___/                                                |___/ 
         {
+            "name": "Python: train_UNet_allunet_nodpm_notime",
+            "type": "python",
+            "request": "launch",
+            "env": {"CUDA_VISIBLE_DEVICES":"1", "WANDB_MODE":"offline"},
+            "program": "./train_scripts/image_train_no_dpm_paired.py",
+            "args": ["--train.log_dir",
+                    "/data/mint/model_logs/test",
+                    "--train.batch_size", "5", 
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/Faster_Inference/plain_UNet_nodpm/paired+allunet_eps+nodpm_128.yaml",
+                    "--train.sampling_interval", "50",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/difareli-faster/",
+            "justMyCode": true
+        }, 
+        {
+            "name": "Python: train_UNet_allenc_nodpm_notime",
+            "type": "python",
+            "request": "launch",
+            "env": {"CUDA_VISIBLE_DEVICES":"1", "WANDB_MODE":"offline"},
+            "program": "./train_scripts/image_train_no_dpm_paired.py",
+            "args": ["--train.log_dir",
+                    "/data/mint/model_logs/test",
+                    "--train.batch_size", "5", 
+                    "--train.n_gpus", "1", 
+                    "--cfg", "./config/Faster_Inference/plain_UNet_nodpm/paired+allenc_eps+nodpm_128.yaml",
+                    "--train.sampling_interval", "50",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/difareli-faster/",
+            "justMyCode": true
+        }, 
+        {
             "name": "Python: train_difareli_paired_allenc",
             "type": "python",
             "request": "launch",
