@@ -12,7 +12,7 @@ parser.add_argument('--rx', type=float, default=1)
 parser.add_argument('--ry', type=float, default=1)
 parser.add_argument('--resize', action='store_true', default=False)
 parser.add_argument('--baseline', action='store_true', default=False)
-parser.add_argument('--model', )
+parser.add_argument('--model', type=str, required=True)
 args = parser.parse_args()
 
 def smooth_spiral(sj_name, n_frames, savepath):
@@ -31,9 +31,9 @@ def smooth_spiral(sj_name, n_frames, savepath):
         dat_path = f"/data/mint/Generated_Relighting_Dataset/{sj_name}/dst=60000.jpg/Lerp_1000/n_frames={n_frames}/"
         args.model = 'Masked_Face_woclip+BgNoHead+shadow_256'
     else:
-        dat_path = f"/data/mint/sampling/paired_training_gridSH/log={args.model}_cfg={args.model}.yaml/model_040000/valid/render_face/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_1000/n_frames={n_frames}/"
+        dat_path = f"/data/mint/sampling/paired_training_gridSH/log={args.model}_cfg={args.model}.yaml/model_020000/valid/render_face/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_1000/n_frames={n_frames}/"
     if not os.path.exists(dat_path):
-        print("GG")
+        print(f"[#] No file...{dat_path}")
         return
     all_x = []
     all_y = []
@@ -74,7 +74,8 @@ def smooth_spiral(sj_name, n_frames, savepath):
         d = cv.imread(f"{dat_path}/res_%02d_%02d.png" % (ix2, iy2)) / 255.0
         # print(ix, iy)
         out_img = ((a*(1-ty) + c*ty)*(1-tx) + (b*(1-ty) + d*ty)*tx) * 255
-        out_img = cv.resize(out_img, (64, 64))
+        if args.resize:
+            out_img = cv.resize(out_img, (64, 64))
         cv.imwrite(f"/data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{sj_name}/%05d.png" % i, out_img)
     
 
