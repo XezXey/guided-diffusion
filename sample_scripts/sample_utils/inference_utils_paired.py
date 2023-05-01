@@ -93,6 +93,15 @@ class PLSampling(pl.LightningModule):
                 cond[i] = th.ones_like(cond[i])
         return cond
     
+    def forward_nodpm(self, src_xstart, model_kwargs, t=None):
+        model = self.model_dict[self.cfg.img_model.name]
+        if model_kwargs['dpm_cond_img'] is not None:
+            relight_out = model(th.cat((src_xstart, model_kwargs['dpm_cond_img']), dim=1).float(), t, **model_kwargs)
+        else:
+            relight_out = model(src_xstart.float(), t, **model_kwargs)
+        return relight_out
+        
+    
 def cond_xt_fn(cond, cfg, use_render_itp, t, diffusion, noise, device='cuda'):
     #NOTE: This specifically run for ['dpm_cond_img']
     
