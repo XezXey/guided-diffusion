@@ -33,6 +33,7 @@ parser.add_argument('--diffuse_sh', type=float, default=None)
 parser.add_argument('--diffuse_perc', type=float, default=None)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
+parser.add_argument('--timestep_respacing', type=str, default="")
 # Misc.
 parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--out_dir', type=str, required=True)
@@ -117,14 +118,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     cond, _ = inference_utils_paired.build_condition_image(cond=cond, misc=misc)
     cond = inference_utils_paired.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
     cond['cfg'] = cfg
-    # if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):
     cond['use_cond_xt_fn'] = False
-    #     for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
-    #         cond[f'{k}_img'] = cond[f'{k}_img'].to(device)
-    #         if p is not None:
-    #             if 'dpm_noise_masking' in p:
-    #                 cond[f'{k}_mask'] = cond[f'{k}_mask'].to(device)
-    #                 cond['image'] = cond['image'].to(device)
     
 
     if 'render_face' in args.itp:
@@ -216,7 +210,9 @@ if __name__ == '__main__':
     cfg = ckpt_loader.cfg
     
     print(f"[#] Sampling with diffusion_steps = {args.diffusion_steps}")
+    print(f"[#] Sampling with timestep respacing = {args.timestep_respacing}")
     cfg.diffusion.diffusion_steps = args.diffusion_steps
+    cfg.diffusion.timestep_respacing = args.timestep_respacing
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
     model_dict = inference_utils_paired.eval_mode(model_dict)
 
@@ -347,7 +343,7 @@ if __name__ == '__main__':
         #NOTE: Save result
         out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
         os.makedirs(out_dir_relit, exist_ok=True)
-        save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
+        save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_diff={args.diffusion_steps}_respace={args.timestep_respacing}/n_frames={n_step}/"
         os.makedirs(save_res_dir, exist_ok=True)
         
         f_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0

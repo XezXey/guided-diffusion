@@ -41,10 +41,12 @@ def create_app():
         n_frame = 5
         itp = 'render_face'
         itp_method = 'Lerp'
+        diff_step = 1000
+        ckpt = 'ema_040000'
         for m in model:
             if 'log' in m:
                 m_name = m.split('/')[-1]
-                out += f"<a href=\"show_m_name={m_name}&itp={itp}&itp_method={itp_method}&n_frame={n_frame}&sampling=reverse&show_itmd=True\">{m_name}</a> <br>"
+                out += f"<a href=\"show_m_name={m_name}&ckpt={ckpt}&itp={itp}&itp_method={itp_method}&diff_step={diff_step}&n_frame={n_frame}&sampling=reverse&show_itmd=True\">{m_name}</a> <br>"
         return out
     
     @app.route('/varying_trainingstep__fixed_diffstep/')
@@ -57,16 +59,17 @@ def create_app():
         itp_method = 'Lerp'
         diff_step = 1000
         m_type = 'model'
+        time_respace = 250
         for m in model:
             if 'log' in m:
                 m_name = m.split('/')[-1]
-                out += f"<a href=\"show_m_name={m_name}&m_type={m_type}&itp={itp}&itp_method={itp_method}&diff_step={diff_step}&n_frame={n_frame}&sampling=reverse&show_itmd=True\">{m_name}</a> <br>"
+                out += f"<a href=\"show_m_name={m_name}&m_type={m_type}&itp={itp}&itp_method={itp_method}&diff_step={diff_step}&time_respace={time_respace}&n_frame={n_frame}&sampling=reverse&show_itmd=True\">{m_name}</a> <br>"
         return out
     
     
     
-    @app.route("/fixed_trainingstep__varying_diffstep/show_m_name=<m_name>&itp=<itp>&itp_method=<itp_method>&n_frame=<n_frame>&sampling=<sampling>&show_itmd=<show_itmd>")
-    def fixed_trainingstep__varying_diffstep(m_name, itp, itp_method, n_frame, sampling, show_itmd):
+    @app.route("/fixed_trainingstep__varying_diffstep/show_m_name=<m_name>&ckpt=<ckpt>&itp=<itp>&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>&show_itmd=<show_itmd>")
+    def fixed_trainingstep__varying_diffstep(m_name, itp, itp_method, diff_step, ckpt, n_frame, sampling, show_itmd):
         
         # Fixed the training step and varying the diffusion step
         out = """<style>
@@ -95,10 +98,10 @@ def create_app():
             dst = v['dst']
             
             out += f"[#{k}] {src}=>{dst} : <img src=/files/{data_path}/{src.replace('jpg', 'png')}>, {dst} : <img src=/files/{data_path}/{dst.replace('jpg', 'png')}>" + "<br>" + "<br>"
-            path = f"{args.sampling_dir}/{args.exp_dir}/{m_name}/model_040000/{args.set_}/{itp}/{sampling}_sampling/src={src}/dst={dst}/"
-            for diff_step in [25, 50, 100, 250, 500, 750, 1000]:
+            path = f"{args.sampling_dir}/{args.exp_dir}/{m_name}/{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src}/dst={dst}/"
+            for time_respace in [25, 50, 100, 250, 500, 750, 1000, ""]:
                 out += "<tr>"
-                out += f"<td> {diff_step} </td> "
+                out += f"<td> {time_respace} </td> "
                 
                 if args.res == 128:
                     out += f"<td> <img src=/files/{data_path}/{src.replace('jpg', 'png')}> </td>"
@@ -107,7 +110,7 @@ def create_app():
                 
                 ###################################################
                 # Show results
-                frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
+                frames = glob.glob(f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame}/res_*.png")
                 # out += str(show_itmd)
                     
                 out += "<td>"
@@ -135,8 +138,8 @@ def create_app():
         return out
 
 
-    @app.route("/varying_trainingstep__fixed_diffstep/show_m_name=<m_name>&m_type=<m_type>&itp=<itp>&itp_method=<itp_method>&diff_step=<diff_step>&n_frame=<n_frame>&sampling=<sampling>&show_itmd=<show_itmd>")
-    def varying_trainingstep__fixed_diffstep(m_name, m_type, itp, itp_method, diff_step, n_frame, sampling, show_itmd):
+    @app.route("/varying_trainingstep__fixed_diffstep/show_m_name=<m_name>&m_type=<m_type>&itp=<itp>&itp_method=<itp_method>&diff_step=<diff_step>&time_respace=<time_respace>&n_frame=<n_frame>&sampling=<sampling>&show_itmd=<show_itmd>")
+    def varying_trainingstep__fixed_diffstep(m_name, m_type, itp, itp_method, diff_step, time_respace, n_frame, sampling, show_itmd):
         
         # Fixed the training step and varying the diffusion step
         out = """<style>
@@ -148,7 +151,8 @@ def create_app():
         out += f"<h2>[#] Saving Model type : {m_type} </h2>"
         out += f"<h2>[#] Interpolate on : {itp} </h2>"
         out += f"<h2>[#] Interpolate method : {itp_method} </h2>"
-        out += f"<h2>[#] #Diffusion step : {diff_step} </h2>"
+        out += f"<h2>[#] Diffusion step : {diff_step} </h2>"
+        out += f"<h2>[#] Time-respacing : {time_respace} </h2>"
         out += f"<h2>[#] #N-Frames (@fps=30) : {n_frame} </h2>"
         
         
@@ -181,7 +185,7 @@ def create_app():
                 
                 ###################################################
                 # Show results
-                frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
+                frames = glob.glob(f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame}/res_*.png")
                 # out += str(show_itmd)
                     
                 out += "<td>"
