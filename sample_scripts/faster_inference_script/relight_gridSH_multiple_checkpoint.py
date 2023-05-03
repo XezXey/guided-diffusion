@@ -36,7 +36,7 @@ for ckpt in args.ckpt_step:
         --diffusion_steps 1000 --seed 47 \
         --sample_pair_json {args.sample_pair_json} --sample_pair_mode pair \
         --itp render_face --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --save_vid --idx {args.sample_idx[0]} {args.sample_idx[1]} \
-        --sh_grid_size 7 --sh_span_x -4 4 --sh_span_y 4 -4 --use_sh --sh_scale 0.6""   
+        --sh_grid_size 7 --sh_span_x -4 4 --sh_span_y 4 -4 --use_sh --sh_scale 0.6
         """
         )
     print(cmd)
