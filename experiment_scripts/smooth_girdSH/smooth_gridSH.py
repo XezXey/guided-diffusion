@@ -2,8 +2,10 @@ import cv2 as cv
 import numpy as np
 import os
 import tqdm
+import glob
 import matplotlib.pyplot as plt
 import argparse
+import multiprocessing
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--cx', type=float, default=0)
@@ -13,6 +15,8 @@ parser.add_argument('--ry', type=float, default=1)
 parser.add_argument('--resize', action='store_true', default=False)
 parser.add_argument('--baseline', action='store_true', default=False)
 parser.add_argument('--model', type=str, required=True)
+parser.add_argument('--out_path', type=str, default='./vid_out_testpath/')
+parser.add_argument('--set_', type=str, default='valid')
 args = parser.parse_args()
 
 def smooth_spiral(sj_name, n_frames, savepath):
@@ -44,7 +48,7 @@ def smooth_spiral(sj_name, n_frames, savepath):
     ry = args.ry
 
     os.makedirs(f"/data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{sj_name}/", exist_ok=True)
-    os.makedirs(f"vid_out_testpath/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/", exist_ok=True)
+    os.makedirs(f"{args.out_path}/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/", exist_ok=True)
     for i in range(n):
         t = i / n 
         tt = t * rounds * 2 * np.pi
@@ -105,11 +109,25 @@ def smooth_spiral(sj_name, n_frames, savepath):
 
         # Show the plot
         plt.show()
-        plt.savefig(f"./vid_out_testpath/cx{cx}_rx{rx}_cy{cy}_ry{ry}/path.png")
+        plt.savefig(f"{args.out_path}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/path.png")
 
-    os.system(f"ffmpeg -y -i /data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{sj_name}/%05d.png -c:v libx264 -pix_fmt yuv420p -crf 18 ./vid_out_testpath/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{sj_name}.mp4 2> tmp.txt")
+    os.system(f"ffmpeg -y -i /data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{sj_name}/%05d.png -c:v libx264 -pix_fmt yuv420p -crf 18 {args.out_path}/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{sj_name}.mp4 2> tmp.txt")
 
 
 if __name__ == '__main__':
-    for i, sj in tqdm.tqdm(enumerate(['src=60265.jpg', 'src=60268.jpg', 'src=60340.jpg', 'src=60374.jpg', 'src=60414.jpg', 'src=60865.jpg', 'src=61003.jpg', 'src=61062.jpg', 'src=61777.jpg'])):
-        smooth_spiral(sj_name = sj, n_frames=49, savepath=False if i==0 else False)
+    if args.set_ is None:
+        for i, sj in tqdm.tqdm(enumerate(os.listdir('/data/mint/Generated_Relighting_Dataset/'))):
+        # for i, sj in tqdm.tqdm(enumerate(['src=60265.jpg', 'src=60268.jpg', 'src=60340.jpg', 'src=60374.jpg', 'src=60414.jpg', 'src=60865.jpg', 'src=61003.jpg', 'src=61062.jpg', 'src=61777.jpg'])):
+            smooth_spiral(sj_name = sj, n_frames=49, savepath=False if i==0 else False)
+    else:
+        path = f'/data/mint/DPM_Dataset/generated_dataset_80perc/gen_images/{args.set_}'
+
+        imgs = glob.glob(f'{path}/*.png')
+        sj_dict = {}
+        for f in imgs:
+            sj_dict['src=' + f.split('/')[-1].split('_')[0] + '.jpg'] = f
+        # for i, sj in tqdm.tqdm(enumerate(sj_dict.keys())):
+            # smooth_spiral(sj_name = sj, n_frames=49, savepath=False)
+        data = zip(list(sj_dict.keys()), [49] * len(sj_dict.keys()), [False] * len(sj_dict.keys()))
+        with multiprocessing.Pool() as pool:
+            _ = pool.starmap(smooth_spiral, data)
