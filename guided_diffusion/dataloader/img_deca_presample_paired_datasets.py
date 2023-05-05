@@ -165,7 +165,7 @@ def load_data_img_deca(
         img_ext=img_ext
     )
     print("[#] Parameters Conditioning")
-    print("Params keys order : ", img_dataset.precomp_params_key)
+    print("Params keys order : ", cfg.param_model.params_selector)
     print("Remove keys : ", cfg.param_model.rmv_params)
     print("Input Image : ", cfg.img_model.in_image)
     print("Image condition : ", cfg.img_cond_model.in_image)
@@ -251,7 +251,6 @@ class DECADataset(Dataset):
         self.cfg = cfg
         self.mode = mode
         self.img_ext = img_ext
-        self.precomp_params_key = without(src=self.cfg.param_model.params_selector, rmv=['img_latent'] + self.rmv_params)
         self.kwargs = kwargs
         self.condition_image = self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img + self.cfg.img_model.in_image
         self.prep_condition_image = self.cfg.img_cond_model.prep_image + self.cfg.img_model.prep_dpm_cond_img + self.cfg.img_model.prep_in_image
@@ -337,10 +336,7 @@ class DECADataset(Dataset):
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                 each_cond_img = (each_cond_img / 127.5) - 1
                 out_dict[f'{k}_img'] = each_cond_img
-        # Consturct the 'cond_params' for non-spatial conditioning
-        if self.cfg.img_model.conditioning: 
-            out_dict["cond_params"] = np.concatenate([self.deca_params[query_img_name][k] for k in self.precomp_params_key])
-            
+                
         for k in self.deca_params[query_img_name].keys():
             out_dict[k] = self.deca_params[query_img_name][k]
         out_dict['image_name'] = query_img_name

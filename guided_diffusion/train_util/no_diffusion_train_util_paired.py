@@ -369,7 +369,25 @@ class TrainLoop(LightningModule):
         else:
             out_cond['cond_img'] = None
         
-        out_cond['cond_params'] = src['dict']['cond_params']
+        # NOTE: Create the 'cond_params' for non-spatial condition given "params_selector list"
+        assert not th.allclose(src['dict']['light'], dst['dict']['light'])
+        cond_params = []
+        for p in self.cfg.param_model.params_selector:
+            if p == 'src_light':
+                cond_params.append(src['dict']['light'])
+                # print(p, src['dict']['light'].shape)
+                # print(p, src['dict']['light'])
+            elif p == 'dst_light':
+                cond_params.append(dst['dict']['light'])
+                # print(p, dst['dict']['light'].shape)
+                # print(p, dst['dict']['light'])
+            else:
+                assert th.allclose(src['dict'][p], dst['dict'][p])
+                cond_params.append(src['dict'][p])
+                # print(p, src['dict'][p].shape)
+                # print(p, dst['dict'][p].shape)
+        # exit()
+        out_cond['cond_params'] = th.cat(cond_params, dim=1).float()
         return out_cond
     
     def prepare_cond_sampling(self, src, dst):
@@ -407,7 +425,18 @@ class TrainLoop(LightningModule):
         else:
             cond['cond_img'] = None
             
-        cond['cond_params'] = src['dict']['cond_params']
+        # NOTE: Create the 'cond_params' for non-spatial condition given "params_selector list"
+        assert not th.allclose(src['dict']['light'], dst['dict']['light'])
+        cond_params = []
+        for p in self.cfg.param_model.params_selector:
+            if p == 'src_light':
+                cond_params.append(src['dict']['light'])
+            elif p == 'dst_light':
+                cond_params.append(dst['dict']['light'])
+            else:
+                assert th.allclose(src['dict'][p], dst['dict'][p])
+                cond_params.append(src['dict'][p])
+        cond['cond_params'] = th.cat(cond_params, dim=1).float()
         return cond
 
     @rank_zero_only

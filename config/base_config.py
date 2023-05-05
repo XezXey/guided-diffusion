@@ -35,8 +35,8 @@ cfg.param_model.light = 27
 cfg.param_model.faceemb = 512
 cfg.param_model.bound = 1.0
 
-
-params_dict = {'shape':100, 'pose':6, 'exp':50, 'cam':3, 'light':27, 'faceemb':512, 'shadow':1}
+# Compute the in_channels to be used
+params_dict = {'shape':100, 'pose':6, 'exp':50, 'cam':3, 'light':27, 'faceemb':512, 'shadow':1, 'src_light':27, 'dst_light':27}
 cfg.param_model.n_params = []
 for param in cfg.param_model.params_selector:
     cfg.param_model.n_params.append(params_dict[param])
@@ -289,7 +289,7 @@ def parse_args(ipynb={'mode':False, 'cfg':None}):
 
 def update_params(cfg):
     '''
-    Recalculate new config paramters
+    Recalculate new config paramters given from the command line args
     1. conditioned-parameters shape
     '''
 
@@ -313,8 +313,6 @@ def update_params(cfg):
                 cfg.param_model.n_params.append(params_dict[param])
 
     # Replace with updated n_params from params_selector
-    cfg.param_model.in_channels = sum(cfg.param_model.n_params)
-    cfg.param_model.out_channels = sum(cfg.param_model.n_params)
     cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
 
     cfg.img_model.in_channels, cfg.img_model.each_in_channels = update_img_chns(img_list=cfg.img_model.dpm_cond_img, 
