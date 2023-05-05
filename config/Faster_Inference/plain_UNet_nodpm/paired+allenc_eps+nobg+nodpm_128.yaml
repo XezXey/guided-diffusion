@@ -48,4 +48,4 @@ dataset:
 
 train_misc:
   exp_name: "paired_training"
-  cfg_name: "paired+allenc_eps+nodpm_128"
+  cfg_name: "paired+allenc_eps+nobg+nodpm_128"

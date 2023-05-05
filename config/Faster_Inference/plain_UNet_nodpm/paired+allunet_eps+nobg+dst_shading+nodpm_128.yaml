@@ -43,4 +43,4 @@ dataset:
 
 train_misc:
   exp_name: "paired_training"
-  cfg_name: "paired+allunet_eps+nodpm_128"
+  cfg_name: "paired+allunet_eps+nobg+dst_shading+nodpm_128"
