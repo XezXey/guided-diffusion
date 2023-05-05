@@ -337,7 +337,7 @@ if __name__ == '__main__':
         #NOTE: Save result
         out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
         os.makedirs(out_dir_relit, exist_ok=True)
-        save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
+        save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_diff={args.diffusion_steps}_respace=/n_frames={n_step}/"
         os.makedirs(save_res_dir, exist_ok=True)
         
         out_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0

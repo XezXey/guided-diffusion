@@ -15,6 +15,7 @@ parser.add_argument('--ry', type=float, default=1)
 parser.add_argument('--resize', action='store_true', default=False)
 parser.add_argument('--baseline', action='store_true', default=False)
 parser.add_argument('--model', type=str, required=True)
+parser.add_argument('--ckpt', type=str, default='ema_120000')
 parser.add_argument('--out_path', type=str, default='./vid_out_testpath/')
 parser.add_argument('--set_', type=str, default='valid')
 args = parser.parse_args()
@@ -35,7 +36,9 @@ def smooth_spiral(sj_name, n_frames, savepath):
         dat_path = f"/data/mint/Generated_Relighting_Dataset/{sj_name}/dst=60000.jpg/Lerp_1000/n_frames={n_frames}/"
         args.model = 'Masked_Face_woclip+BgNoHead+shadow_256'
     else:
-        dat_path = f"/data/mint/sampling/paired_training_gridSH/log={args.model}_cfg={args.model}.yaml/model_020000/valid/render_face/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_1000/n_frames={n_frames}/"
+        # dat_path = f"/data/mint/sampling/paired_training_gridSH/log={args.model}_cfg={args.model}.yaml/model_020000/valid/render_face/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_1000/n_frames={n_frames}/"
+        # dat_path = f"/data/mint/sampling/paired_training_experiment/gridSH/log={args.model}_cfg={args.model}.yaml/{args.ckpt}/valid/render_face/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_diff=1000_respace=/n_frames={n_frames}/"
+        dat_path = f"/data/mint/sampling/paired_training_experiment/gridSH/log={args.model}_cfg={args.model}.yaml/{args.ckpt}/valid/render_face/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_1000/n_frames={n_frames}/"
     if not os.path.exists(dat_path):
         print(f"[#] No file...{dat_path}")
         return
@@ -79,7 +82,7 @@ def smooth_spiral(sj_name, n_frames, savepath):
         # print(ix, iy)
         out_img = ((a*(1-ty) + c*ty)*(1-tx) + (b*(1-ty) + d*ty)*tx) * 255
         if args.resize:
-            out_img = cv.resize(out_img, (64, 64))
+            out_img = cv.resize(out_img, (128, 128))
         cv.imwrite(f"/data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{sj_name}/%05d.png" % i, out_img)
     
 

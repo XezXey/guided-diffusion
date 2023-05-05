@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 '''
 # Command
-python relight_paired.py --ckpt_selector ema --dataset ffhq --set valid --step 100000 
+python relight_paired_nodpm.py --ckpt_selector ema --dataset ffhq --set valid --step 100000 
 --out_dir /data/mint/sampling/paired_training_experiment/targetSH 
 --cfg_name paired+allunet_eps+ddst_128.yaml --log_dir paired+allunet_eps+ddst_128 
 --diffusion_steps 1000 --seed 47 
@@ -34,18 +34,18 @@ for ckpt in args.ckpt_step:
         if time_respace == "":
             cmd = (
                 f"""
-                python relight_paired.py --ckpt_selector {args.ckpt_type} --dataset ffhq --set valid --step {ckpt} --out_dir {args.out_dir} \
+                python relight_paired_nodpm.py --ckpt_selector {args.ckpt_type} --dataset ffhq --set valid --step {ckpt} --out_dir {args.out_dir} \
                 --cfg_name {args.model}.yaml --log_dir {args.model} \
-                --diffusion_steps {args.diffusion_steps} --seed 47 \
+                --seed 47 \
                 --sample_pair_json {args.sample_pair_json} --sample_pair_mode pair \
                 --itp render_face --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]}"""
                 )
         else:
             cmd = (
                 f"""
-                python relight_paired.py --ckpt_selector {args.ckpt_type} --dataset ffhq --set valid --step {ckpt} --out_dir {args.out_dir} \
+                python relight_paired_nodpm.py --ckpt_selector {args.ckpt_type} --dataset ffhq --set valid --step {ckpt} --out_dir {args.out_dir} \
                 --cfg_name {args.model}.yaml --log_dir {args.model} \
-                --diffusion_steps {args.diffusion_steps} --timestep_respacing {time_respace} --seed 47 \
+                --timestep_respacing {time_respace} --seed 47 \
                 --sample_pair_json {args.sample_pair_json} --sample_pair_mode pair \
                 --itp render_face --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]}"""
                 )

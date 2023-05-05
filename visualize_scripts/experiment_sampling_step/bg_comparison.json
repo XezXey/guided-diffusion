@@ -1,0 +1,38 @@
+{
+    "log=paired+allenc_eps+ddst_128_cfg=paired+allenc_eps+ddst_128.yaml" : {
+        "step":"ema_160000", 
+        "alias":"Encoder(Input) + w/ Background",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5"
+    },
+    "log=paired+allenc_eps+ddst+nobg_128_cfg=paired+allenc_eps+ddst+nobg_128.yaml" : {
+        "step":"ema_160000", 
+        "alias":"Encoder(Input) + w/o Background",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5"
+    },
+    "log=paired+allunet_eps+ddst_128_cfg=paired+allunet_eps+ddst_128.yaml" : {
+        "step":"ema_160000", 
+        "alias":"UNet(Input) + w/ Background",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5"
+    },
+    "log=paired+allunet_eps+ddst+nobg_128_cfg=paired+allunet_eps+ddst+nobg_128.yaml" : {
+        "step":"ema_160000", 
+        "alias":"UNet(Input) + w/o Background",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5"
+    }
+}

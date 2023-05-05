@@ -42,7 +42,7 @@ def create_app():
         itp = 'render_face'
         itp_method = 'Lerp'
         diff_step = 1000
-        ckpt = 'ema_040000'
+        ckpt = 'ema_120000'
         for m in model:
             if 'log' in m:
                 m_name = m.split('/')[-1]
@@ -58,8 +58,8 @@ def create_app():
         itp = 'render_face'
         itp_method = 'Lerp'
         diff_step = 1000
-        m_type = 'model'
-        time_respace = 250
+        m_type = 'ema'
+        time_respace = None
         for m in model:
             if 'log' in m:
                 m_name = m.split('/')[-1]
@@ -99,7 +99,7 @@ def create_app():
             
             out += f"[#{k}] {src}=>{dst} : <img src=/files/{data_path}/{src.replace('jpg', 'png')}>, {dst} : <img src=/files/{data_path}/{dst.replace('jpg', 'png')}>" + "<br>" + "<br>"
             path = f"{args.sampling_dir}/{args.exp_dir}/{m_name}/{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src}/dst={dst}/"
-            for time_respace in [25, 50, 100, 250, 500, 750, 1000, ""]:
+            for time_respace in [25, 50, 100, 250, 500, 750, ""]:
                 out += "<tr>"
                 out += f"<td> {time_respace} </td> "
                 
@@ -147,6 +147,8 @@ def create_app():
                     border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
                 }
                 </style>"""
+        if time_respace == "None":
+            time_respace = ""
         out += f"<h2>[#] Model name : {m_name} </h2>"
         out += f"<h2>[#] Saving Model type : {m_type} </h2>"
         out += f"<h2>[#] Interpolate on : {itp} </h2>"
