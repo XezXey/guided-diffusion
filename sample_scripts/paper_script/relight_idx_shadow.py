@@ -17,7 +17,7 @@ parser.add_argument('--batch_size', type=int, default=15)
 parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--add_shadow', action='store_true', default=False)
-# parser.add_argument('--vary_shadow', nargs='+', type=int, default=None)
+parser.add_argument('--vary_shadow_range', nargs='+', type=float, default=None)
 parser.add_argument('--vary_shadow', action='store_true', default=False)
 # Samples selection
 parser.add_argument('--idx', nargs='+', default=[])
@@ -43,6 +43,9 @@ parser.add_argument('--gpu_id', type=str, default="0")
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--save_vid', action='store_true', default=False)
 parser.add_argument('--fps', action='store_true', default=False)
+# Experiment
+parser.add_argument('--fixed_render', action='store_true', default=False)
+parser.add_argument('--fixed_shadow', action='store_true', default=False)
 
 args = parser.parse_args()
 
@@ -97,6 +100,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
             'itp_func':itp_func,
             'img_size':cfg.img_model.image_size,
             'deca_obj':deca_obj,
+            'batch_size':args.batch_size,
             'cfg':cfg,
             }  
     cond['misc'] = misc
@@ -132,7 +136,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
         interp_set = args.itp
         
     # Interpolate non-spatial
-    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func, add_shadow=args.add_shadow, vary_shadow=args.vary_shadow)
+    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func, add_shadow=args.add_shadow, vary_shadow=args.vary_shadow, vary_shadow_range=args.vary_shadow_range)
     cond.update(interp_cond)
         
     # Repeated non-spatial
