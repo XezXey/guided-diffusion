@@ -49,6 +49,10 @@ def image_align(src_file,
     mouth_right = lm_mouth_outer[6]
     mouth_avg = (mouth_left + mouth_right) * 0.5
     eye_to_mouth = mouth_avg - eye_avg
+    
+    do_pad = False
+    do_crop = False
+    do_shrink = False
 
     # Choose oriented crop rectangle.
     x = eye_to_eye - np.flipud(eye_to_mouth) * [-1, 1]
@@ -71,6 +75,7 @@ def image_align(src_file,
     # Shrink.
     shrink = int(np.floor(qsize / output_size * 0.5))
     if shrink > 1:
+        do_shrink = True
         rsize = (int(np.rint(float(img.size[0]) / shrink)),
                  int(np.rint(float(img.size[1]) / shrink)))
         img = img.resize(rsize, PIL.Image.ANTIALIAS)
@@ -85,6 +90,7 @@ def image_align(src_file,
             min(crop[2] + border,
                 img.size[0]), min(crop[3] + border, img.size[1]))
     if crop[2] - crop[0] < img.size[0] or crop[3] - crop[1] < img.size[1]:
+        do_crop = True
         img = img.crop(crop)
         quad -= crop[0:2]
 
@@ -96,6 +102,7 @@ def image_align(src_file,
                        0), max(pad[2] - img.size[0] + border,
                                0), max(pad[3] - img.size[1] + border, 0))
     if enable_padding and max(pad) > border - 4:
+        do_pad = True
         pad = np.maximum(pad, int(np.rint(qsize * 0.3)))
         img = np.pad(np.float32(img),
                      ((pad[1], pad[3]), (pad[0], pad[2]), (0, 0)), 'reflect')
@@ -120,5 +127,16 @@ def image_align(src_file,
                         (quad + 0.5).flatten(), PIL.Image.BILINEAR)
     if output_size < transform_size:
         img = img.resize((output_size, output_size), PIL.Image.ANTIALIAS)
+ 
+    align_dict = {
+        'quad' : quad,
+        'pad' : pad if do_pad else None,
+        'do_pad' : do_pad,
+        'crop' : crop if do_crop else None,
+        'do_crop' : do_crop,
+        'shrink' : shrink if do_shrink else None,
+        'do_shrink' : do_shrink,
+        'face_landmark': face_landmarks
+    }       
 
-    return img
+    return img, align_dict

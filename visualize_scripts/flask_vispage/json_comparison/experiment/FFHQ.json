@@ -4,6 +4,12 @@
         "itp":"render_face", 
         "alias":"Ours",
         "n_frames":"5"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_mean_matching" :  {
+        "step":"ema_050000", 
+        "itp":"render_face", 
+        "alias":"Ours",
+        "n_frames":"5"
     }
     
 }

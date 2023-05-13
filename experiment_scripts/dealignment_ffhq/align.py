@@ -345,6 +345,8 @@ if __name__ == "__main__":
             # pool.close()
             # pool.join()
             
+    if RAW_IMAGES_DIR[-1] == '//' or RAW_IMAGES_DIR[-1] == '/':
+      RAW_IMAGES_DIR = RAW_IMAGES_DIR[:-1]
     np.save(file=f"{'/'.join(RAW_IMAGES_DIR.split('/')[:-1])}/{RAW_IMAGES_DIR.split('/')[-2]}_align_params.npy", arr=align_params)
     # print(align_params)
     print(f"output aligned images at: {ALIGNED_IMAGES_DIR}")

@@ -289,9 +289,8 @@ if __name__ == '__main__':
     # Loading light to test
     light_target = read_params('/data/mint/DPM_Dataset/ffhq_256_with_anno/params/valid/ffhq-valid-light-anno.txt')
     
-    if len(args.light_to_test) == 0 and '.jpg' not in args.light_to_test[0]:
-        test_light_sj = args.light_to_test[0]
-        with open(args.light_to_test, 'r') as fp:
+    if len(args.light_to_test) == 1 and '.jpg' not in args.light_to_test[0]:
+        with open(args.light_to_test[0], 'r') as fp:
             test_light_sj = json.load(fp)['list']
     else:
         test_light_sj = args.light_to_test

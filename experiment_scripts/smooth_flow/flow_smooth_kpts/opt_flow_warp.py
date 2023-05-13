@@ -228,7 +228,8 @@ if __name__ == "__main__":
     #NOTE: Use for moving the keypoints from t => t+1
     flows_fw = []
     for k in fw_v_list:
-      flows_fw.append(flows[k]['fw'])
+      if k in flows.keys():
+        flows_fw.append(flows[k]['fw'])
       
     if len(flows_fw) != 0:
       #NOTE: Forward flows = warping from [t-n_votes, ..., t-2, t-1] ===> to "t" kpts
@@ -248,7 +249,8 @@ if __name__ == "__main__":
     #NOTE: Use for moving the keypoints from t+1 => t
     flows_bw = []
     for k in bw_v_list:
-      flows_bw.append(flows[k]['bw'])
+      if k in flows.keys():
+        flows_bw.append(flows[k]['bw'])
       
     if len(flows_bw) != 0:
       #NOTE: Backward flows = warping from [t+1, t+2, ..., t+n_votes] ===> to "t" kpts
@@ -272,7 +274,9 @@ if __name__ == "__main__":
   # print(smooth_kpts.keys())
   
   if args.save_align is not None:
-    
+    print("=" * 77)
+    print("=" * 77)
+    print("[#] Aligning w/ new kpts")
     import align_lib
     import shutil
     data_dir = f'/data/mint/DPM_Dataset/Videos/{args.video_name}/images/'
@@ -283,13 +287,19 @@ if __name__ == "__main__":
     os.makedirs(copy_path, exist_ok=True)
     os.makedirs(save_path, exist_ok=True)
     
-    for f in frames:
-        aligned_img = align_lib.image_align(src_file=data_dir + f,
-                                  face_landmarks=smooth_kpts[f], 
-                                  output_size=256)
-        aligned_img.save(f'{save_path}/{f}')
-        # Image.fromarray(aligned_img).save(f'{save_path}/{f}')
-        shutil.copyfile(src=data_dir + f, dst=copy_path + f)
+    align_params = {}
+    for f in tqdm.tqdm(frames):
+      aligned_img, aligned_dict = align_lib.image_align(src_file=data_dir + f,
+                                                        face_landmarks=smooth_kpts[f], 
+                                                        output_size=256)
+      align_params[f] = aligned_dict
+      align_params[f]['face_landmark_smooth'] = smooth_kpts[f]
+      aligned_img.save(f'{save_path}/{f}')
+      shutil.copyfile(src=data_dir + f, dst=copy_path + f)
+    np.save(file=f'{args.save_align}/{args.video_name}_align_params.npy', arr=align_params)
+    print("[#] Done!!!")
+    print(f"Save params at {args.save_align}/{args.video_name}_align_params.npy")
+    print(f"Save images at {save_path}")
   
   if args.save_vis:
     # Save the visualization

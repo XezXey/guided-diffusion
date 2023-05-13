@@ -248,7 +248,7 @@ def image_align(src_file,
     mask_save = PIL.Image.fromarray(np.clip(mask_save*255, 0, 255).astype(np.uint8), 'RGB')
     mask_save.save(f"./own_blending/{sj_name}/{dst_name}/imgs/mask_original_{composite_file.split('/')[-1]}", 'PNG')
     
-    return 
+    # return 
     mask = cv2.dilate((mask).astype(np.uint8), np.ones((3, 3)).astype(np.uint8), iterations=10)
     center = (int(np.array(original_img).shape[1]/2), int(np.array(original_img).shape[0]/2))
     im_clone = cv2.seamlessClone(np.array(original_img), np.array(inv_transformed), mask*255, center, cv2.NORMAL_CLONE)

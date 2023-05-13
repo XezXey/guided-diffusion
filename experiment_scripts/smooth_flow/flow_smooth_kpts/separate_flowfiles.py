@@ -3,7 +3,7 @@ import glob, os
 import tqdm
 import multiprocessing as mp
 
-name = 'joker_2'
+name = 'lisa_1'
 alpha = 0.012
 ratio = 0.75
 minWidth = 20.0

@@ -136,7 +136,7 @@ def load_data_img_deca(
                 in_image['laplacian_mask'] = image_path_list_to_dict(in_image['laplacian_mask'])
             elif 'shadow_mask' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_mask_dir}/{set_}/")
-            elif 'raw' in in_image_type: continue
+            elif ('raw' in in_image_type) or ('face_structure' in in_image_type): continue
             else:
                 raise NotImplementedError(f"The {in_image_type}-image type not found.")
 
