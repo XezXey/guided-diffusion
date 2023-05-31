@@ -35,6 +35,7 @@ parser.add_argument('--diffuse_sh', type=float, default=None)
 parser.add_argument('--diffuse_perc', type=float, default=None)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
+parser.add_argument('--timestep_respacing', type=str, default="")
 # Misc.
 parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--out_dir', type=str, required=True)
@@ -236,7 +237,9 @@ if __name__ == '__main__':
     cfg = ckpt_loader.cfg
     
     print(f"[#] Sampling with diffusion_steps = {args.diffusion_steps}")
+    print(f"[#] Sampling with timestep respacing = {args.timestep_respacing}")
     cfg.diffusion.diffusion_steps = args.diffusion_steps
+    cfg.diffusion.timestep_respacing = args.timestep_respacing
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
     model_dict = inference_utils.eval_mode(model_dict)
 
