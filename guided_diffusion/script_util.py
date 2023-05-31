@@ -360,7 +360,8 @@ def create_gaussian_diffusion(cfg):
     if not cfg.timestep_respacing:
         timestep_respacing = [cfg.diffusion_steps]
     return SpacedDiffusion(
-        use_timesteps=space_timesteps(cfg.diffusion_steps, timestep_respacing),
+        # use_timesteps=space_timesteps(cfg.diffusion_steps, timestep_respacing),
+        use_timesteps=space_timesteps(cfg.diffusion_steps, cfg.timestep_respacing),
         betas=betas,
         model_mean_type=(
             gd.ModelMeanType.EPSILON if not cfg.predict_xstart else gd.ModelMeanType.START_X

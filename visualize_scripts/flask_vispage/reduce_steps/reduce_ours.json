@@ -1,0 +1,44 @@
+ {
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps25" :  {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"Steps = 25 (ours)",
+        "n_frames":"5"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps50" :  {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"Steps = 50 (ours)",
+        "n_frames":"5"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps125" :  {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"Steps = 125 (ours)",
+        "n_frames":"5"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps250" :  {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"Steps = 250 (ours)",
+        "n_frames":"5"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps500" :  {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"Steps = 500 (ours)",
+        "n_frames":"5"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps750" :  {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"Steps = 750 (ours)",
+        "n_frames":"5"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps1000" :  {
+        "step":"ema_085000", 
+        "itp":"render_face", 
+        "alias":"Steps = 1000 (ours)",
+        "n_frames":"5"
+    }
+}

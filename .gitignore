@@ -124,3 +124,4 @@ experiment_scripts/check_smooth_light/with_cond_nc
 experiment_scripts/check_smooth_light/with_create_dat
 experiment_scripts/check_smooth_light/*.mp4
 experiment_scripts/check_smooth_light/
+experiment_scripts/rebuttal_sota_samples
