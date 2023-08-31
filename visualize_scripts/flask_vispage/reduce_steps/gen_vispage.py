@@ -533,7 +533,8 @@ def create_app():
         for s_id, src_dst in enumerate(subject_id):
             # out += create_hide(m, m_id)
             out += f"<tr>"
-            out += f"<th style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.({src_dst[0].split('.')[0]},{src_dst[1].split('.')[0]})<img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')} title=\"{src_dst[0]}\"><img src=/files/{data_path}/{src_dst[1].replace('jpg', 'png')} title=\"{src_dst[1]}\"> </th>"
+            # out += f"<th style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.({src_dst[0].split('.')[0]},{src_dst[1].split('.')[0]})<img src=/files/{data_path}/{src_dst[0].replace('jpg', 'png')} title=\"{src_dst[0]}\"><img src=/files/{data_path}/{src_dst[1].replace('jpg', 'png')} title=\"{src_dst[1]}\"> </th>"
+            out += f"<th style=\"font-size:10px;white-space: nowrap;\"> {s_id+1}.({src_dst[0].split('.')[0]},{src_dst[1].split('.')[0]})<img src=/files/{data_path}/{src_dst[0]} title=\"{src_dst[0]}\"><img src=/files/{data_path}/{src_dst[1]} title=\"{src_dst[1]}\"> </th>"
             # out += f"<td> {m_id+1} : {ckpt_dict[m]['alias']} <br> </td>"
             for m_id, m in enumerate(model):
                 if ckpt == 'json':
@@ -544,7 +545,9 @@ def create_app():
                 itp = ckpt_dict[m]['itp']
                 n_frames = ckpt_dict[m]['n_frames']
                 each_model = f"{args.sample_dir}/{args.exp_dir}/{m}/{step}/{args.set_}/{itp}/{sampling}_sampling/src={src_dst[0].replace('png', 'jpg')}/dst={src_dst[1].replace('png', 'jpg')}/"
-                frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/{show}_f*.png")
+                print(each_model)
+                # frames = glob.glob(f"{each_model}/{itp_method}_{diff_step}/n_frames={n_frames}/{show}_f*.png")
+                frames = glob.glob(f"{each_model}/Lerp_1000/n_frames=5/{show}_f*.png")
                 
                 out += "<td>"
                 if len(frames) > 0:
