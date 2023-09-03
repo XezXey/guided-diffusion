@@ -34,6 +34,7 @@ parser.add_argument('--sh_scale', type=float, default=1.0)
 parser.add_argument('--use_sh', action='store_true', default=False)
 parser.add_argument('--diffuse_sh', type=float, default=None)
 parser.add_argument('--diffuse_perc', type=float, default=None)
+parser.add_argument('--force_render', action='store_true', default=False)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 # Misc.
@@ -117,8 +118,11 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
             if 'faceseg' in k:
                 cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
         
-    cond, _ = inference_utils_paired.build_condition_image(cond=cond, misc=misc)
-    cond = inference_utils_paired.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
+    cond, _ = inference_utils_paired.build_condition_image(cond=cond, misc=misc, force_render=args.force_render)
+    # print(cond.keys())
+    cond.update(inference_utils_paired.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True))
+    # print(cond.keys())
+    # exit()
     cond['cfg'] = cfg
     cond['use_cond_xt_fn'] = False
     
@@ -126,16 +130,30 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     if 'render_face' in args.itp:
         interp_set = args.itp.copy()
         interp_set.remove('render_face')
+    elif args.sh_grid_size is not None:
+        interp_set = args.itp.copy()
+        interp_set.remove('light')
     else:
         interp_set = args.itp
         
     # Interpolate non-spatial
     interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func, add_shadow=args.add_shadow)
     cond.update(interp_cond)
-        
     # Repeated non-spatial
-    repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.itp + ['light', 'img_latent']))
+    repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.itp + ['src_light', 'dst_light', 'light', 'img_latent']))
     cond.update(repeated_cond)
+    
+    print(cond['light'])
+    # If there's src_light and dst_light in cfg.param_model.params_selector, then duplicate them as 
+    #   - src_light = light[0:1] => (n_step, 27)
+    #   - dst_light = light[:]
+    if 'src_light' in cfg.param_model.params_selector:
+        cond['src_light'] = cond['light'][0:1].repeat(repeats=n_step, axis=0)
+    if 'dst_light' in cfg.param_model.params_selector:
+        cond['dst_light'] = cond['light'][1:]
+    # print(cond['src_light'].shape)
+    # print(cond['dst_light'].shape)
+    # exit()
 
     # Finalize the cond_params
     cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
@@ -193,7 +211,10 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         relit_out.append(relight_out['output'].detach().cpu().numpy())
     relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
     
-    return relit_out, th.cat((cond['src_deca_masked_face_images_woclip'], cond['dst_deca_masked_face_images_woclip']), dim=0)
+    if ('render_face' in args.itp) or args.force_render:
+        return relit_out, th.cat((cond['src_deca_masked_face_images_woclip'], cond['dst_deca_masked_face_images_woclip']), dim=0)
+    else:
+        return relit_out, None
 
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -348,7 +369,8 @@ if __name__ == '__main__':
         sy = args.sh_span_y
         
         print("Out relit frames : ", out_relit.shape)
-        print("Out render frames : ", out_render.shape)
+        if out_render is not None:
+            print("Out render frames : ", out_render.shape)
         
         
         # inv_frame = out_relit[0:1, ...]
@@ -358,8 +380,10 @@ if __name__ == '__main__':
         # torchvision.utils.save_image(tensor=(inv_render_frame), fp=f"{save_res_dir}/ren_inversion.png")
         
         relit_frames = out_relit.reshape(n_grid, n_grid, C, H, W)
-        render_frames = out_render[:, 0:3, ...].permute(0, 2, 3, 1)
-        render_frames = render_frames.reshape(n_grid, n_grid, H, W, C)
+        
+        if out_render is not None:
+            render_frames = out_render[:, 0:3, ...].permute(0, 2, 3, 1)
+            render_frames = render_frames.reshape(n_grid, n_grid, H, W, C)
         
         for ili, li in enumerate(np.linspace(sx[0], sx[1], n_grid)):
             for ilj, lj in enumerate(np.linspace(sy[0], sy[1], n_grid)):
@@ -367,11 +391,12 @@ if __name__ == '__main__':
                 frame = relit_frames[ili, ilj].cpu().detach()
                 torchvision.utils.save_image(tensor=(frame), fp=f"{save_res_dir}/res_{ilj:02d}_{ili:02d}.png")
                 # Render 
-                frame = render_frames[ili, ilj].cpu().detach()
-                frame = frame.permute(2, 0, 1)
-                frame = (frame.mul(255).add_(0.5).clamp_(0, 255)/255.0).float()
-                
-                torchvision.utils.save_image(tensor=(frame), fp=f"{save_res_dir}/ren_{ilj:02d}_{ili:02d}.png")
+                if out_render is not None:
+                    frame = render_frames[ili, ilj].cpu().detach()
+                    frame = frame.permute(2, 0, 1)
+                    frame = (frame.mul(255).add_(0.5).clamp_(0, 255)/255.0).float()
+                    
+                    torchvision.utils.save_image(tensor=(frame), fp=f"{save_res_dir}/ren_{ilj:02d}_{ili:02d}.png")
         
         if args.save_vid:
             """
@@ -394,11 +419,12 @@ if __name__ == '__main__':
             torchvision.io.write_video(video_array=th.cat((v_res, th.flip(v_res, dims=[0]))), filename=f"{save_res_dir}/res_rt.mp4", fps=30)
             
             v_ren = []
-            for vi in spiral:
-                v_ren.append(render_frames[vi[0], vi[1]])
-            v_ren = th.stack(v_ren, dim=0).mul(255).add_(0.5).clamp_(0, 255).type(th.ByteTensor)
-            torchvision.io.write_video(video_array=v_ren.cpu().numpy(), filename=f"{save_res_dir}/ren.mp4", fps=30)
-            torchvision.io.write_video(video_array=th.cat((v_ren, th.flip(v_ren, dims=[0]))).cpu().numpy(), filename=f"{save_res_dir}/ren_rt.mp4", fps=30)
+            if out_render is not None:
+                for vi in spiral:
+                    v_ren.append(render_frames[vi[0], vi[1]])
+                v_ren = th.stack(v_ren, dim=0).mul(255).add_(0.5).clamp_(0, 255).type(th.ByteTensor)
+                torchvision.io.write_video(video_array=v_ren.cpu().numpy(), filename=f"{save_res_dir}/ren.mp4", fps=30)
+                torchvision.io.write_video(video_array=th.cat((v_ren, th.flip(v_ren, dims=[0]))).cpu().numpy(), filename=f"{save_res_dir}/ren_rt.mp4", fps=30)
             
             
         with open(f'{save_res_dir}/res_desc.json', 'w') as fj:
@@ -409,65 +435,3 @@ if __name__ == '__main__':
             
     # Free memory!!!
     del deca_obj               
-    #     #NOTE: Save result
-    #     out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
-    #     os.makedirs(out_dir_relit, exist_ok=True)
-    #     save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
-    #     os.makedirs(save_res_dir, exist_ok=True)
-        
-    #     f_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0
-    #     vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=f_relit)
-        
-    #     if args.eval_dir is not None:
-    #         # if args.dataset in ['mp_valid', 'mp_test']
-    #         # eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/{args.dataset}/"
-    #         eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/"
-    #         os.makedirs(eval_dir, exist_ok=True)
-    #         torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{eval_dir}/input={src_id}#pred={dst_id}.png")
-            
-        
-    #     is_render = True if out_render is not None else False
-    #     if is_render:
-    #         clip_ren = True if 'wclip' in dataset.condition_image[0] else False 
-    #         if clip_ren:
-    #             vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5)
-    #         else:
-    #             vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
-                
-    #     if args.save_vid:
-    #         """
-    #         save the video
-    #         Args:
-    #             frames (list of tensor): range = [0, 255] (uint8), and shape = [T x H x W x C]
-    #             fn : path + filename to save
-    #             fps : video fps
-    #         """
-    #         #NOTE: save_video, w/ shape = TxHxWxC and value range = [0, 255]
-    #         vid_relit = out_relit
-    #         vid_relit = vid_relit.permute(0, 2, 3, 1)
-    #         vid_relit = ((vid_relit + 1)*127.5).clamp_(0, 255).type(th.ByteTensor)
-    #         vid_relit_rt = th.cat((vid_relit, th.flip(vid_relit, dims=[0])))
-    #         torchvision.io.write_video(video_array=vid_relit, filename=f"{save_res_dir}/res.mp4", fps=args.fps)
-    #         torchvision.io.write_video(video_array=vid_relit_rt, filename=f"{save_res_dir}/res_rt.mp4", fps=args.fps)
-    #         if is_render:
-    #             out_render = out_render[:, :3]
-    #             vid_render = out_render
-    #             # vid_render = th.cat((out_render, th.flip(out_render, dims=[0])))
-    #             clip_ren = False #if 'wclip' in dataset.condition_image else True
-    #             if clip_ren:
-    #                 vid_render = ((vid_render.permute(0, 2, 3, 1) + 1) * 127.5).clamp_(0, 255).type(th.ByteTensor)
-    #                 torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
-    #             else:
-    #                 vid_render = (vid_render.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
-    #                 torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
-    #                 vid_render_rt = th.cat((vid_render, th.flip(vid_render, dims=[0])))
-    #                 torchvision.io.write_video(video_array=vid_render_rt, filename=f"{save_res_dir}/ren_rt.mp4", fps=args.fps)
-                
-    #     with open(f'{save_res_dir}/res_desc.json', 'w') as fj:
-    #         log_dict = {'sampling_args' : vars(args), 
-    #                     'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_fn':itp_fn_str, 'itp':itp_str}}
-    #         json.dump(log_dict, fj)
-            
-            
-    # # Free memory!!!
-    # del deca_obj               

@@ -17,6 +17,7 @@ parser.add_argument('--batch_size', type=int, default=15)
 parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--add_shadow', action='store_true', default=False)
+parser.add_argument('--vary_shadow_nobound', action='store_true', default=None)
 # Samples selection
 parser.add_argument('--idx', nargs='+', default=[])
 parser.add_argument('--sample_pair_json', type=str, default=None)
@@ -31,6 +32,7 @@ parser.add_argument('--sh_grid_size', type=int, default=None)
 parser.add_argument('--sh_span', type=float, default=None)
 parser.add_argument('--diffuse_sh', type=float, default=None)
 parser.add_argument('--diffuse_perc', type=float, default=None)
+parser.add_argument('--force_render', action='store_true', default=False)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 # Misc.
@@ -80,7 +82,7 @@ from sample_utils import (
     params_utils, 
     vis_utils, 
     file_utils, 
-    inference_utils, 
+    inference_utils_paired, 
     mani_utils,
 )
 device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
@@ -114,17 +116,13 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
             if 'faceseg' in k:
                 cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
         
-    cond, _ = inference_utils.build_condition_image(cond=cond, misc=misc)
-    cond = inference_utils.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
+    # Create the render the image
+    cond, _ = inference_utils_paired.build_condition_image(cond=cond, misc=misc, force_render=args.force_render)
+    # Return the ['cond_img'] and ['dpm_cond_img']
+    cond.update(inference_utils_paired.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True))
+    
     cond['cfg'] = cfg
-    if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):
-        cond['use_cond_xt_fn'] = True
-        for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
-            cond[f'{k}_img'] = cond[f'{k}_img'].to(device)
-            if p is not None:
-                if 'dpm_noise_masking' in p:
-                    cond[f'{k}_mask'] = cond[f'{k}_mask'].to(device)
-                    cond['image'] = cond['image'].to(device)
+    cond['use_cond_xt_fn'] = False
     
 
     if 'render_face' in args.itp:
@@ -134,20 +132,34 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
         interp_set = args.itp
         
     # Interpolate non-spatial
-    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func, add_shadow=args.add_shadow)
+    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, 
+                                              src_idx=src_idx, dst_idx=dst_idx, 
+                                              n_step=n_step, interp_fn=itp_func, 
+                                              add_shadow=args.add_shadow, vary_shadow_nobound=args.vary_shadow_nobound)
     cond.update(interp_cond)
         
     # Repeated non-spatial
-    repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.itp + ['light', 'img_latent']))
+    repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.itp + ['src_light', 'dst_light', 'light', 'img_latent']))
     cond.update(repeated_cond)
-
+    # If there's src_light and dst_light in cfg.param_model.params_selector, then duplicate them as 
+    #   - src_light = light[0:1] => (n_step, 27)
+    #   - dst_light = light[:]
+    print(cond['shadow'].shape, cond['light'].shape)
+    if 'src_light' in cfg.param_model.params_selector:
+        cond['src_light'] = th.repeat_interleave(cond['light'][0:1], repeats=n_step, dim=0)
+        print(cond['src_light'].shape)
+        print(cond['src_light'])
+    if 'dst_light' in cfg.param_model.params_selector:
+        cond['dst_light'] = th.repeat_interleave(cond['light'][0:1], repeats=n_step, dim=0)
+        print(cond['dst_light'].shape)
+        print(cond['dst_light'])
     # Finalize the cond_params
     cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
     if cfg.img_cond_model.override_cond != '':
         to_tensor_key = ['cond_params'] + cfg.param_model.params_selector + [cfg.img_cond_model.override_cond]
     else:    
         to_tensor_key = ['cond_params'] + cfg.param_model.params_selector
-    cond = inference_utils.to_tensor(cond, key=to_tensor_key, device=ckpt_loader.device)
+    cond = inference_utils_paired.to_tensor(cond, key=to_tensor_key, device=ckpt_loader.device)
     
     return cond
     
@@ -163,7 +175,7 @@ def ext_sub_step(n_step):
         tmp -= bz
     return np.cumsum([0] + sub_step)
 
-def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
+def relight(model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     '''
     Relighting the image
     Output : Tensor (B x C x H x W); range = -1 to 1
@@ -174,7 +186,6 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
                         src_idx=src_idx, dst_idx=dst_idx, 
                         n_step=n_step, itp_func=itp_func
                     )
-
     print("[#] Relighting...")
     sub_step = ext_sub_step(n_step)
     relit_out = []
@@ -183,9 +194,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         start = sub_step[i]
         end = sub_step[i+1]
         
-        # Noise 
-        noise_map = th.randn(size=(end-start, 3, cfg.img_model.image_size, cfg.img_model.image_size)).cuda()
-        # th.repeat_interleave(noise_map, repeats=end-start, dim=0)
+        src_xstart = th.repeat_interleave(model_kwargs['image'][[0]], repeats=end-start, dim=0).cuda().float()
         
         # Relight!
         cond['use_render_itp'] = True
@@ -194,16 +203,16 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         if cfg.img_cond_model.apply:
             cond_relit = pl_sampling.forward_cond_network(model_kwargs=cond_relit)
         
-        relight_out = pl_sampling.forward_proc(
-            noise=noise_map,
-            model_kwargs=cond_relit,
-            store_intermediate=False,
-            add_mean=None)
+        relight_out = pl_sampling.forward_nodpm(src_xstart=src_xstart, model_kwargs=cond_relit)
         
-        relit_out.append(relight_out["final_output"]["sample"].detach().cpu().numpy())
+        relit_out.append(relight_out['output'].detach().cpu().numpy())
     relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
     
-    return relit_out, cond['cond_img']
+    # if args.itp == ['render_face']:
+    if ('render_face' in args.itp) or args.force_render:
+        return relit_out, th.cat((cond['src_deca_masked_face_images_woclip'], cond['dst_deca_masked_face_images_woclip']), dim=0)
+    else:
+        return relit_out, None
 
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -212,13 +221,16 @@ if __name__ == '__main__':
     # Load Ckpt
     if args.cfg_name is None:
         args.cfg_name = args.log_dir + '.yaml'
+    elif args.log_dir is None:
+        args.log_dir = args.cfg_name.replace('.yaml', '')
+        
     ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
     cfg = ckpt_loader.cfg
     
     print(f"[#] Sampling with diffusion_steps = {args.diffusion_steps}")
     cfg.diffusion.diffusion_steps = args.diffusion_steps
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
-    model_dict = inference_utils.eval_mode(model_dict)
+    model_dict = inference_utils_paired.eval_mode(model_dict)
 
     # Load dataset
     if args.dataset == 'itw':
@@ -281,7 +293,7 @@ if __name__ == '__main__':
                                                                             args.src_dst, img_path, 
                                                                             -1)
     #NOTE: Initialize a DECA renderer
-    if np.any(['deca_masked' in n for n in list(filter(None, dataset.condition_image))]):
+    if np.any(['deca_masked' in n for n in list(filter(None, dataset.condition_image))]) or args.force_render:
         mask = params_utils.load_flame_mask()
     else: mask=None
     deca_obj = params_utils.init_deca(mask=mask)
@@ -312,7 +324,7 @@ if __name__ == '__main__':
         n_step = args.itp_step
         print(f"[#] Current idx = {i}, Set = {args.set}, Src-id = {src_id}, Dst-id = {dst_id}")
         
-        pl_sampling = inference_utils.PLSampling(model_dict=model_dict,
+        pl_sampling = inference_utils_paired.PLSampling(model_dict=model_dict,
                                                     diffusion=diffusion,
                                                     reverse_fn=diffusion.ddim_reverse_sample_loop,
                                                     forward_fn=diffusion.ddim_sample_loop,
@@ -320,25 +332,20 @@ if __name__ == '__main__':
                                                     cfg=cfg,
                                                     args=args)
         
-        model_kwargs = inference_utils.prepare_cond_sampling(cond=model_kwargs, cfg=cfg)
+        # model_kwargs = inference_utils_paired.prepare_cond_sampling_paired(cond=model_kwargs, cfg=cfg)
         model_kwargs['cfg'] = cfg
         model_kwargs['use_cond_xt_fn'] = False
         if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):
             model_kwargs['use_cond_xt_fn'] = True
             for k, p in zip(cfg.img_model.dpm_cond_img, cfg.img_model.noise_dpm_cond_img):
                 model_kwargs[f'{k}_img'] = model_kwargs[f'{k}_img'].to(device)
-                if p is not None:
-                    if 'dpm_noise_masking' in p:
-                        model_kwargs[f'{k}_mask'] = model_kwargs[f'{k}_mask'].to(device)
-                        model_kwargs['image'] = model_kwargs['image'].to(device)
            
         itp_fn = mani_utils.slerp if args.slerp else mani_utils.lerp
         itp_fn_str = 'Slerp' if itp_fn == mani_utils.slerp else 'Lerp'
         itp_str = '_'.join(args.itp)
         
         model_kwargs['use_render_itp'] = True
-        out_relit, out_render = relight(dat = dat,
-                                    model_kwargs=model_kwargs,
+        out_relit, out_render = relight(model_kwargs=model_kwargs,
                                     src_idx=src_idx, dst_idx=dst_idx,
                                     itp_func=itp_fn,
                                     n_step = n_step
@@ -347,7 +354,7 @@ if __name__ == '__main__':
         #NOTE: Save result
         out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
         os.makedirs(out_dir_relit, exist_ok=True)
-        save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
+        save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_diff={args.diffusion_steps}_respace=/n_frames={n_step}/"
         os.makedirs(save_res_dir, exist_ok=True)
         
         f_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0

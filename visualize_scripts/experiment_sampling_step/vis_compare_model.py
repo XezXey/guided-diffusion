@@ -83,7 +83,10 @@ def create_app():
                 
                 ###################################################
                 # Show results
-                frames = glob.glob(f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame}/res_*.png")
+                if 'baseline' in alias:
+                    frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
+                else:
+                    frames = glob.glob(f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame}/res_*.png")
                 # out += str(show_itmd)
                     
                 out += "<td>"
@@ -92,7 +95,10 @@ def create_app():
                     if show_itmd == "False":
                         frames = [frames[0], frames[-1]]
                     for f in frames:
-                        out += "<img src=/files/" + f + ">"
+                        if 'baseline' in alias:
+                            out += "<img width=\"128\" height=\"128\" src=/files/" + f + ">"
+                        else:
+                            out += "<img src=/files/" + f + ">"
                 else:
                     out += "<p style=\"color:red\">Images not found!</p>"
                 out += "</td>"

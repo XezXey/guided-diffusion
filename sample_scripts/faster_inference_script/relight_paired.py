@@ -316,7 +316,7 @@ if __name__ == '__main__':
                                                     cfg=cfg,
                                                     args=args)
         
-        model_kwargs = inference_utils_paired.prepare_cond_sampling_paired(cond=model_kwargs, cfg=cfg)
+        # model_kwargs = inference_utils_paired.prepare_cond_sampling_paired(cond=model_kwargs, cfg=cfg)
         model_kwargs['cfg'] = cfg
         model_kwargs['use_cond_xt_fn'] = False
         if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):

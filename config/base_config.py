@@ -129,6 +129,11 @@ img_cond_model_img_type = {'raw':3,
                            'dst_deca_masked_face_images_woclip':3,
                            'src_faceseg_nohead':3,
                            'dst_faceseg_nohead':3,
+                           # For LDM
+                           'ldm_kl-f4':3,
+                           'ldm_kl-f8':4,
+                           'ldm_vq-f4':3,
+                           'ldm_vq-f8':4,
                             None:0,
 }
 cfg.img_cond_model = CN()
@@ -185,6 +190,7 @@ cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffh
 cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
 cfg.dataset.deca_rendered_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
 cfg.dataset.laplacian_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
+cfg.dataset.latent_ldm_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/ldm_encoding/"
 cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
 cfg.dataset.shadow_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_masks/"
 
@@ -317,7 +323,8 @@ def update_params(cfg):
 
     cfg.img_model.in_channels, cfg.img_model.each_in_channels = update_img_chns(img_list=cfg.img_model.dpm_cond_img, 
                                                                                 prep_list=cfg.img_model.prep_dpm_cond_img, 
-                                                                                in_channels=3,
+                                                                                # in_channels=3,
+                                                                                in_channels=cfg.img_model.in_channels,
                                                                             )
     cfg.img_cond_model.in_channels, cfg.img_cond_model.each_in_channels = update_img_chns(img_list=cfg.img_cond_model.in_image, prep_list=cfg.img_cond_model.prep_image)
     
@@ -334,6 +341,7 @@ def update_dataset_path(cfg):
     return cfg
 
 def update_img_chns(img_list, prep_list, in_channels=0):
+    #TODO: Rework this shit
     # Update conditioning image type for img_model/img_cond_model
     assert len(img_list) == len(prep_list)
     for in_img, prep in zip(img_list, prep_list):

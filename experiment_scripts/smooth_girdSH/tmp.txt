@@ -10,16 +10,16 @@ ffmpeg version 3.4.11-0ubuntu0.1 Copyright (c) 2000-2022 the FFmpeg developers
   libswscale      4.  8.100 /  4.  8.100
   libswresample   2.  9.100 /  2.  9.100
   libpostproc    54.  7.100 / 54.  7.100
-Input #0, image2, from '/data/mint/smooth_rotlight_gen/Masked_Face_woclip+BgNoHead+shadow_256/cx0_rx1_cy0_ry1/src=68670.jpg/%05d.png':
+Input #0, image2, from '/data/mint/smooth_rotlight_gen/paired+allunet_eps+no_shading+dst_light+nodpm_128/cx0_rx1_cy0_ry1/ema_160000/src=68568.jpg/%05d.png':
   Duration: 00:00:12.00, start: 0.000000, bitrate: N/A
     Stream #0:0: Video: png, rgb24(pc), 128x128, 25 fps, 25 tbr, 25 tbn, 25 tbc
 Stream mapping:
   Stream #0:0 -> #0:0 (png (native) -> h264 (libx264))
 Press [q] to stop, [?] for help
-[libx264 @ 0x556f8f14f960] using cpu capabilities: MMX2 SSE2Fast SSSE3 SSE4.2 AVX FMA3 BMI2 AVX2
-[libx264 @ 0x556f8f14f960] profile High, level 1.1
-[libx264 @ 0x556f8f14f960] 264 - core 152 r2854 e9a5903 - H.264/MPEG-4 AVC codec - Copyleft 2003-2017 - http://www.videolan.org/x264.html - options: cabac=1 ref=3 deblock=1:0:0 analyse=0x3:0x113 me=hex subme=7 psy=1 psy_rd=1.00:0.00 mixed_ref=1 me_range=16 chroma_me=1 trellis=1 8x8dct=1 cqm=0 deadzone=21,11 fast_pskip=1 chroma_qp_offset=-2 threads=4 lookahead_threads=1 sliced_threads=0 nr=0 decimate=1 interlaced=0 bluray_compat=0 constrained_intra=0 bframes=3 b_pyramid=2 b_adapt=1 b_bias=0 direct=1 weightb=1 open_gop=0 weightp=2 keyint=250 keyint_min=25 scenecut=40 intra_refresh=0 rc_lookahead=40 rc=crf mbtree=1 crf=18.0 qcomp=0.60 qpmin=0 qpmax=69 qpstep=4 ip_ratio=1.40 aq=1:1.00
-Output #0, mp4, to './vid_out_testpath//Masked_Face_woclip+BgNoHead+shadow_256/cx0_rx1_cy0_ry1/src=68670.jpg.mp4':
+[libx264 @ 0x55dabe557b20] using cpu capabilities: MMX2 SSE2Fast SSSE3 SSE4.2 AVX FMA3 BMI2 AVX2
+[libx264 @ 0x55dabe557b20] profile High, level 1.1
+[libx264 @ 0x55dabe557b20] 264 - core 152 r2854 e9a5903 - H.264/MPEG-4 AVC codec - Copyleft 2003-2017 - http://www.videolan.org/x264.html - options: cabac=1 ref=3 deblock=1:0:0 analyse=0x3:0x113 me=hex subme=7 psy=1 psy_rd=1.00:0.00 mixed_ref=1 me_range=16 chroma_me=1 trellis=1 8x8dct=1 cqm=0 deadzone=21,11 fast_pskip=1 chroma_qp_offset=-2 threads=4 lookahead_threads=1 sliced_threads=0 nr=0 decimate=1 interlaced=0 bluray_compat=0 constrained_intra=0 bframes=3 b_pyramid=2 b_adapt=1 b_bias=0 direct=1 weightb=1 open_gop=0 weightp=2 keyint=250 keyint_min=25 scenecut=40 intra_refresh=0 rc_lookahead=40 rc=crf mbtree=1 crf=18.0 qcomp=0.60 qpmin=0 qpmax=69 qpstep=4 ip_ratio=1.40 aq=1:1.00
+Output #0, mp4, to './vid_out_testpath//paired+allunet_eps+no_shading+dst_light+nodpm_128/cx0_rx1_cy0_ry1/ema_160000/src=68568.jpg.mp4':
   Metadata:
     encoder         : Lavf57.83.100
     Stream #0:0: Video: h264 (libx264) (avc1 / 0x31637661), yuv420p, 128x128, q=-1--1, 25 fps, 12800 tbn, 25 tbc
@@ -27,20 +27,22 @@ Output #0, mp4, to './vid_out_testpath//Masked_Face_woclip+BgNoHead+shadow_256/c
       encoder         : Lavc57.107.100 libx264
     Side data:
       cpb: bitrate max/min/avg: 0/0/0 buffer size: 0 vbv_delay: -1
-frame=  300 fps=0.0 q=-1.0 Lsize=     111kB time=00:00:11.88 bitrate=  76.9kbits/s speed=61.4x    
-video:109kB audio:0kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: 1.911954%
-[libx264 @ 0x556f8f14f960] frame I:2     Avg QP:16.75  size:  7158
-[libx264 @ 0x556f8f14f960] frame P:294   Avg QP:18.88  size:   330
-[libx264 @ 0x556f8f14f960] frame B:4     Avg QP:26.14  size:    18
-[libx264 @ 0x556f8f14f960] consecutive B-frames: 97.3%  2.7%  0.0%  0.0%
-[libx264 @ 0x556f8f14f960] mb I  I16..4:  0.0% 28.1% 71.9%
-[libx264 @ 0x556f8f14f960] mb P  I16..4:  0.0%  0.1%  0.0%  P16..4: 38.2% 11.7%  7.7%  0.0%  0.0%    skip:42.4%
-[libx264 @ 0x556f8f14f960] mb B  I16..4:  0.0%  0.0%  0.0%  B16..8:  7.0%  0.0%  0.0%  direct: 0.0%  skip:93.0%  L0: 5.6% L1:94.4% BI: 0.0%
-[libx264 @ 0x556f8f14f960] 8x8 transform intra:32.6% inter:59.8%
-[libx264 @ 0x556f8f14f960] coded y,uvDC,uvAC intra: 100.0% 98.6% 90.8% inter: 39.0% 25.0% 3.7%
-[libx264 @ 0x556f8f14f960] i8 v,h,dc,ddl,ddr,vr,hd,vl,hu: 18% 13%  4%  3% 15% 12% 15%  8% 11%
-[libx264 @ 0x556f8f14f960] i4 v,h,dc,ddl,ddr,vr,hd,vl,hu: 15% 16% 11%  5% 10% 11% 11%  8% 13%
-[libx264 @ 0x556f8f14f960] i8c dc,h,v,p: 48% 14% 21% 16%
-[libx264 @ 0x556f8f14f960] Weighted P-Frames: Y:0.0% UV:0.0%
-[libx264 @ 0x556f8f14f960] ref P L0: 67.3% 32.0%  0.6%  0.1%
-[libx264 @ 0x556f8f14f960] kb/s:74.23
+frame=  300 fps=0.0 q=-1.0 Lsize=     116kB time=00:00:11.88 bitrate=  79.9kbits/s speed=46.2x    
+video:114kB audio:0kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: 1.774570%
+[libx264 @ 0x55dabe557b20] frame I:2     Avg QP:16.37  size:  7517
+[libx264 @ 0x55dabe557b20] frame P:297   Avg QP:18.19  size:   340
+[libx264 @ 0x55dabe557b20] frame B:1     Avg QP:24.00  size:    12
+[libx264 @ 0x55dabe557b20] consecutive B-frames: 99.3%  0.7%  0.0%  0.0%
+[libx264 @ 0x55dabe557b20] mb I  I16..4:  0.8% 22.7% 76.6%
+[libx264 @ 0x55dabe557b20] mb P  I16..4:  0.0%  0.0%  0.0%  P16..4: 47.0%  7.6%  6.3%  0.0%  0.0%    skip:39.0%
+[libx264 @ 0x55dabe557b20] mb B  I16..4:  0.0%  0.0%  0.0%  B16..8:  0.0%  0.0%  0.0%  direct: 0.0%  skip:100.0%
+[libx264 @ 0x55dabe557b20] 8x8 transform intra:22.5% inter:56.1%
+[libx264 @ 0x55dabe557b20] coded y,uvDC,uvAC intra: 97.7% 100.0% 99.2% inter: 41.1% 29.5% 4.9%
+[libx264 @ 0x55dabe557b20] i16 v,h,dc,p:  0%  0% 100%  0%
+[libx264 @ 0x55dabe557b20] i8 v,h,dc,ddl,ddr,vr,hd,vl,hu: 16% 14%  4%  8%  9% 15%  9% 10% 15%
+[libx264 @ 0x55dabe557b20] i4 v,h,dc,ddl,ddr,vr,hd,vl,hu: 14% 16% 10%  7% 11%  9% 13%  8% 12%
+[libx264 @ 0x55dabe557b20] i8c dc,h,v,p: 63% 15% 18%  5%
+[libx264 @ 0x55dabe557b20] Weighted P-Frames: Y:0.0% UV:0.0%
+[libx264 @ 0x55dabe557b20] ref P L0: 69.3% 30.0%  0.6%  0.1%
+[libx264 @ 0x55dabe557b20] kb/s:77.31
+ 0x55faa8fcdd80] kb/s:77.98

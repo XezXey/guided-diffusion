@@ -125,3 +125,8 @@ experiment_scripts/check_smooth_light/with_cond_c
 experiment_scripts/check_smooth_light/with_cond_nc
 experiment_scripts/check_smooth_light/with_create_dat
 experiment_scripts/check_smooth_light/*.mp4
+experiment_scripts/smooth_girdSH/compare_gridSH.py
+experiment_scripts/smooth_girdSH/multiple_smooth_gridSH.py
+experiment_scripts/smooth_girdSH/smooth_gridSH.py
+experiment_scripts/smooth_girdSH/tmp.txt
+experiment_scripts/smooth_girdSH/

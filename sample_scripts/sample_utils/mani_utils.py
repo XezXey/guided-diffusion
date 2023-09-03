@@ -33,7 +33,7 @@ def interchange_cond_img(cond, src_idx, dst_idx, itc_img_key, cfg):
     cond['cond_img'] = th.cat(cond_img, dim=1)  # BxCxHxW
     return cond
 
-def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn, add_shadow=False, vary_shadow=None):
+def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn, add_shadow=False, vary_shadow=None, vary_shadow_nobound=None):
     '''
     Interpolate the condition following the keys in interp_set
     :params src_idx: the source index of condition
@@ -75,6 +75,21 @@ def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn, add_
             #     print(min_c.shape, max_c.shape, interp.shape)
             #     print(f"[#] Shadow = {cond[itp][src_idx][0]}")
             #     print(f"[#] Varying shadow ({vary_shadow}) with : \n{interp}")
+            elif vary_shadow_nobound:
+                min_c = -10
+                max_c = +10
+                if n_step % 2 == 0:
+                    min_c = np.linspace(min_c, cond[itp][src_idx][0], n_step//2)[..., None]
+                    max_c = np.linspace(cond[itp][src_idx][0], max_c, (n_step//2)+1)[..., None]
+                else:
+                    min_c = np.linspace(min_c, cond[itp][src_idx][0], (n_step//2)+1)[..., None]
+                    max_c = np.linspace(cond[itp][src_idx][0], max_c, (n_step//2)+1)[..., None]
+                # interp = np.concatenate((max_c[0:1, :], min_c, max_c[1:, :]), axis=0)
+                interp = np.concatenate((min_c, max_c[1:, :]), axis=0)
+                print(min_c.shape, max_c.shape, interp.shape)
+                print(f"[#] Shadow = {cond[itp][src_idx][0]}")
+                print(f"[#] Varying shadow ({vary_shadow}) with : \n{interp}")
+                
             else:
                 if add_shadow:
                     interp = np.linspace(cond[itp][src_idx][0], cond[itp][src_idx][0]+5, n_step)[..., None]

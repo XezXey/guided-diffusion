@@ -17,6 +17,7 @@ parser.add_argument('--batch_size', type=int, default=15)
 parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--add_shadow', action='store_true', default=False)
+parser.add_argument('--vary_shadow_nobound', action='store_true', default=None)
 # Samples selection
 parser.add_argument('--idx', nargs='+', default=[])
 parser.add_argument('--sample_pair_json', type=str, default=None)
@@ -31,6 +32,7 @@ parser.add_argument('--sh_grid_size', type=int, default=None)
 parser.add_argument('--sh_span', type=float, default=None)
 parser.add_argument('--diffuse_sh', type=float, default=None)
 parser.add_argument('--diffuse_perc', type=float, default=None)
+parser.add_argument('--force_render', action='store_true', default=False)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 # Misc.
@@ -114,8 +116,11 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
             if 'faceseg' in k:
                 cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
         
-    cond, _ = inference_utils_paired.build_condition_image(cond=cond, misc=misc)
-    cond = inference_utils_paired.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
+    # Create the render the image
+    cond, _ = inference_utils_paired.build_condition_image(cond=cond, misc=misc, force_render=args.force_render)
+    # Return the ['cond_img'] and ['dpm_cond_img']
+    cond.update(inference_utils_paired.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True))
+    
     cond['cfg'] = cfg
     cond['use_cond_xt_fn'] = False
     
@@ -127,13 +132,23 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
         interp_set = args.itp
         
     # Interpolate non-spatial
-    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func, add_shadow=args.add_shadow)
+    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, 
+                                              src_idx=src_idx, dst_idx=dst_idx, 
+                                              n_step=n_step, interp_fn=itp_func, 
+                                              add_shadow=args.add_shadow, vary_shadow_nobound=args.vary_shadow_nobound)
     cond.update(interp_cond)
         
     # Repeated non-spatial
-    repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.itp + ['light', 'img_latent']))
+    repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.itp + ['src_light', 'dst_light', 'light', 'img_latent']))
     cond.update(repeated_cond)
-
+    
+    # If there's src_light and dst_light in cfg.param_model.params_selector, then duplicate them as 
+    #   - src_light = light[0:1] => (n_step, 27)
+    #   - dst_light = light[:]
+    if 'src_light' in cfg.param_model.params_selector:
+        cond['src_light'] = cond['light'][0:1].repeat(repeats=n_step, axis=0)
+    if 'dst_light' in cfg.param_model.params_selector:
+        cond['dst_light'] = cond['light']
     # Finalize the cond_params
     cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
     if cfg.img_cond_model.override_cond != '':
@@ -142,6 +157,9 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
         to_tensor_key = ['cond_params'] + cfg.param_model.params_selector
     cond = inference_utils_paired.to_tensor(cond, key=to_tensor_key, device=ckpt_loader.device)
     
+    # print(cond['cond_params'])
+    # print(cond['cond_params'].shape)
+    # exit()
     return cond
     
 def ext_sub_step(n_step):
@@ -167,7 +185,6 @@ def relight(model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
                         src_idx=src_idx, dst_idx=dst_idx, 
                         n_step=n_step, itp_func=itp_func
                     )
-
     print("[#] Relighting...")
     sub_step = ext_sub_step(n_step)
     relit_out = []
@@ -190,7 +207,11 @@ def relight(model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         relit_out.append(relight_out['output'].detach().cpu().numpy())
     relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
     
-    return relit_out, th.cat((cond['src_deca_masked_face_images_woclip'], cond['dst_deca_masked_face_images_woclip']), dim=0)
+    # if args.itp == ['render_face']:
+    if ('render_face' in args.itp) or args.force_render:
+        return relit_out, th.cat((cond['src_deca_masked_face_images_woclip'], cond['dst_deca_masked_face_images_woclip']), dim=0)
+    else:
+        return relit_out, None
 
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -199,6 +220,9 @@ if __name__ == '__main__':
     # Load Ckpt
     if args.cfg_name is None:
         args.cfg_name = args.log_dir + '.yaml'
+    elif args.log_dir is None:
+        args.log_dir = args.cfg_name.replace('.yaml', '')
+        
     ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
     cfg = ckpt_loader.cfg
     
@@ -268,7 +292,7 @@ if __name__ == '__main__':
                                                                             args.src_dst, img_path, 
                                                                             -1)
     #NOTE: Initialize a DECA renderer
-    if np.any(['deca_masked' in n for n in list(filter(None, dataset.condition_image))]):
+    if np.any(['deca_masked' in n for n in list(filter(None, dataset.condition_image))]) or args.force_render:
         mask = params_utils.load_flame_mask()
     else: mask=None
     deca_obj = params_utils.init_deca(mask=mask)
@@ -307,7 +331,7 @@ if __name__ == '__main__':
                                                     cfg=cfg,
                                                     args=args)
         
-        model_kwargs = inference_utils_paired.prepare_cond_sampling_paired(cond=model_kwargs, cfg=cfg)
+        # model_kwargs = inference_utils_paired.prepare_cond_sampling_paired(cond=model_kwargs, cfg=cfg)
         model_kwargs['cfg'] = cfg
         model_kwargs['use_cond_xt_fn'] = False
         if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):

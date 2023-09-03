@@ -34,5 +34,23 @@
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"5"
+    },
+    "log=paired+allunet_eps+nobg+nodpm_128_cfg=paired+allunet_eps+nobg+nodpm_128.yaml" : {
+        "step":"ema_200000", 
+        "alias":"UNet(Input) + w/o Background + w/o dpm",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5"
+    },
+    "log=paired+allunet_eps+nobg+dst_shading+nodpm_128_cfg=paired+allunet_eps+nobg+dst_shading+nodpm_128.yaml" : {
+        "step":"ema_160000", 
+        "alias":"UNet(Input) + w/o Background + w/o dpm + only target shading",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5"
     }
 }

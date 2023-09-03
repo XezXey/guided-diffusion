@@ -1,0 +1,29 @@
+{
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml" : {
+        "step":"ema_085000", 
+        "alias":"UNet(Input) baseline",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5"
+    },
+    "log=paired+allunet_eps+nodpm_128_cfg=paired+allunet_eps+nodpm_128.yaml" : {
+        "step":"ema_160000", 
+        "alias":"UNet(Input) + w/o dpm",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5"
+    },
+    "log=paired+allunet_eps+nobg+nodpm_128_cfg=paired+allunet_eps+nobg+nodpm_128.yaml" : {
+        "step":"ema_160000", 
+        "alias":"UNet(Input) + w/o Background + w/o dpm",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5"
+    }
+}

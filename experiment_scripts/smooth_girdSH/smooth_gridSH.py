@@ -12,8 +12,10 @@ parser.add_argument('--cx', type=float, default=0)
 parser.add_argument('--cy', type=float, default=0)
 parser.add_argument('--rx', type=float, default=1)
 parser.add_argument('--ry', type=float, default=1)
+
 parser.add_argument('--resize', action='store_true', default=False)
 parser.add_argument('--baseline', action='store_true', default=False)
+parser.add_argument('--itp', type=str, default='render_face')
 parser.add_argument('--model', type=str, required=True)
 parser.add_argument('--ckpt', type=str, default='ema_120000')
 parser.add_argument('--out_path', type=str, default='./vid_out_testpath/')
@@ -37,8 +39,8 @@ def smooth_spiral(sj_name, n_frames, savepath):
         args.model = 'Masked_Face_woclip+BgNoHead+shadow_256'
     else:
         # dat_path = f"/data/mint/sampling/paired_training_gridSH/log={args.model}_cfg={args.model}.yaml/model_020000/valid/render_face/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_1000/n_frames={n_frames}/"
-        # dat_path = f"/data/mint/sampling/paired_training_experiment/gridSH/log={args.model}_cfg={args.model}.yaml/{args.ckpt}/valid/render_face/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_diff=1000_respace=/n_frames={n_frames}/"
-        dat_path = f"/data/mint/sampling/paired_training_experiment/gridSH/log={args.model}_cfg={args.model}.yaml/{args.ckpt}/valid/render_face/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_1000/n_frames={n_frames}/"
+        dat_path = f"/data/mint/sampling/paired_training_experiment/gridSH/log={args.model}_cfg={args.model}.yaml/{args.ckpt}/valid/{args.itp}/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_diff=1000_respace=/n_frames={n_frames}/"
+        # dat_path = f"/data/mint/sampling/paired_training_experiment/gridSH/log={args.model}_cfg={args.model}.yaml/{args.ckpt}/valid/{args.itp}/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_1000/n_frames={n_frames}/"
     if not os.path.exists(dat_path):
         print(f"[#] No file...{dat_path}")
         return
@@ -50,8 +52,10 @@ def smooth_spiral(sj_name, n_frames, savepath):
     cy = args.cy
     ry = args.ry
 
-    os.makedirs(f"/data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{sj_name}/", exist_ok=True)
-    os.makedirs(f"{args.out_path}/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/", exist_ok=True)
+    # Save the image frames
+    os.makedirs(f"/data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}/", exist_ok=True)
+    # Save the videos
+    os.makedirs(f"{args.out_path}/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}", exist_ok=True)
     for i in range(n):
         t = i / n 
         tt = t * rounds * 2 * np.pi
@@ -83,7 +87,7 @@ def smooth_spiral(sj_name, n_frames, savepath):
         out_img = ((a*(1-ty) + c*ty)*(1-tx) + (b*(1-ty) + d*ty)*tx) * 255
         if args.resize:
             out_img = cv.resize(out_img, (128, 128))
-        cv.imwrite(f"/data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{sj_name}/%05d.png" % i, out_img)
+        cv.imwrite(f"/data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}/%05d.png" % i, out_img)
     
 
     if savepath:
@@ -114,7 +118,7 @@ def smooth_spiral(sj_name, n_frames, savepath):
         plt.show()
         plt.savefig(f"{args.out_path}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/path.png")
 
-    os.system(f"ffmpeg -y -i /data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{sj_name}/%05d.png -c:v libx264 -pix_fmt yuv420p -crf 18 {args.out_path}/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{sj_name}.mp4 2> tmp.txt")
+    os.system(f"ffmpeg -y -i /data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}/%05d.png -c:v libx264 -pix_fmt yuv420p -crf 18 {args.out_path}/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}.mp4 2> tmp.txt")
 
 
 if __name__ == '__main__':

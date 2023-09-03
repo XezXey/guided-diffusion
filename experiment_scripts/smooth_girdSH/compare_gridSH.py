@@ -12,7 +12,9 @@ parser.add_argument('--rx', type=float, default=1)
 parser.add_argument('--ry', type=float, default=1)
 parser.add_argument('--resize', action='store_true', default=False)
 parser.add_argument('--baseline', action='store_true', default=False)
-parser.add_argument('--model', )
+parser.add_argument('--model', nargs='+', required=True)
+parser.add_argument('--ckpt', nargs='+', required=True)
+parser.add_argument('--out', default='./cmp')
 args = parser.parse_args()
 
 def compare_smooth_spiral(sj_name, n_frames, savepath):
@@ -20,17 +22,26 @@ def compare_smooth_spiral(sj_name, n_frames, savepath):
     cfg = 'cx0_rx1_cy0_ry1'
     # Change path here!!!
     baseline = f'./vid_out_testpath/Masked_Face_woclip+BgNoHead+shadow_256/{cfg}/{sj_name}.mp4'
-    out1 = f'./vid_out_testpath/paired+allenc_eps+ddst_128/{cfg}/{sj_name}.mp4'
-    out2 = f'./vid_out_testpath/paired+allenc_eps+ddst+nobg_128/{cfg}/{sj_name}.mp4'
-    out3 = f'./vid_out_testpath/paired+allenc_eps+nodpm_128/{cfg}/{sj_name}.mp4'
-    out4 = f'./vid_out_testpath/paired+allunet_eps+ddst_128/{cfg}/{sj_name}.mp4'
-    out5 = f'./vid_out_testpath/paired+allunet_eps+ddst+nobg_128/{cfg}/{sj_name}.mp4'
-    out6 = f'./vid_out_testpath/paired+allunet_eps+nodpm_128/{cfg}/{sj_name}.mp4'
-    if (not os.path.exists(baseline)) or (not os.path.exists(out1)) or (not os.path.exists(out2)) or (not os.path.exists(out2)):
+    out = []
+    for m, cp in zip(args.model, args.ckpt):
+        out.append(f'./vid_out_testpath/{m}/{cfg}/{cp}/{sj_name}.mp4')
+    # out1 = f'./vid_out_testpath/paired+allenc_eps+ddst_128/{cfg}/{sj_name}.mp4'
+    # out2 = f'./vid_out_testpath/paired+allenc_eps+ddst+nobg_128/{cfg}/{sj_name}.mp4'
+    # out3 = f'./vid_out_testpath/paired+allenc_eps+nodpm_128/{cfg}/{sj_name}.mp4'
+    # out4 = f'./vid_out_testpath/paired+allunet_eps+ddst_128/{cfg}/{sj_name}.mp4'
+    # out5 = f'./vid_out_testpath/paired+allunet_eps+ddst+nobg_128/{cfg}/{sj_name}.mp4'
+    # out6 = f'./vid_out_testpath/paired+allunet_eps+nodpm_128/{cfg}/{sj_name}.mp4'
+    if (not os.path.exists(baseline)) or np.any([not os.path.exists(o) for o in out]):
         print(f"{sj_name} : No file...")
         return
 
-    os.system(f"ffmpeg -y -i {baseline} -i {out1} -i {out2} -i {out3} -i {out4} -i {out5} -i {out6} -filter_complex \"[0:v][1:v][2:v][3:v][4:v][5:v][6:v]hstack=7,format=yuv420p[v]\" -map \"[v]\" ./cmp/{sj_name}.mp4")
+    instream = ' -i ' + ' -i '.join(out)
+    vidx = ''.join([f'[{i}:v]' for i in range(1, len(out)+1)])
+    # print(vidx)
+    # print(instream)
+    # exit()
+    os.makedirs(args.out, exist_ok=True)
+    os.system(f"ffmpeg -y -i {baseline} {instream} -filter_complex \"[0:v]{vidx}hstack={len(out)+1},format=yuv420p[v]\" -map \"[v]\" ./{args.out}/{sj_name}.mp4")
 
 
 if __name__ == '__main__':

@@ -116,7 +116,6 @@ def load_data_img_deca(
     :param random_crop: if True, randomly crop the images for augmentation.
     :param random_flip: if True, randomly flip the images for augmentation.
     """
-
     if not data_dir and not deca_dir:
         raise ValueError("unspecified data directory")
     in_image = {}
@@ -128,6 +127,8 @@ def load_data_img_deca(
         else:
             if 'deca' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.deca_rendered_dir}/{in_image_type}/{set_}/")
+            elif 'ldm' in in_image_type:
+                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.latent_ldm_dir}/{in_image_type}/{set_}/")
             elif 'faceseg' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
             elif 'laplacian' in in_image_type:
@@ -147,12 +148,12 @@ def load_data_img_deca(
     
     deca_params, avg_dict = load_deca_params(deca_dir + set_, cfg)
 
-    # For raw image
+    # For raw image (Always loading raw image)
     in_image['raw'] = _list_image_files_recursively(f"{data_dir}/{set_}")
     in_image['raw'] = image_path_list_to_dict(in_image['raw'])
     # print(in_image['raw'])
 
-    img_dataset = DECADataset(
+    img_dataset = LDMDataset(
         resolution=image_size,
         image_paths=in_image['raw'],
         resize_mode=resize_mode,
@@ -210,7 +211,7 @@ def _list_image_files_recursively(data_dir):
             results.extend(_list_image_files_recursively(full_path))
     return results
 
-class DECADataset(Dataset):
+class LDMDataset(Dataset):
     def __init__(
         self,
         resolution,
@@ -260,6 +261,9 @@ class DECADataset(Dataset):
         # if self.cfg.img_cond_model.apply or self.cfg.img_model.apply_dpm_cond_img:
         for i, k in enumerate(self.condition_image):
             if k is None: continue
+            elif 'ldm' in k:
+                each_cond_img = np.transpose(cond_img[k], [2, 0, 1])
+                out_dict[f'{k}_img'] = each_cond_img
             elif k == 'raw':
                 each_cond_img = (raw_img / 127.5) - 1
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
@@ -323,9 +327,11 @@ class DECADataset(Dataset):
                 arr = np.transpose(arr, [2, 0, 1])
                 out_dict['image'] = arr
             else: raise ValueError(f"Bouding value = {self.cfg.img_model.input_bound} is invalid.")
-            
         elif self.in_image_UNet == ['faceseg_head']:
             arr = out_dict['faceseg_head_img']
+            out_dict['image'] = arr
+        elif 'ldm' in self.in_image_UNet[0] and len(self.in_image_UNet) == 1:
+            arr = out_dict[f'{self.in_image_UNet[0]}_img']
             out_dict['image'] = arr
         else : raise NotImplementedError
         return arr, out_dict
@@ -373,6 +379,8 @@ class DECADataset(Dataset):
                     condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
+            elif 'ldm' in in_image_type:
+                condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
             elif in_image_type == 'face_structure':
                 condition_image['face_structure'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
             else: raise ValueError(f"Not supported type of condition image : {in_image_type}")

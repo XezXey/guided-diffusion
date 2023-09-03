@@ -121,7 +121,7 @@ def create_app():
                     for f in frames:
                         out += "<img src=/files/" + f + ">"
                 else:
-                    out += "<p style=\"color:red\">Images not found!</p>"
+                    out += f"<p style=\"color:red\">Images not found! : {path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame}/</p>"
                 out += "</td>"
                 ###################################################
                 
@@ -198,7 +198,7 @@ def create_app():
                     for f in frames:
                         out += "<img src=/files/" + f + ">"
                 else:
-                    out += "<p style=\"color:red\">Images not found!</p>"
+                    out += f"<p style=\"color:red\">Images not found! : {path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame}/</p>"
                 out += "</td>"
                 ###################################################
                 

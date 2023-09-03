@@ -228,8 +228,8 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
     :param model_kwargs: model_kwargs dict
     """
     out_cond = {}
-    out_shape = cond['src_deca_masked_face_images_woclip'].shape[0] + cond['dst_deca_masked_face_images_woclip'].shape[0]
     def construct_cond_tensor(pair_cfg, sj_paired):
+        out_shape = cond['src_deca_masked_face_images_woclip'].shape[0] + cond['dst_deca_masked_face_images_woclip'].shape[0]
         out_cond_img = []
         for i in range(out_shape):
             cond_img = []
@@ -264,14 +264,32 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
                                                      sj_paired = cfg.img_cond_model.sj_paired)
     else:
         out_cond['cond_img'] = None
-    out_cond['src_deca_masked_face_images_woclip'] = cond['src_deca_masked_face_images_woclip']
-    out_cond['dst_deca_masked_face_images_woclip'] = cond['dst_deca_masked_face_images_woclip']
-    for k in cfg.param_model.params_selector:
-        out_cond[k] = cond[k]
+    # out_cond['src_deca_masked_face_images_woclip'] = cond['src_deca_masked_face_images_woclip']
+    # out_cond['dst_deca_masked_face_images_woclip'] = cond['dst_deca_masked_face_images_woclip']
+    
+    # # NOTE: Create the 'cond_params' for non-spatial condition given "params_selector list"
+    # assert not th.allclose(src['dict']['light'], dst['dict']['light'])
+    # cond_params = []
+    # for p in self.cfg.param_model.params_selector:
+    #     if p == 'src_light':
+    #         cond_params.append(src['dict']['light'])
+    #         # print(p, src['dict']['light'].shape)
+    #         # print(p, src['dict']['light'])
+    #     elif p == 'dst_light':
+    #         cond_params.append(dst['dict']['light'])
+    #         # print(p, dst['dict']['light'].shape)
+    #         # print(p, dst['dict']['light'])
+    #     else:
+    #         assert th.allclose(src['dict'][p], dst['dict'][p])
+    #         cond_params.append(src['dict'][p])
+    #         # print(p, src['dict'][p].shape)
+    #         # print(p, dst['dict'][p].shape)
+    # # exit()
+    # out_cond['cond_params'] = th.cat(cond_params, dim=1).float()
     return out_cond
 
 
-def build_condition_image(cond, misc):
+def build_condition_image(cond, misc, force_render=False):
     src_idx = misc['src_idx']
     dst_idx = misc['dst_idx']
     n_step = misc['n_step']
@@ -285,68 +303,60 @@ def build_condition_image(cond, misc):
     deca_obj = misc['deca_obj']
     clip_ren = None
     
+    def prep_render(cond, cond_img_name):
+        rendered_tmp = []
+        for j in range(n_step):
+            if 'woclip' in cond_img_name:
+                #NOTE: Input is the npy array -> Used cv2.resize() to handle
+                r_tmp = deca_rendered[j].cpu().numpy().transpose((1, 2, 0))
+                r_tmp = cv2.resize(r_tmp, (img_size, img_size), cv2.INTER_AREA)
+                r_tmp = np.transpose(r_tmp, (2, 0, 1))
+                clip_ren = False
+            else:
+                r_tmp = deca_rendered[j].mul(255).add_(0.5).clamp_(0, 255)
+                r_tmp = np.transpose(r_tmp.cpu().numpy(), (1, 2, 0))
+                r_tmp = r_tmp.astype(np.uint8)
+                r_tmp = dataset.augmentation(PIL.Image.fromarray(r_tmp))
+                r_tmp = dataset.prep_cond_img(r_tmp, cond_img_name, i)
+                r_tmp = np.transpose(r_tmp, (2, 0, 1))
+                r_tmp = (r_tmp / 127.5) - 1
+                clip_ren = True
+            rendered_tmp.append(r_tmp)
+        rendered_tmp = np.stack(rendered_tmp, axis=0)
+        cond[cond_img_name] = th.tensor(rendered_tmp).cuda()
+        cond[f'src_{cond_img_name}'] = th.tensor(rendered_tmp[[0]]).cuda()
+        cond[f'dst_{cond_img_name}'] = th.tensor(rendered_tmp[1:]).cuda()
+        return cond, clip_ren
+    
+    # creating the light condition e.g. gridSH, interpolated light
+    if args.sh_grid_size is not None:
+        #NOTE: Render w/ grid light 
+        cond['light'] = params_utils.grid_sh(sh=cond['light'][src_idx], n_grid=args.sh_grid_size, sx=args.sh_span_x, sy=args.sh_span_y, sh_scale=args.sh_scale, use_sh=args.use_sh).reshape(-1, 27)
+    elif 'render_face' in args.interpolate:
+        #NOTE: Render w/ interpolated light (Main code use this)
+        cond['light'][[dst_idx]] *= args.scale_sh
+        interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+        cond.update(interp_cond)
+    elif force_render:
+        #NOTE: Render w/ interpolated light (Main code use this)
+        tmp_light = cond['light'].clone()
+        interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+        cond.update(interp_cond)
+    else:
+        #NOTE: Render w/ same light
+        repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
+        cond.update(repeated_cond)
+            
     # Handling the render face
-    if np.any(['deca' in i for i in condition_img]) or np.any(['shadow_mask' in i for i in condition_img]):
-        # Render the face
-        if args.rotate_normals:
-            #NOTE: Render w/ Rotated normals; cond['light'] shape = B x 27
-            cond.update(mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light']))
-            cond['R_normals'] = params_utils.get_R_normals(n_step=n_step)
-            lb = cond['light'].copy()
-            lr_shading = int(n_step//2)
-            # cond['light'][3:lr_shading] *= args.scale_sh
-            cond['light'] *= args.scale_sh
-            if args.add_sh is not None:
-                cond['light'][3:lr_shading+3, 0:3] += args.add_sh
-            if args.diffuse_sh is not None:
-                cond['light'][3:lr_shading+3, 0:3] += args.diffuse_sh
-                cond['light'][3:lr_shading+3, 3:] -= args.diffuse_sh
-            if args.diffuse_perc is not None:
-                for i, sh_idx in enumerate(np.arange(0, 27, 3)):
-                    # print(sh_idx)
-                    if i == 0:
-                        cond['light'][3:lr_shading+3, sh_idx:sh_idx+3] -= (np.mean(cond['light'][3:lr_shading+3, sh_idx:sh_idx+3], axis=1, keepdims=True) * args.diffuse_perc)
-                    else:
-                        cond['light'][3:lr_shading+3, sh_idx:sh_idx+3] += (np.mean(cond['light'][3:lr_shading+3, sh_idx:sh_idx+3], axis=1, keepdims=True) * args.diffuse_perc)
-            print(f"[#] Mean light after scale with {args.scale_sh}: {np.mean(lb)} -> {np.mean(cond['light'])}")
-        elif args.sh_grid_size is not None:
-            #NOTE: Render w/ grid light 
-            cond['light'] = params_utils.grid_sh(sh=cond['light'][src_idx], n_grid=args.sh_grid_size, sx=args.sh_span_x, sy=args.sh_span_y, sh_scale=args.sh_scale, use_sh=args.use_sh).reshape(-1, 27)
-        elif 'render_face' in args.interpolate:
-            #NOTE: Render w/ interpolated light (Mainly use this)
-            interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
-            cond.update(interp_cond)
-        # elif 'render_face' in args.interpolate:
-        #     #NOTE: Render w/ interpolated light (For aj jumras or any itw)
-        #     # print(cond['light'])
-        #     # print(cond['mod_light'])
-        #     interp_cond = mani_utils.iter_interp_cond_lightfile(cond, itp_src='light', itp_dst='mod_light', src_idx=src_idx, n_step=n_step, interp_fn=itp_func)
-        #     # print(interp_cond)
-        #     cond.update(interp_cond)
-        elif 'render_face_modSH' in args.interpolate:
-            #NOTE: Render w/ interpolated light
-            repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
-            # mod_SH = np.array([1, 1.1, 1.2, 1/1.1, 1/1.2])[..., None]
-            mod_SH = np.array([0, 1, 1.2, 1/1.2])[..., None]
-            repeated_cond['light'] = repeated_cond['light'] * mod_SH
-            cond.update(repeated_cond)
-        else:
-            #NOTE: Render w/ same light
-            repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
-            cond.update(repeated_cond)
-            # interp_cond = mani_utils.iter_interp_cond(cond, interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
-            # interp_cond['pose'] = th.tensor(interp_cond['pose'])
-            # cond.update(interp_cond)
-        
+    if np.any(['deca' in i for i in condition_img]) or force_render:
         start_t = time.time()
-        if np.any(['deca_masked' in n for n in condition_img]) or np.any(['shadow_mask' in n for n in condition_img]):
+        if np.any(['deca_masked' in n for n in condition_img]) or force_render:
             mask = params_utils.load_flame_mask()
         else: mask=None
         
         #TODO: Render DECA in minibatch
         sub_step = mani_utils.ext_sub_step(n_step, batch_size)
         all_render = []
-        # all_shadow_mask = []
         for i in range(len(sub_step)-1):
             print(f"[#] Sub step rendering : {sub_step[i]} to {sub_step[i+1]}")
             start = sub_step[i]
@@ -354,7 +364,7 @@ def build_condition_image(cond, misc):
             sub_cond = cond.copy()
             sub_cond['light'] = sub_cond['light'][start:end, :]
             # Deca rendered : B x 3 x H x W
-            deca_rendered, orig_visdict = params_utils.render_deca(deca_params=sub_cond, 
+            deca_rendered, _ = params_utils.render_deca(deca_params=sub_cond, 
                                                                 idx=src_idx, n=end-start, 
                                                                 avg_dict=avg_dict, 
                                                                 render_mode=args.render_mode, 
@@ -362,23 +372,10 @@ def build_condition_image(cond, misc):
                                                                 mask=mask,
                                                                 deca_obj=deca_obj,
                                                                 repeat=True)
-            # Shadow_mask : B x H x W
-            # shadow_mask = params_utils.render_shadow_mask(
-            #                                 sh_light=sub_cond['light'], 
-            #                                 cam=sub_cond['cam'][src_idx],
-            #                                 verts=orig_visdict['trans_verts_orig'], 
-            #                                 deca=deca_obj)
             all_render.append(deca_rendered)
-            # all_shadow_mask.append(shadow_mask[:, None, ...])
         print("Rendering time : ", time.time() - start_t)
+        deca_rendered = th.cat(all_render, dim=0)
         
-        if args.fixed_render:
-            print("[#] Fixed the Deca renderer")
-            deca_rendered = all_render[0].repeat_interleave(repeats=len(all_render), dim=0)
-        else:
-            deca_rendered = th.cat(all_render, dim=0)
-        
-    #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'
     print("Conditoning with image : ", condition_img)
     for i, cond_img_name in enumerate(condition_img):
         if ('faceseg' in cond_img_name) or ('face_structure' in cond_img_name):
@@ -389,29 +386,14 @@ def build_condition_image(cond, misc):
                 bg_tmp = np.stack(bg_tmp, axis=0)
             cond[f"src_{cond_img_name}"] = th.tensor(bg_tmp)
             
-        elif 'deca' in cond_img_name:
-            rendered_tmp = []
-            for j in range(n_step):
-                if 'woclip' in cond_img_name:
-                    #NOTE: Input is the npy array -> Used cv2.resize() to handle
-                    r_tmp = deca_rendered[j].cpu().numpy().transpose((1, 2, 0))
-                    r_tmp = cv2.resize(r_tmp, (img_size, img_size), cv2.INTER_AREA)
-                    r_tmp = np.transpose(r_tmp, (2, 0, 1))
-                    clip_ren = False
-                else:
-                    r_tmp = deca_rendered[j].mul(255).add_(0.5).clamp_(0, 255)
-                    r_tmp = np.transpose(r_tmp.cpu().numpy(), (1, 2, 0))
-                    r_tmp = r_tmp.astype(np.uint8)
-                    r_tmp = dataset.augmentation(PIL.Image.fromarray(r_tmp))
-                    r_tmp = dataset.prep_cond_img(r_tmp, cond_img_name, i)
-                    r_tmp = np.transpose(r_tmp, (2, 0, 1))
-                    r_tmp = (r_tmp / 127.5) - 1
-                    clip_ren = True
-                rendered_tmp.append(r_tmp)
-            rendered_tmp = np.stack(rendered_tmp, axis=0)
-            cond[cond_img_name] = th.tensor(rendered_tmp).cuda()
-            cond[f'src_{cond_img_name}'] = th.tensor(rendered_tmp[[0]]).cuda()
-            cond[f'dst_{cond_img_name}'] = th.tensor(rendered_tmp[1:]).cuda()
+        elif ('deca' in cond_img_name):
+            cond, clip_ren = prep_render(cond, cond_img_name)
+    
+    if force_render:
+        cond, clip_ren = prep_render(cond, 'deca_masked_face_images_woclip')
+        if args.sh_grid_size is None:
+            cond['light'] = tmp_light
+    
     return cond, clip_ren
 
 
