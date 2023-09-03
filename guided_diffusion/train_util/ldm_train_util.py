@@ -111,7 +111,7 @@ class TrainLoop(LightningModule):
         self.lr_anneal_steps = self.cfg.train.lr_anneal_steps
         self.name = name
         self.input_bound = self.cfg.img_model.input_bound
-        self.scale_factor = None
+        self.scale_factor = 1.0184533596038818
 
         self.step = 0
         self.resume_step = 0
@@ -219,11 +219,14 @@ class TrainLoop(LightningModule):
             ldm_encoder_name = [k for k in batch[1].keys() if 'ldm' in k][0]
             assert th.allclose(input=z, other=batch[1][ldm_encoder_name])
             self.scale_factor = 1. / z.flatten().std()
+            self.register_buffer("scale_factor", th.tensor(self.scale_factor))
             print(f"[#] Setting self.scale_factor to {self.scale_factor}")
             print("### USING STD-RESCALING ###")
             filename = f"scale_factor_{self.scale_factor:.4f}.pt"
             with bf.BlobFile(bf.join(get_blob_logdir(), filename), "wb") as f:
                 th.save(self.scale_factor.double(), f)
+                
+            del self.scale_factor
     
     
     @rank_zero_only
