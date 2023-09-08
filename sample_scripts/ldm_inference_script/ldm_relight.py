@@ -200,15 +200,15 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     if cfg.img_cond_model.apply:
         cond_rev = pl_sampling.forward_cond_network(model_kwargs=cond_rev)
         
-    print("[#] Apply Mean-matching...")
     reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
     noise_map = reverse_ddim_sample['final_output']['sample']
     
     if args.w_mm:
+        print("[#] Apply Mean-matching...")
         rev_mean = reverse_ddim_sample['intermediate']
         
         #NOTE: rev_mean WILL BE MODIFIED; This is for computing the ratio of inversion (brightness correction).
-        sample_ddim = pl_sampling.forward_proc(
+        _ = pl_sampling.forward_proc(
             noise=noise_map,
             model_kwargs=cond_rev,
             store_intermediate=False,
@@ -216,6 +216,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
 
         assert noise_map.shape[0] == 1
         rev_mean_first = [x[:1] for x in rev_mean]
+    else: rev_mean_first = None
     
     print("[#] Relighting...")
     sub_step = ext_sub_step(n_step)
