@@ -103,24 +103,8 @@ cfg.img_model.noise_dpm_cond_img = [None]
 
 # Additional Encoder Network
 img_cond_model_img_type = {'raw':3, 
-                            'face_structure':3,
-                            'deca_shape_images':3, 
-                            'deca_template_shape_images':3, 
-                            'deca_albedo_shape_images':3, 
-                            'deca_albedo_template_shape_images':3, 
-                            'deca_masked_face_images_wclip':3, 
-                            'deca_masked_face_images_woclip':3,
-                            'shadow_mask':1,
-                            'faceseg_face':3, 
-                            'faceseg_faceskin&nose':3, 
-                            'faceseg_bg&noface':3,
-                            'faceseg_bg_noface&nohair':3,
-                            'faceseg_bg&ears_noface&nohair':3,
-                            'faceseg_bg':3,
-                            'faceseg_nohead':3,
-                            'faceseg_face&hair':3, 
-                            'normals':3,
-                            'laplacian_topmost_eyes':3,
+                           'depth_map':1,
+                           'normal_map':3,
                             None:0,
 }
 cfg.img_cond_model = CN()
@@ -169,15 +153,12 @@ cfg.relighting.num_shaded_ch = 1
 # Options for Dataset
 # ---------------------------------------------------------------------------- #
 cfg.dataset = CN()
-cfg.dataset.training_data = 'ffhq_256_with_anno'
-cfg.dataset.root_path = '/data/mint/DPM_Dataset/'
-cfg.dataset.deca_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
-cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
-cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
-cfg.dataset.deca_rendered_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
-cfg.dataset.laplacian_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
-cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
-cfg.dataset.shadow_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_masks/"
+cfg.dataset.training_data = 'scene2'
+cfg.dataset.root_path = '/data/mint/Aom_Dataset/'
+cfg.dataset.params_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
+cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/images/'
+cfg.dataset.normal_map_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/normal_map/"
+cfg.dataset.depth_map_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/depth_map/"
 
 # ---------------------------------------------------------------------------- #
 # Options for training
@@ -318,11 +299,9 @@ def update_params(cfg):
     
 def update_dataset_path(cfg):
     cfg.dataset.deca_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
-    cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
-    cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
-    cfg.dataset.deca_rendered_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
-    cfg.dataset.laplacian_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
-    cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
+    cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/images/'
+    cfg.dataset.depth_map_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/depth_map/"
+    cfg.dataset.normal_map_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/normal_map/"
     return cfg
 
 def update_img_chns(img_list, prep_list, in_channels=0):

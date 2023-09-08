@@ -567,7 +567,32 @@ class TrainLoop(LightningModule):
         ddim_recon_predx0_plot = ((ddim_recon_sample['pred_xstart'] + 1) * 127.5) / 255.
         log_image_fn(key=f'{sampling_model} - ddim_recon_predx0 (x0)', image=make_grid(ddim_recon_predx0_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
         
-
+        # Relit
+        cond_relit = copy.deepcopy(cond)
+        cond_relit['light'] = th.cat((cond['light'][1:], cond['light'][0:1]), dim=0)
+        cond_relit['cond_params'] = th.cat((cond['cond_params'][1:], cond['cond_params'][0:1]), dim=0)
+        
+        ddim_relit_sample_inv, _ = self.diffusion.ddim_sample_loop(
+            model=sampling_model_dict[self.cfg.img_model.name],
+            shape=(n, 3, H, W),
+            clip_denoised=True,
+            model_kwargs=cond_relit,
+            noise=ddim_reverse_sample['sample'],
+        )
+        
+        ddim_relit_sample_n01, _ = self.diffusion.ddim_sample_loop(
+            model=sampling_model_dict[self.cfg.img_model.name],
+            shape=(n, 3, H, W),
+            clip_denoised=True,
+            model_kwargs=cond_relit,
+            noise=noise,
+        )
+        
+        ddim_relit_sample_inv_plot = ((ddim_relit_sample_inv['sample'] + 1) * 127.5) / 255.
+        log_image_fn(key=f'{sampling_model} - ddim_relit_sample (inv)', image=make_grid(ddim_relit_sample_inv_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
+        ddim_relit_sample_n01_plot = ((ddim_relit_sample_n01['sample'] + 1) * 127.5) / 255.
+        log_image_fn(key=f'{sampling_model} - ddim_relit_sample (n01)', image=make_grid(ddim_relit_sample_n01_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
+        
         # Save memory!
         dat = dat.detach()
         cond = tensor_util.dict_detach(in_d=cond, keys=cond.keys())

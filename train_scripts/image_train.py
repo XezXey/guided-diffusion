@@ -7,7 +7,7 @@ import pytorch_lightning as pl
 from guided_diffusion import logger
 from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 from config.base_config import parse_args
-from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
+from guided_diffusion.dataloader.scene_dataset import load_data_img_scene
 from guided_diffusion.resample import create_named_schedule_sampler
 from guided_diffusion.script_util import (
     create_img_and_diffusion,
@@ -29,7 +29,7 @@ def main():
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
 
     logger.log("[#] Creating data loader...")
-    train_loader, _, _ = load_data_img_deca(
+    train_loader, _, _ = load_data_img_scene(
         data_dir=cfg.dataset.data_dir,
         deca_dir=cfg.dataset.deca_dir,
         batch_size=cfg.train.batch_size,
@@ -48,7 +48,7 @@ def main():
     print(f"Initialize \"{cfg.train.logger_mode}\" logger : {cfg.train.logger_dir}")
     os.makedirs(cfg.train.logger_dir, exist_ok=True)
     if cfg.train.logger_mode == 'wandb':
-        t_logger = WandbLogger(project='Relighting-DPM', save_dir=cfg.train.logger_dir, tags=[cfg.train_misc.exp_name], name=cfg.train_misc.cfg_name)
+        t_logger = WandbLogger(project='Scene-Relighting-DPM', save_dir=cfg.train.logger_dir, tags=[cfg.train_misc.exp_name], name=cfg.train_misc.cfg_name)
     elif cfg.train.logger_mode == 'tb':
         t_logger = TensorBoardLogger(save_dir=cfg.train.logger_dir, name="diffusion", version=cfg.train_misc.exp_name, sub_dir=cfg.train_misc.cfg_name)
     else: 

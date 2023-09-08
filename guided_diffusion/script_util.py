@@ -358,7 +358,7 @@ def create_gaussian_diffusion(cfg):
     else:
         loss_type = gd.LossType.MSE
     if not cfg.timestep_respacing:
-        timestep_respacing = [cfg.diffusion_steps]
+        cfg.timestep_respacing = [cfg.diffusion_steps]
     return SpacedDiffusion(
         # use_timesteps=space_timesteps(cfg.diffusion_steps, timestep_respacing),
         use_timesteps=space_timesteps(cfg.diffusion_steps, cfg.timestep_respacing),
