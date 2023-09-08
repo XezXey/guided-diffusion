@@ -34,6 +34,7 @@ parser.add_argument('--diffuse_perc', type=float, default=None)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--timestep_respacing', type=str, default="")
+parser.add_argument('--w_mm', action='store_true', default=False)
 # Misc.
 parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--out_dir', type=str, required=True)
@@ -73,6 +74,7 @@ from guided_diffusion.tensor_util import (
 )
 
 from guided_diffusion.dataloader.ldm_datasets import load_data_img_deca
+from guided_diffusion.distributions import DiagonalGaussianDistribution
 
 # Sample utils
 sys.path.insert(0, '../')
@@ -85,6 +87,22 @@ from sample_utils import (
     mani_utils,
 )
 device = 'cuda' if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0 else 'cpu'
+
+def rescale_latent(cfg, encoder_posterior, scale_factor=1.0184533596038818):
+    #NOTE: Rescale latent from first stage (e.g. AutoencoderKL, VQGAN, etc.)
+    assert scale_factor is not None
+    assert len(cfg.img_model.in_image) == 1
+    if 'kl' in cfg.img_model.in_image[0]:
+        #NOTE: AutoencoderKL
+        # print("SAMPLE SHAPE:", encoder_posterior.shape)
+        z = DiagonalGaussianDistribution(encoder_posterior).sample()
+        # print("SAMPLE SHAPE:", z.shape)
+    elif 'vq' in cfg.img_model.in_image[0]:
+        #NOTE: VQGAN
+        z = encoder_posterior
+    else:
+        raise NotImplementedError(f"encoder_posterior of type '{type(encoder_posterior)}' not yet implemented")
+    return z * scale_factor
 
 def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     condition_img = list(filter(None, dataset.condition_image))
@@ -185,17 +203,19 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     print("[#] Apply Mean-matching...")
     reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
     noise_map = reverse_ddim_sample['final_output']['sample']
-    rev_mean = reverse_ddim_sample['intermediate']
     
-    #NOTE: rev_mean WILL BE MODIFIED; This is for computing the ratio of inversion (brightness correction).
-    sample_ddim = pl_sampling.forward_proc(
-        noise=noise_map,
-        model_kwargs=cond_rev,
-        store_intermediate=False,
-        rev_mean=rev_mean)
+    if args.w_mm:
+        rev_mean = reverse_ddim_sample['intermediate']
+        
+        #NOTE: rev_mean WILL BE MODIFIED; This is for computing the ratio of inversion (brightness correction).
+        sample_ddim = pl_sampling.forward_proc(
+            noise=noise_map,
+            model_kwargs=cond_rev,
+            store_intermediate=False,
+            rev_mean=rev_mean)
 
-    assert noise_map.shape[0] == 1
-    rev_mean_first = [x[:1] for x in rev_mean]
+        assert noise_map.shape[0] == 1
+        rev_mean_first = [x[:1] for x in rev_mean]
     
     print("[#] Relighting...")
     sub_step = ext_sub_step(n_step)
@@ -206,7 +226,9 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         end = sub_step[i+1]
         
         # Relight!
-        mean_match_ratio = copy.deepcopy(rev_mean_first)
+        if args.w_mm:
+            mean_match_ratio = copy.deepcopy(rev_mean_first)
+        else: mean_match_ratio = None
         cond['use_render_itp'] = True
         cond_relight = copy.deepcopy(cond)
         cond_relit = dict_slice_se(in_d=cond_relight, keys=cond_relight.keys(), s=start, e=end) # Slice only 1st image out for inversion
@@ -330,8 +352,6 @@ if __name__ == '__main__':
                                             shuffle=False, num_workers=24)
                                    
         dat, model_kwargs = next(iter(subset_loader))
-        print(dat.shape)
-        exit()
         print("#"*100)
         # Indexing
         src_idx = 0
@@ -367,30 +387,27 @@ if __name__ == '__main__':
         itp_str = '_'.join(args.itp)
         
         model_kwargs['use_render_itp'] = True
+        
+        dat = rescale_latent(cfg=model_kwargs['cfg'], encoder_posterior=dat)
         out_relit, out_render = relight(dat = dat,
                                     model_kwargs=model_kwargs,
                                     src_idx=src_idx, dst_idx=dst_idx,
                                     itp_func=itp_fn,
                                     n_step = n_step
                                 )
-        
         #NOTE: Save result
         out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
         os.makedirs(out_dir_relit, exist_ok=True)
-        save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
+        save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}_{args.timestep_respacing}/n_frames={n_step}/images/"
         os.makedirs(save_res_dir, exist_ok=True)
+        save_latent_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}_{args.timestep_respacing}/n_frames={n_step}/latent/"
+        os.makedirs(save_latent_dir, exist_ok=True)
         
-        f_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0
-        vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=f_relit)
-        
-        if args.eval_dir is not None:
-            # if args.dataset in ['mp_valid', 'mp_test']
-            # eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/{args.dataset}/"
-            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/"
-            os.makedirs(eval_dir, exist_ok=True)
-            torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{eval_dir}/input={src_id}#pred={dst_id}.png")
+        out_relit = out_relit.detach().cpu().numpy()
+        print(out_relit.shape)
+        for j in range(out_relit.shape[0]):
+            np.save(f"{save_latent_dir}/latent_{j:03d}.npy", out_relit[j])
             
-        
         is_render = True if out_render is not None else False
         if is_render:
             clip_ren = True if 'wclip' in dataset.condition_image[0] else False 
@@ -398,41 +415,7 @@ if __name__ == '__main__':
                 vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5)
             else:
                 vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
-                
-        if args.save_vid:
-            """
-            save the video
-            Args:
-                frames (list of tensor): range = [0, 255] (uint8), and shape = [T x H x W x C]
-                fn : path + filename to save
-                fps : video fps
-            """
-            #NOTE: save_video, w/ shape = TxHxWxC and value range = [0, 255]
-            vid_relit = out_relit
-            vid_relit = vid_relit.permute(0, 2, 3, 1)
-            vid_relit = ((vid_relit + 1)*127.5).clamp_(0, 255).type(th.ByteTensor)
-            vid_relit_rt = th.cat((vid_relit, th.flip(vid_relit, dims=[0])))
-            torchvision.io.write_video(video_array=vid_relit, filename=f"{save_res_dir}/res.mp4", fps=args.fps)
-            torchvision.io.write_video(video_array=vid_relit_rt, filename=f"{save_res_dir}/res_rt.mp4", fps=args.fps)
-            if is_render:
-                out_render = out_render[:, :3]
-                vid_render = out_render
-                # vid_render = th.cat((out_render, th.flip(out_render, dims=[0])))
-                clip_ren = False #if 'wclip' in dataset.condition_image else True
-                if clip_ren:
-                    vid_render = ((vid_render.permute(0, 2, 3, 1) + 1) * 127.5).clamp_(0, 255).type(th.ByteTensor)
-                    torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
-                else:
-                    vid_render = (vid_render.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
-                    torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
-                    vid_render_rt = th.cat((vid_render, th.flip(vid_render, dims=[0])))
-                    torchvision.io.write_video(video_array=vid_render_rt, filename=f"{save_res_dir}/ren_rt.mp4", fps=args.fps)
-                
-        with open(f'{save_res_dir}/res_desc.json', 'w') as fj:
-            log_dict = {'sampling_args' : vars(args), 
-                        'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_fn':itp_fn_str, 'itp':itp_str}}
-            json.dump(log_dict, fj)
-            
+        
             
     # Free memory!!!
     del deca_obj               

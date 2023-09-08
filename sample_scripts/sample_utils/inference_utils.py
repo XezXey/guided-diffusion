@@ -183,7 +183,7 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
      - cond[f'{k}'] is the original one render & build_condition_image() fn
     """
     
-    print(cond.keys())
+    # print(cond.keys())
     if cfg.img_model.apply_dpm_cond_img:
         dpm_cond_img = []
         for k in cfg.img_model.dpm_cond_img:
