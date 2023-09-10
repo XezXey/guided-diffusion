@@ -85,10 +85,12 @@ def create_app():
                 # Show results
                 if 'baseline' in alias:
                     frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
+                    out += f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png"
                 else:
                     frames = glob.glob(f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame}/res_*.png")
+                    out += f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame}/res_*.png"
                 # out += str(show_itmd)
-                    
+                print(frames)
                 out += "<td>"
                 if len(frames) > 0:
                     frames = sort_by_frame(frames)

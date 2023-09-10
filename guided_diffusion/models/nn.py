@@ -272,6 +272,18 @@ def conv_nd(dims, *args, **kwargs):
         return nn.Conv3d(*args, **kwargs)
     raise ValueError(f"unsupported dimensions: {dims}")
 
+def deconv_nd(dims, *args, **kwargs):
+    """
+    Create a 1D, 2D, or 3D convolution module.
+    """
+    if dims == 1:
+        return nn.ConvTranspose1d(*args, **kwargs)
+    elif dims == 2:
+        return nn.ConvTranspose2d(*args, **kwargs)
+    elif dims == 3:
+        return nn.ConvTranspose2d(*args, **kwargs)
+    raise ValueError(f"unsupported dimensions: {dims}")
+
 
 def linear(*args, **kwargs):
     """

@@ -13,6 +13,7 @@ from ..trainer_util import convert_module_to_f16, convert_module_to_f32
 from .nn import (
     checkpoint,
     conv_nd,
+    deconv_nd,
     linear,
     avg_pool_nd,
     zero_module,
@@ -100,6 +101,43 @@ class TimestepEmbedSequentialCond(nn.Sequential, TimestepBlockCond):
                 x = layer(x, emb, condition)
             else:
                 x = layer(x)
+        return x
+    
+class UpsamplingLayer(nn.Module):
+    """
+    An upsampling layer with an optional convolution.
+
+    :param channels: channels in the inputs and outputs.
+    :param use_conv: a bool determining if a convolution is applied.
+    :param dims: determines if the signal is 1D, 2D, or 3D. If 3D, then
+                 upsampling occurs in the inner-two dimensions.
+    """
+
+    def __init__(self, channels, use_conv, use_deconv=False, dims=2, out_channels=None):
+        super().__init__()
+        self.channels = channels
+        self.out_channels = out_channels or channels
+        self.use_conv = use_conv
+        self.use_deconv = use_deconv
+        self.dims = dims
+        if use_conv:
+            self.conv = conv_nd(dims, self.channels, self.out_channels, 3, padding=1)
+        elif use_deconv:
+            self.deconv = deconv_nd(dims, self.channels, self.out_channels, 3, stride=2, padding=1, output_padding=1)
+
+    def forward(self, x, output_size=None):
+        assert x.shape[1] == self.channels
+        if self.use_deconv:
+            x = self.deconv(x, output_size)
+        else:
+            if self.dims == 3:
+                x = F.interpolate(
+                    x, (x.shape[2], x.shape[3] * 2, x.shape[4] * 2), mode="nearest"
+                )
+            else:
+                x = F.interpolate(x, scale_factor=2, mode="nearest")
+            if self.use_conv:
+                x = self.conv(x)
         return x
 
 class Upsample(nn.Module):
@@ -842,6 +880,107 @@ class UNetModelCondition_No_DPM_Notime(UNetModel):
             h = module(h, emb, condition=kwargs)
         h = h.type(x.dtype)
         return {'output':self.out(h)}
+
+class UNetModelCondition_NoDPM_NoTime_Upsampling(UNetModel):
+    def __init__(self, 
+        image_size, 
+        in_channels, 
+        model_channels, 
+        out_channels, 
+        num_res_blocks, 
+        attention_resolutions, 
+        target_size=256,
+        dropout=0,
+        channel_mult=(1, 2, 4, 8), 
+        conv_resample=True, 
+        dims=2, 
+        use_checkpoint=False, 
+        use_fp16=False, 
+        num_heads=1, 
+        num_head_channels=-1, 
+        num_heads_upsample=-1, 
+        use_scale_shift_norm=False, 
+        resblock_updown=False, 
+        use_new_attention_order=False, 
+        condition_dim=159, 
+        condition_proj_dim=512,
+        conditioning=True,
+        use_conv=False,
+        use_deconv=False,
+    ):
+        self.condition_dim = condition_dim
+        self.use_conv = use_conv
+        self.use_deconv = use_deconv
+        super().__init__(
+            image_size=image_size, 
+            in_channels=in_channels, 
+            model_channels=model_channels, 
+            out_channels=out_channels, 
+            num_res_blocks=num_res_blocks, 
+            attention_resolutions=attention_resolutions, 
+            conditioning=conditioning, 
+            dropout=dropout, 
+            channel_mult=channel_mult, 
+            conv_resample=conv_resample, 
+            dims=dims, 
+            use_checkpoint=use_checkpoint, 
+            use_fp16=use_fp16, 
+            num_heads=num_heads, 
+            num_head_channels=num_head_channels, 
+            num_heads_upsample=num_heads_upsample, 
+            use_scale_shift_norm=use_scale_shift_norm, 
+            resblock_updown=resblock_updown, 
+            use_new_attention_order=use_new_attention_order,
+            condition_dim = condition_dim,
+            condition_proj_dim=condition_proj_dim)
+
+        self.upsampling_layer = nn.Sequential()
+        # Upsampling by 2 until we reach the desired scale from image_size input
+        out_size = image_size
+        while out_size < target_size:
+            
+            # print(out_size, target_size)
+            self.upsampling_layer.append(UpsamplingLayer(channels=self.out_channels, 
+                                          use_conv=self.use_conv,
+                                          use_deconv=self.use_deconv,
+                                        )
+            )
+            out_size *= 2
+        # print(self.input_blocks)
+        # print(self.upsampling_layer)
+        # exit()
+        
+    def forward(self, x, timesteps, y=None, **kwargs):
+        """
+        Apply the model to an input batch.
+        :param x: an [N x C x ...] Tensor of inputs.
+        :param timesteps: a 1-D batch of timesteps.
+        :param y: an [N] Tensor of labels, if class-conditional.
+        :return: an [N x C x ...] Tensor of outputs.
+        """
+        hs = []
+        emb = None
+
+        h = x.type(self.dtype)
+        for module in self.input_blocks:
+            h = module(h, emb, condition=kwargs)
+            hs.append(h)
+        h = self.middle_block(h, emb, condition=kwargs)
+        for module in self.output_blocks:
+            h = th.cat([h, hs.pop()], dim=1)
+            h = module(h, emb, condition=kwargs)
+        h = h.type(x.dtype)
+        h = self.out(h)
+        # print("OUT : ", h.shape)
+        # if self.use_deconv:
+        #     for module in self.upsampling_layer:
+        #         h = module(h, (h.size()[0], h.size()[1], h.size()[2]*2, h.size()[3]*2))
+        #     out = h
+        # else:
+        out = self.upsampling_layer(h)
+        # print("OUT(up) : ", out.shape)
+        return {'output':out}
+
 
 class ResBlockCondition(TimestepBlockCond):
     """

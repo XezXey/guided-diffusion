@@ -40,7 +40,7 @@ def main():
         in_image_UNet=cfg.img_model.in_image,
         params_selector=cfg.param_model.params_selector,
         rmv_params=cfg.param_model.rmv_params,
-        # set_='valid', # For fast debgugging
+        set_='valid', # For fast debgugging
         cfg=cfg,
     )
 

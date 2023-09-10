@@ -4,7 +4,7 @@ import argparse
 from . import gaussian_diffusion as gd
 from guided_diffusion.respace import SpacedDiffusion, space_timesteps
 from guided_diffusion.models.unet import EncoderUNetModelNoTime, UNetModelCondition, UNetModel
-from guided_diffusion.models.unet_no_dpm_notime import UNetModelCondition_No_DPM_Notime
+from guided_diffusion.models.unet_no_dpm_notime import UNetModelCondition_No_DPM_Notime, UNetModelCondition_NoDPM_NoTime_Upsampling
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart import UNetModel_SpatialCondition_Hadamart, EncoderUNet_SpatialCondition
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_no_dpm import UNetModel_SpatialCondition_Hadamart_No_DPM
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_no_dpm_notime import UNetModel_SpatialCondition_Hadamart_No_DPM_NoTime
@@ -147,6 +147,30 @@ def create_model(cfg, all_cfg=None):
             condition_proj_dim=cfg.condition_proj_dim,
             conditioning=True,
         )
+    elif cfg.arch == 'UNetCond_NoDPM_NoTime_Upsampling':
+        return UNetModelCondition_NoDPM_NoTime_Upsampling(
+            image_size=cfg.image_size,
+            in_channels=cfg.in_channels,
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=cfg.num_res_blocks,
+            attention_resolutions=tuple(attention_ds),
+            dropout=cfg.dropout,
+            channel_mult=channel_mult,
+            use_checkpoint=cfg.use_checkpoint,
+            num_heads=cfg.num_heads,
+            num_head_channels=cfg.num_head_channels,
+            num_heads_upsample=cfg.num_heads_upsample,
+            use_scale_shift_norm=cfg.use_scale_shift_norm,
+            resblock_updown=cfg.resblock_updown,
+            use_new_attention_order=cfg.use_new_attention_order,
+            condition_dim=cfg.condition_dim,
+            condition_proj_dim=cfg.condition_proj_dim,
+            conditioning=True,
+            use_conv=all_cfg.upsampling.use_conv,
+            use_deconv=all_cfg.upsampling.use_deconv,
+            target_size=all_cfg.upsampling.target_size,
+        )
     elif cfg.arch == 'EncoderUNet':
         return EncoderUNetModelNoTime(
             image_size=cfg.image_size,
@@ -279,7 +303,7 @@ def create_model(cfg, all_cfg=None):
             conditioning=True,
             pool=cfg.pool
         )
-    else: raise NotImplementedError
+    else: raise NotImplementedError(f"Unknown model architecture: {cfg.arch}")
 
 def create_gaussian_diffusion(cfg):
     betas = gd.get_named_beta_schedule(cfg.noise_schedule, cfg.diffusion_steps)

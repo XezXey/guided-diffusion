@@ -198,6 +198,9 @@ class TrainLoop(LightningModule):
         :params cond: the condition dict e.g. ['cond_params'] in BXD; D is dimension of DECA, Latent, ArcFace, etc.
         '''
         self.zero_grad_trainer()
+        # print(src['dict'].keys(), dst['dict'].keys())
+        # print(src['dict']['raw_image'].shape, dst['dict']['raw_image'].shape)
+        # exit()
         self.forward_backward(src, dst)
         took_step = self.optimize_trainer()
         self.took_step = took_step
@@ -278,9 +281,7 @@ class TrainLoop(LightningModule):
 
     def forward_backward(self, src, dst):
 
-        t, weights = self.schedule_sampler.sample(src['arr'].shape[0], self.device)
-        t = th.zeros_like(t)
-        
+        t, _ = self.schedule_sampler.sample(src['arr'].shape[0], self.device)
         def training_losses(model, src_xstart, dst_xstart, t, model_kwargs=None):
             """
             Compute training losses for a single timestep.
@@ -302,6 +303,10 @@ class TrainLoop(LightningModule):
             else:
                 output = model(src_xstart.float(), t, **model_kwargs)
             model_output = output['output']
+            # if self.cfg.upsampling.apply:
+            #     target = cond['dst_raw_image']
+            #     dst_xstart = cond['dst_raw_image']
+            # else:
             target = dst_xstart
             assert model_output.shape == target.shape == dst_xstart.shape
             
@@ -312,25 +317,24 @@ class TrainLoop(LightningModule):
         cond = self.prepare_cond_train(src=src, dst=dst, t=t)
         
         cond = self.forward_cond_network(cond)
-        cond['denoise_src'] = self.cfg.diffusion.denoise_src
         
         # Losses
         model_compute_losses = functools.partial(
             training_losses,
             self.model_dict[self.cfg.img_model.name],
             src_xstart=src['dict']['image'],
-            dst_xstart=dst['dict']['image'],
+            dst_xstart=dst['dict']['raw_image'] if self.cfg.upsampling.apply else dst['dict']['image'],
             t=t,
             model_kwargs=cond,
         )
         model_losses, _ = model_compute_losses()
 
-        loss = (model_losses["loss"] * weights).mean()
+        loss = (model_losses["loss"]).mean()
         self.manual_backward(loss)
 
         if self.step % self.log_interval:
             self.log_loss_dict(
-                self.diffusion, t, {k: v * weights for k, v in model_losses.items()}, module=self.cfg.img_model.name,
+                {k: v for k, v in model_losses.items()}, module=self.cfg.img_model.name,
             )
 
 
@@ -522,9 +526,14 @@ class TrainLoop(LightningModule):
         n = self.cfg.train.n_sampling
         if n > src['arr'].shape[0]:
             n = src['arr'].shape[0]
-            
-        src_img = src['arr'][:n].type_as(batch[0]['arr'])
-        dst_img = dst['arr'][:n].type_as(batch[1]['arr'])
+        
+        if self.cfg.upsampling.apply:
+            src_img = src['dict']['raw_image'][:n].type_as(batch[0]['arr'])
+            dst_img = dst['dict']['raw_image'][:n].type_as(batch[1]['arr'])
+            print(th.max(src_img), th.min(src_img), th.max(dst_img), th.min(dst_img))
+        else:
+            src_img = src['arr'][:n].type_as(batch[0]['arr'])
+            dst_img = dst['arr'][:n].type_as(batch[1]['arr'])
         
         cond = self.prepare_cond_sampling(src=src, dst=dst)
         cond = tensor_util.dict_slice(in_d=cond, keys=cond.keys(), n=n)
@@ -623,17 +632,11 @@ class TrainLoop(LightningModule):
         return self.opt
 
     @rank_zero_only
-    def log_loss_dict(self, diffusion, ts, losses, module):
+    def log_loss_dict(self, losses, module):
         for key, values in losses.items():
             self.log(f"training_loss_{module}/{key}", values.mean().item())
             if key == "loss":
                 self.log(f"{key}", values.mean().item(), prog_bar=True, logger=False)
-            # log the quantiles (four quartiles, in particular).
-            for sub_t, sub_loss in zip(ts.cpu().numpy(), values.detach().cpu().numpy()):
-                quartile = int(4 * sub_t / diffusion.num_timesteps)
-                self.log(f"training_loss_{module}/{key}_q{quartile}", sub_loss)
-                if key == "loss":
-                    self.log(f"{key}_q{quartile}", sub_loss, prog_bar=True, logger=False)
 
 def parse_resume_step_from_filename(filename):
     """

@@ -22,7 +22,7 @@ img_model:
 upsampling:
   apply: True
   use_conv: False
-  use_deconv: False
+  use_deconv: True
   target_size: 256
 
 
@@ -50,4 +50,4 @@ dataset:
 
 train_misc:
   exp_name: "paired_training"
-  cfg_name: "all_unet_up4x"
+  cfg_name: "all_unet_up4x_deconv"

@@ -340,7 +340,7 @@ class DECADataset(Dataset):
         for k in self.deca_params[query_img_name].keys():
             out_dict[k] = self.deca_params[query_img_name][k]
         out_dict['image_name'] = query_img_name
-        out_dict['raw_image'] = np.transpose(np.array(raw_pil_image), [2, 0, 1])
+        out_dict['raw_image'] = np.transpose(np.array(raw_pil_image), [2, 0, 1]) / 127.5 - 1
         out_dict['raw_image_path'] = self.local_images[query_img_name]
 
         # Input to UNet-model

@@ -102,6 +102,16 @@ cfg.img_model.prep_dpm_cond_img = [None]
 cfg.img_model.noise_dpm_cond_img = [None]
 cfg.img_model.sj_paired = []
 
+# ---------------------------------------------------------------------------- #
+# Options for Upsampling module
+# ---------------------------------------------------------------------------- #
+cfg.upsampling = CN()
+cfg.upsampling.name = "Upsampling"
+cfg.upsampling.apply = False
+cfg.upsampling.use_conv = False
+cfg.upsampling.use_deconv = False
+cfg.upsampling.target_size = 256
+
 # Additional Encoder Network
 img_cond_model_img_type = {'raw':3, 
                            'face_structure':3,
