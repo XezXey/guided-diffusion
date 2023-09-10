@@ -28,6 +28,7 @@ def set_rasterizer(type = 'pytorch3d'):
         from pytorch3d.io import load_obj
         from pytorch3d.renderer.mesh import rasterize_meshes
     elif type == 'standard':
+        print("USING STARDARD...")
         global standard_rasterize, load_obj
         import os
         from .util import load_obj
@@ -35,6 +36,7 @@ def set_rasterizer(type = 'pytorch3d'):
         # ref: https://pytorch.org/tutorials/advanced/cpp_extension.html
         from torch.utils.cpp_extension import load, CUDA_HOME
         curr_dir = os.path.dirname(__file__)
+        print(curr_dir)
         standard_rasterize_cuda = \
             load(name='standard_rasterize_cuda', 
                 sources=[f'{curr_dir}/rasterizer/standard_rasterize_cuda.cpp', f'{curr_dir}/rasterizer/standard_rasterize_cuda_kernel.cu'], 
