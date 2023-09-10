@@ -1840,6 +1840,33 @@
             "cwd": "/home/mint/difareli-faster/sample_scripts/faster_inference_script/",
             "justMyCode": true
         },
+        {
+            "name": "Python: relight_with_solver",
+            "type": "python",
+            "request": "launch",
+            "program": "./relight_with_solver.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"0", "WANDB_MODE":"offline"},
+            "args": [
+                "--dataset", "ffhq",
+                "--set", "valid",
+                "--step", "050000", 
+                "--out_dir", "/data/mint/sampling/with_solver/dpm_solver",
+                "--cfg_name", "Masked_Face_woclip+BgNoHead+shadow.yaml",
+                "--log_dir", "Masked_Face_woclip+BgNoHead+shadow",
+                "--diffusion_steps", "1000",
+                "--seed", "47", 
+                "--batch_size", "1",
+                "--gpu_id", "0",
+                "--idx", "0", "10",
+                "--itp", "render_face",
+                "--itp_step", "5",
+                "--sample_pair_json", "../faster_inference_script/sample_json/targetSH/gen_data_80perc_testset_n=46.json",
+                "--sample_pair_mode", "pair"
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/integrated_solver/",
+            "justMyCode": true
+        },
 
 
 

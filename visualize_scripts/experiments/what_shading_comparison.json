@@ -8,6 +8,15 @@
         "time_respace":"",
         "n_frame":"5"
     },
+    "log=Masked_Face_woclip+BgNoHead+shadow_cfg=Masked_Face_woclip+BgNoHead+shadow.yaml" : {
+        "step":"ema_050000", 
+        "alias":"UNet(Input) baseline",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5"
+    },
     "log=paired+allunet_eps+nodpm_128_cfg=paired+allunet_eps+nodpm_128.yaml" : {
         "step":"ema_160000", 
         "alias":"UNet(Src_sd, Dst_sd, Bg) w/o Diffusion",

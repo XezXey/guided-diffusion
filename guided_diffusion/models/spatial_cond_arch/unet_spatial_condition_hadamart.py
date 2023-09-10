@@ -6,6 +6,7 @@ from tkinter import N
 from unittest import result
 
 import numpy as np
+import copy
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
@@ -1309,6 +1310,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         condition_dim=0,
         condition_proj_dim=0,
         all_cfg=None,
+        return_dict=True,
     ):
         super().__init__()
 
@@ -1333,6 +1335,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         self.condition_dim = condition_dim
         self.condition_proj_dim = condition_proj_dim
         self.all_cfg = all_cfg
+        self.return_dict = return_dict
 
         time_embed_dim = model_channels * 4
         self.time_embed = nn.Sequential(
@@ -1538,6 +1541,65 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         self.middle_block.apply(convert_module_to_f32)
         self.output_blocks.apply(convert_module_to_f32)
         
+    # def forward(self, x, timesteps, y=None, **kwargs):
+    #     """
+    #     Apply the model to an input batch.
+    #     :param x: an [N x C x ...] Tensor of inputs.
+    #     :param timesteps: a 1-D batch of timesteps.
+    #     :param y: an [N] Tensor of labels, if class-conditional.
+    #     :return: an [N x C x ...] Tensor of outputs.
+    #     """
+    #     apply_cond_layer = self.cond_layer_selector.get_apply_cond_selector()
+    #     spatial_latent = copy.deepcopy(kwargs["spatial_latent"])
+    #     assert len(kwargs['spatial_latent']) == len(apply_cond_layer)
+    #     hs = []
+    #     emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
+    #     # First layer - input_blocks
+    #     h = x.type(self.dtype)
+    #     h = self.input_blocks[0](h, emb, condition=kwargs)
+    #     hs.append(h)
+    #     # The rest layer - input_blocks
+    #     for i, module in enumerate(self.input_blocks[1:]):
+    #         # The hadamart conditioning
+    #         hadamart_layer, rest_layer = module[0], module[1:]
+    #         h = hadamart_layer(x=h, y=kwargs['spatial_latent'][0], apply_=apply_cond_layer[0])
+    #         kwargs['spatial_latent'].pop(0)
+    #         apply_cond_layer.pop(0)
+    #         # The rest layer
+    #         h = rest_layer(h, emb, condition=kwargs)
+    #         hs.append(h)
+        
+    #     # Pre - middle blocks
+    #     hadamart_pre_mb, middle_block, hadamart_post_mb = self.middle_block[0], self.middle_block[1:-1], self.middle_block[-1]
+    #     assert len(kwargs['spatial_latent']) == 2
+    #     assert len(apply_cond_layer) == 2
+    #     h = hadamart_pre_mb(x=h, y=kwargs['spatial_latent'][0], apply_=apply_cond_layer[0])
+    #     kwargs['spatial_latent'].pop(0)
+    #     apply_cond_layer.pop(0)
+        
+    #     # Middle blocks
+    #     h = middle_block(h, emb, condition=kwargs)
+
+    #     # Post - middle blocks
+    #     assert len(kwargs['spatial_latent']) == 1
+    #     assert len(apply_cond_layer) == 1
+    #     h = hadamart_post_mb(x=h, y=kwargs['spatial_latent'][0], apply_=apply_cond_layer[0])
+    #     kwargs['spatial_latent'].pop(0)
+    #     apply_cond_layer.pop(0)
+        
+    #     # Output blocks
+    #     for i, module in enumerate(self.output_blocks):
+    #         h = th.cat([h, hs.pop()], dim=1)
+    #         h = module(h, emb, condition=kwargs)
+    #     h = h.type(x.dtype)
+
+    #     assert len(kwargs['spatial_latent']) == 0
+    #     assert len(apply_cond_layer) == 0
+    #     if self.return_dict:
+    #         return {'output':self.out(h)}
+    #     else: return self.out(h)
+        
+        
     def forward(self, x, timesteps, y=None, **kwargs):
         """
         Apply the model to an input batch.
@@ -1547,6 +1609,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         :return: an [N x C x ...] Tensor of outputs.
         """
         apply_cond_layer = self.cond_layer_selector.get_apply_cond_selector()
+        spatial_latent = copy.deepcopy(kwargs["spatial_latent"])
         assert len(kwargs['spatial_latent']) == len(apply_cond_layer)
         hs = []
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
@@ -1558,8 +1621,8 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         for i, module in enumerate(self.input_blocks[1:]):
             # The hadamart conditioning
             hadamart_layer, rest_layer = module[0], module[1:]
-            h = hadamart_layer(x=h, y=kwargs['spatial_latent'][0], apply_=apply_cond_layer[0])
-            kwargs['spatial_latent'].pop(0)
+            h = hadamart_layer(x=h, y=spatial_latent[0], apply_=apply_cond_layer[0])
+            spatial_latent.pop(0)
             apply_cond_layer.pop(0)
             # The rest layer
             h = rest_layer(h, emb, condition=kwargs)
@@ -1567,20 +1630,20 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         
         # Pre - middle blocks
         hadamart_pre_mb, middle_block, hadamart_post_mb = self.middle_block[0], self.middle_block[1:-1], self.middle_block[-1]
-        assert len(kwargs['spatial_latent']) == 2
+        assert len(spatial_latent) == 2
         assert len(apply_cond_layer) == 2
-        h = hadamart_pre_mb(x=h, y=kwargs['spatial_latent'][0], apply_=apply_cond_layer[0])
-        kwargs['spatial_latent'].pop(0)
+        h = hadamart_pre_mb(x=h, y=spatial_latent[0], apply_=apply_cond_layer[0])
+        spatial_latent.pop(0)
         apply_cond_layer.pop(0)
         
         # Middle blocks
         h = middle_block(h, emb, condition=kwargs)
 
         # Post - middle blocks
-        assert len(kwargs['spatial_latent']) == 1
+        assert len(spatial_latent) == 1
         assert len(apply_cond_layer) == 1
-        h = hadamart_post_mb(x=h, y=kwargs['spatial_latent'][0], apply_=apply_cond_layer[0])
-        kwargs['spatial_latent'].pop(0)
+        h = hadamart_post_mb(x=h, y=spatial_latent[0], apply_=apply_cond_layer[0])
+        spatial_latent.pop(0)
         apply_cond_layer.pop(0)
         
         # Output blocks
@@ -1589,9 +1652,11 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
             h = module(h, emb, condition=kwargs)
         h = h.type(x.dtype)
 
-        assert len(kwargs['spatial_latent']) == 0
+        assert len(spatial_latent) == 0
         assert len(apply_cond_layer) == 0
-        return {'output':self.out(h)}
+        if self.return_dict:
+            return {'output':self.out(h)}
+        else: return self.out(h)
         
 
 class EncoderUNet_SpatialCondition(nn.Module):
