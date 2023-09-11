@@ -65,7 +65,7 @@ for ckpt in args.ckpt_step:
                             --solver_alg {solver_alg} --solver_steps {solver_steps} --solver_method {solver_method} --solver_order {solver_order} --solver_correcting_x0_fn {solver_correcting_x0_fn} \
                             --postfix {solver_alg}_{solver_order}_{solver_method}_{solver_steps}_{solver_correcting_x0_fn} \
                             """
-                            )
+                        )
                         if args.force_render: cmd += ' --force_render'
                         print(cmd)
                         os.system(cmd)

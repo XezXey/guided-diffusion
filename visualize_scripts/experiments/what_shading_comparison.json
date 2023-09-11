@@ -8,7 +8,7 @@
         "time_respace":"",
         "n_frame":"5"
     },
-    "log=Masked_Face_woclip+BgNoHead+shadow_cfg=Masked_Face_woclip+BgNoHead+shadow.yaml" : {
+    "log=Masked_Face_woclip+BgNoHead+shadow_cfg=Masked_Face_woclip+BgNoHead+shadow.yaml_step=1000" : {
         "step":"ema_050000", 
         "alias":"UNet(Input) baseline",
         "itp":"render_face",
