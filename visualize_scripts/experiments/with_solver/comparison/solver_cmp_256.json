@@ -1,0 +1,542 @@
+{
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_multistep_100_None": {
+        "alias": "dpmsolver++_2_multistep_100_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_multistep_10_None": {
+        "alias": "dpmsolver++_2_multistep_10_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_multistep_15_None": {
+        "alias": "dpmsolver++_2_multistep_15_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_multistep_20_None": {
+        "alias": "dpmsolver++_2_multistep_20_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_multistep_25_None": {
+        "alias": "dpmsolver++_2_multistep_25_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_multistep_50_None": {
+        "alias": "dpmsolver++_2_multistep_50_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_singlestep_100_None": {
+        "alias": "dpmsolver++_2_singlestep_100_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_singlestep_100_dynamic_thresholding": {
+        "alias": "dpmsolver++_2_singlestep_100_dynamic_thresholding",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_singlestep_10_None": {
+        "alias": "dpmsolver++_2_singlestep_10_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_singlestep_10_dynamic_thresholding": {
+        "alias": "dpmsolver++_2_singlestep_10_dynamic_thresholding",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_singlestep_15_None": {
+        "alias": "dpmsolver++_2_singlestep_15_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_singlestep_15_dynamic_thresholding": {
+        "alias": "dpmsolver++_2_singlestep_15_dynamic_thresholding",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_singlestep_20_None": {
+        "alias": "dpmsolver++_2_singlestep_20_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_singlestep_20_dynamic_thresholding": {
+        "alias": "dpmsolver++_2_singlestep_20_dynamic_thresholding",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_singlestep_25_None": {
+        "alias": "dpmsolver++_2_singlestep_25_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_singlestep_25_dynamic_thresholding": {
+        "alias": "dpmsolver++_2_singlestep_25_dynamic_thresholding",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_singlestep_50_None": {
+        "alias": "dpmsolver++_2_singlestep_50_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_2_singlestep_50_dynamic_thresholding": {
+        "alias": "dpmsolver++_2_singlestep_50_dynamic_thresholding",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_multistep_100_None": {
+        "alias": "dpmsolver++_3_multistep_100_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_multistep_10_None": {
+        "alias": "dpmsolver++_3_multistep_10_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_multistep_15_None": {
+        "alias": "dpmsolver++_3_multistep_15_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_multistep_20_None": {
+        "alias": "dpmsolver++_3_multistep_20_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_multistep_25_None": {
+        "alias": "dpmsolver++_3_multistep_25_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_multistep_50_None": {
+        "alias": "dpmsolver++_3_multistep_50_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_singlestep_100_None": {
+        "alias": "dpmsolver++_3_singlestep_100_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_singlestep_100_dynamic_thresholding": {
+        "alias": "dpmsolver++_3_singlestep_100_dynamic_thresholding",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_singlestep_10_None": {
+        "alias": "dpmsolver++_3_singlestep_10_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_singlestep_10_dynamic_thresholding": {
+        "alias": "dpmsolver++_3_singlestep_10_dynamic_thresholding",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_singlestep_15_None": {
+        "alias": "dpmsolver++_3_singlestep_15_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_singlestep_15_dynamic_thresholding": {
+        "alias": "dpmsolver++_3_singlestep_15_dynamic_thresholding",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_singlestep_20_None": {
+        "alias": "dpmsolver++_3_singlestep_20_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_singlestep_20_dynamic_thresholding": {
+        "alias": "dpmsolver++_3_singlestep_20_dynamic_thresholding",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_singlestep_25_None": {
+        "alias": "dpmsolver++_3_singlestep_25_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_singlestep_25_dynamic_thresholding": {
+        "alias": "dpmsolver++_3_singlestep_25_dynamic_thresholding",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_singlestep_50_None": {
+        "alias": "dpmsolver++_3_singlestep_50_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_singlestep_50_dynamic_thresholding": {
+        "alias": "dpmsolver++_3_singlestep_50_dynamic_thresholding",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_2_multistep_100_None": {
+        "alias": "dpmsolver_2_multistep_100_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_2_multistep_10_None": {
+        "alias": "dpmsolver_2_multistep_10_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_2_multistep_15_None": {
+        "alias": "dpmsolver_2_multistep_15_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_2_multistep_20_None": {
+        "alias": "dpmsolver_2_multistep_20_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_2_multistep_25_None": {
+        "alias": "dpmsolver_2_multistep_25_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_2_multistep_50_None": {
+        "alias": "dpmsolver_2_multistep_50_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_2_singlestep_100_None": {
+        "alias": "dpmsolver_2_singlestep_100_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_2_singlestep_10_None": {
+        "alias": "dpmsolver_2_singlestep_10_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_2_singlestep_15_None": {
+        "alias": "dpmsolver_2_singlestep_15_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_2_singlestep_20_None": {
+        "alias": "dpmsolver_2_singlestep_20_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_2_singlestep_25_None": {
+        "alias": "dpmsolver_2_singlestep_25_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_2_singlestep_50_None": {
+        "alias": "dpmsolver_2_singlestep_50_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_3_multistep_100_None": {
+        "alias": "dpmsolver_3_multistep_100_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_3_multistep_10_None": {
+        "alias": "dpmsolver_3_multistep_10_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_3_multistep_15_None": {
+        "alias": "dpmsolver_3_multistep_15_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_3_multistep_20_None": {
+        "alias": "dpmsolver_3_multistep_20_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_3_multistep_25_None": {
+        "alias": "dpmsolver_3_multistep_25_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_3_multistep_50_None": {
+        "alias": "dpmsolver_3_multistep_50_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_3_singlestep_100_None": {
+        "alias": "dpmsolver_3_singlestep_100_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_3_singlestep_10_None": {
+        "alias": "dpmsolver_3_singlestep_10_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_3_singlestep_15_None": {
+        "alias": "dpmsolver_3_singlestep_15_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_3_singlestep_20_None": {
+        "alias": "dpmsolver_3_singlestep_20_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_3_singlestep_25_None": {
+        "alias": "dpmsolver_3_singlestep_25_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_3_singlestep_50_None": {
+        "alias": "dpmsolver_3_singlestep_50_None",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "5",
+        "step": "ema_085000",
+        "time_respace": ""
+    }
+}

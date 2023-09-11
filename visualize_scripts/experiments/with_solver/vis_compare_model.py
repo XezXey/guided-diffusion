@@ -27,13 +27,14 @@ def create_app():
     
     @app.route('/')
     def root():
-        out = "<h1> Method/Architecture's comparison </h1>"
-        out += f"<a href=\"/model_compare/sampling=reverse&show_itmd=True&show_recon=True&show_relit=True\"> Model Comparison </a> <br>"
-        
+        out = f"<h1> Solver Comparison </h1>"
+        out = ""
+        for f in glob.glob(args.comparison_dir + "/*.json"):
+            out += f"<a href=\"/model_compare/sampling=reverse&show_itmd=True&show_recon=True&show_relit=True&comparison_candidate={f.split('/')[-1]}\"> {f} </a> <br>"
         return out
         
-    @app.route("/model_compare/sampling=<sampling>&show_itmd=<show_itmd>&show_recon=<show_recon>&show_relit=<show_relit>")
-    def model_compare(sampling, show_itmd, show_recon, show_relit):
+    @app.route("/model_compare/sampling=<sampling>&show_itmd=<show_itmd>&show_recon=<show_recon>&show_relit=<show_relit>&comparison_candidate=<comparison_candidate>")
+    def model_compare(sampling, show_itmd, show_recon, show_relit, comparison_candidate):
         
         # Fixed the training step and varying the diffusion step
         out = """<style>
@@ -77,7 +78,8 @@ def create_app():
         
         # path example : /data/mint/sampling/paired_training_target/log=paired+allunet_eps+ddst_128_cfg=paired+allunet_eps+ddst_128.yaml
         # /model_040000/valid/render_face/reverse_sampling/src=62385.jpg/dst=61432.jpg
-        f = open(args.comparison_candidate)
+        f = open(args.comparison_dir + comparison_candidate)
+        print(args.comparison_dir + comparison_candidate)
         candidates = json.load(f)
         print(candidates)
         
@@ -166,7 +168,7 @@ if __name__ == "__main__":
     parser.add_argument('--sampling_dir', default='/data/mint/sampling')
     parser.add_argument('--exp_dir', default='')
     parser.add_argument('--sample_pair_json', required=True)
-    parser.add_argument('--comparison_candidate', required=True)
+    parser.add_argument('--comparison_dir', required=True)
     parser.add_argument('--set_', default='valid')
     parser.add_argument('--res', default=128)
     parser.add_argument('--port', required=True)

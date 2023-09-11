@@ -188,6 +188,7 @@ def relight(model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     print("[#] Relighting...")
     sub_step = ext_sub_step(n_step)
     relit_out = []
+    relight_time = time.time()
     for i in range(len(sub_step)-1):
         print(f"[#] Sub step relight : {sub_step[i]} to {sub_step[i+1]}")
         start = sub_step[i]
@@ -205,13 +206,15 @@ def relight(model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         relight_out = pl_sampling.forward_nodpm(src_xstart=src_xstart, model_kwargs=cond_relit)
         
         relit_out.append(relight_out['output'].detach().cpu().numpy())
+    relight_time = time.time() - relight_time
+    print(f"[#] Relight time = {relight_time}")
     relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
     
     # if args.itp == ['render_face']:
     if ('render_face' in args.itp) or args.force_render:
-        return relit_out, th.cat((cond['src_deca_masked_face_images_woclip'], cond['dst_deca_masked_face_images_woclip']), dim=0)
+        return relit_out, th.cat((cond['src_deca_masked_face_images_woclip'], cond['dst_deca_masked_face_images_woclip']), dim=0), {'relit_time':relight_time}
     else:
-        return relit_out, None
+        return relit_out, None, {'relit_time':relight_time}
 
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -304,6 +307,8 @@ if __name__ == '__main__':
     if start >= n_subject: raise ValueError("[#] Start beyond the sample index")
     print(f"[#] Run from index of {start} to {end}...")
         
+    counter_sj = 0
+    runtime_dict = {'relit_time':[]}
     for i in range(start, end):
         img_idx = all_img_idx[i]
         img_name = all_img_name[i]
@@ -344,11 +349,13 @@ if __name__ == '__main__':
         itp_str = '_'.join(args.itp)
         
         model_kwargs['use_render_itp'] = True
-        out_relit, out_render = relight(model_kwargs=model_kwargs,
+        out_relit, out_render, time_dict = relight(model_kwargs=model_kwargs,
                                     src_idx=src_idx, dst_idx=dst_idx,
                                     itp_func=itp_fn,
                                     n_step = n_step
                                 )
+        
+        runtime_dict['relit_time'].append(time_dict['relit_time'])
         
         #NOTE: Save result
         out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
@@ -408,7 +415,15 @@ if __name__ == '__main__':
             log_dict = {'sampling_args' : vars(args), 
                         'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_fn':itp_fn_str, 'itp':itp_str}}
             json.dump(log_dict, fj)
+        counter_sj += 1
             
+            
+    with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/runtime.json', 'w') as fj:
+        runtime_dict['name'] = f"log={args.log_dir}_cfg={args.cfg_name}{args.postfix}"
+        runtime_dict['mean_relit_time'] = np.mean(runtime_dict['relit_time'])
+        runtime_dict['std_relit_time'] = np.std(runtime_dict['relit_time'])
+        runtime_dict['n_sj'] = counter_sj
+        json.dump(runtime_dict, fj)
             
     # Free memory!!!
     del deca_obj               
