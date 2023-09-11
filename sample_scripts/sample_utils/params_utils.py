@@ -132,8 +132,8 @@ def init_deca(useTex=False, extractTex=True, device='cuda',
               deca_mode='only_renderer', mask=None, deca_obj=None):
     
     # sys.path.insert(1, '/home/mint/guided-diffusion/preprocess_scripts/Relighting_preprocessing_tools/DECA/')
-    # sys.path.insert(1, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
-    sys.path.insert(1, '/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/')
+    sys.path.insert(1, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+    # sys.path.insert(1, '/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/')
 
     from decalib import deca
     from decalib.utils.config import cfg as deca_cfg

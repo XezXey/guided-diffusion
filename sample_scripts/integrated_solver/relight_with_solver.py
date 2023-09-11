@@ -34,7 +34,6 @@ parser.add_argument('--diffuse_perc', type=float, default=None)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--timestep_respacing', type=str, default="")
-parser.add_argument('--solver', type=str, default='dpmsolver++')
 # Misc.
 parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--out_dir', type=str, required=True, help='dir to save the output')
@@ -46,6 +45,12 @@ parser.add_argument('--fps', action='store_true', default=False)
 # Experiment
 parser.add_argument('--fixed_render', action='store_true', default=False)
 parser.add_argument('--fixed_shadow', action='store_true', default=False)
+# Solver
+parser.add_argument('--solver_alg', type=str, default='dpmsolver++')
+parser.add_argument('--solver_steps', type=int, default=20)
+parser.add_argument('--solver_method', type=str, default='multistep')
+parser.add_argument('--solver_order', type=int, default=2)
+parser.add_argument('--solver_correcting_x0_fn', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -246,7 +251,20 @@ def relight_with_solver(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_id
     cond_rev = dict_slice(in_d=cond_rev, keys=cond_rev.keys(), n=1) # Slice only 1st image out for inversion
     if cfg.img_cond_model.apply:
         cond_rev = pl_sampling.forward_cond_network(model_kwargs=cond_rev)
-    
+        
+    ############################################################################
+    # Solver
+    ############################################################################
+    # Hyper parameters of solver
+    solver_steps = args.solver_steps
+    solver_alg = args.solver_alg
+    solver_method = args.solver_method
+    solver_order = args.solver_order
+    solver_correcting_x0_fn = args.solver_correcting_x0_fn
+    if solver_correcting_x0_fn.lower() == 'none':
+        solver_correcting_x0_fn = None
+    if solver_correcting_x0_fn is not None and solver_alg != 'dpmsolver++':
+        raise ValueError(f"[#] Solver {solver_alg} does not support correcting x0")
     
     betas = get_named_beta_schedule(model_kwargs['cfg'].diffusion.noise_schedule, model_kwargs['cfg'].diffusion.diffusion_steps)
     noise_schedule = NoiseScheduleVP(schedule='discrete', betas=th.tensor(betas).cuda())
@@ -255,15 +273,16 @@ def relight_with_solver(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_id
                              noise_schedule,
                              model_type="noise",
                              model_kwargs=cond_rev)
-    if args.solver == 'dpmsolver' or args.solver == 'dpmsolver++':
-        solver = DPM_Solver(model_fn, noise_schedule, algorithm_type=args.solver)
-    elif args.solver == 'unipc':
+    if solver_alg == 'dpmsolver' or solver_alg == 'dpmsolver++':
+        solver = DPM_Solver(model_fn, noise_schedule, algorithm_type=solver_alg, correcting_x0_fn=solver_correcting_x0_fn)
+    elif solver_alg == 'unipc':
         solver = UniPC(model_fn, noise_schedule, algorithm_type='noise_prediction')
-    else: raise ValueError(f"Solver {args.solver} not supported")
-        
+    else: raise ValueError(f"Solver {solver_alg} not supported")
+       
     rev_time = time.time()
-    noise_map = solver.inverse(dat[0:1, ...].cuda().float(), steps=20, order=3)
-    print(f"[#] Reverse time = {time.time() - rev_time}")
+    noise_map = solver.inverse(dat[0:1, ...].cuda().float(), steps=solver_steps, order=solver_order, method=solver_method)
+    reverse_time = time.time() - rev_time
+    print(f"[#] Reverse time = {reverse_time}")
     
     print("[#] Relighting...")
     sub_step = ext_sub_step(n_step)
@@ -287,20 +306,21 @@ def relight_with_solver(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_id
                                 model_kwargs=cond_relit)
         
         
-        if args.solver == 'dpmsolver' or args.solver == 'dpmsolver++':
-            solver = DPM_Solver(model_fn, noise_schedule, algorithm_type=args.solver)
-        elif args.solver == 'unipc':
+        if solver_alg == 'dpmsolver' or solver_alg == 'dpmsolver++':
+            solver = DPM_Solver(model_fn, noise_schedule, algorithm_type=solver_alg, correcting_x0_fn=solver_correcting_x0_fn)
+        elif solver_alg == 'unipc':
             solver = UniPC(model_fn, noise_schedule, algorithm_type='noise_prediction')
-        else: raise ValueError(f"Solver {args.solver} not supported")
+        else: raise ValueError(f"Solver {solver_alg} not supported")
         
         x_T = th.repeat_interleave(noise_map, repeats=end-start, dim=0)
-        relight_out = solver.sample(x_T, steps=20, order=3, skip_type="time_uniform", method="multistep")
+        relight_out = solver.sample(x_T, steps=solver_steps, order=solver_order, method=solver_method, skip_type="time_uniform")
         
         relit_out.append(relight_out.detach().cpu().numpy())
-    print(f"[#] Relight time = {time.time() - relight_time}")
+    relight_time = time.time() - relight_time
+    print(f"[#] Relight time = {relight_time}")
     relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
     
-    return relit_out, cond['cond_img']
+    return relit_out, cond['cond_img'], {'rev_time':reverse_time, 'relit_time':relight_time}
 
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -318,7 +338,7 @@ if __name__ == '__main__':
     cfg.diffusion.timestep_respacing = args.timestep_respacing
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
     model_dict = inference_utils.eval_mode(model_dict)
-
+    
     # Load dataset
     if args.dataset == 'itw':
         cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
@@ -397,8 +417,9 @@ if __name__ == '__main__':
     if end > n_subject:
         end = n_subject 
     if start >= n_subject: raise ValueError("[#] Start beyond the sample index")
+    counter_sj = 0
     print(f"[#] Run from index of {start} to {end}...")
-        
+    runtime_dict = {'rev_time':[], 'relit_time':[]}
     for i in range(start, end):
         img_idx = all_img_idx[i]
         img_name = all_img_name[i]
@@ -443,12 +464,14 @@ if __name__ == '__main__':
         itp_str = '_'.join(args.itp)
         
         model_kwargs['use_render_itp'] = True
-        out_relit, out_render = relight_with_solver(dat = dat,
-                                    model_kwargs=model_kwargs,
-                                    src_idx=src_idx, dst_idx=dst_idx,
-                                    itp_func=itp_fn,
-                                    n_step = n_step
-                                )
+        out_relit, out_render, time_dict = relight_with_solver(dat = dat,
+                                            model_kwargs=model_kwargs,
+                                            src_idx=src_idx, dst_idx=dst_idx,
+                                            itp_func=itp_fn,
+                                            n_step = n_step
+                                        )
+        runtime_dict['rev_time'].append(time_dict['rev_time'])
+        runtime_dict['relit_time'].append(time_dict['relit_time'])
         
         #NOTE: Save result
         out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
@@ -508,7 +531,16 @@ if __name__ == '__main__':
             log_dict = {'sampling_args' : vars(args), 
                         'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_fn':itp_fn_str, 'itp':itp_str}}
             json.dump(log_dict, fj)
-            
-            
+        counter_sj += 1
+        
+    with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/runtime.json', 'w') as fj:
+        runtime_dict['name'] = f"log={args.log_dir}_cfg={args.cfg_name}{args.postfix}"
+        runtime_dict['mean_rev_time'] = np.mean(runtime_dict['rev_time'])
+        runtime_dict['mean_relit_time'] = np.mean(runtime_dict['relit_time'])
+        runtime_dict['std_rev_time'] = np.std(runtime_dict['rev_time'])
+        runtime_dict['std_relit_time'] = np.std(runtime_dict['relit_time'])
+        runtime_dict['n_sj'] = counter_sj
+        json.dump(runtime_dict, fj)
+        
     # Free memory!!!
     del deca_obj               
