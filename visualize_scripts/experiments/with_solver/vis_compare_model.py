@@ -28,12 +28,12 @@ def create_app():
     @app.route('/')
     def root():
         out = "<h1> Method/Architecture's comparison </h1>"
-        out += f"<a href=\"/model_compare/sampling=reverse&show_itmd=True\"> Model Comparison </a> <br>"
+        out += f"<a href=\"/model_compare/sampling=reverse&show_itmd=True&show_recon=True&show_relit=True\"> Model Comparison </a> <br>"
         
         return out
         
-    @app.route("/model_compare/sampling=<sampling>&show_itmd=<show_itmd>")
-    def model_compare(sampling, show_itmd):
+    @app.route("/model_compare/sampling=<sampling>&show_itmd=<show_itmd>&show_recon=<show_recon>&show_relit=<show_relit>")
+    def model_compare(sampling, show_itmd, show_recon, show_relit):
         
         # Fixed the training step and varying the diffusion step
         out = """<style>
@@ -42,6 +42,34 @@ def create_app():
                 }
                 </style>"""
         
+        out += "<script>"
+        out += """
+        function transposeTable(table) {
+            var transposedTable = document.createElement("table");
+
+            for (var i = 0; i < table.rows[0].cells.length; i++) {
+                var newRow = transposedTable.insertRow(i);
+
+                for (var j = 0; j < table.rows.length; j++) {
+                var newCell = newRow.insertCell(j);
+                newCell.innerHTML = table.rows[j].cells[i].innerHTML;
+                }
+            }
+
+            table.parentNode.replaceChild(transposedTable, table);
+        }
+
+        function transposeAllTables() {
+            var tables = document.getElementsByTagName("table");
+
+            for (var i = 0; i < tables.length; i++) {
+                transposeTable(tables[i]);
+            }
+        }
+
+        """
+        out += "</script>"
+        out += "<button onclick='transposeAllTables()'>Transpose</button>"
         data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_{args.res}/{args.set_}/"
         assert os.path.isfile(args.sample_pair_json)
         f = open(args.sample_pair_json)
@@ -59,7 +87,11 @@ def create_app():
             src = v['src']
             dst = v['dst']
             
-            out += f"[#{k}] {src}=>{dst} : <img src=/files/{data_path}/{src.replace('jpg', 'png')}>, {dst} : <img src=/files/{data_path}/{dst.replace('jpg', 'png')}>" + "<br>" + "<br>"
+            if args.res == 128:
+                out += f"[#{k}] {src}=>{dst} : <img src=/files/{data_path}/{src.replace('jpg', 'png')}>, {dst} : <img src=/files/{data_path}/{dst.replace('jpg', 'png')}>" + "<br>" + "<br>"
+            else:
+                out += f"[#{k}] {src}=>{dst} : <img src=/files/{data_path}/{src}>, {dst} : <img src=/files/{data_path}/{dst}>" + "<br>" + "<br>"
+                
             # Model 
             for m_name, metadat in candidates.items():
                 # Model's metadata
@@ -92,12 +124,16 @@ def create_app():
                     frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
                     # out += f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png"
                 # out += str(show_itmd)
-                print(frames)
                 out += "<td>"
                 if len(frames) > 0:
                     frames = sort_by_frame(frames)
                     if show_itmd == "False":
                         frames = [frames[0], frames[-1]]
+                    if show_recon == "False":
+                        frames = frames[1:]
+                    if show_relit == "False":
+                        frames = frames[:-1]
+                        
                     for f in frames:
                         if 'baseline' in alias:
                             out += "<img width=\"128\" height=\"128\" src=/files/" + f + ">"
@@ -117,7 +153,7 @@ def create_app():
                 
             out += "</table>"
             out += "<br> <hr>"
-                    
+                  
         return out
 
 

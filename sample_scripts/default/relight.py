@@ -181,7 +181,8 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     cond_rev = dict_slice(in_d=cond_rev, keys=cond_rev.keys(), n=1) # Slice only 1st image out for inversion
     if cfg.img_cond_model.apply:
         cond_rev = pl_sampling.forward_cond_network(model_kwargs=cond_rev)
-        
+    
+    rev_time = time.time()
     print("[#] Apply Mean-matching...")
     reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
     noise_map = reverse_ddim_sample['final_output']['sample']
@@ -193,6 +194,9 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         model_kwargs=cond_rev,
         store_intermediate=False,
         rev_mean=rev_mean)
+    
+    reverse_time = time.time() - rev_time
+    print(f"[#] Reverse time = {reverse_time}")
 
     assert noise_map.shape[0] == 1
     rev_mean_first = [x[:1] for x in rev_mean]
@@ -200,6 +204,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     print("[#] Relighting...")
     sub_step = ext_sub_step(n_step)
     relit_out = []
+    relight_time = time.time()
     for i in range(len(sub_step)-1):
         print(f"[#] Sub step relight : {sub_step[i]} to {sub_step[i+1]}")
         start = sub_step[i]
@@ -220,9 +225,12 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
             add_mean=mean_match_ratio)
         
         relit_out.append(relight_out["final_output"]["sample"].detach().cpu().numpy())
+    relight_time = time.time() - relight_time
+    print(f"[#] Relight time = {relight_time}")
     relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
     
-    return relit_out, cond['cond_img']
+    
+    return relit_out, cond['cond_img'], {'rev_time':reverse_time, 'relit_time':relight_time}
 
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -321,6 +329,8 @@ if __name__ == '__main__':
     if start >= n_subject: raise ValueError("[#] Start beyond the sample index")
     print(f"[#] Run from index of {start} to {end}...")
         
+    counter_sj = 0
+    runtime_dict = {'rev_time':[], 'relit_time':[]}
     for i in range(start, end):
         img_idx = all_img_idx[i]
         img_name = all_img_name[i]
@@ -365,12 +375,15 @@ if __name__ == '__main__':
         itp_str = '_'.join(args.itp)
         
         model_kwargs['use_render_itp'] = True
-        out_relit, out_render = relight(dat = dat,
+        out_relit, out_render, time_dict = relight(dat = dat,
                                     model_kwargs=model_kwargs,
                                     src_idx=src_idx, dst_idx=dst_idx,
                                     itp_func=itp_fn,
                                     n_step = n_step
                                 )
+        
+        runtime_dict['rev_time'].append(time_dict['rev_time'])
+        runtime_dict['relit_time'].append(time_dict['relit_time'])
         
         #NOTE: Save result
         out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
@@ -430,7 +443,16 @@ if __name__ == '__main__':
             log_dict = {'sampling_args' : vars(args), 
                         'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_fn':itp_fn_str, 'itp':itp_str}}
             json.dump(log_dict, fj)
+        counter_sj += 1
             
             
+    with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/runtime.json', 'w') as fj:
+        runtime_dict['name'] = f"log={args.log_dir}_cfg={args.cfg_name}{args.postfix}"
+        runtime_dict['mean_rev_time'] = np.mean(runtime_dict['rev_time'])
+        runtime_dict['mean_relit_time'] = np.mean(runtime_dict['relit_time'])
+        runtime_dict['std_rev_time'] = np.std(runtime_dict['rev_time'])
+        runtime_dict['std_relit_time'] = np.std(runtime_dict['relit_time'])
+        runtime_dict['n_sj'] = counter_sj
+        json.dump(runtime_dict, fj)
     # Free memory!!!
     del deca_obj               
