@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 import math
+import numpy as np
 
 
 class NoiseScheduleVP:
@@ -421,7 +422,14 @@ class DPM_Solver:
         p = self.dynamic_thresholding_ratio
         s = torch.quantile(torch.abs(x0).reshape((x0.shape[0], -1)), p, dim=1)
         s = expand_dims(torch.maximum(s, self.thresholding_max_val * torch.ones_like(s).to(s.device)), dims)
-        x0 = torch.clamp(x0, -s, s) / s
+        # print(s.shape, x0.shape)
+        s = s.cpu().numpy()
+        x0 = x0.cpu().numpy()
+        x0 = np.clip(x0, -s, s) / s
+        x0 = torch.tensor(x0).cuda()
+        # print(x0.shape)
+        # For pytorch >= 1.7.0
+        # x0 = torch.clamp(x0, -s, s) / s
         return x0
 
     def noise_prediction_fn(self, x, t):
