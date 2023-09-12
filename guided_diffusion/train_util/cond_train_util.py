@@ -569,21 +569,6 @@ class TrainLoop(LightningModule):
         ddim_recon_predx0_plot = ((ddim_recon_sample['pred_xstart'] + 1) * 127.5) / 255.
         log_image_fn(key=f'{sampling_model} - ddim_recon_predx0 (x0)', image=make_grid(ddim_recon_predx0_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
         
-        # Relight (Simply use light of next person)
-        for i in range(len(cond['spatial_latent'])):
-            cond['spatial_latent'][i] = th.cat((cond['spatial_latent'][i][1:], cond['spatial_latent'][i][0:1]), dim=0)
-            
-        ddim_relit_sample, _ = self.diffusion.ddim_sample_loop(
-            model=sampling_model_dict[self.cfg.img_model.name],
-            shape=(n, 3, H, W),
-            clip_denoised=True,
-            model_kwargs=cond,
-            noise=ddim_reverse_sample['sample'],
-        )
-        
-        ddim_relit_sample_plot = ((ddim_relit_sample['sample'] + 1) * 127.5) / 255.
-        log_image_fn(key=f'{sampling_model} - ddim_relit_sample (x0)', image=make_grid(ddim_relit_sample_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
-
         # Save memory!
         dat = dat.detach()
         cond = tensor_util.dict_detach(in_d=cond, keys=cond.keys())
