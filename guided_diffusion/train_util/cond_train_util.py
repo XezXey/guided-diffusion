@@ -280,6 +280,7 @@ class TrainLoop(LightningModule):
         noise = th.randn_like(batch)
         
         #NOTE: Prepare condition : Utilize the same schedule from DPM, Add background or any condition.
+        cond['preserved_cond'] = False
         cond = self.prepare_cond_train(dat=batch, cond=cond, t=t, noise=noise)
         
         cond = self.forward_cond_network(cond)

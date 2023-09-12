@@ -1600,7 +1600,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
     #     else: return self.out(h)
         
         
-    def forward(self, x, timesteps, y=None, preserved_cond=False, **kwargs):
+    def forward(self, x, timesteps, y=None, **kwargs):
         """
         Apply the model to an input batch.
         :param x: an [N x C x ...] Tensor of inputs.
@@ -1609,7 +1609,7 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         :return: an [N x C x ...] Tensor of outputs.
         """
         apply_cond_layer = self.cond_layer_selector.get_apply_cond_selector()
-        if preserved_cond:
+        if kwargs['preserved_cond']:
             # Use for inference while ddim need the iterations to work on denoising
             spatial_latent = copy.deepcopy(kwargs["spatial_latent"])
         else:
