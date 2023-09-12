@@ -280,7 +280,7 @@ class TrainLoop(LightningModule):
         noise = th.randn_like(batch)
         
         #NOTE: Prepare condition : Utilize the same schedule from DPM, Add background or any condition.
-        cond['preserved_cond'] = False
+        cond['no_preserved_cond'] = True
         cond = self.prepare_cond_train(dat=batch, cond=cond, t=t, noise=noise)
         
         cond = self.forward_cond_network(cond)
@@ -483,6 +483,7 @@ class TrainLoop(LightningModule):
         noise = th.randn((n, 3, H, W)).type_as(dat)
         assert noise.shape == dat.shape
         cond = self.prepare_cond_sampling(dat=batch, cond=cond)
+        cond['no_preserved_cond'] = True
         cond = tensor_util.dict_slice(in_d=cond, keys=cond.keys(), n=n)
         
 
@@ -568,7 +569,6 @@ class TrainLoop(LightningModule):
         ddim_recon_predx0_plot = ((ddim_recon_sample['pred_xstart'] + 1) * 127.5) / 255.
         log_image_fn(key=f'{sampling_model} - ddim_recon_predx0 (x0)', image=make_grid(ddim_recon_predx0_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
         
-
         # Save memory!
         dat = dat.detach()
         cond = tensor_util.dict_detach(in_d=cond, keys=cond.keys())

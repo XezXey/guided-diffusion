@@ -1609,12 +1609,13 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         :return: an [N x C x ...] Tensor of outputs.
         """
         apply_cond_layer = self.cond_layer_selector.get_apply_cond_selector()
-        if kwargs['preserved_cond'] or 'preserved_cond' not in kwargs.keys():
-            # Use for inference while ddim need the iterations to work on denoising
-            spatial_latent = copy.deepcopy(kwargs["spatial_latent"])
-        else:
+        if 'no_preserved_cond' in kwargs.keys():
             # Use for training
             spatial_latent = kwargs["spatial_latent"]
+        else:
+            # Use for inference while ddim need the iterations to work on denoising
+            spatial_latent = copy.deepcopy(kwargs["spatial_latent"])
+            
         assert len(kwargs['spatial_latent']) == len(apply_cond_layer)
         hs = []
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
