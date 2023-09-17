@@ -5,6 +5,7 @@ import random
 import torch as th
 import matplotlib.pyplot as plt
 import torchvision.transforms.functional as F
+from ..recolor_util import convert2rgb
 
 
 def resize_arr(pil_image, image_size):
@@ -94,3 +95,29 @@ def show(imgs):
         img = F.to_pil_image(img)
         axs[0, i].imshow(np.asarray(img))
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+        
+def make_vis_condimg(data, anno, input_bound):
+    # data: [N, C, H, W], C is annotated by img_type
+    cond_img = []
+    s = 0
+    for img_type, ch_size in anno:
+        e = s + ch_size
+        print(s, e, img_type, ch_size)
+        each_img = data[:, s:e, ...]
+        if 'deca' in img_type:
+            each_img = each_img
+        elif 'laplacian' in img_type:
+            each_img = each_img + 0.5
+        elif 'faceseg' in img_type:
+            each_img = convert2rgb(each_img, bound=input_bound) / 255.
+        elif 'sobel' in img_type:
+            each_img = each_img + 0.5
+        else: raise NotImplementedError(f'img_type: {img_type} is not implemented')
+            
+        if ch_size == 1:  
+            cond_img.append(th.repeat_interleave(each_img, dim=1, repeats=3))
+        else:
+            cond_img.append(each_img)
+        s += ch_size
+    cond_img = th.cat((cond_img), dim=0)
+    return cond_img

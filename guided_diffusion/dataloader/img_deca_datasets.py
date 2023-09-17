@@ -130,10 +130,14 @@ def load_data_img_deca(
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.deca_rendered_dir}/{in_image_type}/{set_}/")
             elif 'faceseg' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
-            elif 'laplacian' in in_image_type:
+            elif 'sobel_bg' in in_image_type:
+                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.sobel_dir}/{set_}/")
+                in_image[f'{in_image_type}_mask'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
+                in_image[f'{in_image_type}_mask'] = image_path_list_to_dict(in_image[f'{in_image_type}_mask'])
+            elif 'laplacian_bg' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.laplacian_dir}/{set_}/")
-                in_image['laplacian_mask'] = _list_image_files_recursively(f"{cfg.dataset.laplacian_mask_dir}/{set_}/")
-                in_image['laplacian_mask'] = image_path_list_to_dict(in_image['laplacian_mask'])
+                in_image[f'{in_image_type}_mask'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
+                in_image[f'{in_image_type}_mask'] = image_path_list_to_dict(in_image[f'{in_image_type}_mask'])
             elif 'shadow_mask' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_mask_dir}/{set_}/")
             elif ('raw' in in_image_type) or ('face_structure' in in_image_type): continue
@@ -274,17 +278,6 @@ class DECADataset(Dataset):
                 each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_AREA)
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                 out_dict[f'{k}_img'] = each_cond_img
-            elif 'laplacian' in k:
-                laplacian_mask = np.array(self.load_image(self.kwargs['in_image_for_cond']['laplacian_mask'][query_img_name.replace(self.img_ext, '.png')]))
-                laplacian_mask = self.prep_cond_img(laplacian_mask, k, i)
-                each_cond_img = cond_img[k] * laplacian_mask
-                each_cond_img = cv2.resize(each_cond_img, (self.resolution, self.resolution), cv2.INTER_AREA)
-                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                # Store mask & img
-                out_dict[f'{k}_img'] = each_cond_img
-                laplacian_mask = cv2.resize(laplacian_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                out_dict[f'{k}_mask'] = np.transpose(laplacian_mask, (2, 0, 1))
-                assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
             elif 'faceseg' in k:
                 faceseg_mask = self.prep_cond_img(~cond_img[k], k, i)   # Invert mask for dilation
                 faceseg_mask = ~faceseg_mask    # Invert back to original mask
@@ -296,6 +289,22 @@ class DECADataset(Dataset):
                 out_dict[f'{k}_img'] = each_cond_img
                 faceseg_mask = cv2.resize(faceseg_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                 out_dict[f'{k}_mask'] = np.transpose(faceseg_mask, (2, 0, 1))
+                assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
+            elif ('sobel' in k) or ('laplacian' in k):
+                mask = cond_img[f'{k}_mask']
+                mask = ~self.prep_cond_img(~mask, k, i)
+                # print(k, cond_img[k].shape, sobel_mask.shape)
+                assert np.allclose(mask[..., 0], mask[..., 1]) and np.allclose(mask[..., 0], mask[..., 2])
+                mask = mask[..., 0:1]
+                each_cond_img = cond_img[k] * mask
+                each_cond_img = cv2.resize(each_cond_img, (self.resolution, self.resolution), cv2.INTER_AREA)
+                each_cond_img = each_cond_img[..., None]
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                # Store mask & img
+                out_dict[f'{k}_img'] = each_cond_img
+                mask = cv2.resize(mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                mask = mask[..., None]
+                out_dict[f'{k}_mask'] = np.transpose(mask, (2, 0, 1))
                 assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
             else:
                 each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
@@ -367,8 +376,9 @@ class DECADataset(Dataset):
                     condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
                 else:
                     condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
-            elif 'laplacian' in in_image_type:
+            elif ('sobel' in in_image_type) or ('laplacian' in in_image_type):
                 condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
+                condition_image[f"{in_image_type}_mask"] = self.face_segment(segment_part=f"{in_image_type}_mask", query_img_name=query_img_name)
             elif 'shadow_mask' in in_image_type:
                     condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
             elif in_image_type == 'raw':
@@ -380,6 +390,7 @@ class DECADataset(Dataset):
 
     def face_segment(self, segment_part, query_img_name):
         face_segment_anno = self.load_image(self.kwargs['in_image_for_cond'][segment_part][query_img_name.replace(self.img_ext, '.png')])
+        
 
         face_segment_anno = np.array(face_segment_anno)
         bg = (face_segment_anno == 0)
@@ -433,6 +444,8 @@ class DECADataset(Dataset):
             seg_m = (l_eye | r_eye | eye_g)
         elif segment_part == 'faceseg_eyes':
             seg_m = (l_eye | r_eye)
+        elif (segment_part == 'sobel_bg_mask') or (segment_part == 'laplacian_bg_mask'):
+            seg_m = ~(face | neck | hair)
         else: raise NotImplementedError(f"Segment part: {segment_part} is not found!")
         
         out = seg_m

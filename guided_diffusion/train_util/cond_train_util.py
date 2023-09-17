@@ -22,6 +22,7 @@ from ..trainer_util import Trainer
 from ..models.nn import update_ema
 from ..resample import LossAwareSampler, UniformSampler
 from ..script_util import seed_all, compare_models, dump_model_params
+from ..dataloader.img_util import make_vis_condimg
 from ..recolor_util import convert2rgb
 
 import torch.nn as nn
@@ -497,35 +498,19 @@ class TrainLoop(LightningModule):
         
         # Condition Image
         if cond['dpm_cond_img'] is not None:
-            cond_img = []
-            s = 0
-            for c in self.cfg.img_model.each_in_channels:
-                e = s + c
-                if c == 1:  
-                    cond_img.append(th.repeat_interleave(cond['dpm_cond_img'][:, s:e, ...], dim=1, repeats=3))
-                else:
-                    cond_img.append(cond['dpm_cond_img'][:, s:e, ...])
-                s += c
-            cond_img = th.cat((cond_img), dim=0)
-            cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.
-            
+            cond_img = make_vis_condimg(data = cond['dpm_cond_img'], 
+                                        anno = zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.each_in_channels),
+                                        input_bound = self.input_bound
+                                    )
             log_image_fn(key=f'{sampling_model} - conditioned_image (UNet)', image=make_grid(cond_img, nrow=4), step=(step_ + 1) * self.n_gpus)
             # self.t_logger.add_image(tag=f'conditioned_image (UNet)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
             # self.t_logger.log_image(key=f'{sampling_model} - conditioned_image (UNet)', images=[make_grid(cond_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
         if cond['cond_img'] is not None:
-            cond_img = []
-            s = 0
-            for c in self.cfg.img_cond_model.each_in_channels:
-                e = s + c
-                if c == 1:  
-                    cond_img.append(th.repeat_interleave(cond['cond_img'][:, s:e, ...], dim=1, repeats=3))
-                else:
-                    cond_img.append(cond['cond_img'][:, s:e, ...])
-                s += c
-            cond_img = th.cat((cond_img), dim=0)
-            cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.
-            
+            cond_img = make_vis_condimg(data = cond['cond_img'], 
+                                        anno = zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.each_in_channels),
+                                        input_bound = self.input_bound
+                                    )
             log_image_fn(key=f'{sampling_model} - conditioned_image (Encoder)', image=make_grid(cond_img, nrow=4), step=(step_ + 1) * self.n_gpus)
             # tb.add_image(tag=f'conditioned_image (Encoder)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
             # self.t_logger.log_image(key=f'{sampling_model} - conditioned_image (Encoder)', images=[make_grid(cond_img, nrow=4)], step=(step_ + 1) * self.n_gpus)

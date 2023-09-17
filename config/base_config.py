@@ -113,7 +113,7 @@ cfg.upsampling.use_deconv = False
 cfg.upsampling.target_size = 256
 
 # Additional Encoder Network
-img_cond_model_img_type = {'raw':3, 
+img_cond_model_img_type = {'raw':3,
                            'face_structure':3,
                            'deca_shape_images':3, 
                            'deca_template_shape_images':3, 
@@ -132,6 +132,9 @@ img_cond_model_img_type = {'raw':3,
                            'faceseg_face&hair':3, 
                            'normals':3,
                            'laplacian_topmost_eyes':3,
+                           # For changing background
+                           'laplacian_bg':1,
+                           'sobel_bg':1,
                            # For paired training
                            'src_deca_masked_face_images_wclip':3,
                            'dst_deca_masked_face_images_wclip':3,
@@ -202,6 +205,7 @@ cfg.dataset.deca_rendered_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_
 cfg.dataset.laplacian_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
 cfg.dataset.latent_ldm_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/ldm_encoding/"
 cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
+cfg.dataset.sobel_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/sobel/"
 cfg.dataset.shadow_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_masks/"
 
 # ---------------------------------------------------------------------------- #
