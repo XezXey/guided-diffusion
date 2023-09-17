@@ -261,7 +261,8 @@ def relight_with_solver(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_id
     solver_method = args.solver_method
     solver_order = args.solver_order
     solver_correcting_x0_fn = args.solver_correcting_x0_fn
-    if solver_correcting_x0_fn.lower() == 'none':
+    if solver_correcting_x0_fn is None: pass
+    elif solver_correcting_x0_fn.lower() == 'none':
         solver_correcting_x0_fn = None
     if solver_correcting_x0_fn is not None and solver_alg != 'dpmsolver++':
         raise ValueError(f"[#] Solver {solver_alg} does not support correcting x0")

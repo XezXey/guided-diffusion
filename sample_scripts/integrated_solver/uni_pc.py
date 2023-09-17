@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+import numpy as np
 import math
 
 
@@ -531,7 +532,9 @@ class UniPC:
                 if order == 2:
                     rhos_p = torch.tensor([0.5], device=b.device)
                 else:
-                    rhos_p = torch.linalg.solve(R[:-1, :-1], b[:-1])
+                    # rhos_p = torch.linalg.solve(R[:-1, :-1], b[:-1])
+                    rhos_p = torch.tensor(np.linalg.solve(R[:-1, :-1].cpu().numpy(), b[:-1].cpu().numpy())).to(b.device)
+                    # rhos_p = torch.solve(R[:-1, :-1], b[:-1])
         else:
             D1s = None
 
@@ -541,8 +544,10 @@ class UniPC:
             if order == 1:
                 rhos_c = torch.tensor([0.5], device=b.device)
             else:
-                rhos_c = torch.linalg.solve(R, b)
-
+                # rhos_c = torch.linalg.solve(R, b)
+                rhos_c = torch.tensor(np.linalg.solve(R.cpu().numpy(), b.cpu().numpy())).to(b.device)
+                # rhos_c = torch.solve(R, b)
+                
         model_t = None
         if self.predict_x0:
             x_t_ = (
