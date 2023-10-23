@@ -69,7 +69,7 @@ def preprocess_light(deca_params, k, cfg):
     """
     # Remove the SH component from DECA (This for reduce SH)
     """
-    if k != 'light':
+    if (k != 'light'):
         return deca_params
     else:
         num_SH = cfg.relighting.num_SH

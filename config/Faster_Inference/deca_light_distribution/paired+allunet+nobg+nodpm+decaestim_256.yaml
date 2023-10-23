@@ -1,0 +1,46 @@
+diffusion:
+  predict_xstart: False
+  denoise_src: False
+
+img_model:
+  name: "ImgCond"
+  arch: "UNetCond_No_DPM_NoTime"
+  image_size: 256
+  in_image: ['raw']
+  in_channels: 3
+  out_channels: 3
+  conditioning: True  # Conditioning with DECA
+  condition_proj_dim: 512
+  hadamart_prep: "Tanh"
+
+  dpm_cond_img: ['deca_masked_face_images_woclip', 'deca_masked_face_images_woclip']
+  sj_paired: ['src', 'dst']
+  prep_dpm_cond_img: [Null, Null]
+  noise_dpm_cond_img: [Null, Null]
+  apply_dpm_cond_img: True
+
+param_model:
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb', 'shadow']
+
+img_cond_model:
+  apply: False
+
+relighting:
+  use_SH: False
+
+train:
+  weight_decay: 0.0
+  sampling_interval: 20000
+  save_interval: 20000
+
+dataset:
+  training_data: "generated_dataset_80perc_decaestim"
+  deca_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc_decaestim/params/"
+  data_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc_decaestim/gen_images/"
+  face_segment_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc_decaestim/face_segment/"
+  deca_rendered_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc_decaestim/rendered_images/"
+
+
+train_misc:
+  exp_name: "paired_training"
+  cfg_name: "paired+allunet+nobg+nodpm+decaestim_256"
