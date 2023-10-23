@@ -135,6 +135,7 @@ img_cond_model_img_type = {'raw':3,
                            # For changing background
                            'laplacian_bg':1,
                            'sobel_bg':1,
+                           'sobel_bin_bg':1,
                            # For paired training
                            'src_deca_masked_face_images_wclip':3,
                            'dst_deca_masked_face_images_wclip':3,
@@ -176,6 +177,7 @@ cfg.img_cond_model.pool = 'attention'
 cfg.img_cond_model.override_cond = ""
 cfg.img_cond_model.xtra_cond = ""
 cfg.img_cond_model.prep_image = [None]
+cfg.img_cond_model.thres_img = [None]
 cfg.img_cond_model.noise_dpm_cond_img = [None]
 cfg.img_cond_model.prep = [None]
 

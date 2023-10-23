@@ -1,6 +1,6 @@
 {
     "log=paired+allunet+nobg+nodpm_256_cfg=paired+allunet+nobg+nodpm_256.yaml" : {
-        "step":"ema_020000", 
+        "step":"ema_160000", 
         "alias":"Single pass UNet",
         "itp":"render_face",
         "itp_method":"Lerp",

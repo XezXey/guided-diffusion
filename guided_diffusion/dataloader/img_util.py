@@ -106,11 +106,13 @@ def make_vis_condimg(data, anno, input_bound):
         each_img = data[:, s:e, ...]
         if 'deca' in img_type:
             each_img = each_img
-        elif 'laplacian' in img_type:
+        elif 'laplacian_bg' in img_type:
             each_img = each_img + 0.5
         elif 'faceseg' in img_type:
             each_img = convert2rgb(each_img, bound=input_bound) / 255.
-        elif 'sobel' in img_type:
+        elif 'sobel_bg' in img_type:
+            each_img = each_img + 0.5
+        elif 'sobel_bin_bg' in img_type:
             each_img = each_img + 0.5
         else: raise NotImplementedError(f'img_type: {img_type} is not implemented')
             

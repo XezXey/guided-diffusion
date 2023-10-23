@@ -13,6 +13,7 @@ parser.add_argument('--path', type=str, required=True)
 parser.add_argument('--set', nargs='+', type=str, default=['train', 'valid'])
 parser.add_argument('--savepath', type=str, required=True)
 parser.add_argument('--batch_size', type=int, default=1)
+parser.add_argument('--ext', type=str, default='jpg')
 args = parser.parse_args()
 
 class CustomImageDataset(Dataset):
@@ -52,7 +53,7 @@ if __name__ == '__main__':
     img_path = glob.glob(os.path.join(args.path, '*.jpg'))
     for set_ in args.set:
         os.makedirs(os.path.join(args.savepath, set_), exist_ok=True)
-        img_path = glob.glob(os.path.join(args.path, set_, '*.jpg'))
+        img_path = glob.glob(os.path.join(args.path, set_, f'*.{args.ext}'))
         dataset = CustomImageDataset(img_path)
         dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, drop_last=False)
         

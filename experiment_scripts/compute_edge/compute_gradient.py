@@ -12,6 +12,7 @@ parser.add_argument('--path', type=str, required=True)
 parser.add_argument('--savepath', type=str, required=True)
 parser.add_argument('--set', nargs='+', type=str, default=['train', 'valid'])
 parser.add_argument('--batch_size', type=int, default=1)
+parser.add_argument('--ext', type=str, default='jpg')
 args = parser.parse_args()
 
 class CustomImageDataset(Dataset):
@@ -25,7 +26,7 @@ class CustomImageDataset(Dataset):
         img_path = self.img_dir[idx]
         name = img_path.split('/')[-1].split('.')[0]
         image = Image.open(img_path).convert('L')
-        image = np.array(image)
+        image = np.array(image)[..., np.newaxis]
         image = (image.transpose((2, 0, 1)) / 255.0).astype(np.float32)
         return image, name 
 
@@ -54,7 +55,7 @@ def extract_edge(img, name, set_):
 if __name__ == '__main__':
     for set_ in args.set:
         os.makedirs(os.path.join(args.savepath, set_), exist_ok=True)
-        img_path = glob.glob(os.path.join(args.path, set_, '*.jpg'))
+        img_path = glob.glob(os.path.join(args.path, set_, f'*.{args.ext}'))
         dataset = CustomImageDataset(img_path)
         dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, drop_last=False)
         

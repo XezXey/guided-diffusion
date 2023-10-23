@@ -130,7 +130,7 @@ def load_data_img_deca(
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.deca_rendered_dir}/{in_image_type}/{set_}/")
             elif 'faceseg' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
-            elif 'sobel_bg' in in_image_type:
+            elif ('sobel_bg' in in_image_type) or ('sobel_bin_bg' in in_image_type):
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.sobel_dir}/{set_}/")
                 in_image[f'{in_image_type}_mask'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
                 in_image[f'{in_image_type}_mask'] = image_path_list_to_dict(in_image[f'{in_image_type}_mask'])
@@ -290,13 +290,14 @@ class DECADataset(Dataset):
                 faceseg_mask = cv2.resize(faceseg_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                 out_dict[f'{k}_mask'] = np.transpose(faceseg_mask, (2, 0, 1))
                 assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
-            elif ('sobel' in k) or ('laplacian' in k):
+            elif ('sobel_bg' in k) or ('laplacian_bg' in k):
                 mask = cond_img[f'{k}_mask']
                 mask = ~self.prep_cond_img(~mask, k, i)
                 # print(k, cond_img[k].shape, sobel_mask.shape)
                 assert np.allclose(mask[..., 0], mask[..., 1]) and np.allclose(mask[..., 0], mask[..., 2])
                 mask = mask[..., 0:1]
                 each_cond_img = cond_img[k] * mask
+                
                 each_cond_img = cv2.resize(each_cond_img, (self.resolution, self.resolution), cv2.INTER_AREA)
                 each_cond_img = each_cond_img[..., None]
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
@@ -305,6 +306,30 @@ class DECADataset(Dataset):
                 mask = cv2.resize(mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                 mask = mask[..., None]
                 out_dict[f'{k}_mask'] = np.transpose(mask, (2, 0, 1))
+                assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
+            elif ('sobel_bin_bg' in k):
+                mask = cond_img[f'{k}_mask']
+                mask = ~self.prep_cond_img(~mask, k, i)
+                # print(k, cond_img[k].shape, sobel_mask.shape)
+                assert np.allclose(mask[..., 0], mask[..., 1]) and np.allclose(mask[..., 0], mask[..., 2])
+                mask = mask[..., 0:1]
+                each_cond_img = cond_img[k] * mask
+                print(np.max(each_cond_img), np.min(each_cond_img))
+                each_cond_img = cv2.normalize(each_cond_img, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+                print(np.max(each_cond_img), np.min(each_cond_img))
+                thres, each_cond_img = cv2.threshold(each_cond_img, int(self.cfg.img_cond_model.thres_img[i]), 255, cv2.THRESH_BINARY)
+                # print(each_cond_img)
+                # print(np.max(each_cond_img), np.min(each_cond_img))
+                
+                each_cond_img = cv2.resize(each_cond_img, (self.resolution, self.resolution), cv2.INTER_AREA)
+                each_cond_img = each_cond_img[..., None] / 255.0
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                # Store mask & img
+                out_dict[f'{k}_img'] = each_cond_img
+                mask = cv2.resize(mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                mask = mask[..., None]
+                out_dict[f'{k}_mask'] = np.transpose(mask, (2, 0, 1))
+                print("MINT : ", np.max(each_cond_img), np.min(each_cond_img))
                 assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
             else:
                 each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
@@ -444,7 +469,8 @@ class DECADataset(Dataset):
             seg_m = (l_eye | r_eye | eye_g)
         elif segment_part == 'faceseg_eyes':
             seg_m = (l_eye | r_eye)
-        elif (segment_part == 'sobel_bg_mask') or (segment_part == 'laplacian_bg_mask'):
+        # elif (segment_part == 'sobel_bg_mask') or (segment_part == 'laplacian_bg_mask') or (segment_part == 'sobel_bin_bg_mask'):
+        elif segment_part in ['sobel_bg_mask', 'laplacian_bg_mask', 'sobel_bin_bg_mask']:
             seg_m = ~(face | neck | hair)
         else: raise NotImplementedError(f"Segment part: {segment_part} is not found!")
         

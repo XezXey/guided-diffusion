@@ -199,6 +199,7 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
     if cfg.img_cond_model.apply:
         cond_img = []
         for k in cfg.img_cond_model.in_image:
+            print(k)
             if use_render_itp: 
                 tmp_img = cond[f'{k}']
             else: 
@@ -326,7 +327,7 @@ def build_condition_image(cond, misc):
     #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'
     print("Conditoning with image : ", condition_img)
     for i, cond_img_name in enumerate(condition_img):
-        if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name) or ('face_structure' in cond_img_name):
+        if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name) or ('sobel' in cond_img_name) or ('face_structure' in cond_img_name):
             bg_tmp = [cond[f"{cond_img_name}_img"][src_idx]] * n_step
             if th.is_tensor(cond[f"{cond_img_name}_img"][src_idx]):
                 bg_tmp = th.stack(bg_tmp, axis=0)
