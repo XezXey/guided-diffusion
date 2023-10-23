@@ -314,9 +314,9 @@ class DECADataset(Dataset):
                 assert np.allclose(mask[..., 0], mask[..., 1]) and np.allclose(mask[..., 0], mask[..., 2])
                 mask = mask[..., 0:1]
                 each_cond_img = cond_img[k] * mask
-                print(np.max(each_cond_img), np.min(each_cond_img))
+                # print(np.max(each_cond_img), np.min(each_cond_img))
                 each_cond_img = cv2.normalize(each_cond_img, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
-                print(np.max(each_cond_img), np.min(each_cond_img))
+                # print(np.max(each_cond_img), np.min(each_cond_img))
                 thres, each_cond_img = cv2.threshold(each_cond_img, int(self.cfg.img_cond_model.thres_img[i]), 255, cv2.THRESH_BINARY)
                 # print(each_cond_img)
                 # print(np.max(each_cond_img), np.min(each_cond_img))
@@ -329,7 +329,7 @@ class DECADataset(Dataset):
                 mask = cv2.resize(mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                 mask = mask[..., None]
                 out_dict[f'{k}_mask'] = np.transpose(mask, (2, 0, 1))
-                print("MINT : ", np.max(each_cond_img), np.min(each_cond_img))
+                # print("MINT : ", np.max(each_cond_img), np.min(each_cond_img))
                 assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
             else:
                 each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
