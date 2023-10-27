@@ -138,6 +138,10 @@ def load_data_img_deca(
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.laplacian_dir}/{set_}/")
                 in_image[f'{in_image_type}_mask'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
                 in_image[f'{in_image_type}_mask'] = image_path_list_to_dict(in_image[f'{in_image_type}_mask'])
+            elif 'canny_edge_bg' in in_image_type:
+                in_image[f'{in_image_type}_mask'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
+                in_image[f'{in_image_type}_mask'] = image_path_list_to_dict(in_image[f'{in_image_type}_mask'])
+                continue
             elif 'shadow_mask' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_mask_dir}/{set_}/")
             elif ('raw' in in_image_type) or ('face_structure' in in_image_type): continue
@@ -331,6 +335,27 @@ class DECADataset(Dataset):
                 out_dict[f'{k}_mask'] = np.transpose(mask, (2, 0, 1))
                 # print("MINT : ", np.max(each_cond_img), np.min(each_cond_img))
                 assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
+            elif ('canny_edge_bg' in k):
+                mask = cond_img[f'{k}_mask']
+                mask = ~self.prep_cond_img(~mask, k, i)
+                # print("G", mask, np.unique(mask))
+                mask = cv2.resize(mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                assert np.allclose(mask[..., 0], mask[..., 1]) and np.allclose(mask[..., 0], mask[..., 2])
+                mask = mask[..., 0:1]
+                # print("P", mask, np.unique(mask))
+                # print("K", mask, np.unique(mask))
+                # print(k, cond_img[k].shape, sobel_mask.shape)
+                min_val, max_val = self.cfg.img_cond_model.canny_thres[i]
+                grey_img = cv2.cvtColor(raw_img[..., ::-1], cv2.COLOR_BGR2GRAY)
+                each_cond_img = cv2.Canny(grey_img, int(min_val), int(max_val))
+                each_cond_img = each_cond_img[..., None] / 255.0
+                # print(each_cond_img.shape, mask.shape)
+                each_cond_img = each_cond_img * mask
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                # Store mask & img
+                out_dict[f'{k}_img'] = each_cond_img
+                out_dict[f'{k}_mask'] = np.transpose(mask, (2, 0, 1))
+                assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
             else:
                 each_cond_img = self.augmentation(PIL.Image.fromarray(cond_img[k]))
                 each_cond_img = self.prep_cond_img(each_cond_img, k, i)
@@ -405,15 +430,20 @@ class DECADataset(Dataset):
                 condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
                 condition_image[f"{in_image_type}_mask"] = self.face_segment(segment_part=f"{in_image_type}_mask", query_img_name=query_img_name)
             elif 'shadow_mask' in in_image_type:
-                    condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
+                condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
             elif in_image_type == 'face_structure':
                 condition_image['face_structure'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
+            elif ('canny_edge_bg' in in_image_type):
+                condition_image[f"{in_image_type}_mask"] = self.face_segment(segment_part=f"{in_image_type}_mask", query_img_name=query_img_name)
             else: raise ValueError(f"Not supported type of condition image : {in_image_type}")
         return condition_image
 
     def face_segment(self, segment_part, query_img_name):
+        # print(self.kwargs.keys())
+        # print(self.kwargs['in_image_for_cond'].keys())
+        # exit()
         face_segment_anno = self.load_image(self.kwargs['in_image_for_cond'][segment_part][query_img_name.replace(self.img_ext, '.png')])
         
 
@@ -472,6 +502,8 @@ class DECADataset(Dataset):
         # elif (segment_part == 'sobel_bg_mask') or (segment_part == 'laplacian_bg_mask') or (segment_part == 'sobel_bin_bg_mask'):
         elif segment_part in ['sobel_bg_mask', 'laplacian_bg_mask', 'sobel_bin_bg_mask']:
             seg_m = ~(face | neck | hair)
+        elif segment_part in ['canny_edge_bg_mask']:
+            seg_m = ~(face | neck | hair) | (l_ear | r_ear)
         else: raise NotImplementedError(f"Segment part: {segment_part} is not found!")
         
         out = seg_m

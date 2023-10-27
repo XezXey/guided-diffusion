@@ -106,7 +106,8 @@ def create_app():
                 out += "<tr>"
                 alias_str = alias.split('_')
                 # alias example: dpmsolver++_3_singlestep_15_dynamic_thresholding
-                out += f"<td> {alias} <br> {ckpt} </td> "
+                # out += f"<td> {alias} <br> {ckpt} </td> "
+                out += f"<td> {alias} </td> "
                 
                 if args.res == 128:
                     out += f"<td> <img src=/files/{data_path}/{src.replace('jpg', 'png')}> </td>"

@@ -114,6 +114,8 @@ def make_vis_condimg(data, anno, input_bound):
             each_img = each_img + 0.5
         elif 'sobel_bin_bg' in img_type:
             each_img = each_img + 0.5
+        elif 'canny_edge_bg' in img_type:
+            each_img = each_img + 0.5
         else: raise NotImplementedError(f'img_type: {img_type} is not implemented')
             
         if ch_size == 1:  
