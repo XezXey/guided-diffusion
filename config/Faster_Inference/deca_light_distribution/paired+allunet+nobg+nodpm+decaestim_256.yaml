@@ -34,11 +34,11 @@ train:
   save_interval: 20000
 
 dataset:
-  training_data: "generated_dataset_80perc_decaestim"
-  deca_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc_decaestim/params/"
-  data_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc_decaestim/gen_images/"
-  face_segment_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc_decaestim/face_segment/"
-  deca_rendered_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc_decaestim/rendered_images/"
+  training_data: "generated_dataset_80perc_deca_estim"
+  deca_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc_deca_estim/params/"
+  data_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc_deca_estim/gen_images/"
+  face_segment_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc_deca_estim/face_segment/"
+  deca_rendered_dir: "/data/mint/DPM_Dataset/generated_dataset_80perc_deca_estim/rendered_images/"
 
 
 train_misc:
