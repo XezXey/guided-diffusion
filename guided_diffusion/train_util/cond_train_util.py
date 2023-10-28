@@ -204,7 +204,6 @@ class TrainLoop(LightningModule):
 
 
     def training_step(self, batch, batch_idx):
-        self.log_rank_zero(batch)
         dat, cond = batch
         self.model(trainloop=self, dat=dat, cond=cond)
         self.step += 1
@@ -490,8 +489,8 @@ class TrainLoop(LightningModule):
         
 
         # Any Encoder/Conditioned Network need to apply before a main UNet.
-        # if self.cfg.img_cond_model.apply:
-        #     self.forward_cond_network(cond=cond, model_dict=sampling_model_dict)
+        if self.cfg.img_cond_model.apply:
+            self.forward_cond_network(cond=cond, model_dict=sampling_model_dict)
             
         # Source Image
         source_img = convert2rgb(dat, bound=self.input_bound) / 255.
