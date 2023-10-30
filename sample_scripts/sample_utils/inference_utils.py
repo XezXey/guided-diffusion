@@ -327,7 +327,7 @@ def build_condition_image(cond, misc):
     #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'
     print("Conditoning with image : ", condition_img)
     for i, cond_img_name in enumerate(condition_img):
-        if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name) or ('sobel' in cond_img_name) or ('face_structure' in cond_img_name):
+        if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name) or ('sobel' in cond_img_name) or ('face_structure' in cond_img_name) or ('canny_edge_bg' in cond_img_name):
             bg_tmp = [cond[f"{cond_img_name}_img"][src_idx]] * n_step
             if th.is_tensor(cond[f"{cond_img_name}_img"][src_idx]):
                 bg_tmp = th.stack(bg_tmp, axis=0)
@@ -431,7 +431,7 @@ def build_condition_image_for_vids(cond, misc):
     #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'
     print("Conditoning with image : ", condition_img)
     for i, cond_img_name in enumerate(condition_img):
-        if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name):
+        if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name) or ('canny_edge_bg' in cond_img_name):
             bg_tmp = cond[f"{cond_img_name}_img"]
             cond[f"{cond_img_name}"] = th.tensor(bg_tmp)
             
@@ -456,6 +456,9 @@ def build_condition_image_for_vids(cond, misc):
                 rendered_tmp.append(r_tmp)
             rendered_tmp = np.stack(rendered_tmp, axis=0)
             cond[cond_img_name] = th.tensor(rendered_tmp).cuda()
+        else: continue  # We don't process ['raw'] here
+    print(cond.keys())
+    exit()
     return cond, clip_ren
 
 def build_condition_image_rotateSH(cond, misc):
@@ -495,7 +498,7 @@ def build_condition_image_rotateSH(cond, misc):
     #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'
     print("Conditoning with image : ", condition_img)
     for i, cond_img_name in enumerate(condition_img):
-        if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name):
+        if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name) or ('canny_edge_bg' in cond_img_name):
             bg_tmp = [cond[f"{cond_img_name}_img"][src_idx]] * sub_step
             if th.is_tensor(cond[f"{cond_img_name}_img"][src_idx]):
                 bg_tmp = th.stack(bg_tmp, axis=0)
