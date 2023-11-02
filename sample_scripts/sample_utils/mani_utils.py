@@ -426,7 +426,7 @@ def get_samples_list(sample_pair_json, sample_pair_mode, src_dst, img_path, n_su
         sample_pairs = json.load(f)[sample_pair_mode]
         if sample_pair_mode == 'pair':
             src_dst = [[sample_pairs[pair_i]['src'], sample_pairs[pair_i]['dst']]
-                        for pair_i in list(sample_pairs.keys())]
+                        for pair_i in list(sample_pairs.keys())[:1000]]
             all_img_idx = [file_utils.search_index_from_listpath(list_path=img_path, search=sd) 
                     for sd in src_dst]
             all_img_name = [[img_path[r[0]].split('/')[-1], img_path[r[1]].split('/')[-1]] for r in all_img_idx]
@@ -461,6 +461,46 @@ def get_samples_list(sample_pair_json, sample_pair_mode, src_dst, img_path, n_su
         all_img_name = [[img_path[r[0]].split('/')[-1], img_path[r[1]].split('/')[-1]] for r in all_img_idx]
     
     return all_img_idx, all_img_name, n_subject
+
+
+def get_samples_pair(sample_pair_json, sample_pair_mode, src_dst, img_path, start, end, n_subject):
+    '''
+    return
+    output of pre-finding pair is list of list : [['60065.jpg', '60001.jpg'], ['60065.jpg', '60012.jpg'], ..., n_subject]
+    '''
+    import json, os
+    if (sample_pair_json is not None) and (sample_pair_mode is not None):
+        #NOTE: Sampling with defined pairs
+        assert os.path.isfile(sample_pair_json)
+        f = open(sample_pair_json)
+        sample_pairs = json.load(f)[sample_pair_mode]
+        if sample_pair_mode == 'pair':
+            if start > len(sample_pairs.keys()) or end > len(sample_pairs.keys()):
+                raise ValueError(f"start={start} or end={end} is out of range of {len(sample_pairs.keys())}")
+            elif start > end:
+                raise ValueError(f"start={start} is greater than end={end}")
+            src_dst = [[sample_pairs[pair_i]['src'], sample_pairs[pair_i]['dst']]
+                        for pair_i in list(sample_pairs.keys())[start:end]]
+            all_img_idx = [file_utils.search_index_from_listpath(list_path=img_path, search=sd) 
+                    for sd in src_dst]
+            all_img_name = [[img_path[r[0]].split('/')[-1], img_path[r[1]].split('/')[-1]] for r in all_img_idx]
+            if n_subject > len(sample_pairs) or n_subject == -1:
+                n_subject = len(sample_pairs.keys())
+        else: raise NotImplementedError
+        
+    elif len(src_dst) == 2:
+        #NOTE: Sampling with a specific pair
+        n_subject = 1
+        all_img_idx = [file_utils.search_index_from_listpath(list_path=img_path, search=src_dst)]
+        all_img_name = [[img_path[r[0]].split('/')[-1], img_path[r[1]].split('/')[-1]] for r in all_img_idx]
+    else:
+        #NOTE: Random samples
+        all_img_idx = np.random.choice(a=range(len(img_path)), replace=False, size=n_subject * 2)
+        all_img_idx = np.array_split(all_img_idx, n_subject)
+        all_img_name = [[img_path[r[0]].split('/')[-1], img_path[r[1]].split('/')[-1]] for r in all_img_idx]
+    
+    return all_img_idx, all_img_name, n_subject
+
 
 def ext_sub_step(n_step, batch_size=5):
     sub_step = []

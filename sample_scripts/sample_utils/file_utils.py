@@ -50,7 +50,7 @@ def list_path_to_dict(list_path, force_type=None):
         
 def search_index_from_listpath(list_path, search):
     """
-    Return the index form image name from search list
+    Return the index from image name from search list
     :param list_path: list of image path
     :param search: list of image name to search in list_path
     """

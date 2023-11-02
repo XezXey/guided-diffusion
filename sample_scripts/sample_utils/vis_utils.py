@@ -115,6 +115,19 @@ def save_images(path, fn, frames):
     for i in range(frames.shape[0]):
         frame = frames[i].cpu().detach()
         torchvision.utils.save_image(tensor=(frame), fp=f"{path}/{fn}_frame{i}.png")
+    
+def save_facerender_images(path, fn, frames):
+    """
+    save the images
+    Args:
+        frames (list of tensor): range = [0, 255] (uint8), and shape = [T x H x W x C]
+        path : save path
+        fn : filename to save
+    """
+    
+    for i in range(frames.shape[0]):
+        frame = frames[i].detach().cpu().numpy().transpose(1, 2, 0)
+        np.save(f"{path}/{fn}_frame{i}.npy", frame)
         
 def save_images_with_fn(path, fn, frames, fn_list):
     """

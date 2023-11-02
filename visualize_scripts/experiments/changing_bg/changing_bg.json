@@ -1,52 +1,7 @@
 {
     "log=difareli_nobg_128_cfg=difareli_nobg_128.yaml_step=250" : {
         "step":"ema_050000", 
-        "alias":"DiFaReli - no background (DDIM 250 steps)",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"5"
-    },
-    "log=difareli_lapbg_128_cfg=difareli_lapbg_128.yaml_step=250" : {
-        "step":"ema_050000", 
-        "alias":"DiFaReli - laplacian background (DDIM 250 steps)",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"5"
-    },
-    "log=difareli_sobbg_128_cfg=difareli_sobbg_128.yaml_step=250" : {
-        "step":"ema_050000", 
-        "alias":"DiFaReli - GM background (DDIM 250 steps)",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"5"
-    },
-    "log=difareli_sobbin=10bg_128_cfg=difareli_sobbin=10bg_128.yaml_step=250" : {
-        "step":"ema_040000", 
-        "alias":"DiFaReli - BM Threshold = 10 background",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"5"
-    },
-    "log=difareli_sobbin=20bg_128_cfg=difareli_sobbin=20bg_128.yaml_step=250" : {
-        "step":"ema_040000", 
-        "alias":"DiFaReli - BM Threshold = 20 background",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"5"
-    },
-    "log=difareli_sobbin=30bg_128_cfg=difareli_sobbin=30bg_128.yaml_step=250" : {
-        "step":"ema_040000", 
-        "alias":"DiFaReli - BM Threshold = 30 background",
+        "alias":"no background",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
@@ -55,16 +10,16 @@
     },
     "log=difareli_canny=51to51bg_128_cfg=difareli_canny=51to51bg_128.yaml_step=250" : {
         "step":"ema_050000", 
-        "alias":"DiFaReli - Canny Fine details",
+        "alias":"Canny Fine details",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"5"
     },
-    "log=difareli_canny=51to255bg_128_cfg=difareli_canny=51to255bg_128.yaml_step=250" : {
+    "log=difareli_canny=51to255bg_128_cfg=difareli_canny=51to255bg_128.yaml_step=1000" : {
         "step":"ema_050000", 
-        "alias":"DiFaReli - Canny Structure",
+        "alias":"Canny Structure",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
@@ -73,16 +28,16 @@
     },
     "log=difareli_canny=153to204bg_128_cfg=difareli_canny=153to204bg_128.yaml_step=250" : {
         "step":"ema_050000", 
-        "alias":"DiFaReli - Canny Roughly",
+        "alias":"Canny Roughly",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"5"
     },
-    "log=Masked_Face_woclip+BgNoHead+shadow_cfg=Masked_Face_woclip+BgNoHead+shadow.yaml_step=1000" : {
+    "log=Masked_Face_woclip+BgNoHead+shadow_cfg=Masked_Face_woclip+BgNoHead+shadow.yaml_step=250" : {
         "step":"ema_050000", 
-        "alias":"DiFaReli baseline",
+        "alias":"DiFaReli",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
