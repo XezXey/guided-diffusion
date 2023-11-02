@@ -336,7 +336,7 @@ if __name__ == '__main__':
         
     counter_sj = 0
     runtime_dict = {'rev_time':[], 'relit_time':[]}
-    for i in range(start, end):
+    for i in range(0, len(all_img_idx)):
         img_idx = all_img_idx[i]
         img_name = all_img_name[i]
         
