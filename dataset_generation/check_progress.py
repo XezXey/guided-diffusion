@@ -25,9 +25,11 @@ def find_progress(start, end, src_dst_done):
             pass
         
     progress = np.where(np.array(src_dst_fromfile, dtype=object) == None)[0]
+    if len(progress) == 0:
+        raise Exception("No progress found")
     assert np.allclose((progress[1:] - progress[:-1]), 1)   # check if progress is continuous
     print("=====================================================")
-    print("[#] For {start} to {end} frames, progress is continuous")
+    print(f"[#] For {start} to {end} frames, progress is continuous")
     print(f"[#] Progress is : {progress[-1]} which is image at {src_dst_fromfile_orig[progress[-1]]}")
     print(f"[#] You should start at {progress[-1]+1} which is image at {src_dst_fromfile_orig[progress[-1]+1]}")
     print(f"[#] After Re-indexing...")
