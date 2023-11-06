@@ -17,7 +17,7 @@
         "time_respace":"",
         "n_frame":"5"
     },
-    "log=difareli_canny=51to255bg_128_cfg=difareli_canny=51to255bg_128.yaml_step=1000" : {
+    "log=difareli_canny=51to255bg_128_cfg=difareli_canny=51to255bg_128.yaml_step=250" : {
         "step":"ema_050000", 
         "alias":"Canny Structure",
         "itp":"render_face",
