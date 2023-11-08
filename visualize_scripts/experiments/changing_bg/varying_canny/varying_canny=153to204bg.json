@@ -1,0 +1,47 @@
+{
+    "log=difareli_canny=153to204bg_128_cfg=difareli_canny=153to204bg_128.yaml_step=250_canny=0to0" : {
+        "step":"ema_050000", 
+        "alias":"T = 0 to 0",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"2"
+    },
+    "log=difareli_canny=153to204bg_128_cfg=difareli_canny=153to204bg_128.yaml_step=250_canny=0to102" : {
+        "step":"ema_050000", 
+        "alias":"T = 0 to 102",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"2"
+    },
+    "log=difareli_canny=153to204bg_128_cfg=difareli_canny=153to204bg_128.yaml_step=250_canny=0to255" : {
+        "step":"ema_050000", 
+        "alias":"T = 0 to 255",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"2"
+    },
+    "log=difareli_canny=153to204bg_128_cfg=difareli_canny=153to204bg_128.yaml_step=250_canny=102to255" : {
+        "step":"ema_050000", 
+        "alias":"T = 102 to 255",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"2"
+    },
+    "log=difareli_canny=153to204bg_128_cfg=difareli_canny=153to204bg_128.yaml_step=250_canny=255to255" : {
+        "step":"ema_050000", 
+        "alias":"T = 255 to 255",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"2"
+    }
+}

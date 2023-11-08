@@ -19,14 +19,15 @@ parser.add_argument('--itp', type=str, default='render_face')
 parser.add_argument('--model', type=str, required=True)
 parser.add_argument('--ckpt', type=str, default='ema_120000')
 parser.add_argument('--out_path', type=str, default='./vid_out_testpath/')
-parser.add_argument('--set_', type=str, default='valid')
+# parser.add_argument('--set_', type=str, default='valid')
+parser.add_argument('--set_', type=str, default=None)
 args = parser.parse_args()
 
 def smooth_spiral(sj_name, n_frames, savepath):
     n = 300
     rounds = 4
 
-    num = 7
+    num = 3
     x_half = (num-1) / 2
     y_half = (num-1) / 2
 
@@ -39,11 +40,13 @@ def smooth_spiral(sj_name, n_frames, savepath):
         args.model = 'Masked_Face_woclip+BgNoHead+shadow_256'
     else:
         # dat_path = f"/data/mint/sampling/paired_training_gridSH/log={args.model}_cfg={args.model}.yaml/model_020000/valid/render_face/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_1000/n_frames={n_frames}/"
-        dat_path = f"/data/mint/sampling/paired_training_experiment/gridSH/log={args.model}_cfg={args.model}.yaml/{args.ckpt}/valid/{args.itp}/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_diff=1000_respace=/n_frames={n_frames}/"
+        # /data/mint/sampling/changing_bg/rotateSH/log=difareli_nobg_128_cfg=difareli_nobg_128.yaml/ema_050000/valid/render_face/reverse_sampling/
+        dat_path = f"/data/mint/sampling/changing_bg/rotateSH/log={args.model}_cfg={args.model}.yaml/{args.ckpt}/valid/{args.itp}/reverse_sampling/{sj_name}/dst=67524.jpg/Lerp_1000/n_frames={n_frames}/"
         # dat_path = f"/data/mint/sampling/paired_training_experiment/gridSH/log={args.model}_cfg={args.model}.yaml/{args.ckpt}/valid/{args.itp}/reverse_sampling/{sj_name}/dst=60000.jpg/Lerp_1000/n_frames={n_frames}/"
     if not os.path.exists(dat_path):
         print(f"[#] No file...{dat_path}")
         return
+    else: print(f"[#] Found...{dat_path}")
     all_x = []
     all_y = []
     cx = args.cx
@@ -53,7 +56,8 @@ def smooth_spiral(sj_name, n_frames, savepath):
     ry = args.ry
 
     # Save the image frames
-    os.makedirs(f"/data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}/", exist_ok=True)
+    os.makedirs(f"/data/mint/smooth_gridSH/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}/", exist_ok=True)
+    # os.makedirs(f"/data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}/", exist_ok=True)
     # Save the videos
     os.makedirs(f"{args.out_path}/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}", exist_ok=True)
     for i in range(n):
@@ -79,6 +83,7 @@ def smooth_spiral(sj_name, n_frames, savepath):
         tx = x - ix
         ty = y - iy
         
+        print(f"{dat_path}/res_%02d_%02d.png", ix, iy)
         a = cv.imread(f"{dat_path}/res_%02d_%02d.png" % (ix, iy)) / 255.0
         b = cv.imread(f"{dat_path}/res_%02d_%02d.png" % (ix2, iy)) / 255.0
         c = cv.imread(f"{dat_path}/res_%02d_%02d.png" % (ix, iy2)) / 255.0
@@ -87,7 +92,8 @@ def smooth_spiral(sj_name, n_frames, savepath):
         out_img = ((a*(1-ty) + c*ty)*(1-tx) + (b*(1-ty) + d*ty)*tx) * 255
         if args.resize:
             out_img = cv.resize(out_img, (128, 128))
-        cv.imwrite(f"/data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}/%05d.png" % i, out_img)
+        # cv.imwrite(f"/data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}/%05d.png" % i, out_img)
+        cv.imwrite(f"/data/mint/smooth_gridSH/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}/%05d.png" % i, out_img)
     
 
     if savepath:
@@ -118,14 +124,15 @@ def smooth_spiral(sj_name, n_frames, savepath):
         plt.show()
         plt.savefig(f"{args.out_path}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/path.png")
 
-    os.system(f"ffmpeg -y -i /data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}/%05d.png -c:v libx264 -pix_fmt yuv420p -crf 18 {args.out_path}/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}.mp4 2> tmp.txt")
+    os.system(f"ffmpeg -y -i /data/mint/smooth_gridSH/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}/%05d.png -c:v libx264 -pix_fmt yuv420p -crf 18 {args.out_path}/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}.mp4 2> tmp.txt")
+    # os.system(f"ffmpeg -y -i /data/mint/smooth_rotlight_gen/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}/%05d.png -c:v libx264 -pix_fmt yuv420p -crf 18 {args.out_path}/{args.model}/cx{cx}_rx{rx}_cy{cy}_ry{ry}/{args.ckpt}/{sj_name}.mp4 2> tmp.txt")
 
 
 if __name__ == '__main__':
     if args.set_ is None:
-        for i, sj in tqdm.tqdm(enumerate(os.listdir('/data/mint/Generated_Relighting_Dataset/'))):
+        for i, sj in tqdm.tqdm(enumerate(os.listdir('/data/mint/sampling/changing_bg/rotateSH/log=difareli_nobg_128_cfg=difareli_nobg_128.yaml/ema_050000/valid/render_face/reverse_sampling/'))):
         # for i, sj in tqdm.tqdm(enumerate(['src=60265.jpg', 'src=60268.jpg', 'src=60340.jpg', 'src=60374.jpg', 'src=60414.jpg', 'src=60865.jpg', 'src=61003.jpg', 'src=61062.jpg', 'src=61777.jpg'])):
-            smooth_spiral(sj_name = sj, n_frames=49, savepath=False if i==0 else False)
+            smooth_spiral(sj_name = sj, n_frames=9, savepath=False)# if i==0 else False)
     else:
         path = f'/data/mint/DPM_Dataset/generated_dataset_80perc/gen_images/{args.set_}'
 
@@ -135,6 +142,6 @@ if __name__ == '__main__':
             sj_dict['src=' + f.split('/')[-1].split('_')[0] + '.jpg'] = f
         # for i, sj in tqdm.tqdm(enumerate(sj_dict.keys())):
             # smooth_spiral(sj_name = sj, n_frames=49, savepath=False)
-        data = zip(list(sj_dict.keys()), [49] * len(sj_dict.keys()), [False] * len(sj_dict.keys()))
+        data = zip(list(sj_dict.keys()), [9] * len(sj_dict.keys()), [False] * len(sj_dict.keys()))
         with multiprocessing.Pool() as pool:
             _ = pool.starmap(smooth_spiral, data)
