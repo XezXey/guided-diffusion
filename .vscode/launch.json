@@ -13,6 +13,24 @@
 //  |_____/ \___|_.__/ \__,_|\__, |\__, |\___|_|    (_)    |_|_|  \__,_|_|_| |_|_|_| |_|\__, |
 //                            __/ | __/ |                                                __/ |
 //                           |___/ |___/                                                |___/ 
+
+        {
+            "name": "Python: train_paired_data_from_trainset",
+            "type": "python",
+            "request": "launch",
+            "env": {"CUDA_VISIBLE_DEVICES":"1", "WANDB_MODE":"offline"},
+            "program": "./train_scripts/train_on_generated_dataset/image_train_no_dpm_presample_paired.py",
+            "args": ["--train.log_dir",
+                    "/data/mint/model_logs/test",
+                    "--train.batch_size", "1", 
+                    "--train.n_gpus", "1", 
+                    "--cfg", "/home/mint/Dev/DiFaReli/difareli-faster/config/Faster_Inference/generate_from_trainset/paired+allunet+nobg+nodpm+trainset_128.yaml",
+                    "--train.sampling_interval", "50",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/Dev/DiFaReli/difareli-faster/",
+            "justMyCode": true
+        }, 
         {
             "name": "Python: train_UNet_allunet_nodpm_notime",
             "type": "python",

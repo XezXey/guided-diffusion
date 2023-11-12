@@ -9,7 +9,7 @@ import blobfile as bf
 import numpy as np
 from scipy import ndimage
 import tqdm
-import os
+import os, sys
 import glob
 import torchvision
 import torch as th
@@ -19,7 +19,8 @@ from torch.utils.data import DataLoader, Dataset
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-from .img_util import (
+# sys.path.append('../')
+from ..img_util import (
     resize_arr,
     center_crop_arr,
     random_crop_arr
@@ -131,28 +132,36 @@ def load_data_img_deca(
             elif 'faceseg' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
             elif 'raw' in in_image_type: 
-                in_image[in_image_type] = _list_image_files_recursively(f"{data_dir}/{set_}")
+                # Separate 'raw' (input image) and 'relit' (output image)
+                input_image, relit_image = _list_image_files_recursively_separate(f"{data_dir}/{set_}")
+                in_image[in_image_type] = input_image
             elif in_image_type in ['face_structure']: continue
             else:
                 raise NotImplementedError(f"The {in_image_type}-image type not found.")
 
         # in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
     
-    deca_params, avg_dict = load_deca_params(deca_dir + set_, cfg)
+    # deca_params, avg_dict = load_deca_params(deca_dir + set_, cfg)
+    deca_params = None
 
     # Shuffling the data (to make the training/sampling can query the multiple sj in one batch)
-    shuffle_idx = np.arange(len(_list_image_files_recursively(f"{data_dir}/{set_}")))
+    shuffle_idx = np.arange(len(input_image))
     np.random.shuffle(shuffle_idx)
     
     for k in in_image.keys():
         in_image[k] = [in_image[k][i] for i in shuffle_idx]
         in_image[k] = image_path_list_to_dict(in_image[k])
-    sj_dict = image_path_list_to_sjdict(_list_image_files_recursively(f"{data_dir}/{set_}"))
+    src_sj_dict = image_path_list_to_sjdict(input_image)
+
+    relit_sj_dict = image_path_list_to_sjdict(relit_image)
+    relit_image = image_path_list_to_dict(relit_image)
 
     img_dataset = DECADataset(
         resolution=image_size,
-        image_paths=in_image['raw'],
-        sj_dict=sj_dict,
+        src_image_paths=in_image['raw'],
+        relit_image_paths=relit_image,
+        src_sj_dict=src_sj_dict,
+        relit_sj_dict=relit_sj_dict,
         resize_mode=resize_mode,
         augment_mode=augment_mode,
         deca_params=deca_params,
@@ -222,12 +231,31 @@ def _list_image_files_recursively(data_dir):
             results.extend(_list_image_files_recursively(full_path))
     return results
 
+def _list_image_files_recursively_separate(data_dir):
+    input_results = []
+    relit_results = []
+    for entry in sorted(bf.listdir(data_dir)):
+        full_path = bf.join(data_dir, entry)
+        ext = entry.split(".")[-1]
+        if "." in entry and ext.lower() in ["jpg", "jpeg", "png", "gif", "npy"]:
+            if 'input' in entry:
+                input_results.append(full_path)
+            elif 'relit' in entry:
+                relit_results.append(full_path)
+        elif bf.isdir(full_path):
+            input_results_rec, relit_results_rec = _list_image_files_recursively_separate(full_path)
+            input_results.extend(input_results_rec)
+            relit_results.extend(relit_results_rec)
+    return input_results, relit_results
+
 class DECADataset(Dataset):
     def __init__(
         self,
         resolution,
-        image_paths,
-        sj_dict,
+        src_image_paths,
+        relit_image_paths,
+        src_sj_dict,
+        relit_sj_dict,
         resize_mode,
         augment_mode,
         deca_params,
@@ -241,7 +269,8 @@ class DECADataset(Dataset):
     ):
         super().__init__()
         self.resolution = resolution
-        self.local_images = image_paths
+        self.src_image_paths = src_image_paths
+        self.relit_image_paths = relit_image_paths
         self.resize_mode = resize_mode
         self.augment_mode = augment_mode
         self.deca_params = deca_params
@@ -254,14 +283,17 @@ class DECADataset(Dataset):
         self.kwargs = kwargs
         self.condition_image = self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img + self.cfg.img_model.in_image
         self.prep_condition_image = self.cfg.img_cond_model.prep_image + self.cfg.img_model.prep_dpm_cond_img + self.cfg.img_model.prep_in_image
-        self.sj_dict = sj_dict 
-        self.sj_to_index_dict, self.sj_dict_swap = self.get_sj_index_dict()
+        self.src_sj_dict = src_sj_dict
+        self.relit_sj_dict = relit_sj_dict
+        self.src_sj_to_index_dict, self.src_sj_dict_swap = self.get_sj_index_dict(sj_dict=self.src_sj_dict, paths_dict=src_image_paths)
+        self.relit_sj_to_index_dict, self.relit_sj_dict_swap = self.get_sj_index_dict(sj_dict=self.relit_sj_dict, paths_dict=relit_image_paths)
         print(f"[#] Bounding the input of UNet to +-{self.cfg.img_model.input_bound}")
+        self.__getitem__(0)
 
     def __len__(self):
-        return len(self.local_images)
+        return len(self.src_image_paths)
 
-    def get_sj_index_dict(self):
+    def get_sj_index_dict(self, sj_dict, paths_dict):
         '''
         return the 
         - sj_to_index_dict : {sj_name: [idx1, idx2, ...]}
@@ -271,19 +303,19 @@ class DECADataset(Dataset):
         '''
         sj_to_index_dict = {}
         sj_dict_swap = {}
-        for sj in self.sj_dict.keys():
-            sj_list = list(self.local_images.keys())
-            sj_index = [sj_list.index(v) for v in self.sj_dict[sj]]
+        for sj in sj_dict.keys():
+            sj_list = list(paths_dict.keys())
+            sj_index = [sj_list.index(v) for v in sj_dict[sj]]
             sj_to_index_dict[sj] = sj_index
-            for sj_name in self.sj_dict[sj]:
+            for sj_name in sj_dict[sj]:
                 sj_dict_swap[sj_name] = sj
         return sj_to_index_dict, sj_dict_swap
     
     def __getitem__(self, src_idx):
         # Select the sj at idx
-        query_src_name = list(self.local_images.keys())[src_idx]
-        sj_name = self.sj_dict_swap[query_src_name]
-        dst_idx = self.sj_to_index_dict[sj_name].copy()
+        query_src_name = list(self.src_sj_dict.keys())[src_idx]
+        sj_name = self.src_sj_dict_swap[query_src_name]
+        dst_idx = self.src_sj_to_index_dict[sj_name].copy()
         dst_idx.remove(src_idx)
         dst_idx = np.random.choice(dst_idx, 1)[0]
         query_dst_name = list(self.local_images.keys())[dst_idx]
