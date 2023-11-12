@@ -303,6 +303,7 @@ class DECA(nn.Module):
         assert dim == 1 or dim==2
         grids = {}
         for key in visdict:
+            print(key, visdict[key].shape)
             _,_,h,w = visdict[key].shape
             if dim == 2:
                 new_h = size; new_w = int(w*size/h)
