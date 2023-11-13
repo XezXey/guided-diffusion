@@ -139,6 +139,7 @@ def load_data_img_deca(
         # in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
     
     deca_params, avg_dict = load_deca_params(deca_dir + set_, cfg)
+    print(deca_params.keys())
 
     # Shuffling the data (to make the training/sampling can query the multiple sj in one batch)
     shuffle_idx = np.arange(len(_list_image_files_recursively(f"{data_dir}/{set_}")))

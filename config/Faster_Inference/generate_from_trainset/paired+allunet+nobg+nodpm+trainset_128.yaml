@@ -35,7 +35,7 @@ train:
 
 dataset:
   training_data: "Generated_Dataset"
-  deca_dir: "/data/mint/DPM_Dataset/Generated_Dataset/params/"
+  deca_dir: "/data/mint/DPM_Dataset/Generated_Dataset/params_recreate/"
   data_dir: "/data/mint/DPM_Dataset/Generated_Dataset/images/"
   face_segment_dir: "/data/mint/DPM_Dataset/Generated_Dataset/face_segment/"
   deca_rendered_dir: "/data/mint/DPM_Dataset/Generated_Dataset/rendered_images/"

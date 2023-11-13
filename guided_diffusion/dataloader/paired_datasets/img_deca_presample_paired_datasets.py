@@ -390,8 +390,7 @@ class DECADataset(Dataset):
                 each_cond_img = (each_cond_img / 127.5) - 1
                 out_dict[f'{k}_img'] = each_cond_img
                 
-        print("GG")
-        query_img_name_for_deca = query_img_name.split('_')[0] + '.jpg'
+        query_img_name_for_deca = query_img_name.replace('_relit' if relit else '_input', '')
         for k in self.deca_params[query_img_name_for_deca].keys():
             out_dict[k] = self.deca_params[query_img_name_for_deca][k]
         out_dict['image_name'] = query_img_name
