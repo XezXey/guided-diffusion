@@ -54,10 +54,13 @@ def create_symlink(each_gen_path):
             os.system(f"ln -s {each_gen_path}/res_frame0.png {gen_images}/{src_id}_input.png")
             os.system(f"ln -s {each_gen_path}/ren_frame0.png {deca_clip}/{src_id}_input.png")
             os.system(f"ln -s {each_gen_path}/ren_frame0.npy {deca_noclip}/{src_id}_input.npy")
-        # Relit
-        os.system(f"ln -s {each_gen_path}/res_frame1.png {gen_images}/{fn}_relit.png")
-        os.system(f"ln -s {each_gen_path}/ren_frame1.png {deca_clip}/{fn}_relit.png")
-        os.system(f"ln -s {each_gen_path}/ren_frame1.npy {deca_noclip}/{fn}_relit.npy")
+        if not (os.path.exists(f'{gen_images}/{fn}_relit') and 
+                os.path.exists(f'{deca_clip}/{fn}_relit.png') and
+                os.path.exists(f'{deca_noclip}/{fn}_relit.npy')):
+            # Relit
+            os.system(f"ln -s {each_gen_path}/res_frame1.png {gen_images}/{fn}_relit.png")
+            os.system(f"ln -s {each_gen_path}/ren_frame1.png {deca_clip}/{fn}_relit.png")
+            os.system(f"ln -s {each_gen_path}/ren_frame1.npy {deca_noclip}/{fn}_relit.npy")
         complete_count += 1
         source_coverage[src_id] = 1
         
