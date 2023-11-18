@@ -47,7 +47,7 @@ command = f"""CUDA_VISIBLE_DEVICES={args.gpu_id} /home/mint/miniconda3/envs/dpm_
             --save_params_folder {args.save_params_folder} \
             --save_images_folder {args.save_images_folder} \
             --masking_flame \
-            --fast_save_params True \
+            --fast_save_params False \
             --index {s} {e} \
             --inputpath {args.input_path}"""
             
