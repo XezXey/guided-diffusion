@@ -19,7 +19,7 @@ gen_images = f'{out_path}/images/{set_}/'
 for fold in [deca_clip, deca_noclip, gen_images]:
     os.makedirs(fold, exist_ok=True)
 
-with open('./generated_dataset_seed=47.json') as f:
+with open('./sampler/generated_dataset_seed=47.json') as f:
     gen_data = json.load(f)
     
 pattern = r'src=([^\s/]+).*?dst=([^\s/]+)'
