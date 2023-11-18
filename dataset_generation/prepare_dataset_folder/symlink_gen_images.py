@@ -47,20 +47,23 @@ def create_symlink(each_gen_path):
     each_gen_path = f'{each_gen_path}/Lerp_1000/n_frames=2/'
     try:
         fn = f'{src_id}_{dst_id}'
-        if not (os.path.exists(f'{gen_images}/{src_id}_input.png') and 
-                os.path.exists(f'{deca_clip}/{src_id}_input.png') and 
-                os.path.exists(f'{deca_noclip}/{src_id}_input.npy')):
-            # Input
+        # Input
+        if not os.path.exists(f'{gen_images}/{src_id}_input.png'):
             os.system(f"ln -s {each_gen_path}/res_frame0.png {gen_images}/{src_id}_input.png")
+        if not os.path.exists(f'{deca_clip}/{src_id}_input.png'):
             os.system(f"ln -s {each_gen_path}/ren_frame0.png {deca_clip}/{src_id}_input.png")
+        if not os.path.exists(f'{deca_noclip}/{src_id}_input.npy'):
             os.system(f"ln -s {each_gen_path}/ren_frame0.npy {deca_noclip}/{src_id}_input.npy")
-        if not (os.path.exists(f'{gen_images}/{fn}_relit') and 
-                os.path.exists(f'{deca_clip}/{fn}_relit.png') and
-                os.path.exists(f'{deca_noclip}/{fn}_relit.npy')):
-            # Relit
+            
+            
+        # Relit
+        if not os.path.exists(f'{gen_images}/{fn}_relit'):
             os.system(f"ln -s {each_gen_path}/res_frame1.png {gen_images}/{fn}_relit.png")
+        if not os.path.exists(f'{deca_clip}/{fn}_relit.png'):
             os.system(f"ln -s {each_gen_path}/ren_frame1.png {deca_clip}/{fn}_relit.png")
+        if not os.path.exists(f'{deca_noclip}/{fn}_relit.npy'):
             os.system(f"ln -s {each_gen_path}/ren_frame1.npy {deca_noclip}/{fn}_relit.npy")
+            
         complete_count += 1
         source_coverage[src_id] = 1
         
