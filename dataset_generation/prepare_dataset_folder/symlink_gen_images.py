@@ -57,7 +57,7 @@ def create_symlink(each_gen_path):
             
             
         # Relit
-        if not os.path.exists(f'{gen_images}/{fn}_relit'):
+        if not os.path.exists(f'{gen_images}/{fn}_relit.png'):
             os.system(f"ln -s {each_gen_path}/res_frame1.png {gen_images}/{fn}_relit.png")
         if not os.path.exists(f'{deca_clip}/{fn}_relit.png'):
             os.system(f"ln -s {each_gen_path}/ren_frame1.png {deca_clip}/{fn}_relit.png")
