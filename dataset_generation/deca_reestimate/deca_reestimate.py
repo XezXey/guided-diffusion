@@ -16,9 +16,9 @@ if args.params_prefix is None:
 
 
 if '/rendered_images/deca_masked_face_images/' not in args.save_images_folder:
-    args.save_images_folder += '/rendered_images/deca_masked_face_images/'
+    args.save_images_folder += '/rendered_images/deca_masked_face_images'
 if f'/params/{args.set}' not in args.save_params_folder:
-    args.save_params_folder += f'/params/{args.set}/'
+    args.save_params_folder += f'/params/{args.set}'
 if not os.path.exists(args.estimation_script_folder):
     print("[#] Estimation script folder does not exist")
     sys.exit(1)
@@ -42,8 +42,8 @@ command = f"""CUDA_VISIBLE_DEVICES={args.gpu_id} /home/mint/miniconda3/envs/dpm_
             --useTemplate False \
             --useAvgCam False \
             --useAvgTform False \
-            --set valid \
-            --params_prefix valid \
+            --set {args.set} \
+            --params_prefix {args.set} \
             --save_params_folder {args.save_params_folder} \
             --save_images_folder {args.save_images_folder} \
             --masking_flame \
