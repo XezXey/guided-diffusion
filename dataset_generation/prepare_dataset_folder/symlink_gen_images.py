@@ -11,7 +11,6 @@ name = 'random_target'
 model_name = "/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_step=250/"
 misc = "/ema_085000/train/render_face/reverse_sampling"
 genenration_path = f'/data/mint/dataset_generation/{name}/{model_name}/{misc}/*/*'
-print("[#] #N data : ", len(glob.glob(genenration_path, recursive=True)))
 
 out_path = args.out_path
 set_ = 'train'
@@ -30,6 +29,8 @@ pattern = r'src=([^\s/]+).*?dst=([^\s/]+)'
 def create_symlink(each_gen_path):
     complete_count = 0
     incomplete_count = 0
+    input_images_count = 0
+    relit_images_count = 0
     source_coverage = {}
     # for i, each_gen_path in enumerate(glob.glob(genenration_path, recursive=True)):
         # print(each_gen_path)# Use re.findall to extract src and dst values
@@ -53,6 +54,7 @@ def create_symlink(each_gen_path):
         # Input
         if not os.path.exists(f'{gen_images}/{src_id}_input.png'):
             os.system(f"ln -s {each_gen_path}/res_frame0.png {gen_images}/{src_id}_input.png")
+            input_images_count += 1
         if not os.path.exists(f'{deca_clip}/{src_id}_input.png'):
             os.system(f"ln -s {each_gen_path}/ren_frame0.png {deca_clip}/{src_id}_input.png")
         if not os.path.exists(f'{deca_noclip}/{src_id}_input.npy'):
@@ -62,6 +64,7 @@ def create_symlink(each_gen_path):
         # Relit
         if not os.path.exists(f'{gen_images}/{fn}_relit.png'):
             os.system(f"ln -s {each_gen_path}/res_frame1.png {gen_images}/{fn}_relit.png")
+            relit_images_count += 1
         if not os.path.exists(f'{deca_clip}/{fn}_relit.png'):
             os.system(f"ln -s {each_gen_path}/ren_frame1.png {deca_clip}/{fn}_relit.png")
         if not os.path.exists(f'{deca_noclip}/{fn}_relit.npy'):
@@ -72,7 +75,7 @@ def create_symlink(each_gen_path):
         
     except: 
         incomplete_count += 1
-    return complete_count, incomplete_count, source_coverage
+    return complete_count, incomplete_count, source_coverage, input_images_count, relit_images_count
 
 
 if __name__ == '__main__':
@@ -81,7 +84,7 @@ if __name__ == '__main__':
     pool = Pool(processes=24)
     print("[#] Starting symlink the dataset...")
     print("[#] Dataset path : ", genenration_path)
-    print("[#] #N data : ", len(glob.glob(genenration_path, recursive=True)))
+    print("[#] #N pairs : ", len(glob.glob(genenration_path, recursive=True)))
     print(f"[#] Symlinking to {out_path}")
           
     s = time.time()
@@ -89,10 +92,14 @@ if __name__ == '__main__':
     
     complete_count = 0
     incomplete_count = 0
+    input_images_count = 0
+    relit_images_count = 0
     source_coverage = {}
     for f in tqdm.tqdm(out):
         complete_count += f[0]
         incomplete_count += f[1]
+        input_images_count += f[3]
+        relit_images_count += f[4]
         k = list(f[2].keys())[0]
         if k in list(source_coverage.keys()):
             source_coverage[k] += 1
@@ -105,3 +112,4 @@ if __name__ == '__main__':
     print(f"[#] Complete : {complete_count} images")
     print(f"[#] Incomplete : {incomplete_count} images")
     print(f"[#] Subject coverage : {len(source_coverage)}")
+    print("[#] #N (Input + Relit) images: ")
