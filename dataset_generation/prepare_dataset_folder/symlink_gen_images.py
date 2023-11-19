@@ -112,4 +112,6 @@ if __name__ == '__main__':
     print(f"[#] Complete : {complete_count} images")
     print(f"[#] Incomplete : {incomplete_count} images")
     print(f"[#] Subject coverage : {len(source_coverage)}")
-    print("[#] #N (Input + Relit) images: ")
+    print(f"[#] Input images: ", input_images_count)
+    print(f"[#] Relit images: ", relit_images_count)
+    print(f"[#] #N (Input + Relit) images: ", input_images_count+relit_images_count)
