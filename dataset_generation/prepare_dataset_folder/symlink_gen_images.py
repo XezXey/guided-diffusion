@@ -1,8 +1,8 @@
 import sys, tqdm
 import json, os, glob, re, time
 from multiprocessing.pool import Pool
-import argsparse
-parser = argsparse.ArgumentParser()
+import argparse
+parser = argparse.ArgumentParser()
 parser.add_argument('--out_path', type=str, required=True)
 args = parser.parse_args()
 
