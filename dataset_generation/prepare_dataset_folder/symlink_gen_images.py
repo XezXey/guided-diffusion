@@ -80,6 +80,7 @@ if __name__ == '__main__':
     # print(glob.glob(genenration_path, recursive=True)[:10])
     pool = Pool(processes=24)
     print("[#] Starting symlink the dataset...")
+    print("[#] Dataset path : ", genenration_path)
     print("[#] #N data : ", len(glob.glob(genenration_path, recursive=True)))
     print(f"[#] Symlinking to {out_path}")
           
