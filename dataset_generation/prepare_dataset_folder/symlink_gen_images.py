@@ -1,6 +1,10 @@
 import sys, tqdm
 import json, os, glob, re, time
 from multiprocessing.pool import Pool
+import argsparse
+parser = argsparse.ArgumentParser()
+parser.add_argument('--out_path', type=str, required=True)
+args = parser.parse_args()
 
 # Generate dataset path
 name = 'random_target'
@@ -9,7 +13,7 @@ misc = "/ema_085000/train/render_face/reverse_sampling"
 genenration_path = f'/data/mint/dataset_generation/{name}/{model_name}/{misc}/*/*'
 print("[#] #N data : ", len(glob.glob(genenration_path, recursive=True)))
 
-out_path = "/data/mint/DPM_Dataset/Generated_Dataset"
+out_path = args.out_path
 set_ = 'train'
 deca_clip = f"{out_path}/rendered_images/deca_masked_face_wclip/{set_}/"
 deca_noclip = f"{out_path}/rendered_images/deca_masked_face_woclip/{set_}/"
