@@ -2,13 +2,13 @@ import sys, tqdm
 import json, os, glob, re, time
 from multiprocessing.pool import Pool
 
-
 # Generate dataset path
 name = 'random_target'
 model_name = "/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_step=250/"
 misc = "/ema_085000/train/render_face/reverse_sampling"
 genenration_path = f'/data/mint/dataset_generation/{name}/{model_name}/{misc}/*/*'
-print("[#] #N data : ", len(glob.glob(genenration_path + '/*', recursive=True)))
+print("[#] #N data : ", len(glob.glob(genenration_path + '/*/*', recursive=True)))
+exit()
 
 out_path = "/data/mint/DPM_Dataset/Generated_Dataset"
 set_ = 'train'
