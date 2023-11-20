@@ -23,35 +23,44 @@ if not os.path.exists(args.estimation_script_folder):
     print("[#] Estimation script folder does not exist")
     sys.exit(1)
     
-s, e = args.index
-if s > e:
-    print("[#] Start index must be less than end index")
-    sys.exit(1)
-if s < 0:
-    print("[#] Start index must be greater than 0")
-    sys.exit(1)
+if len(args.index) > 2:
+    # Doing the List of index and auto compute the start and end index
+    to_run_index = [[x, x+1] for x in args.index]
+else: 
+    to_run_index = [args.index]
     
-print("[#] Re-estimating DECA parameters for DPM dataset")
-curdir = os.getcwd()
-print("[#} Current directory : ", curdir)
-os.chdir(args.estimation_script_folder)
-print("[#] Changed directory : ", os.getcwd())
-print("[#] Running the estimation script...")
-command = f"""CUDA_VISIBLE_DEVICES={args.gpu_id} /home/mint/miniconda3/envs/dpm_sampling_deca/bin/python ./estimate_deca_for_dpm.py \
-            --useTex True \
-            --useTemplate False \
-            --useAvgCam False \
-            --useAvgTform False \
-            --set {args.set} \
-            --params_prefix {args.set} \
-            --save_params_folder {args.save_params_folder} \
-            --save_images_folder {args.save_images_folder} \
-            --masking_flame \
-            --fast_save_params False \
-            --index {s} {e} \
-            --inputpath {args.input_path}"""
-            
-os.system(command)
+for tri in to_run_index:
+    s, e = tri
+    continue
+    if s > e:
+        print("[#] Start index must be less than end index")
+        sys.exit(1)
+    if s < 0:
+        print("[#] Start index must be greater than 0")
+        sys.exit(1)
+        
+    print("[#] Re-estimating DECA parameters for DPM dataset")
+    curdir = os.getcwd()
+    print("[#} Current directory : ", curdir)
+    os.chdir(args.estimation_script_folder)
+    print("[#] Changed directory : ", os.getcwd())
+    print("[#] Running the estimation script...")
+
+    command = f"""CUDA_VISIBLE_DEVICES={args.gpu_id} /home/mint/miniconda3/envs/dpm_sampling_deca/bin/python ./estimate_deca_for_dpm.py \
+                --useTex True \
+                --useTemplate False \
+                --useAvgCam False \
+                --useAvgTform False \
+                --set {args.set} \
+                --params_prefix {args.set} \
+                --save_params_folder {args.save_params_folder} \
+                --save_images_folder {args.save_images_folder} \
+                --masking_flame \
+                --fast_save_params False \
+                --index {s} {e} \
+                --inputpath {args.input_path}"""
+                
+    os.system(command)
 os.chdir(curdir)
 
 # command = f"CUDA_VISIBLE_DEVICES=2 /home/mint/miniconda3/envs/dpm_sampling_deca/bin/python ./estimate_deca_for_dpm.py 

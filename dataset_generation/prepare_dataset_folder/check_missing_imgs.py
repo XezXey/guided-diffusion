@@ -3,14 +3,21 @@ import glob, os
 
 src = "/data/mint/DPM_Dataset/Generated_Dataset/"
 cmp = "/data/mint/DPM_Dataset/Generated_Dataset_deca_estim/"
-folder = "/rendered_images/deca_masked_face_images_woclip/train/"
+fsrc = "/rendered_images/deca_masked_face_woclip/train/"
+fcmp = "/rendered_images/deca_masked_face_images_woclip/train/"
 
-src += folder
-cmp += folder
+src += fsrc
+cmp += fcmp
 
-src_img = glob.glob(src + "*")
-cmp_img = glob.glob(cmp + "*")
+os.chdir(src)
+src_img = glob.glob("./*")
+os.chdir(cmp)
+cmp_img = glob.glob("./*")
 
-# '\n'.join(src_img)
 print("[#] Total images in src: ", len(src_img))
 print("[#] Total images in cmp: ", len(cmp_img))
+
+out = set(src_img) - set(cmp_img)
+print("[#] #N Missing files from source: ", len(out))
+print("[#] Missing files from source: ", out)
+print("[#] Index in source: ", sorted([src_img.index(x) for x in list(out)]))
