@@ -5,7 +5,7 @@ diffusion:
 img_model:
   name: "ImgCond"
   arch: "UNetCond_No_DPM_NoTime"
-  image_size: 128
+  image_size: 256
   in_image: ['raw']
   in_channels: 3
   out_channels: 3
@@ -34,13 +34,13 @@ train:
   save_interval: 20000
 
 dataset:
-  training_data: "Generated_Dataset_TargetLight/Generated_Dataset/"
-  deca_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset/params_recreate/"
-  data_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset/images/"
-  face_segment_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset/face_segment/"
-  deca_rendered_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset/rendered_images/"
+  training_data: "Generated_Dataset_TargetLight/Generated_Dataset_deca_estim/"
+  deca_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_deca_estim/params_combined/"
+  data_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_deca_estim/images/"
+  face_segment_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_deca_estim/face_segment/"
+  deca_rendered_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_deca_estim/rendered_images/"
 
 
 train_misc:
   exp_name: "paired_training"
-  cfg_name: "paired+allunet+nobg+nodpm+trainset_128"
+  cfg_name: "paired+allunet+nobg+nodpm+trainset+decareest_256"

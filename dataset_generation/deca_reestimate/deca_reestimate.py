@@ -31,7 +31,6 @@ else:
     
 for tri in to_run_index:
     s, e = tri
-    continue
     if s > e:
         print("[#] Start index must be less than end index")
         sys.exit(1)
@@ -44,7 +43,7 @@ for tri in to_run_index:
     print("[#} Current directory : ", curdir)
     os.chdir(args.estimation_script_folder)
     print("[#] Changed directory : ", os.getcwd())
-    print("[#] Running the estimation script...")
+    print(f"[#] Running the estimation script on index: {s}-{e}...")
 
     command = f"""CUDA_VISIBLE_DEVICES={args.gpu_id} /home/mint/miniconda3/envs/dpm_sampling_deca/bin/python ./estimate_deca_for_dpm.py \
                 --useTex True \
@@ -61,7 +60,7 @@ for tri in to_run_index:
                 --inputpath {args.input_path}"""
                 
     os.system(command)
-os.chdir(curdir)
+    os.chdir(curdir)
 
 # command = f"CUDA_VISIBLE_DEVICES=2 /home/mint/miniconda3/envs/dpm_sampling_deca/bin/python ./estimate_deca_for_dpm.py 
 #             --useTex True 

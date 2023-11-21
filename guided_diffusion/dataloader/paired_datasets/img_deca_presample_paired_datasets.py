@@ -27,6 +27,7 @@ from ..img_util import (
 )
 
 def read_params(path):
+    print(path)
     params = pd.read_csv(path, header=None, sep=" ", index_col=False, lineterminator='\n')
     params.rename(columns={0:'img_name'}, inplace=True)
     params = params.set_index('img_name').T.to_dict('list')
@@ -120,6 +121,7 @@ def load_data_img_deca(
 
     if not data_dir and not deca_dir:
         raise ValueError("unspecified data directory")
+    
     in_image_dict = {}
     relit_image_dict = {}
     # For conditioning images
