@@ -5,7 +5,7 @@ diffusion:
 img_model:
   name: "ImgCond"
   arch: "UNetCond_No_DPM_NoTime"
-  image_size: 256
+  image_size: 128
   in_image: ['raw']
   in_channels: 3
   out_channels: 3
@@ -13,14 +13,8 @@ img_model:
   condition_proj_dim: 512
   hadamart_prep: "Tanh"
 
-  dpm_cond_img: ['deca_masked_face_images_woclip', 'deca_masked_face_images_woclip']
-  sj_paired: ['src', 'dst']
-  prep_dpm_cond_img: [Null, Null]
-  noise_dpm_cond_img: [Null, Null]
-  apply_dpm_cond_img: True
-
 param_model:
-  params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb', 'shadow']
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb', 'shadow', 'src_light', 'dst_light']
 
 img_cond_model:
   apply: False
@@ -30,8 +24,8 @@ relighting:
 
 train:
   weight_decay: 0.0
-  sampling_interval: 10000
-  save_interval: 5000
+  sampling_interval: 20000
+  save_interval: 20000
 
 dataset:
   training_data: "Generated_Dataset_TargetLight/Generated_Dataset/"
@@ -42,5 +36,5 @@ dataset:
 
 
 train_misc:
-  exp_name: "paired_training"
-  cfg_name: "paired+allunet+nobg+nodpm+trainset_256"
+  exp_name: "TPAMI_conditioning_ablation"
+  cfg_name: "paired+nonspa+nobg+nodpm+trainset_128"
