@@ -3,7 +3,7 @@ import glob, os, json
 
 n_frames = 2
 path = '/data/mint/dataset_generation/random_target/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_step=250/ema_085000/train/render_face/reverse_sampling/'
-src_dst_done = [p.split('/')[-2:] for p in glob.glob(f'{path}/*/*')]
+src_dst_done = [p.split('/')[-2:] for p in glob.iglob(f'{path}/*/*')]
 # print(src_dst_done[:10])
 
 

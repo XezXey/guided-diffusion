@@ -476,8 +476,10 @@ def get_samples_pair(sample_pair_json, sample_pair_mode, src_dst, img_path, star
         sample_pairs = json.load(f)[sample_pair_mode]
         print("[#] Sample pair length : ", len(sample_pairs.keys()))
         if sample_pair_mode == 'pair':
-            if start > len(sample_pairs.keys()) or end > len(sample_pairs.keys()):
-                raise ValueError(f"start={start} or end={end} is out of range of {len(sample_pairs.keys())}")
+            if start > len(sample_pairs.keys()):
+                raise ValueError(f"start={start} is out of range of {len(sample_pairs.keys())}")
+            elif end > len(sample_pairs.keys()):
+                end = len(sample_pairs.keys())
             elif start > end:
                 raise ValueError(f"start={start} is greater than end={end}")
             src_dst = [[sample_pairs[pair_i]['src'], sample_pairs[pair_i]['dst']]
