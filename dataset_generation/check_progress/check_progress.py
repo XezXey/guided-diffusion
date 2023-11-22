@@ -8,7 +8,7 @@ src_dst_done = [p.split('/')[-2:] for p in glob.glob(f'{path}/*/*')]
 
 
 def find_progress(start, end, src_dst_done):
-    with open('../sample_scripts/dataset_generation/sample_json/generated_dataset_seed=47.json', 'r') as f:
+    with open('../../sample_scripts/dataset_generation/sample_json/generated_dataset_seed=47.json', 'r') as f:
         json_data = json.load(f)['pair']
         src_dst_fromfile = []
         for k in list(json_data.keys())[start:end]:
