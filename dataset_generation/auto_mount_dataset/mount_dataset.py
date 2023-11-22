@@ -44,8 +44,9 @@ if __name__ == '__main__':
     if len(args.vid) > 0:
         print("[#] Auto sshfs to ...", [f"v{id}" for id in args.vid])
     
-    if args.model_dir is not None:
+    if args.dataset_dir is not None:
         print(f"[#] Mounting the dataset from: /data/mint/DPM_Dataset/Generated_Dataset_TargetLight")
         mounting(from_path='/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/', to_path=args.dataset_dir)
+    if args.source_sampling_dir is not None:
         print(f"[#] Mounting the dataset from: /data/mint/dataset_generation")
         mounting(from_path='/data/mint/dataset_generation/', to_path=args.source_sampling_dir)
