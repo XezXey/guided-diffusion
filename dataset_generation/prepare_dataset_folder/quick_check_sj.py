@@ -11,6 +11,7 @@ parser.add_argument('--mount_dir', required=True)
 parser.add_argument('--dataset_dir', required=True)
 parser.add_argument('--do_mount', action='store_true', default=False)
 parser.add_argument('--curr_vid', type=int, default=9)
+parser.add_argument('--gen_missing_sj', action='store_true', default=False)
 # parser.add_argument('--source_sampling_dir', required=True)
 
 args = parser.parse_args()
@@ -92,35 +93,36 @@ if __name__ == '__main__':
     print(f"[#] Unvisited sj: {unvisited_sj}")
     print(f"[#] Unvisited sj: {len(unvisited_sj)}")
     
-    # Find index of unvisited sj in /home/mint/Dev/DiFaReli/difareli-faster/dataset_generation/sampler/generated_dataset_seed=47.json
-    with open('/home/mint/Dev/DiFaReli/difareli-faster/dataset_generation/sampler/generated_dataset_seed=47.json', 'r') as f:
-        dat = json.load(f)
-        
-    # Find pair-id based on unvisited_sj
-    found_pairs = []
-    found_id = []
-    found_pairs_json = {'pair': {}}
+    if args.gen_missing_sj:
+        # Find index of unvisited sj in /home/mint/Dev/DiFaReli/difareli-faster/dataset_generation/sampler/generated_dataset_seed=47.json
+        with open('/home/mint/Dev/DiFaReli/difareli-faster/dataset_generation/sampler/generated_dataset_seed=47.json', 'r') as f:
+            dat = json.load(f)
+            
+        # Find pair-id based on unvisited_sj
+        found_pairs = []
+        found_id = []
+        found_pairs_json = {'pair': {}}
 
-    # for pair_id, pair_data in tqdm.tqdm(dat['pair'].items()):
-    #     if pair_data["src"] in list(unvisited_sj):
-    #         found_pairs.append(pair_id)
-    
-    for sj in tqdm.tqdm(list(unvisited_sj)):
-        for pair_id, pair_data in dat['pair'].items():
-            if f'src={pair_data["src"]}' == sj:
-                found_pairs.append(pair_id)
-                found_id.append(pair_data["src"].split('=')[-1].split('.')[0])
-                found_pairs_json['pair'][pair_id] = pair_data
-                break
-
-    # Print or use the found pair-ids as needed
-    print("[#] Found pair-ids:", found_pairs)
-    print("[#] Found pair-ids:", len(found_pairs))
-    found_pairs_json['time'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(f'./fill_sj_generated_dataset_seed=47.json', 'w') as f:
-        json.dump(found_pairs_json, f, indent=4)
+        # for pair_id, pair_data in tqdm.tqdm(dat['pair'].items()):
+        #     if pair_data["src"] in list(unvisited_sj):
+        #         found_pairs.append(pair_id)
         
-    
+        for sj in tqdm.tqdm(list(unvisited_sj)):
+            for pair_id, pair_data in dat['pair'].items():
+                if f'src={pair_data["src"]}' == sj:
+                    found_pairs.append(pair_id)
+                    found_id.append(pair_data["src"].split('=')[-1].split('.')[0])
+                    found_pairs_json['pair'][pair_id] = pair_data
+                    break
+
+        # Print or use the found pair-ids as needed
+        print("[#] Found pair-ids:", found_pairs)
+        print("[#] Found pair-ids:", len(found_pairs))
+        found_pairs_json['time'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open(f'./fill_sj_generated_dataset_seed=47.json', 'w') as f:
+            json.dump(found_pairs_json, f, indent=4)
+            
+        
     
     
     # Just get the first pair of each sj to fulfill the coverage
