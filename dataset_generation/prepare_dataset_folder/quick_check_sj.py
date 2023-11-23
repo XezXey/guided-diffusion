@@ -1,7 +1,7 @@
 import numpy as np
-import glob
+import glob, json
 import argparse
-import os, time
+import os, time, tqdm, datetime
 import subprocess
 
 parser = argparse.ArgumentParser()
@@ -84,7 +84,45 @@ if __name__ == '__main__':
     print(f"[#] Total time: {time.time() - t_start}")
     print(f"[#] Total sj: {len(sj_dict_all.keys())}")
     
-    # # rsync to combined all files for checking the coverage, progress, etc.
-    # os.makedirs(f'{args.mount_dir}/combined', exist_ok=True)
-    # for id in args.vid:
-    #     os.system(f"rsync -avL {args.mount_dir}/mount/v{id:02d}/{name} {args.mount_dir}/combined/")
+    template_sj = dict.fromkeys([f'src={i}.jpg' for i in range(0, 60000)])
+    # print(list(template_sj.keys())[:10])
+    # print(list(sj_dict_all.keys())[:10])
+    # exit()
+    unvisited_sj = set(template_sj.keys()) - set(sj_dict_all.keys())
+    print(f"[#] Unvisited sj: {unvisited_sj}")
+    print(f"[#] Unvisited sj: {len(unvisited_sj)}")
+    
+    # Find index of unvisited sj in /home/mint/Dev/DiFaReli/difareli-faster/dataset_generation/sampler/generated_dataset_seed=47.json
+    with open('/home/mint/Dev/DiFaReli/difareli-faster/dataset_generation/sampler/generated_dataset_seed=47.json', 'r') as f:
+        dat = json.load(f)
+        
+    # Find pair-id based on unvisited_sj
+    found_pairs = []
+    found_id = []
+    found_pairs_json = {'pair': {}}
+
+    # for pair_id, pair_data in tqdm.tqdm(dat['pair'].items()):
+    #     if pair_data["src"] in list(unvisited_sj):
+    #         found_pairs.append(pair_id)
+    
+    for sj in tqdm.tqdm(list(unvisited_sj)):
+        for pair_id, pair_data in dat['pair'].items():
+            if f'src={pair_data["src"]}' == sj:
+                found_pairs.append(pair_id)
+                found_id.append(pair_data["src"].split('=')[-1].split('.')[0])
+                found_pairs_json['pair'][pair_id] = pair_data
+                break
+
+    # Print or use the found pair-ids as needed
+    print("[#] Found pair-ids:", found_pairs)
+    print("[#] Found pair-ids:", len(found_pairs))
+    found_pairs_json['time'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(f'./fill_sj_generated_dataset_seed=47.json', 'w') as f:
+        json.dump(found_pairs_json, f, indent=4)
+        
+    
+    
+    
+    # Just get the first pair of each sj to fulfill the coverage
+    
+    
