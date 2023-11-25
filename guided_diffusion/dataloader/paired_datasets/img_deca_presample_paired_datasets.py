@@ -362,8 +362,8 @@ class DECADataset(Dataset):
         # Select the sj at idx
         query_src_name = list(self.src_sj_dict.keys())[src_idx] # Get src subject keys
         src_name = list(self.src_sj_dict_swap.keys())[src_idx]
-        print(src_name, query_src_name)
-        print(self.relit_sj_to_index_dict[query_src_name])
+        # print(src_name, query_src_name)
+        # print(self.relit_sj_to_index_dict[query_src_name])
         dst_idx = self.relit_sj_to_index_dict[query_src_name].copy()[:self.cfg.dataset.pair_per_sj]
         dst_idx = np.random.choice(dst_idx, 1)[0]   # Sample the relit image from the same source subject
         # dst_name = list(self.relit_sj_dict_swap.keys())[dst_idx]
@@ -371,7 +371,7 @@ class DECADataset(Dataset):
         
         #NOTE: Check whether the src and dst are the same subject 
         # e.g. src = <id1>_input.png, dst = <id1>_<id2>_relit.png
-        print(src_name, dst_name)
+        # print(src_name, dst_name)
         assert src_name.split('_')[0] == dst_name.split('_')[0]
         
         src_arr, src_dict = self.get_data_sjdict(src_name)
