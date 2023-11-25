@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--vid', type=int, nargs='+', default=[])
 parser.add_argument('--local', action='store_true', default=False)
 parser.add_argument('--dataset_dir', required=True)
-parser.add_argument('--source_sampling_dir', required=True)
+parser.add_argument('--source_sampling_dir', default=None)
 
 args = parser.parse_args()
 def mounting(from_path, to_path):
