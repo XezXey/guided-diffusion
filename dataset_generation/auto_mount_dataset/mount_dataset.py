@@ -29,7 +29,7 @@ def mounting(from_path, to_path):
         else:
             ip = f"10.204.100.1{id:02d}"
         
-        cmd = f"sshfs mint@{ip}:{from_path} {mount_path}"
+        cmd = f"sshfs -o ro mint@{ip}:{from_path} {mount_path}"
         print(f'''
               Mounting...
               from : {from_path}
