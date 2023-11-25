@@ -183,7 +183,6 @@ def load_data_img_deca(
         in_image_dict[k] = [in_image_dict[k][i] for i in shuffle_idx]
         in_image_dict[k] = image_path_list_to_dict(in_image_dict[k])
     for k in relit_image_dict.keys():
-        
         shuffle_idx = np.arange(len(relit_image))
         np.random.shuffle(shuffle_idx)
         relit_image_dict[k] = [relit_image_dict[k][i] for i in shuffle_idx]
@@ -325,6 +324,9 @@ class DECADataset(Dataset):
         #NOTE: <src/relit>_sj_dict are dict {sj_name: [img_name1, img_name2, ...]} e.g. {60065 : [/<path>/60065_00_00.jpg, /<path>/60065_00_01.jpg, ...]}
         self.src_sj_dict = src_sj_dict
         self.relit_sj_dict = relit_sj_dict
+        # print(self.src_sj_dict)
+        # print(src_image_paths)
+        # exit()
         self.src_sj_to_index_dict, self.src_sj_dict_swap = self.get_sj_index_dict(sj_dict=self.src_sj_dict, paths_dict=src_image_paths)
         self.relit_sj_to_index_dict, self.relit_sj_dict_swap = self.get_sj_index_dict(sj_dict=self.relit_sj_dict, paths_dict=relit_image_paths)
         print(f"[#] Bounding the input of UNet to +-{self.cfg.img_model.input_bound}")
@@ -335,11 +337,16 @@ class DECADataset(Dataset):
 
     def get_sj_index_dict(self, sj_dict, paths_dict):
         '''
-        return the 
-        - sj_to_index_dict : {sj_name: [idx1, idx2, ...]}
-            e.g. {60065: [9942, 9943, ...]}
-        - sj_dict_swap : the swappped version of sj_dict (between key and value)
-            e.g. {/<path>/60065_00_00.jpg: 60065, /<path>/60065_00_01.jpg: 60065, ...}
+        1. input:
+            - sj_dict : {sj_name: [sj_img_1, sj_img_2, ...], ...}
+                e.g. '52937': ['52937_input.png'], '26632': ['26632_input.png'], '48668': ['48668_input.png']
+            - paths_dict : {img_name: path}
+                e.g. '22451_input.png': '<path>/22451_input.png', '10661_input.png': '<path>/10661_input.png'
+        2. return: 
+            - sj_to_index_dict : {sj_name: [idx1, idx2, ...]}
+                e.g. {60065: [9942, 9943, ...]}
+            - sj_dict_swap : the swappped version of sj_dict (between key and value)
+                e.g. {/<path>/60065_00_00.jpg: 60065, /<path>/60065_00_01.jpg: 60065, ...}
         '''
         sj_to_index_dict = {}
         sj_dict_swap = {}
@@ -355,12 +362,16 @@ class DECADataset(Dataset):
         # Select the sj at idx
         query_src_name = list(self.src_sj_dict.keys())[src_idx] # Get src subject keys
         src_name = list(self.src_sj_dict_swap.keys())[src_idx]
+        print(src_name, query_src_name)
+        print(self.relit_sj_to_index_dict[query_src_name])
         dst_idx = self.relit_sj_to_index_dict[query_src_name].copy()[:self.cfg.dataset.pair_per_sj]
         dst_idx = np.random.choice(dst_idx, 1)[0]   # Sample the relit image from the same source subject
-        dst_name = list(self.relit_sj_dict_swap.keys())[dst_idx]
+        # dst_name = list(self.relit_sj_dict_swap.keys())[dst_idx]
+        dst_name = list(self.relit_image_paths.keys())[dst_idx]
         
         #NOTE: Check whether the src and dst are the same subject 
         # e.g. src = <id1>_input.png, dst = <id1>_<id2>_relit.png
+        print(src_name, dst_name)
         assert src_name.split('_')[0] == dst_name.split('_')[0]
         
         src_arr, src_dict = self.get_data_sjdict(src_name)

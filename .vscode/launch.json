@@ -24,7 +24,7 @@
                     "/data/mint/model_logs/test",
                     "--train.batch_size", "10", 
                     "--train.n_gpus", "1", 
-                    "--cfg", "/home/mint/Dev/DiFaReli/difareli-faster/config/Faster_Inference/generate_from_trainset/paired+allunet+nobg+nodpm+trainset_128.yaml",
+                    "--cfg", "/home/mint/Dev/DiFaReli/difareli-faster/config/Faster_Inference/generate_from_trainset/test_paired+allunet+nobg+nodpm+trainset_128.yaml",
                     "--train.sampling_interval", "10",
             ],
             "console": "integratedTerminal",

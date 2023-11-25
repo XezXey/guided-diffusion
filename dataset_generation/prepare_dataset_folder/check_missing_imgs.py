@@ -22,6 +22,6 @@ print("[#] Total images in cmp: ", len(cmp_img))
 
 out = list(set(src_img) - set(cmp_img))
 print("[#] #N Missing files from source: ", len(out))
-print("[#] Missing files from source: ", out)
+# print("[#] Missing files from source: ", out)
 print("[#] Index in source: ", [gen_img.index(x.replace('.npy', '.png')) for x in out])
 print(f"[#] For running: {' '.join([str(gen_img.index(x.replace('.npy', '.png'))) for x in out])}")
