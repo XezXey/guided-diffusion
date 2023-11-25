@@ -52,7 +52,7 @@ def gen_set(set_name, gen_from_set='valid'):
             'shadow':fo_shadow}
 
     # Iterate through the generated images
-    for dat in tqdm.tqdm(glob.glob(f'{args.gendata_path}/images/{set_name}/*.png')):
+    for dat in tqdm.tqdm(glob.iglob(f'{args.gendata_path}/images/{set_name}/*.png')):
         name = dat.split('/')[-1].split('.')[0].split('_')
         
         for fok, fos in fo_dict.items():

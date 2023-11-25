@@ -119,7 +119,7 @@ if __name__ == '__main__':
         print("[#] Found pair-ids:", found_pairs)
         print("[#] Found pair-ids:", len(found_pairs))
         found_pairs_json['time'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open(f'./fill_sj_generated_dataset_seed=47.json', 'w') as f:
+        with open(f'/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/dataset_generation/sample_json/fill_sj_generated_dataset_seed=47.json', 'w') as f:
             json.dump(found_pairs_json, f, indent=4)
             
         

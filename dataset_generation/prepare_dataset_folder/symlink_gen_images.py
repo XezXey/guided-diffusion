@@ -14,8 +14,8 @@ genenration_path = f'/data/mint/dataset_generation/{name}/{model_name}/{misc}/*/
 
 out_path = args.out_path
 set_ = 'train'
-deca_clip = f"{out_path}/rendered_images/deca_masked_face_wclip/{set_}/"
-deca_noclip = f"{out_path}/rendered_images/deca_masked_face_woclip/{set_}/"
+deca_clip = f"{out_path}/rendered_images/deca_masked_face_images_wclip/{set_}/"
+deca_noclip = f"{out_path}/rendered_images/deca_masked_face_images_woclip/{set_}/"
 gen_images = f'{out_path}/images/{set_}/'
 
 for fold in [deca_clip, deca_noclip, gen_images]:

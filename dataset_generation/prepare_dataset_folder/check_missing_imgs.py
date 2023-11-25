@@ -1,10 +1,10 @@
 import numpy as np
 import glob, os
 
-gen = "/data/mint/DPM_Dataset/Generated_Dataset/" + "/images/train/"
-src = "/data/mint/DPM_Dataset/Generated_Dataset/"
-fsrc = "/rendered_images/deca_masked_face_woclip/train/"
-cmp = "/data/mint/DPM_Dataset/Generated_Dataset_deca_estim/"
+gen = "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset/" + "/images/train/"
+src = "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset/"
+fsrc = "/rendered_images/deca_masked_face_images_woclip/train/"
+cmp = "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_deca_estim/"
 fcmp = "/rendered_images/deca_masked_face_images_woclip/train/"
 
 src += fsrc

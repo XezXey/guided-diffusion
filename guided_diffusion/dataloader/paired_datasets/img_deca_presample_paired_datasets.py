@@ -1,5 +1,6 @@
 import math
 import random
+import pickle
 
 import PIL
 import cv2
@@ -131,16 +132,39 @@ def load_data_img_deca(
         if in_image_type is None: continue
         else:
             if 'deca' in in_image_type:
-                input_render_image, relit_render_image = _list_image_files_recursively_separate(f"{cfg.dataset.deca_rendered_dir}/{in_image_type}/{set_}/")
+                deca_render_path = f"{cfg.dataset.deca_rendered_dir}/{in_image_type}/{set_}/"
+                # Separate 'raw' (input image) and 'relit' (output image)
+                if (os.path.exists(f"{deca_render_path}/render_input_results.pkl")) and (os.path.exists(f"{deca_render_path}/render_relit_results.pkl")):
+                    print("[#] Loading the pre-saved render results file lists")
+                    # Preload the image path for faster loading
+                    with open(f"{deca_render_path}/render_input_results.pkl", 'rb') as f:
+                        input_render_image = pickle.load(f)
+                    with open(f"{deca_render_path}/render_relit_results.pkl", 'rb') as f:
+                        relit_render_image = pickle.load(f)
+                else: 
+                    input_render_image, relit_render_image = _list_image_files_recursively_separate(deca_render_path)
+                
                 in_image_dict[in_image_type] = input_render_image
                 relit_image_dict[in_image_type] = relit_render_image
+                print(f"[#] Total input images of render: {len(input_render_image)}")
+                print(f"[#] Total relit images of render: {len(relit_render_image)}")
             elif 'faceseg' in in_image_type:
                 in_image_dict[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
             elif 'raw' in in_image_type: 
                 # Separate 'raw' (input image) and 'relit' (output image)
-                input_image, relit_image = _list_image_files_recursively_separate(f"{data_dir}/{set_}")
+                if os.path.exists(f"{data_dir}/{set_}/raw_input_results.pkl"):
+                    print("[#] Loading the pre-saved raw results file lists")
+                    # Preload the image path for faster loading
+                    with open(f"{data_dir}/{set_}/raw_input_results.pkl", 'rb') as f:
+                        input_image = pickle.load(f)
+                    with open(f"{data_dir}/{set_}/raw_relit_results.pkl", 'rb') as f:
+                        relit_image = pickle.load(f)
+                else: 
+                    input_image, relit_image = _list_image_files_recursively_separate(f"{data_dir}/{set_}")
                 in_image_dict[in_image_type] = input_image
                 relit_image_dict[in_image_type] = relit_image
+                print(f"[#] Total input images of raw: {len(input_image)}")
+                print(f"[#] Total relit images of raw: {len(relit_image)}")
                 
             elif in_image_type in ['face_structure']: continue
             else:
@@ -154,7 +178,6 @@ def load_data_img_deca(
     # Shuffling the data (to make the training/sampling can query the multiple sj in one batch)
     
     for k in in_image_dict.keys():
-        
         shuffle_idx = np.arange(len(input_image))
         np.random.shuffle(shuffle_idx)
         in_image_dict[k] = [in_image_dict[k][i] for i in shuffle_idx]
@@ -332,7 +355,7 @@ class DECADataset(Dataset):
         # Select the sj at idx
         query_src_name = list(self.src_sj_dict.keys())[src_idx] # Get src subject keys
         src_name = list(self.src_sj_dict_swap.keys())[src_idx]
-        dst_idx = self.relit_sj_to_index_dict[query_src_name].copy()
+        dst_idx = self.relit_sj_to_index_dict[query_src_name].copy()[:self.cfg.dataset.pair_per_sj]
         dst_idx = np.random.choice(dst_idx, 1)[0]   # Sample the relit image from the same source subject
         dst_name = list(self.relit_sj_dict_swap.keys())[dst_idx]
         
