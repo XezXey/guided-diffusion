@@ -374,6 +374,9 @@ class TrainLoop(LightningModule):
             out_cond['cond_img'] = None
         
         # NOTE: Create the 'cond_params' for non-spatial condition given "params_selector list"
+        # print(src['dict']['light'])
+        # print(dst['dict']['light'])
+        # print(dst['dict']['light'].shape, src['dict']['light'].shape)
         assert not th.allclose(src['dict']['light'], dst['dict']['light'])
         cond_params = []
         for p in self.cfg.param_model.params_selector:

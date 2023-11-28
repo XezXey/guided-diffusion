@@ -16,6 +16,8 @@ parser.add_argument('--sample_pair_json', type=str, required=True, help='sample 
 parser.add_argument('--diffusion_steps', type=int, default=1000, help='diffusion step')
 parser.add_argument('--time_respace', nargs='+', type=str, default=[""], help='time respace')
 parser.add_argument('--force_render', action='store_true', default=False)
+parser.add_argument('--dataset', type=str, default='ffhq', help='dataset name')
+parser.add_argument('--eval_dir', type=str, default=None, help='eval dir')
 args = parser.parse_args()
 
 '''
@@ -36,7 +38,7 @@ for ckpt in args.ckpt_step:
         if time_respace == "":
             cmd = (
                 f"""
-                python relight_paired_nodpm.py --ckpt_selector {args.ckpt_type} --dataset ffhq --set valid --step {ckpt} --out_dir {args.out_dir} \
+                python relight_paired_nodpm.py --ckpt_selector {args.ckpt_type} --dataset {args.dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
                 --cfg_name {args.model}.yaml --log_dir {args.model} \
                 --seed 47 \
                 --sample_pair_json {args.sample_pair_json} --sample_pair_mode pair \
@@ -45,13 +47,14 @@ for ckpt in args.ckpt_step:
         else:
             cmd = (
                 f"""
-                python relight_paired_nodpm.py --ckpt_selector {args.ckpt_type} --dataset ffhq --set valid --step {ckpt} --out_dir {args.out_dir} \
+                python relight_paired_nodpm.py --ckpt_selector {args.ckpt_type} --dataset {args.dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
                 --cfg_name {args.model}.yaml --log_dir {args.model} \
                 --timestep_respacing {time_respace} --seed 47 \
                 --sample_pair_json {args.sample_pair_json} --sample_pair_mode pair \
                 --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]}"""
                 )
         if args.force_render: cmd += ' --force_render'
+        if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
         print(cmd)
         os.system(cmd)
         print("#"*100)

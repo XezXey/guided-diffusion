@@ -1,6 +1,7 @@
 import math
 import random
 import pickle
+import time
 
 import PIL
 import cv2
@@ -42,11 +43,36 @@ def swap_key(params):
 
     return params_s
 
+def load_deca_params_parallel(deca_dir, cfg):
+    deca_params = {}
+    params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'tform', 'albedo', 'detail', 'shadow']
+    # params_key = cfg.param_model.params_selector + ['light'] if 'light' not in cfg.param_model.params_selector else cfg.param_model.params_selector
+    params_path = []
+    for k in tqdm.tqdm(params_key, desc="Loading deca params..."):
+        p = glob.glob(f"{deca_dir}/*{k}-anno.txt")
+        params_path.append((p[0],))
+    import multiprocessing as mp
+    with mp.Pool(processes=mp.cpu_count()) as pool:
+        # Use starmap to apply the function to the list of argument tuples
+        # print([f"{deca_dir}/*{k}-anno.txt" for k in params_key])
+        # results = pool.starmap(read_params ,[(f"{deca_dir}/*{k}-anno.txt", ) for k in params_key])
+        results = pool.starmap(read_params ,params_path)
+    for i, k in tqdm.tqdm(enumerate(params_key), desc="Assigning deca params..."):
+        deca_params[k] = results[i]
+        deca_params[k] = preprocess_light(deca_params[k], k, cfg)
+        
+    avg_dict = avg_deca(deca_params)
+    
+    deca_params = swap_key(deca_params)
+    return deca_params, avg_dict
+
+
 def load_deca_params(deca_dir, cfg):
     deca_params = {}
 
     # face params 
-    params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'tform', 'albedo', 'detail', 'shadow']
+    # params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'tform', 'albedo', 'detail', 'shadow']
+    params_key = cfg.param_model.params_selector + ['light']
     for k in tqdm.tqdm(params_key, desc="Loading deca params..."):
         params_path = glob.glob(f"{deca_dir}/*{k}-anno.txt")
         for path in params_path:
@@ -172,7 +198,9 @@ def load_data_img_deca(
 
         # in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
     
-    deca_params, avg_dict = load_deca_params(deca_dir + set_, cfg)
+    tstart = time.time()
+    deca_params, avg_dict = load_deca_params_parallel(deca_dir + set_, cfg)
+    print(f"[#] Time for loading the deca_params: {time.time() - tstart:.2f}s")
     # deca_params = None
 
     # Shuffling the data (to make the training/sampling can query the multiple sj in one batch)
@@ -188,9 +216,17 @@ def load_data_img_deca(
         relit_image_dict[k] = [relit_image_dict[k][i] for i in shuffle_idx]
         relit_image_dict[k] = image_path_list_to_dict(relit_image_dict[k])
 
+    tstart = time.time()
     src_sj_dict = image_path_list_to_sjdict(input_image)
+    print(f"[#] Time for loading the src_sj_dict: {time.time() - tstart:.2f}s")
+    
+    tstart = time.time()
     relit_sj_dict = image_path_list_to_sjdict(relit_image)
+    print(f"[#] Time for loading the relit_sj_dict: {time.time() - tstart:.2f}s")
+    
     relit_image = image_path_list_to_dict(relit_image)
+    tstart = time.time()
+    print(f"[#] Time for loading the relit_image: {time.time() - tstart:.2f}s")
 
     img_dataset = DECADataset(
         resolution=image_size,
@@ -327,8 +363,20 @@ class DECADataset(Dataset):
         # print(self.src_sj_dict)
         # print(src_image_paths)
         # exit()
+        tstart = time.time()
+        # self.src_sj_to_index_dict, self.src_sj_dict_swap = self.get_sj_index_dict(sj_dict=self.src_sj_dict, paths_dict=src_image_paths)
         self.src_sj_to_index_dict, self.src_sj_dict_swap = self.get_sj_index_dict(sj_dict=self.src_sj_dict, paths_dict=src_image_paths)
+        print(f"[#] Time for loading the src_sj_to_index_dict: {time.time() - tstart:.2f}s")
+        
+        tstart = time.time()
         self.relit_sj_to_index_dict, self.relit_sj_dict_swap = self.get_sj_index_dict(sj_dict=self.relit_sj_dict, paths_dict=relit_image_paths)
+        print(f"[#] Time for loading the relit_sj_to_index_dict: {time.time() - tstart:.2f}s")
+        
+        # Predefined the keyslist for faster runtime
+        self.src_sj_dict_keyslist = list(self.src_sj_dict.keys())
+        self.src_sj_dict_swap_keyslist = list(self.src_sj_dict_swap.keys())
+        self.relit_image_paths_keyslist = list(self.relit_image_paths.keys())
+        
         print(f"[#] Bounding the input of UNet to +-{self.cfg.img_model.input_bound}")
         self.__getitem__(0)
 
@@ -358,16 +406,55 @@ class DECADataset(Dataset):
                 sj_dict_swap[sj_name] = sj
         return sj_to_index_dict, sj_dict_swap
     
+    
+    def procs(sj, paths_dict, sj_dict):
+        sj_to_index_dict = {}
+        sj_dict_swap = {}
+        sj_list = list(paths_dict.keys())
+        sj_index = [sj_list.index(v) for v in sj_dict[sj]]
+        sj_to_index_dict[sj] = sj_index
+        for sj_name in sj_dict[sj]:
+            sj_dict_swap[sj_name] = sj
+            
+        return sj_to_index_dict, sj_dict_swap
+            
+    def get_sj_index_dict_parallel(self, sj_dict, paths_dict):
+        '''
+        Same as get_sj_index_dict but with multiprocessing
+        '''
+        sj_to_index_dict = {}
+        sj_dict_swap = {}
+        func_in = [(k, paths_dict, sj_dict) for k in sj_dict.keys()]
+        import multiprocessing as mp
+        with mp.Pool(processes=mp.cpu_count()) as pool:
+            # Use starmap to apply the function to the list of argument tuples
+            results = pool.starmap(self.procs, func_in)
+        for out in results:
+            sj_to_index_dict.update(out[0])
+            sj_dict_swap.update(out[1])    
+        
+        return sj_to_index_dict, sj_dict_swap
+            
+            
+        
+    
     def __getitem__(self, src_idx):
         # Select the sj at idx
-        query_src_name = list(self.src_sj_dict.keys())[src_idx] # Get src subject keys
-        src_name = list(self.src_sj_dict_swap.keys())[src_idx]
+        # query_src_name = list(self.src_sj_dict.keys())[src_idx] # Get src subject keys
+        # src_name = list(self.src_sj_dict_swap.keys())[src_idx]
+        query_src_name = self.src_sj_dict_keyslist[src_idx] # Get src subject keys
+        src_name = self.src_sj_dict_swap_keyslist[src_idx]
+        
         # print(src_name, query_src_name)
         # print(self.relit_sj_to_index_dict[query_src_name])
-        dst_idx = self.relit_sj_to_index_dict[query_src_name].copy()[:self.cfg.dataset.pair_per_sj]
-        dst_idx = np.random.choice(dst_idx, 1)[0]   # Sample the relit image from the same source subject
+        dst_idx = self.relit_sj_to_index_dict[query_src_name][:self.cfg.dataset.pair_per_sj]
+        if self.cfg.dataset.pair_per_sj > 1:
+            dst_idx = np.random.choice(dst_idx, 1)[0]   # Sample the relit image from the same source subject
+        else:
+            dst_idx = dst_idx[0]
+            
         # dst_name = list(self.relit_sj_dict_swap.keys())[dst_idx]
-        dst_name = list(self.relit_image_paths.keys())[dst_idx]
+        dst_name = self.relit_image_paths_keyslist[dst_idx]
         
         #NOTE: Check whether the src and dst are the same subject 
         # e.g. src = <id1>_input.png, dst = <id1>_<id2>_relit.png
