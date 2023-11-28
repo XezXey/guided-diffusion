@@ -28,5 +28,17 @@
         "alias":"Ours : Enc(Face+Bg)",
         "misc" : "ours",
         "img_dir" : "out/validset/"
+    }, 
+    "ours_paired+allunet+nobg+nodpm+trainset_128" : {
+        "step":"ema_150000", 
+        "alias":"Ours : UNet(Face) - OneShot",
+        "misc" : "ours",
+        "img_dir" : "out/"
+    },
+    "ours_paired+nonspa+nobg+nodpm+trainset_128" : {
+        "step":"ema_150000", 
+        "alias":"Ours : UNet(nonspa) - OneShot",
+        "misc" : "ours",
+        "img_dir" : "out/"
     }
 }
