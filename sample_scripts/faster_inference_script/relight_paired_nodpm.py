@@ -212,6 +212,7 @@ def relight(model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     
     # if args.itp == ['render_face']:
     if ('render_face' in args.itp) or args.force_render:
+        print(cond.keys())
         return relit_out, th.cat((cond['src_deca_masked_face_images_woclip'], cond['dst_deca_masked_face_images_woclip']), dim=0), {'relit_time':relight_time}
     else:
         return relit_out, None, {'relit_time':relight_time}
