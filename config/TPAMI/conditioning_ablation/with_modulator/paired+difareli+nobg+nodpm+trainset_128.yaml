@@ -29,9 +29,6 @@ img_cond_model:
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb', 'shadow']
 
-img_cond_model:
-  apply: False
-
 relighting:
   use_SH: False
 
