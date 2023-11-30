@@ -55,6 +55,7 @@ def eval_loader(gt_path, pred_path, mask_path, batch_size, face_part, n_eval, de
     # batch_size = len(pred_path)
     gt_path = _list_image_files_recursively(f"{gt_path}/")
     gt_path = image_path_list_to_dict(gt_path)
+    input_path = gt_path
     
     mask_path = _list_image_files_recursively(f"{mask_path}/")
     mask_path = image_path_list_to_dict(mask_path)
@@ -75,6 +76,7 @@ def eval_loader(gt_path, pred_path, mask_path, batch_size, face_part, n_eval, de
     # print(final_gt_path[c], pred_path[c])
     # exit()
     eval_dataset = EvalDataset(
+        input_path=input_path,
         gt_path=final_gt_path,
         pred_path=pred_path,
         mask_path=mask_path,
@@ -100,6 +102,7 @@ def eval_loader(gt_path, pred_path, mask_path, batch_size, face_part, n_eval, de
 class EvalDataset(Dataset):
     def __init__(
         self,
+        input_path,
         gt_path,
         pred_path,
         mask_path,
@@ -110,6 +113,7 @@ class EvalDataset(Dataset):
         super().__init__()
         self.gt_path = gt_path
         self.pred_path = pred_path
+        self.input_path = input_path 
         self.mask_path = mask_path
         self.img_ext = img_ext
         self.face_part = face_part
@@ -125,12 +129,18 @@ class EvalDataset(Dataset):
         #NOTE: Use ground truth image name for query the prediction
         query_img_name = list(self.gt_path.keys())[idx]
         
+        # print(query_img_name)
+        # print(self.pred_path[query_img_name])
         gt = self.load_image(self.gt_path[query_img_name])
         pred = self.load_image(self.pred_path[query_img_name])
+        input_name = self.pred_path[query_img_name].split('/')[-1].split('#pred=')[0][6:]
+        # print(input_name)
+        input_ = self.load_image(self.input_path[input_name])
         mask = self.load_face_segment(self.face_part, query_img_name)
         
         out_dict = {
             'img_name': query_img_name,
+            'input':np.array(input_).transpose(2, 0, 1) / 255.0,
             'gt':np.array(gt).transpose(2, 0, 1) / 255.0,
             'pred':np.array(pred).transpose(2, 0, 1) / 255.0,
             'mask':np.array(mask).transpose(2, 0, 1),
