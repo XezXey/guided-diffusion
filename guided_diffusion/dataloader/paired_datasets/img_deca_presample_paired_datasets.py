@@ -470,7 +470,7 @@ class DECADataset(Dataset):
         return {'arr':src_arr, 'dict':src_dict}, {'arr':dst_arr, 'dict':dst_dict}
 
     def get_data_sjdict(self, query_img_name, relit=False):
-        # Raw Images in dataset
+        # Loading images/data from path happens here
         out_dict = {}
         if relit:
             local_images = self.relit_image_paths

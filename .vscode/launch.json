@@ -15,6 +15,18 @@
 //                           |___/ |___/                                                |___/ 
 
         {
+            "name": "Python: train_example",
+            "type": "python",
+            "request": "launch",
+            "env": {"CUDA_VISIBLE_DEVICES":"0", "WANDB_MODE":"offline"},
+            "program": "./train_example.py",
+            "args": [],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/Dev/DiFaReli/difareli-faster/experiment_scripts/TPAMI/pre_copy_dataloader/",
+            "justMyCode": true
+        }, 
+
+        {
             "name": "Python: train_paired_data_from_trainset",
             "type": "python",
             "request": "launch",
