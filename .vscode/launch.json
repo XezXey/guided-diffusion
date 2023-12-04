@@ -18,7 +18,7 @@
             "name": "Python: train_example",
             "type": "python",
             "request": "launch",
-            "env": {"CUDA_VISIBLE_DEVICES":"0", "WANDB_MODE":"offline"},
+            "env": {"WANDB_MODE":"offline"},
             "program": "./train_example.py",
             "args": [],
             "console": "integratedTerminal",

@@ -35,7 +35,7 @@ class CustomDataset(Dataset):
 
 # Trainloader
 pl.seed_everything(47)
-batch_size = 1
+batch_size = 8
 train_dataset = CustomDataset('./data_src/input', './data_src/label')
             
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=16, drop_last=True, pin_memory=True, persistent_workers=True)

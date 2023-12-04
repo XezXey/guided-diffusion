@@ -131,5 +131,6 @@ experiment_scripts/smooth_girdSH/smooth_gridSH.py
 experiment_scripts/smooth_girdSH/tmp.txt
 experiment_scripts/smooth_girdSH/
 
-experiment_scripts/TPAMI/pre_copy_dataloader/data_src
-experiment_scripts/TPAMI/pre_copy_dataloader/data_tmp
+experiment_scripts/TPAMI/pre_copy_dataloader/data_src/*
+experiment_scripts/TPAMI/pre_copy_dataloader/data_tmp/*
+experiment_scripts/TPAMI/pre_copy_dataloader/lightning_logs/*
