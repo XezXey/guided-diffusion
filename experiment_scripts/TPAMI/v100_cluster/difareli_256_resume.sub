@@ -1,0 +1,24 @@
+#!/bin/bash -l
+
+
+#SBATCH --error=./output/Masked_Face_woclip+BgNoHead+shadow_256.err.%j # STDOUT output is written in slurm.out.JOBID
+#SBATCH --output=./output/Masked_Face_woclip+BgNoHead+shadow_256.task.out.%j # STDOUT error is written in slurm.err.JOBID
+#SBATCH --job-name=Masked_Face_woclip+UNet_Bg_share_dpm_noise_masking_shadow_256      # Job name
+#SBATCH --mem=128GB                  # Memory request for this job
+#SBATCH --nodes=1                   # The number of nodes
+#SBATCH --partition=gpu-cluster
+#SBATCH --account=vision
+#SBATCH --time=3-00:0:0                # Runing time 2 hours
+#SBATCH --gpus=4                    # A number of GPUs
+
+path='/ist/users/puntawatp/guided-diffusion/'
+model_path='/ist/ist-share/vision/mint/model_logs/'
+logger_path='/ist/ist-share/vision/mint/tb_logs/'
+cfg_name='Masked_Face_woclip+BgNoHead+shadow_256'
+
+conda activate /ist/users/puntawatp/miniconda3/envs/3dr_conda_training
+
+cmd="${path}/train_scripts/image_train.py --train.log_dir ${model_path}/${cfg_name} --train.logger_dir ${logger_path} --train.batch_size 5 --train.n_gpus 4 --cfg ${path}/config/CVPRs/High_Resolution_V100/${cfg_name}.yaml --train.save_interval 5000 --train.logger_mode tb --train.resume_checkpoint ${model_path}/${cfg_name}/ImgCond_model080000.pt"
+
+echo $cmd
+python $cmd
