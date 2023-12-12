@@ -42,4 +42,4 @@ dataset:
 
 train_misc:
   exp_name: "Changing_BG"
-  cfg_name: "difareli_canny=51to255bg_128"
+  cfg_name: "difareli_canny=51to255bg_256_vll"
