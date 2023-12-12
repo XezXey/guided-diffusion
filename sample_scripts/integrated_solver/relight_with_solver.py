@@ -362,13 +362,15 @@ if __name__ == '__main__':
         img_ext = '.png'
         cfg.dataset.training_data = 'TR_samples'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/aligned_images/'
-    elif args.dataset in ['mp_valid', 'mp_test', 'mp_test2']:
+    elif args.dataset in ['mp_valid', 'mp_valid2', 'mp_test', 'mp_test2']:
         if args.dataset == 'mp_test':
             sub_f = '/MultiPIE_testset/'
         elif args.dataset == 'mp_test2':
             sub_f = '/MultiPIE_testset2/'
         elif args.dataset == 'mp_valid':
             sub_f = '/MultiPIE_validset/'
+        elif args.dataset == 'mp_valid2':
+            sub_f = '/MultiPIE_validset2/'
         else: raise ValueError
         img_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/{sub_f}/mp_aligned/"
         deca_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/{sub_f}/params/"
@@ -486,7 +488,12 @@ if __name__ == '__main__':
         if args.eval_dir is not None:
             # if args.dataset in ['mp_valid', 'mp_test']
             # eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/{args.dataset}/"
-            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/"
+            solver_steps = args.solver_steps
+            solver_alg = args.solver_alg
+            solver_method = args.solver_method
+            solver_order = args.solver_order
+            solver_correcting_x0_fn = args.solver_correcting_x0_fn
+            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/{solver_alg}_{solver_method}_{solver_steps}_{solver_order}_{solver_correcting_x0_fn}/out/"
             os.makedirs(eval_dir, exist_ok=True)
             torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{eval_dir}/input={src_id}#pred={dst_id}.png")
             
@@ -542,6 +549,11 @@ if __name__ == '__main__':
         runtime_dict['std_relit_time'] = np.std(runtime_dict['relit_time'])
         runtime_dict['n_sj'] = counter_sj
         json.dump(runtime_dict, fj)
+    
+    if eval_dir is not None:
+        with open(f'{eval_dir}/runtime.json', 'w') as fj:
+            json.dump(runtime_dict, fj)
+            
         
     # Free memory!!!
     del deca_obj               

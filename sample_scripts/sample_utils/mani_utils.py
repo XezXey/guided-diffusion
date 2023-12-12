@@ -426,7 +426,8 @@ def get_samples_list(sample_pair_json, sample_pair_mode, src_dst, img_path, n_su
         sample_pairs = json.load(f)[sample_pair_mode]
         if sample_pair_mode == 'pair':
             src_dst = [[sample_pairs[pair_i]['src'], sample_pairs[pair_i]['dst']]
-                        for pair_i in list(sample_pairs.keys())[:1000]]
+                        for pair_i in list(sample_pairs.keys())]
+                        # for pair_i in list(sample_pairs.keys())[:1000]]
             all_img_idx = [file_utils.search_index_from_listpath(list_path=img_path, search=sd) 
                     for sd in src_dst]
             all_img_name = [[img_path[r[0]].split('/')[-1], img_path[r[1]].split('/')[-1]] for r in all_img_idx]

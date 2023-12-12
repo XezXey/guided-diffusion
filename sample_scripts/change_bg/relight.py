@@ -338,7 +338,6 @@ if __name__ == '__main__':
         end = n_subject 
     if start >= n_subject: raise ValueError("[#] Start beyond the sample index")
     print(f"[#] Run from index of {start} to {end}...")
-        
     counter_sj = 0
     runtime_dict = {'rev_time':[], 'relit_time':[]}
     for i in range(start, end):
