@@ -6,7 +6,7 @@
 #SBATCH --job-name=difareli_canny=51to51bg_256_v100      # Job name
 #SBATCH --mem=128GB                  # Memory request for this job
 #SBATCH --nodes=1                   # The number of nodes
-#SBATCH --partition=deadline
+#SBATCH --partition=gpu-cluster
 #SBATCH --account=vision
 #SBATCH --time=7-00:0:0                # Runing time 2 hours
 #SBATCH --gpus=4                    # A number of GPUs
