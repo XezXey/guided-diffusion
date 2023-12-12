@@ -1,0 +1,42 @@
+img_model:
+  name: "ImgCond"
+  arch: "UNetCond_SpatialCondition_Hadamart"
+  image_size: 256
+  in_image: ['raw']
+  in_channels: 3
+  out_channels: 3
+  conditioning: True  # Conditioning with DECA
+  condition_proj_dim: 512
+  hadamart_prep: "Tanh"
+
+param_model:
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb', 'shadow']
+
+img_cond_model:
+  apply: True
+  arch: "EncoderUNet_SpatialCondition"
+  in_image: ['deca_masked_face_images_woclip', 'canny_edge_bg']
+  in_channels: 4
+  image_size: 256
+  out_channels: 128
+  condition_dim: 256
+  override_cond: "spatial_latent"
+  prep_image: [Null, dilate=5]
+  noise_dpm_cond_img: [Null, Null]
+  canny_thres: [Null, [51, 255]]
+
+relighting:
+  use_SH: False
+
+train:
+  weight_decay: 0.0
+  sampling_interval: 25000
+  save_interval: 05000
+
+dataset:
+  root_path: "/ist/ist-share/vision/mint/DPM_Dataset/"
+  training_data: "ffhq_256_with_anno"
+
+train_misc:
+  exp_name: "difareli_bg_256_V100"
+  cfg_name: "difareli_canny=51to255bg_256_v100"
