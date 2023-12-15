@@ -334,12 +334,18 @@ def build_condition_image(cond, misc, force_render=False):
         cond['light'] = params_utils.grid_sh(sh=cond['light'][src_idx], n_grid=args.sh_grid_size, sx=args.sh_span_x, sy=args.sh_span_y, sh_scale=args.sh_scale, use_sh=args.use_sh).reshape(-1, 27)
     elif 'render_face' in args.interpolate:
         #NOTE: Render w/ interpolated light (Main code use this)
+        print("[#] Relighting with render_face")
         cond['light'][[dst_idx]] *= args.scale_sh
         interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
         cond.update(interp_cond)
     elif force_render:
         #NOTE: Render w/ interpolated light (Main code use this)
         tmp_light = cond['light'].clone()
+        interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+        cond.update(interp_cond)
+    elif 'light' in args.interpolate:
+        #NOTE: Render w/ non-spatial light
+        print("[#] Relighting with non-spatial light")
         interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
         cond.update(interp_cond)
     else:

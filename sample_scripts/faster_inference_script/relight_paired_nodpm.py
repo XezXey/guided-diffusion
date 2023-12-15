@@ -128,6 +128,9 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     if 'render_face' in args.itp:
         interp_set = args.itp.copy()
         interp_set.remove('render_face')
+    elif 'light' in args.itp:
+        interp_set = args.itp.copy()
+        interp_set.remove('light')
     else:
         interp_set = args.itp
         
@@ -149,6 +152,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
         cond['src_light'] = cond['light'][0:1].repeat(repeats=n_step, axis=0)
     if 'dst_light' in cfg.param_model.params_selector:
         cond['dst_light'] = cond['light']
+    print(cond['src_light'], cond['dst_light'])
     # Finalize the cond_params
     cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
     if cfg.img_cond_model.override_cond != '':

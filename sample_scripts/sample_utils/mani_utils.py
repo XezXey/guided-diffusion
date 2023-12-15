@@ -99,6 +99,7 @@ def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn, add_
                     # interp = np.linspace(cond[itp][src_idx][0], -15, n_step)[..., None] # Original used in paper
                 print(f"Interpolating shadow with : \n{interp}, Adding shadow = {add_shadow}")
         else:
+            # print(cond[itp])
             if isinstance(cond[itp], list):
                 #NOTE: interpolate the condition (list-type)
                 interp = []
@@ -117,7 +118,8 @@ def iter_interp_cond(cond, src_idx, dst_idx, n_step, interp_set, interp_fn, add_
                                     interp_fn=interp_fn)
             else: raise NotImplementedError
         out_interp[itp] = interp
-
+        # print(out_interp[itp], itp)
+        # exit()
     return out_interp 
 
 
