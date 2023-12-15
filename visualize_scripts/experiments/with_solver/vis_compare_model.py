@@ -71,7 +71,14 @@ def create_app():
         """
         out += "</script>"
         out += "<button onclick='transposeAllTables()'>Transpose</button>"
-        data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_{args.res}/{args.set_}/"
+        # data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_{args.res}/{args.set_}/"
+        if args.dataset == 'multipie_valset2':
+            data_path = f"/data/mint/DPM_Dataset/MultiPIE/MultiPIE_validset2/mp_aligned/{args.set_}"
+        elif args.dataset == 'ffhq':
+            data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_{args.res}/{args.set_}/"
+        else: 
+            raise NotImplementedError
+        
         assert os.path.isfile(args.sample_pair_json)
         f = open(args.sample_pair_json)
         sample_pairs = json.load(f)['pair']
@@ -147,9 +154,15 @@ def create_app():
                 ###################################################
                 
                 if args.res == 128:
-                    out += f"<td> <img src=/files/{data_path}/{src.replace('jpg', 'png')}> </td>"
+                    if 'multipie' in args.dataset:
+                        out += f"<td> <img src=/files/{data_path}/{dst.replace('jpg', 'png')}> </td>"
+                    else:
+                        out += f"<td> <img src=/files/{data_path}/{src.replace('jpg', 'png')}> </td>"
                 else:
-                    out += f"<td> <img src=/files/{data_path}/{src}> </td>"
+                    if 'multipie' in args.dataset:
+                        out += f"<td> <img src=/files/{data_path}/{dst}> </td>"
+                    else: 
+                        out += f"<td> <img src=/files/{data_path}/{src}> </td>"
                 
                 out += "</tr>"
                 
@@ -173,6 +186,7 @@ if __name__ == "__main__":
     parser.add_argument('--res', default=128)
     parser.add_argument('--port', required=True)
     parser.add_argument('--host', default='0.0.0.0')
+    parser.add_argument('--dataset', default='multipie_valset2')
     args = parser.parse_args()  
     
     app = create_app()

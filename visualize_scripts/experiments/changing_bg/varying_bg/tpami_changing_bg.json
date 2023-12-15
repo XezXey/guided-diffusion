@@ -1,0 +1,81 @@
+{
+    "log=difareli_nobg_128_cfg=difareli_nobg_128.yaml_step=250" : {
+        "step":"ema_050000", 
+        "alias":"no background",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "show_size":"128",
+        "n_frame":"2",
+        "path":"/data/mint/sampling/TPAMI/changing_bg/128x128/"
+    },
+    "log=difareli_canny=51to51bg_128_cfg=difareli_canny=51to51bg_128.yaml_step=250_canny=51to51" : {
+        "step":"ema_050000", 
+        "alias":"Canny 51-51",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"2",
+        "show_size":"128",
+        "path":"/data/mint/sampling/TPAMI/changing_bg/128x128/"
+    },
+    "log=difareli_canny=51to255bg_128_cfg=difareli_canny=51to255bg_128.yaml_step=250_canny=51to255" : {
+        "step":"ema_050000", 
+        "alias":"Canny 51-255",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"2",
+        "show_size":"128",
+        "path":"/data/mint/sampling/TPAMI/changing_bg/128x128/"
+    },
+    "log=difareli_canny=153to204bg_128_cfg=difareli_canny=153to204bg_128.yaml_step=250_canny=153to204" : {
+        "step":"ema_050000", 
+        "alias":"Canny 153-204",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"2",
+        "show_size":"128",
+        "path":"/data/mint/sampling/TPAMI/changing_bg/128x128/"
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5",
+        "show_size":"128",
+        "path":"/data/mint/sampling/TPAMI/changing_bg/256x256/baseline_sshfs/"
+    },
+    "baseline_Hou21" : {
+        "alias":"Hou et al. (2021)",
+        "path":"/data/mint/sampling/TPAMI/sota/Hou21/",
+        "step":null, 
+        "itp":null,
+        "itp_method":null,
+        "diff_step":null,
+        "time_respace":null,
+        "n_frame":null,
+        "show_size":"128"
+    },
+    "baseline_TotalRelighting" : {
+        "alias":"TR - Pandey et al.",
+        "path":"/data/mint/sampling/TPAMI/sota/TR/TREval_May/output_final/",
+        "step":null, 
+        "itp":null,
+        "itp_method":null,
+        "diff_step":null,
+        "time_respace":null,
+        "n_frame":null,
+        "show_size":"128"
+    }
+
+
+}

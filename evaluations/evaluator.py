@@ -185,10 +185,11 @@ def main():
             resize = torchvision.transforms.Resize(size=(128, 128), interpolation=PIL.Image.NEAREST)
             sub_mask = resize(sub_mask)
         sub_name = sub_batch['img_name']
-        plot = (th.cat((sub_gt[0].permute(1, 2, 0), sub_pred[0].permute(1, 2, 0), sub_mask[0].permute(1, 2, 0)), dim=1).cpu().numpy() * 255).astype(np.uint8)
-        plt.imshow(plot)
-        plt.title('GT Vs. Prediction')
-        plt.savefig('./tmp_img/gg.png')
+        # plot = (th.cat((sub_gt[0].permute(1, 2, 0), sub_pred[0].permute(1, 2, 0), sub_mask[0].permute(1, 2, 0)), dim=1).cpu().numpy() * 255).astype(np.uint8)
+        # os.makedirs('./tmp_img', exist_ok=True)
+        # plt.imshow(plot)
+        # plt.title('GT Vs. Prediction')
+        # plt.savefig('./tmp_img/gg.png')
         # input()
         # continue
         eval.evaluate_each(pred=sub_pred.cuda(), gt=sub_gt.cuda(), mask=sub_mask.cuda(), name=sub_name)

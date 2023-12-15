@@ -28,26 +28,44 @@ python relight_paired.py --ckpt_selector ema --dataset ffhq --set valid --step 1
 --itp render_face --itp_step 5 --batch_size 5 --gpu_id 0 --lerp --idx 0 1000
 '''
 
-assert (len(args.canny_thres) % 2) == 0 and len(args.canny_thres) > 0
-args.canny_thres = [args.canny_thres[i:i+2] for i in range(0, len(args.canny_thres), 2)]
+if args.canny_thres is not None:
+    assert (len(args.canny_thres) % 2) == 0 and len(args.canny_thres) > 0
+    args.canny_thres = [args.canny_thres[i:i+2] for i in range(0, len(args.canny_thres), 2)]
 
 for m in args.model:
     for ckpt in args.ckpt_step:
         for time_respace in args.time_respace:
             for sample_json in args.sample_pair_json:
-                for c_t in args.canny_thres:
-                    print("#"*100)
-                    print(f'Running checkpoint {ckpt} w/ time_respace={time_respace} & diffusion_steps={args.diffusion_steps}')
-                    print("#"*100)
-                    cmd = (
-                        f"""
-                        python relight.py --ckpt_selector {args.ckpt_type} --dataset ffhq --set valid --step {ckpt} --out_dir {args.out_dir} \
-                        --cfg_name {m}.yaml --log_dir {m} \
-                        --diffusion_steps {args.diffusion_steps} --timestep_respacing {time_respace} --seed 47 \
-                        --sample_pair_json {sample_json} --sample_pair_mode pair \
-                        --itp render_face --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]}\
-                        --postfix step={time_respace}_canny={c_t[0]}to{c_t[1]} --canny_thres {c_t[0]} {c_t[1]}"""
-                        )
-                    print(cmd)
-                    os.system(cmd)
-                    print("#"*100)
+                if args.canny_thres is None:
+                        print("#"*100)
+                        print(f'Running checkpoint {ckpt} w/ time_respace={time_respace} & diffusion_steps={args.diffusion_steps}')
+                        print("#"*100)
+                        cmd = (
+                            f"""
+                            python relight.py --ckpt_selector {args.ckpt_type} --dataset ffhq --set valid --step {ckpt} --out_dir {args.out_dir} \
+                            --cfg_name {m}.yaml --log_dir {m} \
+                            --diffusion_steps {args.diffusion_steps} --timestep_respacing {time_respace} --seed 47 \
+                            --sample_pair_json {sample_json} --sample_pair_mode pair \
+                            --itp render_face --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]}\
+                            --postfix step={time_respace}"""
+                            )
+                        print(cmd)
+                        os.system(cmd)
+                        print("#"*100)
+                else:
+                    for c_t in args.canny_thres:
+                        print("#"*100)
+                        print(f'Running checkpoint {ckpt} w/ time_respace={time_respace} & diffusion_steps={args.diffusion_steps}')
+                        print("#"*100)
+                        cmd = (
+                            f"""
+                            python relight.py --ckpt_selector {args.ckpt_type} --dataset ffhq --set valid --step {ckpt} --out_dir {args.out_dir} \
+                            --cfg_name {m}.yaml --log_dir {m} \
+                            --diffusion_steps {args.diffusion_steps} --timestep_respacing {time_respace} --seed 47 \
+                            --sample_pair_json {sample_json} --sample_pair_mode pair \
+                            --itp render_face --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]}\
+                            --postfix step={time_respace}_canny={c_t[0]}to{c_t[1]} --canny_thres {c_t[0]} {c_t[1]}"""
+                            )
+                        print(cmd)
+                        os.system(cmd)
+                        print("#"*100)

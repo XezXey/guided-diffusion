@@ -100,9 +100,14 @@ def create_app():
                 diff_step = metadat['diff_step']
                 time_respace = metadat['time_respace']
                 n_frame= metadat['n_frame']
+                show_size = metadat['show_size']
                 
-                path = f"{args.sampling_dir}/{args.exp_dir}/{m_name}/{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src}/dst={dst}/"
+                if 'path' in metadat:
+                    path = metadat['path']
+                else: 
+                    path = f"{args.sampling_dir}/{args.exp_dir}/{m_name}/{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src}/dst={dst}/"
             
+                path = f'{path}/{m_name}/{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src}/dst={dst}/'
                 out += "<tr>"
                 alias_str = alias.split('_')
                 # alias example: dpmsolver++_3_singlestep_15_dynamic_thresholding
@@ -116,15 +121,17 @@ def create_app():
                 
                 ###################################################
                 # Show results
-                # if 'baseline' in alias:
                 if 'Single pass' in alias:
                     frames = glob.glob(f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame}/res_*.png")
                     # out += f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png"
                 else:
                     frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
                     # out += f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png"
-                # out += str(show_itmd)
-                print(frames)
+                
+                if 'baseline' in m_name:
+                    path = metadat['path']
+                    frames = glob.glob(f"{path}/src={src}/dst={dst}/res_*.png")
+                    
                 out += "<td>"
                 if len(frames) > 0:
                     frames = sort_by_frame(frames)
@@ -135,10 +142,11 @@ def create_app():
                     if show_relit == "False":
                         frames = frames[:-1]
                     for f in frames:
-                        if 'baseline' in alias:
-                            out += "<img width=\"128\" height=\"128\" src=/files/" + f + ">"
-                        else:
-                            out += "<img src=/files/" + f + ">"
+                        out += f"<img width=\"{show_size}\" height=\"{show_size}\" src=/files/" + f + ">"
+                        # if 'baseline' in alias:
+                        #     out += "<img width=\"128\" height=\"128\" src=/files/" + f + ">"
+                        # else:
+                        #     out += "<img src=/files/" + f + ">"
                 else:
                     out += "<p style=\"color:red\">Images not found!</p>"
                 out += "</td>"
