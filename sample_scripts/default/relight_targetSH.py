@@ -12,7 +12,7 @@ parser.add_argument('--batch_size', type=int, required=True, help='batch size')
 parser.add_argument('--itp_step', type=int, required=True, help='interpolation step')
 parser.add_argument('--gpu_id', type=int, required=True, help='gpu id')
 parser.add_argument('--sample_idx', nargs='+', type=int, default=[0, 999999], help='sample index to run (start, end)')
-# parser.add_argument('--sample_pair_json', type=str, required=True, help='sample pair json file')
+parser.add_argument('--eval_dir', type=str, default=None, help='eval dir')
 parser.add_argument('--dataset', nargs='+', type=str, default=[""], help='dataset name')
 parser.add_argument('--sample_pair_json', nargs='+', type=str, default=[""], help='sample pair json file')
 parser.add_argument('--diffusion_steps', type=int, default=1000, help='diffusion step')
@@ -45,7 +45,7 @@ for dataset_idx, dataset in enumerate(args.dataset):
                     --diffusion_steps {args.diffusion_steps} --timestep_respacing {time_respace} --seed 47 \
                     --sample_pair_json {args.sample_pair_json[dataset_idx]} --sample_pair_mode pair \
                     --itp render_face --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]}\
-                    --postfix step={time_respace}"""
+                    --postfix step={time_respace} --eval_dir {args.eval_dir}"""
                     )
                 print(cmd)
                 os.system(cmd)
