@@ -50,6 +50,7 @@ def load_deca_params_parallel(deca_dir, cfg):
     params_path = []
     for k in tqdm.tqdm(params_key, desc="Loading deca params..."):
         p = glob.glob(f"{deca_dir}/*{k}-anno.txt")
+        print(p)
         params_path.append((p[0],))
     import multiprocessing as mp
     with mp.Pool(processes=mp.cpu_count()) as pool:
