@@ -493,7 +493,7 @@ if __name__ == '__main__':
             solver_method = args.solver_method
             solver_order = args.solver_order
             solver_correcting_x0_fn = args.solver_correcting_x0_fn
-            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/{solver_alg}_{solver_method}_{solver_steps}_{solver_order}_{solver_correcting_x0_fn}/out/"
+            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/{args.dataset}/{solver_alg}_{solver_method}_{solver_steps}_{solver_order}_{solver_correcting_x0_fn}/out/"
             os.makedirs(eval_dir, exist_ok=True)
             torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{eval_dir}/input={src_id}#pred={dst_id}.png")
             
