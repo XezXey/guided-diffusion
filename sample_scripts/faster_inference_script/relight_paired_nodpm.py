@@ -191,8 +191,9 @@ def relight(model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     print("[#] Relighting...")
     sub_step = ext_sub_step(n_step)
     relit_out = []
-    relight_time = time.time()
+    relit_time = []
     for i in range(len(sub_step)-1):
+        relight_time = time.time()
         print(f"[#] Sub step relight : {sub_step[i]} to {sub_step[i+1]}")
         start = sub_step[i]
         end = sub_step[i+1]
@@ -209,15 +210,16 @@ def relight(model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         relight_out = pl_sampling.forward_nodpm(src_xstart=src_xstart, model_kwargs=cond_relit)
         
         relit_out.append(relight_out['output'].detach().cpu().numpy())
-    relight_time = time.time() - relight_time
-    print(f"[#] Relight time = {relight_time}")
+        relight_time = time.time() - relight_time
+        print(f"[#] Relight time = {relight_time}")
+        relit_time.append(relight_time)
     relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
     
     # if args.itp == ['render_face']:
     if ('render_face' in args.itp) or args.force_render:
         return relit_out, th.cat((cond['src_deca_masked_face_images_woclip'], cond['dst_deca_masked_face_images_woclip']), dim=0), {'relit_time':relight_time}
     else:
-        return relit_out, None, {'relit_time':relight_time}
+        return relit_out, None, {'relit_time':np.mean(relit_time)}
 
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -252,13 +254,15 @@ if __name__ == '__main__':
         img_ext = '.jpg'
         cfg.dataset.training_data = 'ffhq_256_with_anno'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
-    elif args.dataset in ['mp_valid', 'mp_test', 'mp_test2']:
+    elif args.dataset in ['mp_valid', 'mp_valid2', 'mp_test', 'mp_test2']:
         if args.dataset == 'mp_test':
             sub_f = '/MultiPIE_testset/'
         elif args.dataset == 'mp_test2':
             sub_f = '/MultiPIE_testset2/'
         elif args.dataset == 'mp_valid':
             sub_f = '/MultiPIE_validset/'
+        elif args.dataset == 'mp_valid2':
+            sub_f = '/MultiPIE_validset2/'
         else: raise ValueError
         img_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/{sub_f}/mp_aligned/"
         deca_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/{sub_f}/params/"
@@ -372,7 +376,7 @@ if __name__ == '__main__':
         if args.eval_dir is not None:
             # if args.dataset in ['mp_valid', 'mp_test']
             # eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/{args.dataset}/"
-            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/"
+            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/{args.dataset}/{args.cfg_name}{args.postfix}/out/"
             os.makedirs(eval_dir, exist_ok=True)
             torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{eval_dir}/input={src_id}#pred={dst_id}.png")
             

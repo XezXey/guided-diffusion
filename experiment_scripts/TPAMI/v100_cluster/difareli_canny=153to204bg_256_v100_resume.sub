@@ -18,7 +18,7 @@ cfg_name='difareli_canny=153to204bg_256_v100'
 
 conda activate /ist/users/puntawatp/miniconda3/envs/3dr_conda_training
 
-cmd="${path}/train_scripts/image_train.py --train.log_dir ${model_path}/${cfg_name} --train.logger_dir ${logger_path} --train.batch_size 5 --train.n_gpus 4 --cfg ${path}/config/TPAMI/background_changing/v100/${cfg_name}.yaml --train.save_interval 5000 --train.logger_mode tb --train.resume_checkpoint ${model_path}/${cfg_name}/ImgCond_model040000.pt"
+cmd="${path}/train_scripts/image_train.py --train.log_dir ${model_path}/${cfg_name} --train.logger_dir ${logger_path} --train.batch_size 5 --train.n_gpus 4 --cfg ${path}/config/TPAMI/background_changing/v100/${cfg_name}.yaml --train.save_interval 5000 --train.logger_mode tb --train.resume_checkpoint ${model_path}/${cfg_name}/ImgCond_model080000.pt"
 
 echo $cmd
 python $cmd

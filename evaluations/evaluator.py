@@ -19,12 +19,14 @@ parser.add_argument("--lpips_net", default="alex")
 parser.add_argument("--postfix", help="postfix add to eval json", default='')
 parser.add_argument("--face_part", help="facepart to eval", default='faceseg_face')
 parser.add_argument("--ds_mask", help="facepart to eval", action='store_true', default=False)
+parser.add_argument("--ds_img", help="facepart to eval", action='store_true', default=False)
 parser.add_argument("--n_eval", help="n to eval", type=int, default=None)
 parser.add_argument("--out_score_dir", help="out eval file", type=str, required=True)
 parser.add_argument("--batch_size", type=int, help="batch size")
-parser.add_argument("--save_for_dssim", help="Save for compute DSSIM w/ Matlab later", default=None)
-
+parser.add_argument("--save_for_dssim_path", help="Save for compute DSSIM w/ Matlab later", default=None)
+parser.add_argument("--save_dssim", help="Save for compute DSSIM w/ Matlab later", default=False, action='store_true')
 args = parser.parse_args()
+print(args.save_dssim)
 
 class Evaluator():
     def __init__(self, device='cuda'):
@@ -122,11 +124,26 @@ class Evaluator():
                     'dssim':str(dssim_score.cpu().numpy()),
                     'mse':str(mse_score.cpu().numpy()),
                 }
+                #NOTE: Auto-Saving the image for DSSIM 
+                if args.save_dssim:
+                    gt_path = f'{args.pred}/out_for_dssim/gt/'
+                    pred_path = f'{args.pred}/out_for_dssim/pred/'
+                    mask_path = f'{args.pred}/out_for_dssim/mask/'
+                    os.makedirs(gt_path, exist_ok=True)
+                    os.makedirs(pred_path, exist_ok=True)
+                    os.makedirs(mask_path, exist_ok=True)
+                    torchvision.utils.save_image(tensor=gt_, fp=f'{gt_path}/{name_}')
+                    torchvision.utils.save_image(tensor=pred_, fp=f'{pred_path}/{name_}')
+                    torchvision.utils.save_image(tensor=mask_, fp=f'{mask_path}/{name_}')
+                    
                 #NOTE: Saving the image for DSSIM
-                if args.save_for_dssim is not None:
-                    gt_path = f'{args.save_for_dssim}/{args.postfix}/gt/'
-                    pred_path = f'{args.save_for_dssim}/{args.postfix}/pred/'
-                    mask_path = f'{args.save_for_dssim}/{args.postfix}/mask/'
+                if args.save_for_dssim_path is not None:
+                    gt_path = f'{args.save_for_dssim_path}/{args.postfix}/gt/'
+                    pred_path = f'{args.save_for_dssim_path}/{args.postfix}/pred/'
+                    mask_path = f'{args.save_for_dssim_path}/{args.postfix}/mask/'
+                    # gt_path = f'{args.pred}/out_for_dssim/gt/'
+                    # pred_path = f'{args.pred}/out_for_dssim/pred/'
+                    # mask_path = f'{args.pred}/out_for_dssim/mask/'
                     os.makedirs(gt_path, exist_ok=True)
                     os.makedirs(pred_path, exist_ok=True)
                     os.makedirs(mask_path, exist_ok=True)
@@ -136,6 +153,7 @@ class Evaluator():
             
     def print_score(self):
         print("[#] Evaluation Score")
+        print("[#] Model : ", args.pred)
         print(f"[#] Total samples = {self.score_dict['n_samples']}")
         for k, v in self.score_dict.items():
             if k == 'n_samples': continue
@@ -163,10 +181,11 @@ class Evaluator():
             
 def main():
     
+    print("#"*100)
     print("[#] DPM - Relit Evaluation")
     print(f"[#] Ground truth : {args.gt}")
     print(f"[#] Prediction : {args.pred}")
-    
+    print("#"*100)
     loader, dataset = eval_loader(gt_path=args.gt, 
                                   pred_path=args.pred, 
                                   mask_path=args.mask,
@@ -184,6 +203,10 @@ def main():
         if args.ds_mask:
             resize = torchvision.transforms.Resize(size=(128, 128), interpolation=PIL.Image.NEAREST)
             sub_mask = resize(sub_mask)
+        if args.ds_img:
+            resize = torchvision.transforms.Resize(size=(128, 128), interpolation=PIL.Image.BICUBIC)
+            sub_pred = resize(sub_pred)
+        # print(sub_gt.shape, sub_pred.shape, sub_mask.shape)
         sub_name = sub_batch['img_name']
         # plot = (th.cat((sub_gt[0].permute(1, 2, 0), sub_pred[0].permute(1, 2, 0), sub_mask[0].permute(1, 2, 0)), dim=1).cpu().numpy() * 255).astype(np.uint8)
         # os.makedirs('./tmp_img', exist_ok=True)

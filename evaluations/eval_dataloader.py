@@ -51,7 +51,6 @@ def pred_image_path_list_to_dict(path_list):
 def eval_loader(gt_path, pred_path, mask_path, batch_size, face_part, n_eval, deterministic=True):
     pred_path = _list_image_files_recursively(f"{pred_path}/")
     pred_path = pred_image_path_list_to_dict(pred_path)
-    # print(len(pred_path))
     # batch_size = len(pred_path)
     gt_path = _list_image_files_recursively(f"{gt_path}/")
     gt_path = image_path_list_to_dict(gt_path)
@@ -66,15 +65,6 @@ def eval_loader(gt_path, pred_path, mask_path, batch_size, face_part, n_eval, de
         if gt_k in pred_path.keys():
             final_gt_path[gt_k] = gt_path[gt_k]
             
-            
-    
-    # a = list(final_gt_path.keys())[0]
-    # b = list(final_gt_path.keys())[1]
-    # c = list(final_gt_path.keys())[2]
-    # print(final_gt_path[a], pred_path[a])
-    # print(final_gt_path[b], pred_path[b])
-    # print(final_gt_path[c], pred_path[c])
-    # exit()
     eval_dataset = EvalDataset(
         input_path=input_path,
         gt_path=final_gt_path,
@@ -134,6 +124,9 @@ class EvalDataset(Dataset):
         gt = self.load_image(self.gt_path[query_img_name])
         pred = self.load_image(self.pred_path[query_img_name])
         input_name = self.pred_path[query_img_name].split('/')[-1].split('#pred=')[0][6:]
+        if '#ref' in input_name:
+            input_name = input_name.split('#ref')[0]
+            
         # print(input_name)
         input_ = self.load_image(self.input_path[input_name])
         mask = self.load_face_segment(self.face_part, query_img_name)

@@ -24,16 +24,29 @@ parser.add_argument('--batch_size', type=int, default=10)
 parser.add_argument('--face_part', type=str, default='faceseg_faceskin')
 parser.add_argument('--out_score_dir', type=str, default='')
 parser.add_argument('--ds_mask', action='store_true', default=False)
-parser.add_argument('--save_for_dssim', type=str, default='')
+parser.add_argument('--ds_img', action='store_true', default=False)
+# parser.add_argument('--save_for_dssim_path', type=str, default='')
+parser.add_argument('--save_dssim', default=False, action='store_true')
 args = parser.parse_args()
 
-ckpt = 'ema_085000'
-model = glob.glob(f'{args.model_pred_dir}/{ckpt}/*')
+model = glob.glob(f'{args.model_pred_dir}/*')
 if args.ds_mask:
     args.ds_mask = '--ds_mask'
 else: args.ds_mask = ''
 
+if args.ds_img:
+    args.ds_img = '--ds_img'
+else: args.ds_img = ''
+
+if args.save_dssim:
+    args.save_dssim = '--save_dssim'
+else: args.save_dssim = ''
+
+
+
 for m in model:
+    if not os.path.isdir(m):
+        continue
     cmd = f"""python evaluator.py \
         --gt {args.gt} \
         --pred {m} \
@@ -43,9 +56,10 @@ for m in model:
         --postfix _{m.split('/')[-1]} \
         --out_score_dir {args.out_score_dir} \
         {args.ds_mask} \
-        --save_for_dssim {args.save_for_dssim} \
+        {args.ds_img} \
+        {args.save_dssim} \
     """
     print("#"*100)
     print("Running: ", cmd)
-    subprocess.run([x for x in cmd.split(' ') if x != ''])
+    ret = subprocess.run([x for x in cmd.split(' ') if x != ''])
     print("#"*100)
