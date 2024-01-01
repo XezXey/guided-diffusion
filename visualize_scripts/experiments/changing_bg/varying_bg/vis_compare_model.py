@@ -78,7 +78,7 @@ def create_app():
         # /model_040000/valid/render_face/reverse_sampling/src=62385.jpg/dst=61432.jpg
         f = open(args.comparison_candidate)
         candidates = json.load(f)
-        print(candidates)
+        # print(candidates)
         
         for k, v in sample_pairs.items():
             out += "<table>"
