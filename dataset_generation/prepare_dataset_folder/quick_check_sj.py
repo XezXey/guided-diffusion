@@ -19,8 +19,6 @@ args = parser.parse_args()
 name = 'random_target'
 model_name = "/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_step=250/"
 misc = "/ema_085000/train/render_face/reverse_sampling"
-# genenration_path = f'/data/mint/dataset_generation/{name}/{model_name}/{misc}/*'
-# sj_coverage = glob.glob(genenration_path)
 
 def mounting(from_path, to_path):
     assert os.path.isabs(to_path)
