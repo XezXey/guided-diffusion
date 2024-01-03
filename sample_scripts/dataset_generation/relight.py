@@ -18,7 +18,8 @@ parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--add_shadow', action='store_true', default=False, help='Not used on Relighting')
 # Samples selection
-parser.add_argument('--idx', nargs='+', default=[], help='Specify the start and end idx')
+parser.add_argument('--idx', nargs='+', default=None, help='Specify the start and end idx')
+parser.add_argument('--sample_indices', nargs='+', default=None, help='Specify the file and check session')
 parser.add_argument('--sample_pair_json', type=str, default=None, help='json file containing the sample pair')
 parser.add_argument('--sample_pair_mode', type=str, default=None, help='mode of the sample pair')
 parser.add_argument('--src_dst', nargs='+', default=[], help='list of src and dst image')
@@ -314,28 +315,56 @@ if __name__ == '__main__':
     img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
     get_sample_time = time.time()
     
-    start, end = int(args.idx[0]), int(args.idx[1])
-    all_img_idx, all_img_name, n_subject = mani_utils.get_samples_pair(args.sample_pair_json, 
-                                                                            args.sample_pair_mode, 
-                                                                            args.src_dst, img_path, 
-                                                                            start, end,
-                                                                            -1)
-    print(f"[#] Get sample time = {time.time() - get_sample_time}")
+    if args.idx is not None:
+        start, end = int(args.idx[0]), int(args.idx[1])
+        all_img_idx, all_img_name, n_subject = mani_utils.get_samples_pair(args.sample_pair_json, 
+                                                                                args.sample_pair_mode, 
+                                                                                args.src_dst, img_path, 
+                                                                                start, end,
+                                                                                -1)
+        # Run from start->end idx
+        if end > n_subject:
+            end = n_subject 
+        if start >= n_subject: raise ValueError("[#] Start beyond the sample index")
+        print(f"[#] Run from index of {start} to {end}...")
+        
+    elif args.sample_indices is not None:
+        assert len(args.sample_indices) >= 2
+        to_sampling_file = args.sample_indices[0]
+        check_session = args.sample_indices[1]
+        with open(to_sampling_file, 'r') as fj:
+            to_sampling_dict = json.load(fj)
+        sample_indices = to_sampling_dict[f'check_{check_session}']['args_for_sampling'].split(' ')
+        sample_indices = [int(x) for x in sample_indices]
+        if len(args.sample_indices) == 4:
+            sample_indices = list(np.array(sample_indices[int(args.sample_indices[2]):int(args.sample_indices[3])]))
+            
+        all_img_idx, all_img_name, n_subject = mani_utils.get_samples_pair_from_indices(args.sample_pair_json, 
+                                                                                args.sample_pair_mode, 
+                                                                                args.src_dst, img_path, 
+                                                                                sample_indices)
+        print(f"[#] Run from indices of check_{check_session} from file {to_sampling_file}...")
+        if len(args.sample_indices) == 4:
+            print(f"[#] Run from indices of {args.sample_indices[2]} to {args.sample_indices[3]} (total = {len(sample_indices)})...")
+        else: 
+            print(f"[#] Run all indices (total = {len(sample_indices)})...")
+        
+    else:
+        raise ValueError("[#] No sample method is provided")
     
+    print(f"[#] Get sample time = {time.time() - get_sample_time}")
+        
+        
+    counter_sj = 0
+    runtime_dict = {'rev_time':[], 'relit_time':[]}
+        
     #NOTE: Initialize a DECA renderer
     if np.any(['deca_masked' in n for n in list(filter(None, dataset.condition_image))]):
         mask = params_utils.load_flame_mask()
     else: mask=None
     deca_obj = params_utils.init_deca(mask=mask)
-        
-    # Run from start->end idx
-    if end > n_subject:
-        end = n_subject 
-    if start >= n_subject: raise ValueError("[#] Start beyond the sample index")
-    print(f"[#] Run from index of {start} to {end}...")
-        
-    counter_sj = 0
-    runtime_dict = {'rev_time':[], 'relit_time':[]}
+    
+    # Religting over subject loop
     for i in range(0, len(all_img_idx)):
         img_idx = all_img_idx[i]
         img_name = all_img_name[i]

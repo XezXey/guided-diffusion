@@ -509,6 +509,37 @@ def get_samples_pair(sample_pair_json, sample_pair_mode, src_dst, img_path, star
     
     return all_img_idx, all_img_name, n_subject
 
+def get_samples_pair_from_indices(sample_pair_json, sample_pair_mode, src_dst, img_path, sample_indices):
+    '''
+    return
+    output of pre-finding pair is list of list : [['60065.jpg', '60001.jpg'], ['60065.jpg', '60012.jpg'], ..., n_subject]
+    '''
+    import json, os
+    if (sample_pair_json is not None) and (sample_pair_mode is not None):
+        #NOTE: Sampling with defined pairs
+        assert os.path.isfile(sample_pair_json)
+        f = open(sample_pair_json)
+        sample_pairs = json.load(f)[sample_pair_mode]
+        print("[#] Sample pair length : ", len(sample_pairs.keys()))
+        if sample_pair_mode == 'pair':
+            if np.any(np.array(sample_indices) > len(sample_pairs.keys())):
+              raise ValueError(f"sample indices are out of range of {len(sample_pairs.keys())}")
+            elif np.any(np.array(sample_indices) < 0):
+                raise ValueError(f"sample indices are less than 0")
+            pair_indices = [list(sample_pairs.keys())[i] for i in sample_indices]
+            src_dst = [[sample_pairs[pair_i]['src'], sample_pairs[pair_i]['dst']]
+                        for pair_i in pair_indices]
+            # print(src_dst)
+            all_img_idx = [file_utils.search_index_from_listpath(list_path=img_path, search=sd) 
+                    for sd in src_dst]
+            # print(all_img_idx)
+            all_img_name = [[img_path[r[0]].split('/')[-1], img_path[r[1]].split('/')[-1]] for r in all_img_idx]
+            n_subject = len(sample_pairs.keys())
+        else: raise NotImplementedError
+    else: raise NotImplementedError
+    
+    return all_img_idx, all_img_name, n_subject
+
 
 def ext_sub_step(n_step, batch_size=5):
     sub_step = []
