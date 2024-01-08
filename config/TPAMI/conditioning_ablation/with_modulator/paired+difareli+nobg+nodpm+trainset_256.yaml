@@ -29,16 +29,13 @@ img_cond_model:
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb', 'shadow']
 
-img_cond_model:
-  apply: False
-
 relighting:
   use_SH: False
 
 train:
   weight_decay: 0.0
-  sampling_interval: 20000
-  save_interval: 20000
+  sampling_interval: 25000
+  save_interval: 25000
 
 dataset:
   training_data: "Generated_Dataset_TargetLight/Generated_Dataset_hardlink/"
@@ -49,5 +46,5 @@ dataset:
 
 
 train_misc:
-  exp_name: "TPAMI_conditioning_ablation"
+  exp_name: "TPAMI_main_results"
   cfg_name: "paired+difareli+nobg+nodpm+trainset_256"
