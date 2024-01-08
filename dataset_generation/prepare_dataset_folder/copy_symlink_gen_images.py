@@ -4,13 +4,15 @@ from multiprocessing.pool import Pool
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--out_path', type=str, required=True)
+parser.add_argument('--mode', type=str, required=True)
+parser.add_argument('--sample_file', type=str, required=True)
 args = parser.parse_args()
 
 # Generate dataset path
 name = 'random_target'
 model_name = "/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_step=250/"
-misc = "/ema_085000/train/render_face/reverse_sampling"
-genenration_path = f'/data/mint/dataset_generation/{name}/{model_name}/{misc}/*/*'
+misc = "/ema_085000/train/render_face/reverse_sampling/"
+genenration_path = f'/data/mint/dataset_generation/{name}/{model_name}/{misc}/'
 
 out_path = args.out_path
 set_ = 'train'
@@ -21,19 +23,21 @@ gen_images = f'{out_path}/images/{set_}/'
 for fold in [deca_clip, deca_noclip, gen_images]:
     os.makedirs(fold, exist_ok=True)
 
-with open('../sampler/generated_dataset_seed=47.json') as f:
-    gen_data = json.load(f)
     
 pattern = r'src=([^\s/]+).*?dst=([^\s/]+)'
 
-def create_symlink(each_gen_path):
+def create_copy_or_symlink(each_gen_path):
     complete_count = 0
     incomplete_count = 0
     input_images_count = 0
     relit_images_count = 0
     source_coverage = {}
-    # for i, each_gen_path in enumerate(glob.glob(genenration_path, recursive=True)):
-        # print(each_gen_path)# Use re.findall to extract src and dst values
+    if args.mode == 'symlink':
+        pre_cmd = 'ln -s'
+    elif args.mode == 'copy':
+        pre_cmd = 'cp'
+    else:
+        raise NotImplementedError(f"Mode {args.mode} not implemented")
     matches = re.findall(pattern, each_gen_path)
 
     # Print the results
@@ -53,22 +57,22 @@ def create_symlink(each_gen_path):
         fn = f'{src_id}_{dst_id}'
         # Input
         if not os.path.exists(f'{gen_images}/{src_id}_input.png'):
-            os.system(f"ln -s {each_gen_path}/res_frame0.png {gen_images}/{src_id}_input.png")
+            os.system(f"{pre_cmd} {each_gen_path}/res_frame0.png {gen_images}/{src_id}_input.png")
             input_images_count += 1
-        if not os.path.exists(f'{deca_clip}/{src_id}_input.png'):
-            os.system(f"ln -s {each_gen_path}/ren_frame0.png {deca_clip}/{src_id}_input.png")
+        # if not os.path.exists(f'{deca_clip}/{src_id}_input.png'):
+        #     os.system(f"{pre_cmd} {each_gen_path}/ren_frame0.png {deca_clip}/{src_id}_input.png")
         if not os.path.exists(f'{deca_noclip}/{src_id}_input.npy'):
-            os.system(f"ln -s {each_gen_path}/ren_frame0.npy {deca_noclip}/{src_id}_input.npy")
+            os.system(f"{pre_cmd} {each_gen_path}/ren_frame0.npy {deca_noclip}/{src_id}_input.npy")
             
             
         # Relit
         if not os.path.exists(f'{gen_images}/{fn}_relit.png'):
-            os.system(f"ln -s {each_gen_path}/res_frame1.png {gen_images}/{fn}_relit.png")
+            os.system(f"{pre_cmd} {each_gen_path}/res_frame1.png {gen_images}/{fn}_relit.png")
             relit_images_count += 1
-        if not os.path.exists(f'{deca_clip}/{fn}_relit.png'):
-            os.system(f"ln -s {each_gen_path}/ren_frame1.png {deca_clip}/{fn}_relit.png")
+        # if not os.path.exists(f'{deca_clip}/{fn}_relit.png'):
+        #     os.system(f"{pre_cmd} {each_gen_path}/ren_frame1.png {deca_clip}/{fn}_relit.png")
         if not os.path.exists(f'{deca_noclip}/{fn}_relit.npy'):
-            os.system(f"ln -s {each_gen_path}/ren_frame1.npy {deca_noclip}/{fn}_relit.npy")
+            os.system(f"{pre_cmd} {each_gen_path}/ren_frame1.npy {deca_noclip}/{fn}_relit.npy")
             
         complete_count += 1
         source_coverage[src_id] = 1
@@ -79,16 +83,20 @@ def create_symlink(each_gen_path):
 
 
 if __name__ == '__main__':
-    # print(len(glob.glob(genenration_path, recursive=True)))
-    # print(glob.glob(genenration_path, recursive=True)[:10])
+    with open(args.sample_file) as f:
+        gen_data = json.load(f)['pair']
+    genenration_pathlist = [f"{genenration_path}/src={each['src']}/dst={each['dst']}/" for _, each in gen_data.items()]
+    # Check all the paths are valid
+    assert all([os.path.exists(each) for each in tqdm.tqdm(genenration_pathlist)])
+        
     pool = Pool(processes=24)
-    print("[#] Starting symlink the dataset...")
+    print(f"[#] Starting {args.mode} the dataset...")
     print("[#] Dataset path : ", genenration_path)
-    print("[#] #N pairs : ", len(glob.glob(genenration_path, recursive=True)))
-    print(f"[#] Symlinking to {out_path}")
+    print("[#] #N available pairs : ", len(glob.glob(genenration_path + '/*/*', recursive=True)))
+    print(f"[#] {args.mode}ing to {out_path}")
           
     s = time.time()
-    out = pool.map(create_symlink, glob.glob(genenration_path, recursive=True))
+    out = pool.map(create_copy_or_symlink, genenration_pathlist)
     
     complete_count = 0
     incomplete_count = 0
@@ -106,9 +114,8 @@ if __name__ == '__main__':
         else:
             source_coverage.update(f[2])
     
-    
-
-    print(f"[#] Finishing symlink the dataset in {time.time() - s} seconds...")
+    print(f"[#] Finishing {args.mode} the dataset in {time.time() - s} seconds...")
+    print(f"[#] Sample file : {args.sample_file}")
     print(f"[#] Complete : {complete_count} images")
     print(f"[#] Incomplete : {incomplete_count} images")
     print(f"[#] Subject coverage : {len(source_coverage)}")

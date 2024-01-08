@@ -41,11 +41,11 @@ train:
   save_interval: 20000
 
 dataset:
-  training_data: "Generated_Dataset_TargetLight/Generated_Dataset/"
-  deca_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset/params_recreate/"
-  data_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset/images/"
-  face_segment_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset/face_segment/"
-  deca_rendered_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset/rendered_images/"
+  training_data: "Generated_Dataset_TargetLight/Generated_Dataset_hardlink/"
+  deca_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_hardlink/params_recreate/"
+  data_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_hardlink/images/"
+  face_segment_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_hardlink/face_segment/"
+  deca_rendered_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_hardlink/rendered_images/"
 
 
 train_misc:
