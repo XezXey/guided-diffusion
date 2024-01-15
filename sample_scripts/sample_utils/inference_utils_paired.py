@@ -363,7 +363,10 @@ def build_condition_image(cond, misc, force_render=False):
         #TODO: Render DECA in minibatch
         sub_step = mani_utils.ext_sub_step(n_step, batch_size)
         all_render = []
+        load_deca_time = time.time() - start_t
+        render_time = []
         for i in range(len(sub_step)-1):
+            start_t = time.time()
             print(f"[#] Sub step rendering : {sub_step[i]} to {sub_step[i+1]}")
             start = sub_step[i]
             end = sub_step[i+1]
@@ -379,6 +382,10 @@ def build_condition_image(cond, misc, force_render=False):
                                                                 deca_obj=deca_obj,
                                                                 repeat=True)
             all_render.append(deca_rendered)
+            render_time.append(time.time() - start_t)
+            
+        render_time = np.mean(render_time) + load_deca_time
+        cond['render_time'] = render_time
         print("Rendering time : ", time.time() - start_t)
         deca_rendered = th.cat(all_render, dim=0)
         

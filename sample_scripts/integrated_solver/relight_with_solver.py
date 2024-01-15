@@ -154,6 +154,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
 
     # Finalize the cond_params
     cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
+
     if cfg.img_cond_model.override_cond != '':
         to_tensor_key = ['cond_params'] + cfg.param_model.params_selector + [cfg.img_cond_model.override_cond]
     else:    
@@ -173,66 +174,6 @@ def ext_sub_step(n_step):
             sub_step.append(tmp)
         tmp -= bz
     return np.cumsum([0] + sub_step)
-
-def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
-    '''
-    Relighting the image
-    Output : Tensor (B x C x H x W); range = -1 to 1
-    '''
-    # Rendering
-    cond = copy.deepcopy(model_kwargs)
-    cond = make_condition(cond=cond, 
-                        src_idx=src_idx, dst_idx=dst_idx, 
-                        n_step=n_step, itp_func=itp_func
-                    )
-
-    # Reverse 
-    cond_rev = copy.deepcopy(cond)
-    cond_rev = dict_slice(in_d=cond_rev, keys=cond_rev.keys(), n=1) # Slice only 1st image out for inversion
-    if cfg.img_cond_model.apply:
-        cond_rev = pl_sampling.forward_cond_network(model_kwargs=cond_rev)
-        
-    print("[#] Apply Mean-matching...")
-    reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
-    noise_map = reverse_ddim_sample['final_output']['sample']
-    rev_mean = reverse_ddim_sample['intermediate']
-    
-    #NOTE: rev_mean WILL BE MODIFIED; This is for computing the ratio of inversion (brightness correction).
-    sample_ddim = pl_sampling.forward_proc(
-        noise=noise_map,
-        model_kwargs=cond_rev,
-        store_intermediate=False,
-        rev_mean=rev_mean)
-
-    assert noise_map.shape[0] == 1
-    rev_mean_first = [x[:1] for x in rev_mean]
-    
-    print("[#] Relighting...")
-    sub_step = ext_sub_step(n_step)
-    relit_out = []
-    for i in range(len(sub_step)-1):
-        print(f"[#] Sub step relight : {sub_step[i]} to {sub_step[i+1]}")
-        start = sub_step[i]
-        end = sub_step[i+1]
-        
-        # Relight!
-        mean_match_ratio = copy.deepcopy(rev_mean_first)
-        cond['use_render_itp'] = True
-        cond_relight = copy.deepcopy(cond)
-        cond_relit = dict_slice_se(in_d=cond_relight, keys=cond_relight.keys(), s=start, e=end) # Slice only 1st image out for inversion
-        if cfg.img_cond_model.apply:
-            cond_relit = pl_sampling.forward_cond_network(model_kwargs=cond_relit)
-        
-        relight_out = pl_sampling.forward_proc(
-            noise=th.repeat_interleave(noise_map, repeats=end-start, dim=0),
-            model_kwargs=cond_relit,
-            store_intermediate=False,
-            add_mean=mean_match_ratio)
-        
-        relit_out.append(relight_out["final_output"]["sample"].detach().cpu().numpy())
-    relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
-    
-    return relit_out, cond['cond_img']
 
 def relight_with_solver(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     '''
@@ -288,8 +229,9 @@ def relight_with_solver(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_id
     print("[#] Relighting...")
     sub_step = ext_sub_step(n_step)
     relit_out = []
-    relight_time = time.time()
+    relit_time = []
     for i in range(len(sub_step)-1):
+        relight_time = time.time()
         print(f"[#] Sub step relight : {sub_step[i]} to {sub_step[i+1]}")
         start = sub_step[i]
         end = sub_step[i+1]
@@ -317,11 +259,14 @@ def relight_with_solver(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_id
         relight_out = solver.sample(x_T, steps=solver_steps, order=solver_order, method=solver_method, skip_type="time_uniform")
         
         relit_out.append(relight_out.detach().cpu().numpy())
-    relight_time = time.time() - relight_time
-    print(f"[#] Relight time = {relight_time}")
+        relight_time = time.time() - relight_time
+        print(f"[#] Relight time = {relight_time}")
+        relit_time.append(relight_time)
     relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
     
-    return relit_out, cond['cond_img'], {'rev_time':reverse_time, 'relit_time':relight_time}
+    out_timing = {'rev_time':reverse_time, 'relit_time':np.mean(relit_time), 'render_time':cond['render_time'] if 'render_time' in cond else 0}
+    
+    return relit_out, cond['cond_img'], out_timing
 
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -422,7 +367,7 @@ if __name__ == '__main__':
     if start >= n_subject: raise ValueError("[#] Start beyond the sample index")
     counter_sj = 0
     print(f"[#] Run from index of {start} to {end}...")
-    runtime_dict = {'rev_time':[], 'relit_time':[]}
+    runtime_dict = {'rev_time':[], 'relit_time':[], 'render_time':[]}
     for i in range(start, end):
         img_idx = all_img_idx[i]
         img_name = all_img_name[i]
@@ -475,6 +420,7 @@ if __name__ == '__main__':
                                         )
         runtime_dict['rev_time'].append(time_dict['rev_time'])
         runtime_dict['relit_time'].append(time_dict['relit_time'])
+        runtime_dict['render_time'].append(time_dict['render_time'])
         
         #NOTE: Save result
         out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
@@ -541,12 +487,19 @@ if __name__ == '__main__':
             json.dump(log_dict, fj)
         counter_sj += 1
         
-    with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/runtime.json', 'w') as fj:
+     
+    import datetime
+    # get datetime now to annotate the log
+    dt = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/runtime_{dt}.json', 'w') as fj:
         runtime_dict['name'] = f"log={args.log_dir}_cfg={args.cfg_name}{args.postfix}"
         runtime_dict['mean_rev_time'] = np.mean(runtime_dict['rev_time'])
         runtime_dict['mean_relit_time'] = np.mean(runtime_dict['relit_time'])
         runtime_dict['std_rev_time'] = np.std(runtime_dict['rev_time'])
         runtime_dict['std_relit_time'] = np.std(runtime_dict['relit_time'])
+        runtime_dict['mean_render_time'] = np.mean(runtime_dict['render_time'])
+        runtime_dict['std_render_time'] = np.std(runtime_dict['render_time'])
+        runtime_dict['set'] = args.set
         runtime_dict['n_sj'] = counter_sj
         json.dump(runtime_dict, fj)
     

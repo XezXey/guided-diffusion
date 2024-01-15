@@ -215,11 +215,12 @@ def relight(model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         relit_time.append(relight_time)
     relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
     
+    out_timing = {'relit_time':np.mean(relit_time), 'render_time':cond['render_time'] if 'render_time' in cond else 0}
     # if args.itp == ['render_face']:
     if ('render_face' in args.itp) or args.force_render:
-        return relit_out, th.cat((cond['src_deca_masked_face_images_woclip'], cond['dst_deca_masked_face_images_woclip']), dim=0), {'relit_time':relight_time}
+        return relit_out, th.cat((cond['src_deca_masked_face_images_woclip'], cond['dst_deca_masked_face_images_woclip']), dim=0), out_timing
     else:
-        return relit_out, None, {'relit_time':np.mean(relit_time)}
+        return relit_out, None, out_timing
 
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -315,7 +316,7 @@ if __name__ == '__main__':
     print(f"[#] Run from index of {start} to {end}...")
         
     counter_sj = 0
-    runtime_dict = {'relit_time':[]}
+    runtime_dict = {'relit_time':[], 'render_time':[]}
     for i in range(start, end):
         img_idx = all_img_idx[i]
         img_name = all_img_name[i]
@@ -363,6 +364,7 @@ if __name__ == '__main__':
                                 )
         
         runtime_dict['relit_time'].append(time_dict['relit_time'])
+        runtime_dict['render_time'].append(time_dict['render_time'])
         
         #NOTE: Save result
         out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
@@ -423,12 +425,17 @@ if __name__ == '__main__':
                         'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_fn':itp_fn_str, 'itp':itp_str}}
             json.dump(log_dict, fj)
         counter_sj += 1
-            
-            
-    with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/runtime.json', 'w') as fj:
+    
+    import datetime
+    # get datetime now to annotate the log
+    dt = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/runtime_{dt}.json', 'w') as fj:
         runtime_dict['name'] = f"log={args.log_dir}_cfg={args.cfg_name}{args.postfix}"
         runtime_dict['mean_relit_time'] = np.mean(runtime_dict['relit_time'])
         runtime_dict['std_relit_time'] = np.std(runtime_dict['relit_time'])
+        runtime_dict['mean_render_time'] = np.mean(runtime_dict['render_time'])
+        runtime_dict['std_render_time'] = np.std(runtime_dict['render_time'])
+        runtime_dict['set'] = args.set
         runtime_dict['n_sj'] = counter_sj
         json.dump(runtime_dict, fj)
             

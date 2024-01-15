@@ -51,7 +51,7 @@ def pred_image_path_list_to_dict(path_list):
 def eval_loader(gt_path, pred_path, mask_path, batch_size, face_part, n_eval, deterministic=True):
     pred_path = _list_image_files_recursively(f"{pred_path}/")
     pred_path = pred_image_path_list_to_dict(pred_path)
-    # batch_size = len(pred_path)
+    batch_size = len(pred_path)
     gt_path = _list_image_files_recursively(f"{gt_path}/")
     gt_path = image_path_list_to_dict(gt_path)
     input_path = gt_path
