@@ -74,6 +74,8 @@ def create_app():
         # data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_{args.res}/{args.set_}/"
         if args.dataset == 'multipie_valset2':
             data_path = f"/data/mint/DPM_Dataset/MultiPIE/MultiPIE_validset2/mp_aligned/{args.set_}"
+        elif args.dataset == 'multipie_testset':
+            data_path = f"/data/mint/DPM_Dataset/MultiPIE/MultiPIE_testset/mp_aligned/{args.set_}"
         elif args.dataset == 'ffhq':
             data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_{args.res}/{args.set_}/"
         else: 

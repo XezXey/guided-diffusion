@@ -116,7 +116,7 @@ def create_app():
                 ###################################################
                 # Show results
                 # if 'baseline' in alias:
-                if 'Single pass' in alias:
+                if 'SP' in alias:
                     frames = glob.glob(f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame}/res_*.png")
                     # out += f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png"
                 else:
