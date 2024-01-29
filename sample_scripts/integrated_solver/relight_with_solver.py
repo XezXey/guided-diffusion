@@ -431,6 +431,9 @@ if __name__ == '__main__':
         f_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0
         vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=f_relit)
         
+        if args.eval_dir == 'None':
+            args.eval_dir = None
+            
         if args.eval_dir is not None:
             # if args.dataset in ['mp_valid', 'mp_test']
             # eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/{args.dataset}/"

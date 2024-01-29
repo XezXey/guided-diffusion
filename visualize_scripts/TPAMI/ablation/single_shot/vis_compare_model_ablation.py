@@ -69,7 +69,11 @@ def create_app():
         """
         out += "</script>"
         out += "<button onclick='transposeAllTables()'>Transpose</button>"
-        data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_{args.res}/{args.set_}/"
+        
+        if args.dataset == 'ffhq':
+            data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_{args.res}/{args.set_}/"
+        elif args.dataset == 'mp_valid':
+            data_path = f"/data/mint/DPM_Dataset/MultiPIE/MultiPIE_validset/mp_aligned_{args.res}/{args.set_}/"
         assert os.path.isfile(args.sample_pair_json)
         f = open(args.sample_pair_json)
         sample_pairs = json.load(f)['pair']
@@ -101,7 +105,6 @@ def create_app():
                 time_respace = metadat['time_respace']
                 n_frame= metadat['n_frame']
                 
-                path = f"{args.sampling_dir}/{args.exp_dir}/{m_name}/{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src}/dst={dst}/"
             
                 out += "<tr>"
                 alias_str = alias.split('_')
@@ -115,10 +118,14 @@ def create_app():
                 
                 ###################################################
                 # Show results
+                path = f"{args.sampling_dir}/{args.exp_dir}/{m_name}/{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src}/dst={dst}/"
                 # if 'baseline' in alias:
                 if 'SP' in alias:
                     frames = glob.glob(f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame}/res_*.png")
                     # out += f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png"
+                elif 'DPR' in alias:
+                    path = f"{args.sampling_dir}/{args.exp_dir}/{m_name}/{ckpt}/{args.set_}/{itp}/src={src}/dst={dst}/"
+                    frames = glob.glob(f"{path}/n_frames={n_frame}/res_*.png")
                 else:
                     frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
                     # out += f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png"
@@ -164,6 +171,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--sampling_dir', default='/data/mint/sampling')
     parser.add_argument('--exp_dir', default='')
+    parser.add_argument('--dataset', default='')
     parser.add_argument('--sample_pair_json', required=True)
     parser.add_argument('--comparison_candidate', required=True)
     parser.add_argument('--set_', default='valid')

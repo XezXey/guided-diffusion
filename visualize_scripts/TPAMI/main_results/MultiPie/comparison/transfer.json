@@ -1,0 +1,38 @@
+{
+    "unipc_multistep_100_2_None" : {
+        "step" :"ema_085000",
+        "alias" : "UniPC",
+        "misc" : "solver",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli_results_solver/ema_085000/mp_test2/unipc_multistep_100_2_None/out_for_eval/"
+    },
+    "dpmsolver_singlestep_100_3_None" : {
+        "step" :"ema_085000",
+        "alias" : "DPMSolver",
+        "misc" : "solver",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli_results_solver/ema_085000/mp_test2/dpmsolver_singlestep_100_3_None/out_for_eval/"
+    },
+    "dpmsolver++_multistep_100_3_None" : {
+        "step" :"ema_085000",
+        "alias" : "DPMSolver++",
+        "misc" : "solver",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli_results_solver/ema_085000/mp_test2/dpmsolver++_multistep_100_3_None/out_for_eval/"
+    },
+    "ours_difareli_reduceT" : {
+        "step" :"ema_085000",
+        "alias" : "DiFaReli - 250 steps",
+        "misc" : "solver",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli_reduceT/ema_085000/mp_test2/out_for_eval"
+    },
+    "ours_difareli_oneshot" : {
+        "step" :"ema_200000",
+        "alias" : "DiFaReli - oneshot",
+        "misc" : "solver",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/main_result/ema_200000/mp_test2/paired+difareli+nobg+nodpm+trainset_256.yaml/out_transf_eval/"
+    },
+    "ours_256_Masked_Face_woclip+BgNoHead+shadow_256" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_256_Masked_Face_woclip+BgNoHead+shadow_256_testset2/ema_085000/testset2/"
+    }
+}

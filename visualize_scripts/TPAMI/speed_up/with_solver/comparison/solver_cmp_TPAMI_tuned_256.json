@@ -1,0 +1,47 @@
+{
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_unipc_2_multistep_100_None": {
+        "alias": "unipc_2_multistep_100_None_solver",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "2",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver_3_singlestep_100_None": {
+        "alias": "dpmsolver_3_multistep_100_None_solver",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "2",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_dpmsolver++_3_multistep_100_None": {
+        "alias": "dpmsolver++_3_multistep_100_None_solver",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "2",
+        "step": "ema_085000",
+        "time_respace": ""
+    },
+    "log=paired+difareli+nobg+nodpm+trainset_256.yaml_cfg=paired+difareli+nobg+nodpm+trainset_256.yaml": {
+        "alias": "Ours (SP)",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "2",
+        "step": "ema_200000",
+        "time_respace": ""
+    },
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml": {
+        "alias": "Baseline (Diffusion)",
+        "diff_step": "1000",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "n_frame": "2",
+        "step": "ema_085000",
+        "time_respace": ""
+    }
+}
