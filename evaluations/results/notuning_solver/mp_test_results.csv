@@ -1,0 +1,61 @@
+MethodName,DSSIMScore
+dpmsolver++_multistep_100_2_None,0.069658 +- 0.033506
+
+dpmsolver++_multistep_10_2_None,0.137025 +- 0.035248
+
+dpmsolver++_multistep_20_2_None,0.087763 +- 0.031813
+
+dpmsolver++_multistep_25_2_None,0.079159 +- 0.032120
+
+dpmsolver++_multistep_50_2_None,0.071669 +- 0.034341
+
+dpmsolver++_multistep_75_2_None,0.070558 +- 0.033993
+
+dpmsolver++_singlestep_100_2_None,0.114029 +- 0.035510
+
+dpmsolver++_singlestep_10_2_None,0.488777 +- 0.002839
+
+dpmsolver++_singlestep_20_2_None,0.476281 +- 0.005672
+
+dpmsolver++_singlestep_25_2_None,0.461728 +- 0.009010
+
+dpmsolver++_singlestep_50_2_None,0.312605 +- 0.033041
+
+dpmsolver++_singlestep_75_2_None,0.167199 +- 0.038258
+
+dpmsolver_multistep_100_2_None,0.068686 +- 0.033092
+
+dpmsolver_multistep_10_2_None,0.105977 +- 0.032949
+
+dpmsolver_multistep_20_2_None,0.083918 +- 0.031025
+
+dpmsolver_multistep_25_2_None,0.076941 +- 0.031340
+
+dpmsolver_multistep_50_2_None,0.069943 +- 0.033464
+
+dpmsolver_multistep_75_2_None,0.069221 +- 0.033366
+
+dpmsolver_singlestep_100_2_None,0.070596 +- 0.033671
+
+dpmsolver_singlestep_10_2_None,0.195259 +- 0.039027
+
+dpmsolver_singlestep_20_2_None,0.101400 +- 0.033682
+
+dpmsolver_singlestep_25_2_None,0.082961 +- 0.029815
+
+dpmsolver_singlestep_50_2_None,0.074608 +- 0.035274
+
+dpmsolver_singlestep_75_2_None,0.066760 +- 0.032076
+
+unipc_multistep_100_2_None,0.068568 +- 0.032656
+
+unipc_multistep_10_2_None,0.183151 +- 0.040638
+
+unipc_multistep_20_2_None,0.090986 +- 0.036231
+
+unipc_multistep_25_2_None,0.083855 +- 0.035945
+
+unipc_multistep_50_2_None,0.073561 +- 0.034085
+
+unipc_multistep_75_2_None,0.069766 +- 0.033097
+
