@@ -494,7 +494,7 @@ if __name__ == '__main__':
     import datetime
     # get datetime now to annotate the log
     dt = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/runtime_{dt}.json', 'w') as fj:
+    with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.dataset}/{args.set}/runtime_{dt}.json', 'w') as fj:
         runtime_dict['name'] = f"log={args.log_dir}_cfg={args.cfg_name}{args.postfix}"
         runtime_dict['mean_rev_time'] = np.mean(runtime_dict['rev_time'])
         runtime_dict['mean_relit_time'] = np.mean(runtime_dict['relit_time'])
@@ -506,8 +506,15 @@ if __name__ == '__main__':
         runtime_dict['n_sj'] = counter_sj
         json.dump(runtime_dict, fj)
     
-    if eval_dir is not None:
-        with open(f'{eval_dir}/runtime.json', 'w') as fj:
+    if args.eval_dir is not None:
+        solver_steps = args.solver_steps
+        solver_alg = args.solver_alg
+        solver_method = args.solver_method
+        solver_order = args.solver_order
+        solver_correcting_x0_fn = args.solver_correcting_x0_fn
+        eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/{args.dataset}/{solver_alg}_{solver_method}_{solver_steps}_{solver_order}_{solver_correcting_x0_fn}/"
+        os.makedirs(eval_dir, exist_ok=True)
+        with open(f'{eval_dir}/runtime_{dt}.json', 'w') as fj:
             json.dump(runtime_dict, fj)
             
         
