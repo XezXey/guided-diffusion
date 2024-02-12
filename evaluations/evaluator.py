@@ -25,6 +25,8 @@ parser.add_argument("--out_score_dir", help="out eval file", type=str, required=
 parser.add_argument("--batch_size", type=int, help="batch size")
 parser.add_argument("--save_for_dssim_path", help="Save for compute DSSIM w/ Matlab later", default=None)
 parser.add_argument("--save_dssim", help="Save for compute DSSIM w/ Matlab later", default=False, action='store_true')
+parser.add_argument("--dataset", help="dataset name", default='MultiPIE')
+parser.add_argument("--set_name", help="set name (e.g. mp_test, mp_test2)", required=True)
 args = parser.parse_args()
 print(args.save_dssim)
 
@@ -175,8 +177,8 @@ class Evaluator():
         with open(f'{save_path}/eval_score{args.postfix}.json', 'w') as jf:
             json.dump(self.img_score_dict, jf, indent=4)
             
-        os.makedirs(args.out_score_dir, exist_ok=True)
-        with open(f'{args.out_score_dir}/eval_score{args.postfix}.json', 'w') as jf:
+        os.makedirs(f'{args.out_score_dir}/{args.dataset}/{args.set_name}', exist_ok=True)
+        with open(f'{args.out_score_dir}/{args.dataset}/{args.set_name}/eval_score{args.postfix}.json', 'w') as jf:
             json.dump(self.img_score_dict, jf, indent=4)
             
 def main():

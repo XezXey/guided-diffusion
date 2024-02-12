@@ -18,6 +18,7 @@ $python evaluator.py
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gt', type=str, required=True)
+parser.add_argument('--is_transf', action='store_true', default=False)
 parser.add_argument('--model_pred_dir', type=str, required=True)
 parser.add_argument('--mask', type=str, required=True)
 parser.add_argument('--batch_size', type=int, default=10)
@@ -25,8 +26,10 @@ parser.add_argument('--face_part', type=str, default='faceseg_faceskin')
 parser.add_argument('--out_score_dir', type=str, default='')
 parser.add_argument('--ds_mask', action='store_true', default=False)
 parser.add_argument('--ds_img', action='store_true', default=False)
-# parser.add_argument('--save_for_dssim_path', type=str, default='')
 parser.add_argument('--save_dssim', default=False, action='store_true')
+# Just for saving into the folder
+parser.add_argument('--dataset', type=str, default='MultiPIE', required=True)
+parser.add_argument('--set_name', type=str, help='mp_test, mp_test2, ...', required=True)
 args = parser.parse_args()
 
 model = glob.glob(f'{args.model_pred_dir}/*')
@@ -45,16 +48,23 @@ else: args.save_dssim = ''
 
 
 for m in model:
+    
+    if args.is_transf:
+        pred_path = f"{m}/out_transf_eval/"
+    else: pred_path = f"{m}/out/"
+    
     if not os.path.isdir(m):
         continue
     cmd = f"""python evaluator.py \
         --gt {args.gt} \
-        --pred {m} \
+        --pred {pred_path} \
         --mask {args.mask} \
         --batch_size {args.batch_size} \
         --face_part {args.face_part} \
         --postfix _{m.split('/')[-1]} \
         --out_score_dir {args.out_score_dir} \
+        --dataset {args.dataset} \
+        --set_name {args.set_name} \
         {args.ds_mask} \
         {args.ds_img} \
         {args.save_dssim} \

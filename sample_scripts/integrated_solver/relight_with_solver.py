@@ -423,7 +423,7 @@ if __name__ == '__main__':
         runtime_dict['render_time'].append(time_dict['render_time'])
         
         #NOTE: Save result
-        out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
+        out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.dataset}/{args.set}/{itp_str}/reverse_sampling/"
         os.makedirs(out_dir_relit, exist_ok=True)
         save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
         os.makedirs(save_res_dir, exist_ok=True)
