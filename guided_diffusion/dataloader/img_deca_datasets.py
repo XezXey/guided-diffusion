@@ -122,6 +122,9 @@ def load_data_img_deca(
     in_image = {}
     # For conditioning images
     condition_image = cfg.img_cond_model.in_image + cfg.img_model.dpm_cond_img
+    if cfg.img_cond_model.compose_apply:
+        condition_image += cfg.img_cond_model.compose_img
+        
     input_image = cfg.img_model.in_image
     for in_image_type in condition_image + input_image:
         if in_image_type is None: continue
@@ -144,7 +147,9 @@ def load_data_img_deca(
                 continue
             elif 'shadow_mask' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_mask_dir}/{set_}/")
-            elif ('raw' in in_image_type) or ('face_structure' in in_image_type): continue
+            # elif ('raw' in in_image_type) or ('face_structure' in in_image_type) or (): continue
+            elif in_image_type in ['raw', 'face_structure', 'compose']: 
+                continue
             else:
                 raise NotImplementedError(f"The {in_image_type}-image type not found.")
 
@@ -248,8 +253,8 @@ class DECADataset(Dataset):
         self.img_ext = img_ext
         self.precomp_params_key = without(src=self.cfg.param_model.params_selector, rmv=['img_latent'] + self.rmv_params)
         self.kwargs = kwargs
-        self.condition_image = self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img + self.cfg.img_model.in_image
-        self.prep_condition_image = self.cfg.img_cond_model.prep_image + self.cfg.img_model.prep_dpm_cond_img + self.cfg.img_model.prep_in_image
+        self.condition_image = self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img + self.cfg.img_model.in_image + self.cfg.img_cond_model.compose_img
+        self.prep_condition_image = self.cfg.img_cond_model.prep_image + self.cfg.img_model.prep_dpm_cond_img + self.cfg.img_model.prep_in_image + self.cfg.img_cond_model.prep_compose_image
         print(f"[#] Bounding the input of UNet to +-{self.cfg.img_model.input_bound}")
 
     def __len__(self):

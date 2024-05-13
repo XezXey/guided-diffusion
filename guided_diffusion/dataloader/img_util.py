@@ -116,6 +116,10 @@ def make_vis_condimg(data, anno, input_bound):
             each_img = each_img + 0.5
         elif 'canny_edge_bg' in img_type:
             each_img = each_img + 0.5
+        elif 'shadow_mask' in img_type:
+            each_img = each_img
+            print(th.max(each_img), th.min(each_img))
+            print(each_img.shape)
         else: raise NotImplementedError(f'img_type: {img_type} is not implemented')
             
         if ch_size == 1:  

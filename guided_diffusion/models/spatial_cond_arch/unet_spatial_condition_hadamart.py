@@ -1917,4 +1917,132 @@ class EncoderUNet_SpatialCondition(nn.Module):
         h = self.middle_block(h, emb)
         results.append(h)
         return results
+
+class EncoderUNet_WithPrep_SpatialCondition(nn.Module):
+    def __init__(
+        self,
+        image_size,
+        in_channels,
+        model_channels,
+        out_channels,
+        num_res_blocks,
+        attention_resolutions,
+        conditioning,
+        condition_dim,
+        dropout=0,
+        channel_mult=(1, 2, 4, 8),
+        conv_resample=True,
+        dims=2,
+        use_checkpoint=False,
+        use_fp16=False,
+        num_heads=1,
+        num_head_channels=-1,
+        num_heads_upsample=-1,
+        use_scale_shift_norm=False,
+        resblock_updown=False,
+        use_new_attention_order=False,
+        pool="adaptive",
+        composite_w_type = "global",
+    ):
         
+        #NOTE: Adding new layer to combined
+        self.composite_w_type = composite_w_type
+        if self.composite_w_type == "global":
+            self.composite_w = th.nn.parameter.Parameter(th.ones((1)))  # For example, a scalar weight
+        elif self.composite_w_type == "local":
+            self.composite_w = th.nn.parameter.Parameter(th.ones((in_channels, image_size, image_size)))  # For example, the Hadamart weight of image size
+        else: raise NotImplementedError(f"Unexpected {self.composite_w_type} composite_w_type")
+        
+        #NOTE: Adding sigmoid layer to make sure the composite_w is in [0, 1]
+        self.sigmoid = th.nn.Sigmoid()
+
+    def forward(self, x1, x2, emb=None):
+        """
+        Apply the model to an input batch.
+        :param x: an [N x C x ...] Tensor of inputs.
+        :param timesteps: a 1-D batch of timesteps.
+        :return: an [N x K] Tensor of outputs.
+        """
+        
+        # First doing the composite layer: w * image1 + (1-w) * image2
+        # Normally, x would contains the concatenate of [image1, image2, ...]
+        w = self.sigmoid(self.composite_w)
+        out = w * x1 + (1 - w) * x2
+        return out
+        
+    
+   
+# class EncoderUNet_WithPrep_SpatialCondition(EncoderUNet_SpatialCondition):
+#     def __init__(
+#         self,
+#         image_size,
+#         in_channels,
+#         model_channels,
+#         out_channels,
+#         num_res_blocks,
+#         attention_resolutions,
+#         conditioning,
+#         condition_dim,
+#         dropout=0,
+#         channel_mult=(1, 2, 4, 8),
+#         conv_resample=True,
+#         dims=2,
+#         use_checkpoint=False,
+#         use_fp16=False,
+#         num_heads=1,
+#         num_head_channels=-1,
+#         num_heads_upsample=-1,
+#         use_scale_shift_norm=False,
+#         resblock_updown=False,
+#         use_new_attention_order=False,
+#         pool="adaptive",
+#     ):
+#         super().__init__(
+#             image_size=image_size,
+#             in_channels=in_channels,
+#             model_channels=model_channels,
+#             out_channels=out_channels,
+#             num_res_blocks=num_res_blocks,
+#             attention_resolutions=attention_resolutions,
+#             conditioning=conditioning,
+#             condition_dim=condition_dim,
+#             dropout=dropout,
+#             channel_mult=channel_mult,
+#             conv_resample=conv_resample,
+#             dims=dims,
+#             use_checkpoint=use_checkpoint,
+#             use_fp16=use_fp16,
+#             num_heads=num_heads,
+#             num_head_channels=num_head_channels,
+#             num_heads_upsample=num_heads_upsample,
+#             use_scale_shift_norm=use_scale_shift_norm,
+#             resblock_updown=resblock_updown,
+#             use_new_attention_order=use_new_attention_order,
+#             pool=pool,
+#         )
+        
+#         # Adding new layer to combined
+#         self.composite_w = th.nn.Parameter(th.ones((in_channels, image_size, image_size)))  # For example, a vector of size 10
+
+#     def forward(self, x, emb=None):
+#         """
+#         Apply the model to an input batch.
+#         :param x: an [N x C x ...] Tensor of inputs.
+#         :param timesteps: a 1-D batch of timesteps.
+#         :return: an [N x K] Tensor of outputs.
+#         """
+        
+#         # First doing the composite layer: w * image1 + (1-w) * image2
+#         # Normally, x would contains the concatenate of [image1, image2, ...]
+#         x =
+        
+#         results = []
+#         h = x.type(self.dtype)
+#         for _, module in enumerate(self.input_blocks):
+#             h = module(h, emb)
+#             results.append(h)
+#         h = self.middle_block(h, emb)
+#         results.append(h)
+#         return results
+        
+    

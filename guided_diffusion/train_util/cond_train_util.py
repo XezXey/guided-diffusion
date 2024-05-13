@@ -249,6 +249,22 @@ class TrainLoop(LightningModule):
             self.model_trainer_dict[name].get_norms()
         return True
 
+    def forward_composite_network(self, cond, model_dict=None):
+        if model_dict is None:
+            model_dict = self.model_dict
+            
+        if self.cfg.img_cond_model.compose_apply:
+            assert len(self.cfg.img_cond_model.compose_img) == 2
+            x1 = cond[f'{self.cfg.img_cond_model.compose_img[0]}_img']
+            x2 = cond[f'{self.cfg.img_cond_model.compose_img[1]}_img']
+            out = model_dict[self.cfg.img_cond_model.compose_name](
+                x1 = x1.float(),
+                x2 = x2.float(),
+                emb=None,
+            )
+            cond['compose_img'] = out
+            return cond
+    
     def forward_cond_network(self, cond, model_dict=None):
         if model_dict is None:
             model_dict = self.model_dict
@@ -283,7 +299,7 @@ class TrainLoop(LightningModule):
         #NOTE: Prepare condition : Utilize the same schedule from DPM, Add background or any condition.
         cond['no_preserved_cond'] = True
         cond = self.prepare_cond_train(dat=batch, cond=cond, t=t, noise=noise)
-        
+        cond = self.forward_composite_network(cond)
         cond = self.forward_cond_network(cond)
         
         # Losses
