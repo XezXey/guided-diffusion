@@ -33,9 +33,14 @@ def create_img_and_diffusion(cfg):
     if cfg.img_cond_model.apply:
         img_cond_model = create_model(cfg.img_cond_model, all_cfg=cfg)
     else: img_cond_model = None
+    
+    if cfg.img_composer_model.apply:
+        img_compose_model = create_model(cfg.img_composer_model, all_cfg=cfg)
+    else: 
+        img_compose_model = None
     diffusion = create_gaussian_diffusion(cfg.diffusion)
     
-    return {cfg.img_model.name:img_model, cfg.img_cond_model.name:img_cond_model}, diffusion
+    return {cfg.img_model.name:img_model, cfg.img_cond_model.name:img_cond_model, cfg.img_composer_model.name:img_compose_model}, diffusion
 
 # Each sub-modules
 def create_param_model(cfg, cfg_cond=None):
@@ -307,22 +312,22 @@ def create_model(cfg, all_cfg=None):
         return EncoderUNet_WithPrep_SpatialCondition(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
-            model_channels=cfg.num_channels,
-            out_channels=cfg.out_channels,
-            num_res_blocks=cfg.num_res_blocks,
-            attention_resolutions=tuple(attention_ds),
-            dropout=cfg.dropout,
-            channel_mult=channel_mult,
-            use_checkpoint=cfg.use_checkpoint,
-            num_heads=cfg.num_heads,
-            num_head_channels=cfg.num_head_channels,
-            num_heads_upsample=cfg.num_heads_upsample,
-            use_scale_shift_norm=cfg.use_scale_shift_norm,
-            resblock_updown=cfg.resblock_updown,
-            use_new_attention_order=cfg.use_new_attention_order,
-            condition_dim=cfg.condition_dim,
-            conditioning=True,
-            pool=cfg.pool
+            # model_channels=cfg.num_channels,
+            # out_channels=cfg.out_channels,
+            # num_res_blocks=cfg.num_res_blocks,
+            # attention_resolutions=tuple(attention_ds),
+            # dropout=cfg.dropout,
+            # channel_mult=channel_mult,
+            # use_checkpoint=cfg.use_checkpoint,
+            # num_heads=cfg.num_heads,
+            # num_head_channels=cfg.num_head_channels,
+            # num_heads_upsample=cfg.num_heads_upsample,
+            # use_scale_shift_norm=cfg.use_scale_shift_norm,
+            # resblock_updown=cfg.resblock_updown,
+            # use_new_attention_order=cfg.use_new_attention_order,
+            # condition_dim=cfg.condition_dim,
+            # conditioning=True,
+            # pool=cfg.pool
         ),
 
     else: raise NotImplementedError(f"Unknown model architecture: {cfg.arch}")

@@ -149,6 +149,8 @@ img_cond_model_img_type = {'raw':3,
                            'ldm_kl-f8':4,
                            'ldm_vq-f4':3,
                            'ldm_vq-f8':4,
+                           # For CastShadows
+                           'compose':3,
                             None:0,
 }
 cfg.img_cond_model = CN()
@@ -182,6 +184,21 @@ cfg.img_cond_model.thres_img = [None]
 cfg.img_cond_model.canny_thres = [None]
 cfg.img_cond_model.noise_dpm_cond_img = [None]
 cfg.img_cond_model.prep = [None]
+# Composer
+cfg.img_composer_model = CN()
+cfg.img_composer_model.image_size = 128
+cfg.img_composer_model.in_image = ['deca_masked_face_images_woclip', 'shadow_mask']
+cfg.img_composer_model.in_channels = sum(img_cond_model_img_type[in_img] for in_img in cfg.img_composer_model.in_image)
+cfg.img_composer_model.arch = "EncoderUNet_WithPrep_SpatialCondition"
+cfg.img_composer_model.apply = False
+cfg.img_composer_model.name = 'ImgComposer'
+cfg.img_composer_model.prep_image = [None, None]
+cfg.img_composer_model.w_type = "local"
+cfg.img_composer_model.reduce_chn = 1
+# Dummy vars
+cfg.img_composer_model.channel_mult = ""
+cfg.img_composer_model.attention_resolutions = "16,8"
+
 
 # ---------------------------------------------------------------------------- #
 # Options for relighting

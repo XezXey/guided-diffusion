@@ -24,13 +24,17 @@ img_cond_model:
   override_cond: "spatial_latent"
   prep_image: [Null, Null]
   noise_dpm_cond_img: [Null, Null]
+
+img_composer_model:
   # Composer: (shading * w) + (shadow * (1-w))
-  compose_apply: True
-  compose_name: 'ImgComposer'
-  compose_img: ['deca_masked_face_images_woclip', 'shadow_mask']
-  compose_prep_image: [Null, Null]
-  compose_w_type: "local"
-  compose_reduce_chn: 1
+  apply: False
+  # apply: True
+  name: 'ImgComposer'
+  arch: 'EncoderUNet_WithPrep_SpatialCondition'
+  in_image: ['deca_masked_face_images_woclip', 'shadow_mask']
+  prep_image: [Null, Null]
+  w_type: "local"
+  reduce_chn: 1
 
 
 relighting:

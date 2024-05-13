@@ -39,6 +39,8 @@ class ModelWrapper(nn.Module):
         self.img_model = model_dict['ImgCond']
         if self.cfg.img_cond_model.apply:
             self.img_cond_model = model_dict['ImgEncoder']
+        if self.cfg.img_composer_model.apply:
+            self.img_composer_model = model_dict['ImgComposer']
 
     def forward(self, trainloop, dat, cond):
         trainloop.run_step(dat, cond)
@@ -119,7 +121,9 @@ class TrainLoop(LightningModule):
         self.load_ckpt()
 
         self.model_trainer_dict = {}
+        # print(self.model_dict.keys())
         for name, model in self.model_dict.items():
+            # print(model, name)
             self.model_trainer_dict[name] = Trainer(name=name, model=model, pl_module=self)
 
         self.opt = AdamW(

@@ -122,8 +122,8 @@ def load_data_img_deca(
     in_image = {}
     # For conditioning images
     condition_image = cfg.img_cond_model.in_image + cfg.img_model.dpm_cond_img
-    if cfg.img_cond_model.compose_apply:
-        condition_image += cfg.img_cond_model.compose_img
+    if cfg.img_composer_model.apply:
+        condition_image += cfg.img_composer_model.in_image
         
     input_image = cfg.img_model.in_image
     for in_image_type in condition_image + input_image:
@@ -253,8 +253,8 @@ class DECADataset(Dataset):
         self.img_ext = img_ext
         self.precomp_params_key = without(src=self.cfg.param_model.params_selector, rmv=['img_latent'] + self.rmv_params)
         self.kwargs = kwargs
-        self.condition_image = self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img + self.cfg.img_model.in_image + self.cfg.img_cond_model.compose_img
-        self.prep_condition_image = self.cfg.img_cond_model.prep_image + self.cfg.img_model.prep_dpm_cond_img + self.cfg.img_model.prep_in_image + self.cfg.img_cond_model.prep_compose_image
+        self.condition_image = self.cfg.img_cond_model.in_image + self.cfg.img_model.dpm_cond_img + self.cfg.img_model.in_image + self.cfg.img_composer_model.in_image
+        self.prep_condition_image = self.cfg.img_cond_model.prep_image + self.cfg.img_model.prep_dpm_cond_img + self.cfg.img_model.prep_in_image + self.cfg.img_composer_model.prep_image
         print(f"[#] Bounding the input of UNet to +-{self.cfg.img_model.input_bound}")
 
     def __len__(self):
