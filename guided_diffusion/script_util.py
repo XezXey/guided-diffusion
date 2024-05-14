@@ -35,12 +35,12 @@ def create_img_and_diffusion(cfg):
     else: img_cond_model = None
     
     if cfg.img_composer_model.apply:
-        img_compose_model = create_model(cfg.img_composer_model, all_cfg=cfg)
+        img_composer_model = create_model(cfg.img_composer_model, all_cfg=cfg)
     else: 
-        img_compose_model = None
+        img_composer_model = None
     diffusion = create_gaussian_diffusion(cfg.diffusion)
     
-    return {cfg.img_model.name:img_model, cfg.img_cond_model.name:img_cond_model, cfg.img_composer_model.name:img_compose_model}, diffusion
+    return {cfg.img_model.name:img_model, cfg.img_cond_model.name:img_cond_model, cfg.img_composer_model.name:img_composer_model}, diffusion
 
 # Each sub-modules
 def create_param_model(cfg, cfg_cond=None):
@@ -312,6 +312,7 @@ def create_model(cfg, all_cfg=None):
         return EncoderUNet_WithPrep_SpatialCondition(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
+            composite_w_type=cfg.w_type
             # model_channels=cfg.num_channels,
             # out_channels=cfg.out_channels,
             # num_res_blocks=cfg.num_res_blocks,

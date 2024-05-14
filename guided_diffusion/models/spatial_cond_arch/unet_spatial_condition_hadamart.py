@@ -1947,11 +1947,12 @@ class EncoderUNet_WithPrep_SpatialCondition(nn.Module):
         super().__init__()
         #NOTE: Adding new layer to combined
         self.composite_w_type = composite_w_type
-        self.ggez = th.nn.Linear(256, 256)
         if self.composite_w_type == "global":
-            self.composite_w = th.nn.parameter.Parameter(th.ones((1)))  # For example, a scalar weight
+            print("[#] Using global composite_w")
+            self.composite_w = th.nn.parameter.Parameter(th.zeros((1)))  # For example, a scalar weight
         elif self.composite_w_type == "local":
-            self.composite_w = th.nn.parameter.Parameter(th.ones((in_channels, image_size, image_size)))  # For example, the Hadamart weight of image size
+            print("[#] Using local composite_w")
+            self.composite_w = th.nn.parameter.Parameter(th.zeros((in_channels, image_size, image_size)))  # For example, the Hadamart weight of image size
         else: raise NotImplementedError(f"Unexpected {self.composite_w_type} composite_w_type")
         
         #NOTE: Adding sigmoid layer to make sure the composite_w is in [0, 1]
@@ -1967,7 +1968,9 @@ class EncoderUNet_WithPrep_SpatialCondition(nn.Module):
         
         # First doing the composite layer: w * image1 + (1-w) * image2
         # Normally, x would contains the concatenate of [image1, image2, ...]
+        # print(self.composite_w)
         w = self.sigmoid(self.composite_w)
+        # print(w.shape, x1.shape, x2.shape, self.composite_w)
         out = w * x1 + (1 - w) * x2
         return out
         

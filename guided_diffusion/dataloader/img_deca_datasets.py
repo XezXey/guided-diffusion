@@ -273,6 +273,7 @@ class DECADataset(Dataset):
         # if self.cfg.img_cond_model.apply or self.cfg.img_model.apply_dpm_cond_img:
         for i, k in enumerate(self.condition_image):
             if k is None: continue
+            elif k in ['compose']: continue
             elif k == 'raw':
                 each_cond_img = (raw_img / 127.5) - 1
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
@@ -442,6 +443,8 @@ class DECADataset(Dataset):
                 condition_image['face_structure'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
             elif ('canny_edge_bg' in in_image_type):
                 condition_image[f"{in_image_type}_mask"] = self.face_segment(segment_part=f"{in_image_type}_mask", query_img_name=query_img_name)
+            elif in_image_type in ['compose']:
+                continue
             else: raise ValueError(f"Not supported type of condition image : {in_image_type}")
         return condition_image
 

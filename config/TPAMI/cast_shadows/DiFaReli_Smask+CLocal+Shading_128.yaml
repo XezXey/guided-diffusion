@@ -27,11 +27,11 @@ img_cond_model:
 
 img_composer_model:
   # Composer: (shading * w) + (shadow * (1-w))
-  apply: False
-  # apply: True
+  apply: True
   name: 'ImgComposer'
   arch: 'EncoderUNet_WithPrep_SpatialCondition'
   in_image: ['deca_masked_face_images_woclip', 'shadow_mask']
+  in_channels: 3
   prep_image: [Null, Null]
   w_type: "local"
   reduce_chn: 1
@@ -56,4 +56,4 @@ dataset:
 
 train_misc:
   exp_name: "CastShadows"
-  cfg_name: "DiFaReli_Smask+Shading_128"
+  cfg_name: "DiFaReli_Smask+CLocal+Shading_128"

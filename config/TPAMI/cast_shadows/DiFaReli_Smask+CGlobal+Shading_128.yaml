@@ -15,18 +15,26 @@ param_model:
 img_cond_model:
   apply: True
   arch: "EncoderUNet_SpatialCondition"
-  in_image: ['deca_masked_face_images_woclip', 'shadow_mask', 'faceseg_nohead']
-  in_channels: 4
-  # compose: (shading * w) + (shadow * (1-w))
-  compose_img: ['deca_masked_face_images_woclip', 'shadow_mask']
-  compose_w_type: "local"
-
+  # in_image: ['deca_masked_face_images_woclip', 'shadow_mask', 'faceseg_nohead']
+  in_image: ['compose', 'faceseg_nohead']
+  in_channels: 6
   image_size: 128
   out_channels: 128
   condition_dim: 256
   override_cond: "spatial_latent"
-  prep_image: [Null, Null, Null]
-  noise_dpm_cond_img: [Null, Null, Null]
+  prep_image: [Null, Null]
+  noise_dpm_cond_img: [Null, Null]
+
+img_composer_model:
+  # Composer: (shading * w) + (shadow * (1-w))
+  apply: True
+  name: 'ImgComposer'
+  arch: 'EncoderUNet_WithPrep_SpatialCondition'
+  in_image: ['deca_masked_face_images_woclip', 'shadow_mask']
+  in_channels: 3
+  prep_image: [Null, Null]
+  w_type: "global"
+  reduce_chn: 1
 
 
 relighting:
@@ -48,4 +56,4 @@ dataset:
 
 train_misc:
   exp_name: "CastShadows"
-  cfg_name: "DiFaReli_Smask+Shading_128"
+  cfg_name: "DiFaReli_Smask+CGlobal+Shading_128"
