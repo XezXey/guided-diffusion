@@ -116,6 +116,11 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
                 cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
         
     cond, _ = inference_utils.build_condition_image(cond=cond, misc=misc)
+    # print("AHAHA"*100)
+    # print(cond.keys())
+    # for k in cond.keys():
+    #     print(k, cond[k].shape)
+    # exit()
     cond = inference_utils.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
     cond['cfg'] = cfg
     if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):
@@ -409,7 +414,10 @@ if __name__ == '__main__':
                 vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5)
             else:
                 vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
-                
+        
+        # Save shadow mask
+        # vis_utils.save_images(path=f"{save_res_dir}", fn="shadm", frames=(out_render[:, 3:4] + 1) * 0.5)        
+        
         if args.save_vid:
             """
             save the video

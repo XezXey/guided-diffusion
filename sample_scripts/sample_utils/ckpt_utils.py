@@ -38,7 +38,7 @@ class CkptLoader():
     # Log & Checkpoint file 
     def get_model_path(self,):
         # model_logs_path = glob.glob(f"{self.sshfs_mount_path}/*/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/", recursive=True)
-        model_logs_path = glob.glob(f"{self.sshfs_mount_path}/*/*/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/", recursive=True) + glob.glob(f"{self.sshfs_mount_path}/*/*/", recursive=True)
+        model_logs_path = glob.glob(f"{self.sshfs_mount_path}/*/*/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/*/", recursive=True) + glob.glob(f"{self.sshfs_mount_path}/*/*/", recursive=True)
         model_path = [m_log for m_log in model_logs_path if f"/{self.log_dir}/" in m_log]    # Add /{}/ to achieve a case-sensitive of folder
         print("[#] Model Path : ")
         for i in range(len(model_path)):
@@ -61,7 +61,18 @@ class CkptLoader():
         self.available_model()
         # self.cfg.diffusion.diffusion_steps = 25
         model_dict, diffusion = create_img_and_diffusion(self.cfg)
+            # Filtered out the None model
         model_dict = {k: v for k, v in model_dict.items() if v is not None}
+        # print(model_dict)
+        for k, v in model_dict.items():
+            if v is None:
+                print(f"[#] Model {k} is None")
+            elif type(v) == tuple:
+                assert len(v) == 1
+                model_dict[k] = v[0]
+            else:
+                model_dict[k] = v
+                
         for m_name in model_dict.keys():
             model_path = f"{self.model_path}/{m_name}_{ckpt}.pt"
             print(f"[#] Loading...{model_path}")

@@ -183,7 +183,10 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
      - cond[f'{k}'] is the original one render & build_condition_image() fn
     """
     
-    # print(cond.keys())
+    # print("PREPCOND", cond.keys())
+    # print(cond['shadow_mask_img'].shape)
+    # print(cond['deca_masked_face_images_woclip_img'].shape)
+    # exit()
     if cfg.img_model.apply_dpm_cond_img:
         dpm_cond_img = []
         for k in cfg.img_model.dpm_cond_img:
@@ -289,7 +292,7 @@ def build_condition_image(cond, misc):
         all_render = []
         load_deca_time = time.time() - start_t
         render_time = []
-        # all_shadow_mask = []
+        all_shadow_mask = []
         for i in range(len(sub_step)-1):
             print(f"[#] Sub step rendering : {sub_step[i]} to {sub_step[i+1]}")
             start = sub_step[i]
@@ -306,15 +309,15 @@ def build_condition_image(cond, misc):
                                                                 deca_obj=deca_obj,
                                                                 repeat=True)
             # Shadow_mask : B x H x W
-            # shadow_mask = params_utils.render_shadow_mask(
-            #                                 sh_light=sub_cond['light'], 
-            #                                 cam=sub_cond['cam'][src_idx],
-            #                                 verts=orig_visdict['trans_verts_orig'], 
-            #                                 deca=deca_obj)
+            shadow_mask = params_utils.render_shadow_mask(
+                                            sh_light=sub_cond['light'], 
+                                            cam=sub_cond['cam'][src_idx],
+                                            verts=orig_visdict['trans_verts_orig'], 
+                                            deca=deca_obj)
             all_render.append(deca_rendered)
             render_time.append(time.time() - start_t)
             
-            # all_shadow_mask.append(shadow_mask[:, None, ...])
+            all_shadow_mask.append(shadow_mask[:, None, ...])
             
         render_time = np.mean(render_time) + load_deca_time
         cond['render_time'] = render_time
@@ -325,11 +328,11 @@ def build_condition_image(cond, misc):
             deca_rendered = all_render[0].repeat_interleave(repeats=len(all_render), dim=0)
         else:
             deca_rendered = th.cat(all_render, dim=0)
-        # if args.fixed_shadow:
-        #     print("[#] Fixed the Shadow mask")
-        #     shadow_mask = all_shadow_mask[0].repeat_interleave(repeats=len(all_render), dim=0)
-        # else:
-        #     shadow_mask = th.cat(all_shadow_mask, dim=0)
+        if args.fixed_shadow:
+            print("[#] Fixed the Shadow mask")
+            shadow_mask = all_shadow_mask[0].repeat_interleave(repeats=len(all_render), dim=0)
+        else:
+            shadow_mask = th.cat(all_shadow_mask, dim=0)
         
     #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'
     print("Conditoning with image : ", condition_img)

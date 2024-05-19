@@ -402,6 +402,7 @@ class DECADataset(Dataset):
             - Blur
         :param each_cond_img: condition image in [H x W x C]
         """
+        print(k, i, self.condition_image[i])
         assert k == (self.condition_image)[i]
         prep = (self.prep_condition_image)[i]
         if prep is None:
