@@ -44,6 +44,7 @@ def load_deca_params(deca_dir, cfg):
 
     # face params 
     params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'tform', 'albedo', 'detail', 'shadow']
+    # params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'shadow']
     for k in tqdm.tqdm(params_key, desc="Loading deca params..."):
         params_path = glob.glob(f"{deca_dir}/*{k}-anno.txt")
         for path in params_path:

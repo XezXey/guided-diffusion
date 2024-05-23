@@ -1,56 +1,20 @@
 {
-    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps1000" : {
-        "step":"ema_085000", 
-        "alias":"Baseline - DDIM 1000 steps",
-        "itp":"shadow",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"8"
-    },
-    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps250" : {
-        "step":"ema_085000", 
-        "alias":"Baseline - DDIM 250 steps",
-        "itp":"shadow",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"8"
-    },
-    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps100" : {
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_tomin_steps=100" : {
         "step":"ema_085000", 
         "alias":"Baseline - DDIM 100 steps",
         "itp":"shadow",
         "itp_method":"Lerp",
         "diff_step":"1000",
         "time_respace":"",
-        "n_frame":"8"
+        "n_frame":"3"
     },
-    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps50" : {
+    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_tomin_steps=50" : {
         "step":"ema_085000", 
         "alias":"Baseline - DDIM 50 steps",
         "itp":"shadow",
         "itp_method":"Lerp",
         "diff_step":"1000",
         "time_respace":"",
-        "n_frame":"8"
-    },
-    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_tomin_steps50" : {
-        "step":"ema_085000", 
-        "alias":"Baseline - DDIM 50 steps",
-        "itp":"shadow",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"8"
-    },
-    "log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_to2min_steps50" : {
-        "step":"ema_085000", 
-        "alias":"Baseline - DDIM 50 steps",
-        "itp":"shadow",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"8"
+        "n_frame":"3"
     }
 }
