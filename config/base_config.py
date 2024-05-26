@@ -122,6 +122,7 @@ img_cond_model_img_type = {'raw':3,
                            'deca_masked_face_images_wclip':3, 
                            'deca_masked_face_images_woclip':3,
                            'shadow_mask':1,
+                           'shadow_diff':1,
                            'faceseg_face':3, 
                            'faceseg_faceskin&nose':3, 
                            'faceseg_bg&noface':3,
@@ -228,6 +229,7 @@ cfg.dataset.latent_ldm_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_dat
 cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
 cfg.dataset.sobel_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/sobel/"
 cfg.dataset.shadow_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_masks/"
+cfg.dataset.shadow_diff_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_diff/"
 cfg.dataset.pair_per_sj = 1
 
 # ---------------------------------------------------------------------------- #

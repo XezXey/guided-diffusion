@@ -120,6 +120,8 @@ def make_vis_condimg(data, anno, input_bound):
             each_img = each_img
             print(th.max(each_img), th.min(each_img))
             print(each_img.shape)
+        elif 'shadow_diff' in img_type:
+            each_img = each_img
         else: raise NotImplementedError(f'img_type: {img_type} is not implemented')
             
         if ch_size == 1:  

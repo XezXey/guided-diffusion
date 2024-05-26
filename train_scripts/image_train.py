@@ -34,7 +34,8 @@ def main():
         else:
             img_model[k] = v
             
-    # img_model = {k: v for k, v in img_model.items() if v is not None}
+    # print(img_model.keys())
+    img_model = {k: v for k, v in img_model.items() if v is not None}
     # print(img_model.keys())
     # exit()
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)

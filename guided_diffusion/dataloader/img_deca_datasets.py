@@ -148,6 +148,8 @@ def load_data_img_deca(
                 continue
             elif 'shadow_mask' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_mask_dir}/{set_}/")
+            elif 'shadow_diff' in in_image_type:
+                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
             # elif ('raw' in in_image_type) or ('face_structure' in in_image_type) or (): continue
             elif in_image_type in ['raw', 'face_structure', 'compose']: 
                 continue
@@ -189,12 +191,12 @@ def load_data_img_deca(
 
     if deterministic:
         loader = DataLoader(
-            img_dataset, batch_size=batch_size, shuffle=False, num_workers=16, drop_last=True, 
+            img_dataset, batch_size=batch_size, shuffle=False, num_workers=4, drop_last=True, 
             pin_memory=True, persistent_workers=True
         )
     else:
         loader = DataLoader(
-            img_dataset, batch_size=batch_size, shuffle=True, num_workers=16, drop_last=True, pin_memory=True,
+            img_dataset, batch_size=batch_size, shuffle=True, num_workers=1, drop_last=True, pin_memory=True,
             persistent_workers=True
         )
 
@@ -289,6 +291,12 @@ class DECADataset(Dataset):
                 each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_AREA)
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                 out_dict[f'{k}_img'] = each_cond_img
+            elif 'shadow_diff' in k:
+                each_cond_img = cv2.resize(cond_img[k].astype(np.uint8), (self.resolution, self.resolution), cv2.INTER_NEAREST)
+                assert np.allclose(each_cond_img[..., 0], each_cond_img[..., 1]) and np.allclose(each_cond_img[..., 0], each_cond_img[..., 2])
+                each_cond_img = each_cond_img[..., 0:1]
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                out_dict[f'{k}_img'] = each_cond_img / 255.0
             elif 'faceseg' in k:
                 faceseg_mask = self.prep_cond_img(~cond_img[k], k, i)   # Invert mask for dilation
                 faceseg_mask = ~faceseg_mask    # Invert back to original mask
@@ -438,6 +446,8 @@ class DECADataset(Dataset):
                 condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
                 condition_image[f"{in_image_type}_mask"] = self.face_segment(segment_part=f"{in_image_type}_mask", query_img_name=query_img_name)
             elif 'shadow_mask' in in_image_type:
+                condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
+            elif 'shadow_diff' in in_image_type:
                 condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
