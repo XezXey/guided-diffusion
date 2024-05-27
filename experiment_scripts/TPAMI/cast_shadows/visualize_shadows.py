@@ -58,7 +58,7 @@ def create_app():
             
             path = '/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/'
             to_show_path = []
-            for to_show in ['median5_5e-2', 'thres_1e-1', 'thres_5e-2']:
+            for to_show in ['median5_5e-2', 'thres_1e-1', 'thres_5e-2', 'futschik', 'futschik_1e-1', 'futschik_2e-1']:
                 to_show_path.append(f'{path}/{to_show}/{set_}/{img_name}.png')
             
             out += f"<h1> Image: {img_name} </h1>"
