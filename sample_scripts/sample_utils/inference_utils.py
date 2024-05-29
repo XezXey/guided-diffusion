@@ -230,7 +230,7 @@ def build_condition_image(cond, misc):
     clip_ren = None
     
     # Handling the render face
-    if np.any(['deca' in i for i in condition_img]) or np.any(['shadow_mask' in i for i in condition_img]):
+    if np.any(['deca' in i for i in condition_img]) or np.any(['shadow_mask' in i for i in condition_img]) or np.any(['shadow_diff' in i for i in condition_img]):
         # Render the face
         if args.rotate_normals:
             #NOTE: Render w/ Rotated normals; cond['light'] shape = B x 27
@@ -283,7 +283,7 @@ def build_condition_image(cond, misc):
             # cond.update(interp_cond)
         
         start_t = time.time()
-        if np.any(['deca_masked' in n for n in condition_img]) or np.any(['shadow_mask' in n for n in condition_img]):
+        if np.any(['deca_masked' in n for n in condition_img]) or np.any(['shadow_mask' in n for n in condition_img]) or np.any(['shadow_diff' in n for n in condition_img]):
             mask = params_utils.load_flame_mask()
         else: mask=None
         
@@ -332,7 +332,12 @@ def build_condition_image(cond, misc):
             print("[#] Fixed the Shadow mask")
             shadow_mask = all_shadow_mask[0].repeat_interleave(repeats=len(all_render), dim=0)
         else:
-            shadow_mask = th.cat(all_shadow_mask, dim=0)
+            # m = cond['faceseg_mask'][src_idx]
+            # shadow_mask = ((th.cat(all_shadow_mask, dim=0) > 0.5) * 1.0) * m + (0.5 * ~m)
+            shadow_mask = ((th.cat(all_shadow_mask, dim=0) > 0.5) * 1.0)
+            # shadow_mask = th.cat(all_shadow_mask, dim=0)
+            # print(th.max(shadow_mask), th.min(shadow_mask))
+            # exit()
         
     #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'
     print("Conditoning with image : ", condition_img)
@@ -382,7 +387,7 @@ def build_condition_image(cond, misc):
                 rendered_tmp.append(r_tmp)
             rendered_tmp = np.stack(rendered_tmp, axis=0)
             cond[cond_img_name] = th.tensor(rendered_tmp).cuda()
-        elif 'shadow_mask' in cond_img_name:
+        elif 'shadow_mask' in cond_img_name or 'shadow_diff' in cond_img_name:
             shadow_mask_tmp = []
             for j in range(n_step):
                 sm_tmp = shadow_mask[j].mul(255).add_(0.5).clamp_(0, 255)

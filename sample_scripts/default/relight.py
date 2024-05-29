@@ -16,7 +16,11 @@ parser.add_argument('--itp_step', type=int, default=15, help='Number of frames(s
 parser.add_argument('--batch_size', type=int, default=15)
 parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
-parser.add_argument('--add_shadow', action='store_true', default=False, help='Not used on Relighting')
+# Shadows
+parser.add_argument('--add_remove_shadow', action='store_true', default=False)
+parser.add_argument('--add_shadow_to', type=float, default=None)
+parser.add_argument('--remove_shadow_to', type=float, default=None)
+
 # Samples selection
 parser.add_argument('--idx', nargs='+', default=[], help='Specify the start and end idx')
 parser.add_argument('--sample_pair_json', type=str, default=None, help='json file containing the sample pair')
@@ -140,7 +144,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
         interp_set = args.itp
         
     # Interpolate non-spatial
-    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func, add_shadow=args.add_shadow)
+    interp_cond = mani_utils.iter_interp_cond(cond, interp_set=interp_set, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
     cond.update(interp_cond)
         
     # Repeated non-spatial
@@ -297,6 +301,8 @@ if __name__ == '__main__':
     cfg.dataset.deca_rendered_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
     cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
     cfg.dataset.sobel_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/sobel/"
+    cfg.dataset.shadow_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_masks/"
+    cfg.dataset.shadow_diff_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_masks/"  # Mocking for inference
 
     loader, dataset, avg_dict = load_data_img_deca(
         data_dir=img_dataset_path,
@@ -416,7 +422,7 @@ if __name__ == '__main__':
                 vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
         
         # Save shadow mask
-        # vis_utils.save_images(path=f"{save_res_dir}", fn="shadm", frames=(out_render[:, 3:4] + 1) * 0.5)        
+        vis_utils.save_images(path=f"{save_res_dir}", fn="shadm", frames=(out_render[:, 3:4] + 1) * 0.5)        
         
         if args.save_vid:
             """

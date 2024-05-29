@@ -38,7 +38,7 @@ class CkptLoader():
     # Log & Checkpoint file 
     def get_model_path(self,):
         # model_logs_path = glob.glob(f"{self.sshfs_mount_path}/*/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/", recursive=True)
-        model_logs_path = glob.glob(f"{self.sshfs_mount_path}/*/*/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/*/", recursive=True) + glob.glob(f"{self.sshfs_mount_path}/*/*/", recursive=True)
+        model_logs_path = glob.glob(f"{self.sshfs_mount_path}/*/*/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/*/", recursive=True) + glob.glob(f"{self.sshfs_path}/*/*/*/", recursive=True) + glob.glob(f"{self.sshfs_mount_path}/*/*/", recursive=True) + glob.glob(f"{self.sshfs_mount_path}/*/*/*/*/", recursive=True)
         model_path = [m_log for m_log in model_logs_path if f"/{self.log_dir}/" in m_log]    # Add /{}/ to achieve a case-sensitive of folder
         print("[#] Model Path : ")
         for i in range(len(model_path)):
