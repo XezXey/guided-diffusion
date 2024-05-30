@@ -210,6 +210,8 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
             print(k, tmp_img.shape)
             cond_img.append(tmp_img.to(device))
         cond['cond_img'] = th.cat((cond_img), dim=1).to(device)
+        cond['cond_img'] = th.flip(cond['cond_img'], [0])
+        
     else:
         cond['cond_img'] = None
         
@@ -328,18 +330,14 @@ def build_condition_image(cond, misc):
             deca_rendered = all_render[0].repeat_interleave(repeats=len(all_render), dim=0)
         else:
             deca_rendered = th.cat(all_render, dim=0)
+            
         if args.fixed_shadow:
             print("[#] Fixed the Shadow mask")
             shadow_mask = all_shadow_mask[0].repeat_interleave(repeats=len(all_render), dim=0)
         else:
-            # m = cond['faceseg_mask'][src_idx]
-            # shadow_mask = ((th.cat(all_shadow_mask, dim=0) > 0.5) * 1.0) * m + (0.5 * ~m)
-            shadow_mask = ((th.cat(all_shadow_mask, dim=0) > 0.5) * 1.0)
-            # shadow_mask = th.cat(all_shadow_mask, dim=0)
-            # print(th.max(shadow_mask), th.min(shadow_mask))
-            # exit()
-        
-    #TODO: Make this applicable to either 'cond_img' or 'dpm_cond_img'
+            shadow_mask = th.cat(all_shadow_mask, dim=0)
+
+            
     print("Conditoning with image : ", condition_img)
     for i, cond_img_name in enumerate(condition_img):
         if ('faceseg' in cond_img_name) or ('laplacian' in cond_img_name) or ('sobel' in cond_img_name) or ('face_structure' in cond_img_name) or ('canny_edge_bg' in cond_img_name):
@@ -348,22 +346,6 @@ def build_condition_image(cond, misc):
                 bg_tmp = th.stack(bg_tmp, axis=0)
             else:
                 bg_tmp = np.stack(bg_tmp, axis=0)
-            # mask_bg = cond['faceseg_nohead_mask'][[src_idx]]
-            # sd = 58.050383371049826/127.5
-            # val = 1
-            # rpl_bg = th.normal(mean=val, std=sd, size=bg_tmp.shape)
-            # bg_tmp = mask_bg * rpl_bg
-            # import torchvision
-            # torchvision.utils.save_image(cond['faceseg_nohead_mask'].double(), 'ggex.png')
-            # torchvision.utils.save_image(bg_tmp, 'ggex2.png')
-            # exit()
-                                              
-            # print(condition_img)
-            # print(cond['faceseg_nohead_mask'].shape)
-            # import torchvision
-            # torchvision.utils.save_image(cond['faceseg_nohead_mask'].double(), 'ggex.png')
-            # print(cond.keys())
-            # exit()
             cond[f"{cond_img_name}"] = th.tensor(bg_tmp)
             
         elif 'deca' in cond_img_name:
@@ -387,7 +369,7 @@ def build_condition_image(cond, misc):
                 rendered_tmp.append(r_tmp)
             rendered_tmp = np.stack(rendered_tmp, axis=0)
             cond[cond_img_name] = th.tensor(rendered_tmp).cuda()
-        elif 'shadow_mask' in cond_img_name or 'shadow_diff' in cond_img_name:
+        elif 'shadow_mask' in cond_img_name:
             shadow_mask_tmp = []
             for j in range(n_step):
                 sm_tmp = shadow_mask[j].mul(255).add_(0.5).clamp_(0, 255)
@@ -401,12 +383,29 @@ def build_condition_image(cond, misc):
                 shadow_mask_tmp.append(sm_tmp[[0], ...])
             shadow_mask_tmp = np.stack(shadow_mask_tmp, axis=0)
             cond[cond_img_name] = th.tensor(shadow_mask_tmp).cuda()
-            # print(cond['shadow_mask'].shape)
-            # print(th.min(cond['shadow_mask']))
-            # print(th.max(cond['shadow_mask']))
-            # import torchvision
-            # torchvision.utils.save_image((cond['shadow_mask']+1)*127.5/255.0, 'ggez.png')
-            # exit()
+        elif 'shadow_diff' in cond_img_name:
+            shadow_diff_tmp = []
+            for j in range(n_step):
+                sd_tmp = shadow_mask[j].mul(255).add_(0.5).clamp_(0, 255)   # Scale back to 0-255
+                sd_tmp = sd_tmp.repeat_interleave(repeats=3, dim=0)
+                sd_tmp = np.transpose(sd_tmp.cpu().numpy(), (1, 2, 0))  # HxWxC
+                sd_tmp = sd_tmp.astype(np.uint8)
+                sd_tmp = dataset.augmentation(PIL.Image.fromarray(sd_tmp))
+                sd_tmp = dataset.prep_cond_img(sd_tmp, cond_img_name, i)
+                sd_tmp = np.transpose(sd_tmp, (2, 0, 1))    # CxHxW
+                sd_tmp = sd_tmp[0:1, ...]
+                sd_tmp = (sd_tmp / 255.0)
+                if args.postproc_shadow_mask:
+                    # Thresholding & Masking & Fill bg with 0.5
+                    m_glasses_and_eyes = cond['shadow_diff_meg_mask'][src_idx].cpu().numpy()
+                    m_face = cond['shadow_diff_mface_mask'][src_idx].cpu().numpy()
+                    sd_tmp = (sd_tmp < 0.5) * 1.0
+                    sd_tmp = ((sd_tmp * np.abs(1-m_glasses_and_eyes)) + (1.0 * m_glasses_and_eyes))
+                    sd_tmp = np.abs(1 - sd_tmp) # Inverse => Shadow = 0, Non-shadow = 1
+                    sd_tmp = (((sd_tmp * np.abs(1-m_glasses_and_eyes)) + (1.0 * m_glasses_and_eyes)) * m_face) + (0.5 * np.abs(1-m_face))
+                shadow_diff_tmp.append(sd_tmp)
+            shadow_diff_tmp = np.stack(shadow_diff_tmp, axis=0)
+            cond[cond_img_name] = th.tensor(shadow_diff_tmp).cuda()
     return cond, clip_ren
 
 

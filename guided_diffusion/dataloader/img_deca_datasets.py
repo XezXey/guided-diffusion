@@ -150,16 +150,16 @@ def load_data_img_deca(
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_mask_dir}/{set_}/")
             elif 'shadow_diff' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
-            # elif ('raw' in in_image_type) or ('face_structure' in in_image_type) or (): continue
+                if mode == 'sampling':
+                    for tk in ['faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses', 'faceseg_eyes&glasses']:
+                        in_image[f'{tk}'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
+                        in_image[f'{tk}'] = image_path_list_to_dict(in_image[f'{tk}'])
             elif in_image_type in ['raw', 'face_structure', 'compose']: 
                 continue
             else:
                 raise NotImplementedError(f"The {in_image_type}-image type not found.")
 
         in_image[in_image_type] = image_path_list_to_dict(in_image[in_image_type])
-        # print(in_image[in_image_type])
-        # print("#"*100)
-        # exit()
     
     deca_params, avg_dict = load_deca_params(deca_dir + set_, cfg)
 
@@ -297,6 +297,18 @@ class DECADataset(Dataset):
                 each_cond_img = each_cond_img[..., 0:1]
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                 out_dict[f'{k}_img'] = each_cond_img / 255.0
+                # Loading mask for inference
+                if self.mode == 'sampling':
+                    for tk in ['mface_mask', 'meg_mask']:
+                        out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), cv2.INTER_NEAREST)
+                        out_dict[f'{k}_{tk}'] = np.transpose(out_dict[f'{k}_{tk}'], [2, 0, 1])
+                        out_dict[f'{k}_{tk}'] = out_dict[f'{k}_{tk}'][0:1, ...]
+                    
+                    # out_dict[f'{k}_mface_mask'] = cv2.resize(cond_img[f'{k}_mface_mask'].astype(np.uint8), (self.resolution, self.resolution), cv2.INTER_NEAREST)
+                    # out_dict[f'{k}_mface_mask'] = np.transpose(out_dict[f'{k}_mface_mask'], [2, 0, 1])
+                    # out_dict[f'{k}_meg_mask'] = cv2.resize(cond_img[f'{k}_meg_mask'].astype(np.uint8), (self.resolution, self.resolution), cv2.INTER_NEAREST)
+                    # out_dict[f'{k}_meg_mask'] = np.transpose(out_dict[f'{k}_meg_mask'], [2, 0, 1])
+                    # out_dict[f'{k}_mface_mask'] = out_dict[f'{k}_mface_mask'][0:1, ...]
             elif 'faceseg' in k:
                 faceseg_mask = self.prep_cond_img(~cond_img[k], k, i)   # Invert mask for dilation
                 faceseg_mask = ~faceseg_mask    # Invert back to original mask
@@ -449,6 +461,9 @@ class DECADataset(Dataset):
                 condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
             elif 'shadow_diff' in in_image_type:
                 condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
+                if self.mode == 'sampling':
+                    condition_image[f"{in_image_type}_mface_mask"] = self.face_segment(segment_part=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", query_img_name=query_img_name)
+                    condition_image[f"{in_image_type}_meg_mask"] = self.face_segment(segment_part=f"faceseg_eyes&glasses", query_img_name=query_img_name)
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
             elif in_image_type == 'face_structure':
@@ -511,12 +526,17 @@ class DECADataset(Dataset):
             seg_m = skin
         elif segment_part == 'faceseg_faceskin&nose':
             seg_m = (skin | nose)
+        elif segment_part == 'faceseg_faceskin&nose&mouth&eyebrows':
+            seg_m = (skin | nose | mouth | u_lip | l_lip | l_brow | r_brow | l_eye | r_eye)    
+        elif segment_part == 'faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses':
+            seg_m = (skin | nose | mouth | u_lip | l_lip | l_brow | r_brow | l_eye | r_eye | eye_g)
+        elif segment_part == 'faceseg_eyes&glasses':
+            seg_m = (l_eye | r_eye | eye_g)
+        
         elif segment_part == 'faceseg_face_noglasses':
             seg_m = (~eye_g & face)
         elif segment_part == 'faceseg_face_noglasses_noeyes':
             seg_m = (~(l_eye | r_eye) & ~eye_g & face)
-        elif segment_part == 'faceseg_eyes&glasses':
-            seg_m = (l_eye | r_eye | eye_g)
         elif segment_part == 'faceseg_eyes':
             seg_m = (l_eye | r_eye)
         # elif (segment_part == 'sobel_bg_mask') or (segment_part == 'laplacian_bg_mask') or (segment_part == 'sobel_bin_bg_mask'):

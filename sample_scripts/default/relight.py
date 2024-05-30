@@ -46,9 +46,10 @@ parser.add_argument('--gpu_id', type=str, default="0")
 parser.add_argument('--postfix', type=str, default='', help='postfix for the output folder')
 parser.add_argument('--save_vid', action='store_true', default=False)
 parser.add_argument('--fps', action='store_true', default=False)
-# Experiment
+# Experiment - Cast shadows
 parser.add_argument('--fixed_render', action='store_true', default=False)
 parser.add_argument('--fixed_shadow', action='store_true', default=False)
+parser.add_argument('--postproc_shadow_mask', action='store_true', default=False)
 
 args = parser.parse_args()
 

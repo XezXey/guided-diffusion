@@ -1,6 +1,7 @@
 import torch as th
 import numpy as np
 import time
+import json
 import torchvision
 import matplotlib.pyplot as plt
 import torchvision.transforms.functional as F
@@ -24,7 +25,11 @@ from sample_scripts.sample_utils import (
 from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
 parser = argparse.ArgumentParser()
 parser.add_argument('--trans_verts_orig_file', type=str, required=True)
+parser.add_argument('--image_path', type=str, default='/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/')
+parser.add_argument('--deca_path', type=str, default='/data/mint/DPM_Dataset/ffhq_256_with_anno/params/')
+parser.add_argument('--output_path', type=str, required=True)
 parser.add_argument('--s_e', nargs='+', type=int, default=None)
+parser.add_argument('--pair_file', type=str, default=None)
 parser.add_argument('--set_', type=str, required=True)
 args = parser.parse_args()
 
@@ -134,8 +139,8 @@ if __name__ == '__main__':
     cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
 
     loader, dataset, _ = load_data_img_deca(
-        data_dir=img_dataset_path,
-        deca_dir=deca_dataset_path,
+        data_dir=args.image_path,
+        deca_dir=args.deca_path,
         batch_size=int(1e7),
         image_size=cfg.img_model.image_size,
         deterministic=cfg.train.deterministic,
@@ -149,7 +154,8 @@ if __name__ == '__main__':
     )
 
     from importlib import reload
-    sys.path.insert(0, '../../sample_scripts/cond_utils/DECA/')
+    # sys.path.insert(0, '../../sample_scripts/cond_utils/DECA/')
+    sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA')
     from decalib.deca import DECA
     from decalib.datasets import datasets 
     from decalib.utils import util
@@ -158,8 +164,6 @@ if __name__ == '__main__':
 
     f_mask = np.load('./FLAME_masks_face-id.pkl', allow_pickle=True, encoding='latin1')
     v_mask = np.load('./FLAME_masks.pkl', allow_pickle=True, encoding='latin1')
-    img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
-    deca_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
     mask={
         'v_mask':v_mask['face'].tolist(),
         'f_mask':f_mask['face'].tolist()
@@ -172,12 +176,19 @@ if __name__ == '__main__':
 
     print(deca)
     
-    img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{set_}/")
+    img_path = file_utils._list_image_files_recursively(f"{args.image_path}/{set_}/")
     
-    if args.s_e is None:
-        img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=[name.split('/')[-1] for name in img_path])
-    else:
+    if args.s_e is not None:
         img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=[name.split('/')[-1] for name in img_path][args.s_e[0]:args.s_e[1]])
+    elif args.pair_file is not None and os.path.exists(args.pair_file):
+        with open(args.pair_file, 'r') as file:
+            dat = json.load(file)
+            dat = [d['src'] for d in dat['pair'].values()]
+            print(dat)
+            img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=dat)
+            print(img_idx)
+    else:
+        img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=[name.split('/')[-1] for name in img_path])
     
     dat = th.utils.data.Subset(dataset, indices=img_idx)
     subset_loader = th.utils.data.DataLoader(dat, batch_size=1,
@@ -209,7 +220,10 @@ if __name__ == '__main__':
         shadow_mask = gen_shadow_mask_vect(ld, th.tensor(depth_grid.reshape(h, w, 3)))
         text += "Elapsed time : raycasting : {:.3f}".format(time.time() - s_ray_t)
         # print("[#] SHADOW_MASK's shape : ", shadow_mask.shape)
+        if '.jpg' in img_name:
+            img_name = img_name.replace('.jpg', '')
         torchvision.utils.save_image(shadow_mask/255.0, f"./output/{set_}/{img_name}.png")
+        torchvision.utils.save_image(shadow_mask/255.0, f"{args.output_path}/{set_}/{img_name}.png")
         t.set_description(text)
         t.refresh()
     exit()

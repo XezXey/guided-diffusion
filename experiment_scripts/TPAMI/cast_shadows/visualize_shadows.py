@@ -53,7 +53,7 @@ def create_app():
         # for img_path in glob.glob(f'/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/{set_}/*.jpg')[:100]:
         #     img_name = img_path.split('/')[-1].split('.')[0]
         
-        for img_path in glob.glob(f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/thres_1e-1/{set_}/*.png')[:100]:
+        for img_path in glob.glob(f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/thres_1e-1/{set_}/*.png')[:500]:
             img_name = img_path.split('/')[-1].split('.')[0]
             
             path = '/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/'

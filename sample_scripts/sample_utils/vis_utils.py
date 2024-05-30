@@ -85,6 +85,7 @@ def plot_image(img, c_len=[], fn='./temp', range="-1to1"):
         torchvision.utils.save_image(tensor=img_plot, fp=f"./{fn}.png")
     else:
         for i, c in enumerate(c_len):
+            print("Image range: ", img[:, 0:c, ...].min(), img[:, 0:c, ...].max())
             img_plot = img[:, 0:c, ...]
             img = img[:, c:, ...]   # Slice out the plotted one
             if range == "-1to1":
