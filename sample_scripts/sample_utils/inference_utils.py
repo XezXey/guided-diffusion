@@ -210,7 +210,7 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
             print(k, tmp_img.shape)
             cond_img.append(tmp_img.to(device))
         cond['cond_img'] = th.cat((cond_img), dim=1).to(device)
-        cond['cond_img'] = th.flip(cond['cond_img'], [0])
+        # cond['cond_img'] = th.flip(cond['cond_img'], [0])
         
     else:
         cond['cond_img'] = None

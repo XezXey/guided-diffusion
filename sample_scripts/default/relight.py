@@ -387,7 +387,7 @@ if __name__ == '__main__':
         itp_str = '_'.join(args.itp)
         
         model_kwargs['use_render_itp'] = True
-        out_relit, out_render, time_dict = relight(dat = dat,
+        out_relit, out_cond, time_dict = relight(dat = dat,
                                     model_kwargs=model_kwargs,
                                     src_idx=src_idx, dst_idx=dst_idx,
                                     itp_func=itp_fn,
@@ -414,16 +414,14 @@ if __name__ == '__main__':
             torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{eval_dir}/input={src_id}#pred={dst_id}.png")
             
         
-        is_render = True if out_render is not None else False
+        is_render = True if out_cond is not None else False
         if is_render:
-            clip_ren = True if 'wclip' in dataset.condition_image[0] else False 
-            if clip_ren:
-                vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5)
-            else:
-                vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
+            vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_cond[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
         
         # Save shadow mask
-        vis_utils.save_images(path=f"{save_res_dir}", fn="shadm", frames=(out_render[:, 3:4] + 1) * 0.5)        
+        is_shadow = True if (('shadow_diff' in cfg.img_cond_model.in_image) or ('shadow_mask' in cfg.img_cond_model.in_image)) else False
+        if is_shadow:
+            vis_utils.save_images(path=f"{save_res_dir}", fn="shadm", frames=(out_cond[:, 3:4]))        
         
         if args.save_vid:
             """
@@ -441,8 +439,7 @@ if __name__ == '__main__':
             torchvision.io.write_video(video_array=vid_relit, filename=f"{save_res_dir}/res.mp4", fps=args.fps)
             torchvision.io.write_video(video_array=vid_relit_rt, filename=f"{save_res_dir}/res_rt.mp4", fps=args.fps)
             if is_render:
-                out_render = out_render[:, :3]
-                vid_render = out_render
+                vid_render = out_cond[:, :3]
                 # vid_render = th.cat((out_render, th.flip(out_render, dims=[0])))
                 clip_ren = False #if 'wclip' in dataset.condition_image else True
                 if clip_ren:
@@ -453,6 +450,29 @@ if __name__ == '__main__':
                     torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
                     vid_render_rt = th.cat((vid_render, th.flip(vid_render, dims=[0])))
                     torchvision.io.write_video(video_array=vid_render_rt, filename=f"{save_res_dir}/ren_rt.mp4", fps=args.fps)
+                    
+            if is_shadow:
+                vid_shadm = out_cond[:, 3:4]
+                vid_shadm = vid_shadm.repeat(1, 3, 1, 1)
+                vid_shadm = (vid_shadm.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
+                torchvision.io.write_video(video_array=vid_shadm, filename=f"{save_res_dir}/shadm.mp4", fps=args.fps)
+                vid_shadm_rt = th.cat((vid_shadm, th.flip(vid_shadm, dims=[0])))
+                torchvision.io.write_video(video_array=vid_shadm_rt, filename=f"{save_res_dir}/shadm_rt.mp4", fps=args.fps)
+            
+            if is_render and is_shadow:
+                all_out = th.cat((vid_render, vid_relit, vid_shadm), dim=2)
+            elif is_render:
+                all_out = th.cat((vid_render, vid_relit), dim=2)
+            
+            torchvision.io.write_video(video_array=all_out, filename=f"{save_res_dir}/out.mp4", fps=args.fps)
+            all_out_rt = th.cat((all_out, th.flip(all_out, dims=[0])))
+            torchvision.io.write_video(video_array=all_out_rt, filename=f"{save_res_dir}/out_rt.mp4", fps=args.fps)
+                
+
+                
+                
+                
+                
                 
         with open(f'{save_res_dir}/res_desc.json', 'w') as fj:
             log_dict = {'sampling_args' : vars(args), 

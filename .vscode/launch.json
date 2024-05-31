@@ -15,6 +15,24 @@
 //                           |___/ |___/                                                |___/ 
 
         {
+            "name": "Python: train_UNet_SpatialCond_Both",
+            "type": "python",
+            "request": "launch",
+            "env": {"CUDA_VISIBLE_DEVICES":"0", "WANDB_MODE":"offline"},
+            "program": "./train_scripts/image_train.py",
+            "args": ["--train.log_dir",
+                    "/data/mint/model_logs/test",
+                    "--train.batch_size", "5", 
+                    "--train.n_gpus", "1", 
+                    "--cfg", "/home/mint/Dev/DiFaReli/difareli-faster/config/TPAMI/architecture/DiFaReli_both_128.yaml",
+                    "--train.sampling_interval", "50",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/Dev/DiFaReli/difareli-faster/",
+            "justMyCode": true
+        }, 
+
+        {
             "name": "Python: train_example",
             "type": "python",
             "request": "launch",
