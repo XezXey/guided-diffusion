@@ -327,13 +327,17 @@ def build_condition_image(cond, misc):
         
         if args.fixed_render:
             print("[#] Fixed the Deca renderer")
-            deca_rendered = all_render[0].repeat_interleave(repeats=len(all_render), dim=0)
+            print(all_render[0].shape) # List of  [B x 3 x H x W, ...]
+            deca_rendered = all_render[0][0:1].repeat_interleave(repeats=n_step, dim=0)
+            print(deca_rendered.shape)
         else:
             deca_rendered = th.cat(all_render, dim=0)
             
         if args.fixed_shadow:
             print("[#] Fixed the Shadow mask")
-            shadow_mask = all_shadow_mask[0].repeat_interleave(repeats=len(all_render), dim=0)
+            print(all_shadow_mask[0].shape) # List of  [B x 1 x H x W, ...]
+            shadow_mask = all_shadow_mask[0][0:1].repeat_interleave(repeats=n_step, dim=0)
+            print(shadow_mask.shape)
         else:
             shadow_mask = th.cat(all_shadow_mask, dim=0)
 
@@ -404,8 +408,13 @@ def build_condition_image(cond, misc):
                     sd_tmp = np.abs(1 - sd_tmp) # Inverse => Shadow = 0, Non-shadow = 1
                     sd_tmp = (((sd_tmp * np.abs(1-m_glasses_and_eyes)) + (1.0 * m_glasses_and_eyes)) * m_face) + (0.5 * np.abs(1-m_face))
                 shadow_diff_tmp.append(sd_tmp)
+                
+            if args.inverse_with_shadow_diff:
+                print("[#] Inverse with shadow_diff (Replacing frame-0th)...")
+                shadow_diff_tmp[0] = cond['shadow_diff_img'][src_idx]
             shadow_diff_tmp = np.stack(shadow_diff_tmp, axis=0)
             cond[cond_img_name] = th.tensor(shadow_diff_tmp).cuda()
+                
     return cond, clip_ren
 
 

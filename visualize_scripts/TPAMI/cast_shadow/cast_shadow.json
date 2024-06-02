@@ -1,7 +1,25 @@
 {
     "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_postproc_fnin" : {
         "step":"ema_070000", 
-        "alias":"Baseline - DDIM 100 steps",
+        "alias":"Median",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_inv_with_sd" : {
+        "step":"ema_070000", 
+        "alias":"Median (Inverse with SD)",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_inv_with_sd_futschik" : {
+        "step":"ema_070000", 
+        "alias":"Median (Inverse with Futschik)",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
@@ -10,11 +28,76 @@
     },
     "log=DiFaReli_Sdiff_thres5e-2_128_cfg=DiFaReli_Sdiff_thres5e-2_128.yaml_postproc_fnin" : {
         "step":"ema_070000", 
-        "alias":"Baseline - DDIM 100 steps",
+        "alias":"Thresh",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Sdiff_thres5e-2_128_cfg=DiFaReli_Sdiff_thres5e-2_128.yaml" : {
+        "step":"ema_400000", 
+        "alias":"Thresh (No postprocessing)",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Sdiff_thres5e-2_128_cfg=DiFaReli_Sdiff_thres5e-2_128.yaml_inv_with_sd" : {
+        "step":"ema_400000", 
+        "alias":"Thresh (Inverse with SD)",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Sdiff_thres5e-2_128_cfg=DiFaReli_Sdiff_thres5e-2_128.yaml_inv_with_sd_median" : {
+        "step":"ema_400000", 
+        "alias":"Thresh (Inverse with Median)",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+
+    "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_postproc_fix_rd" : {
+        "step":"ema_070000", 
+        "alias":"Median - Fixed render",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_postproc_fix_sm" : {
+        "step":"ema_070000", 
+        "alias":"Median - Fixed shadows",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Sdiff_futschik2e-1_128_cfg=DiFaReli_Sdiff_futschik2e-1_128" : {
+        "step":"ema_070000", 
+        "alias":"Futschik",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Sdiff_futschik2e-1_128_cfg=DiFaReli_Sdiff_futschik2e-1_128_inv_with_sd" : {
+        "step":"ema_070000", 
+        "alias":"Futschik (Inverse with SD)",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"60"
     }
+    
 }

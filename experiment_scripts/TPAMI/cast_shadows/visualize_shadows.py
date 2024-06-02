@@ -60,6 +60,7 @@ parser.add_argument('--set_', default='train')
 parser.add_argument('--port', required=True)
 parser.add_argument('--host', default='0.0.0.0')
 parser.add_argument('--rank_shadow_c', action='store_true', default=False)
+parser.add_argument('--rank_shadow_iou', action='store_true', default=False)
 argsp = parser.parse_args()
 # Run only once
 run = True
@@ -68,6 +69,9 @@ if run:
     if argsp.rank_shadow_c:
         c = pd.read_csv(f'/data/mint/DPM_Dataset/ffhq_256_with_anno/params/{argsp.set_}/ffhq-{argsp.set_}-shadow-anno.txt', sep=' ', header=None, names=['image_name', 'c_val'])
         c_sorted = c.sort_values(by=['c_val'], ascending=False)
+    if argsp.rank_shadow_iou:
+        c = pd.read_csv('./iou.csv', sep=',', header=None, skiprows=1, names=['image_name', 'IOU'])
+        c_sorted = c.sort_values(by=['IOU'], ascending=False)
             
     diffuse_img_path = progress(vid='11') + progress(vid='10', mothership=True) + progress(vid='9') + progress(vid='8')
     diffuse_img_path = {re.findall(r"src=\d+\.jpg", p)[0].split('=')[1].split('.')[0]: p for p in diffuse_img_path}
@@ -106,7 +110,8 @@ def create_app():
             for to_show in ['thres_5e-2', 'median5_5e-2', 'futschik', 'futschik_2e-1']:
                 to_show_path.append(f'{path}/{to_show}/{set_}/{img_name}.png')
             
-            out += f"<h1> Image: {img_name} </h1>"
+            value = c_sorted[c_sorted['image_name'] == f'{img_name}.jpg'].values[0][1]
+            out += f"<h1> Image: {img_name} => {value} </h1>"
             # Raw image
             tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/{set_}/{img_name}.jpg'
             out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
@@ -125,7 +130,7 @@ def create_app():
             out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
             
             # Shadow masks for vis
-            tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_masks_t5e-2_forvis/{set_}/{img_name}.png'
+            tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_masks_t5e-1_forvis/{set_}/{img_name}.png'
             out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
             
             out += "<br>"

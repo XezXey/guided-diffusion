@@ -70,6 +70,7 @@ def create_app():
         """
         show_vid = request.args.get('show_vid', "True")
         show_img = request.args.get('show_img', "True")
+        ds = int(request.args.get('ds', 5))
         
         out += "</script>"
         out += "<button onclick='transposeAllTables()'>Transpose</button>"
@@ -141,10 +142,10 @@ def create_app():
                     """
                 else: 
                     out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
-                
                 # out += f"<td>{show_img}{show_vid}"
                 out += f"<td>"
                 if len(frames) > 0 and show_img == "True":
+                    tmp_ds = list(range(0, len(frames), int(len(frames)/ds)))
                     frames = sort_by_frame(frames)
                     if show_itmd == "False":
                         frames = [frames[0], frames[-1]]
@@ -152,7 +153,9 @@ def create_app():
                         frames = frames[1:]
                     if show_relit == "False":
                         frames = frames[:-1]
-                    for f in frames:
+                    for idx, f in enumerate(frames):
+                        if idx not in tmp_ds: continue
+                            
                         if 'baseline' in alias:
                             out += "<img width=\"128\" height=\"128\" src=/files/" + f + ">"
                         else:

@@ -1,0 +1,56 @@
+{
+    "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_postproc_fnin" : {
+        "step":"ema_070000", 
+        "alias":"Median",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_inv_with_sd" : {
+        "step":"ema_070000", 
+        "alias":"Median (Inverse with SD)",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_inv_with_sd_thres" : {
+        "step":"ema_070000", 
+        "alias":"Median (Inverse with Thres)",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_inv_with_sd_futschik" : {
+        "step":"ema_070000", 
+        "alias":"Median (Inverse with Futschik)",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_postproc_fix_rd" : {
+        "step":"ema_070000", 
+        "alias":"Median - Fixed render",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_postproc_fix_sm" : {
+        "step":"ema_070000", 
+        "alias":"Median - Fixed shadows",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    }
+}

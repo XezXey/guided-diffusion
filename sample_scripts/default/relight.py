@@ -50,6 +50,8 @@ parser.add_argument('--fps', action='store_true', default=False)
 parser.add_argument('--fixed_render', action='store_true', default=False)
 parser.add_argument('--fixed_shadow', action='store_true', default=False)
 parser.add_argument('--postproc_shadow_mask', action='store_true', default=False)
+parser.add_argument('--inverse_with_shadow_diff', action='store_true', default=False)
+parser.add_argument('--shadow_diff_dir', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -303,7 +305,8 @@ if __name__ == '__main__':
     cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
     cfg.dataset.sobel_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/sobel/"
     cfg.dataset.shadow_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_masks/"
-    cfg.dataset.shadow_diff_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_masks/"  # Mocking for inference
+    cfg.dataset.shadow_diff_dir = f"{cfg.dataset.shadow_diff_dir}/" if args.shadow_diff_dir is None else f"{args.shadow_diff_dir}/"
+    # cfg.dataset.shadow_diff_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_diff/"
 
     loader, dataset, avg_dict = load_data_img_deca(
         data_dir=img_dataset_path,
