@@ -72,6 +72,15 @@
         "time_respace":"",
         "n_frame":"60"
     },
+    "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_inv_with_sd_fix_rd" : {
+        "step":"ema_070000", 
+        "alias":"Median - Fixed render (Inv with sd)",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
     "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_postproc_fix_sm" : {
         "step":"ema_070000", 
         "alias":"Median - Fixed shadows",

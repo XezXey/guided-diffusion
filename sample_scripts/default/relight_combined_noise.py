@@ -51,6 +51,7 @@ parser.add_argument('--fixed_render', action='store_true', default=False)
 parser.add_argument('--fixed_shadow', action='store_true', default=False)
 parser.add_argument('--postproc_shadow_mask', action='store_true', default=False)
 parser.add_argument('--inverse_with_shadow_diff', action='store_true', default=False)
+parser.add_argument('--inverse_combined_noise', type=float, default=0.0)
 parser.add_argument('--shadow_diff_dir', type=str, default=None)
 
 args = parser.parse_args()
@@ -188,30 +189,32 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
                         n_step=n_step, itp_func=itp_func
                     )
 
-    # Reverse 
-    cond_rev = copy.deepcopy(cond)
-    cond_rev = dict_slice(in_d=cond_rev, keys=cond_rev.keys(), n=1) # Slice only 1st image out for inversion
-    if cfg.img_cond_model.apply:
-        cond_rev = pl_sampling.forward_cond_network(model_kwargs=cond_rev)
-    
-    rev_time = time.time()
-    print("[#] Apply Mean-matching...")
-    reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
-    noise_map = reverse_ddim_sample['final_output']['sample']
-    rev_mean = reverse_ddim_sample['intermediate']
-    
-    #NOTE: rev_mean WILL BE MODIFIED; This is for computing the ratio of inversion (brightness correction).
-    sample_ddim = pl_sampling.forward_proc(
-        noise=noise_map,
-        model_kwargs=cond_rev,
-        store_intermediate=False,
-        rev_mean=rev_mean)
-    
-    reverse_time = time.time() - rev_time
-    print(f"[#] Reverse time = {reverse_time}")
+    # Reverse 2 times
+    if args.inverse_combined_noise > 0.0:
+        for i in range(2):
+            cond_rev = copy.deepcopy(cond)
+            cond_rev = dict_slice_se(in_d=cond_rev, keys=cond_rev.keys(), s=i, e=i+1) # Slice only 1st image out for inversion
+            if cfg.img_cond_model.apply:
+                cond_rev = pl_sampling.forward_cond_network(model_kwargs=cond_rev)
+            
+            rev_time = time.time()
+            print("[#] Apply Mean-matching...")
+            reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
+            noise_map = reverse_ddim_sample['final_output']['sample']
+            rev_mean = reverse_ddim_sample['intermediate']
+            
+            #NOTE: rev_mean WILL BE MODIFIED; This is for computing the ratio of inversion (brightness correction).
+            sample_ddim = pl_sampling.forward_proc(
+                noise=noise_map,
+                model_kwargs=cond_rev,
+                store_intermediate=False,
+                rev_mean=rev_mean)
+            
+            reverse_time = time.time() - rev_time
+            print(f"[#] Reverse time = {reverse_time}")
 
-    assert noise_map.shape[0] == 1
-    rev_mean_first = [x[:1] for x in rev_mean]
+            assert noise_map.shape[0] == 1
+            rev_mean_first = [x[:1] for x in rev_mean]
     
     print("[#] Relighting...")
     sub_step = ext_sub_step(n_step)

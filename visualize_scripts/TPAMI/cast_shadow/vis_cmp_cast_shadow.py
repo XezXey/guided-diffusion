@@ -68,16 +68,21 @@ def create_app():
         }
 
         """
+        out += "</script>"
+        
         show_vid = request.args.get('show_vid', "True")
         show_img = request.args.get('show_img', "True")
+        show_shadm = request.args.get('show_shadm', "False")
         ds = int(request.args.get('ds', 5))
+        sample_json =request.args.get('sample_json', args.sample_pair_json)
         
-        out += "</script>"
-        out += "<button onclick='transposeAllTables()'>Transpose</button>"
         data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_{args.res}/{args.set_}/"
-        assert os.path.isfile(args.sample_pair_json)
-        f = open(args.sample_pair_json)
+        assert os.path.isfile(sample_json)
+        f = open(sample_json)
         sample_pairs = json.load(f)['pair']
+        
+        out += f"<h2> Sample json file: {sample_json} </h2>"
+        out += "Transpose : <button onclick='transposeAllTables()'>Transpose</button>"
         
         # path example : /data/mint/sampling/FFHQ_Reshadow_mintomax/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps50/ema_085000/valid/shadow/reverse_sampling/src=60000.jpg/dst=60000.jpg 
         f = open(args.comparison_candidate)
@@ -127,7 +132,10 @@ def create_app():
                     frames = glob.glob(f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame}/res_*.png")
                     # out += f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png"
                 else:
-                    frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
+                    if show_shadm == "True":
+                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/shadm_*.png")
+                    else:
+                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
                     # out += f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png"
                 # out += str(show_itmd)
                         # <video width="320" height="240" controls autoplay muted>
@@ -145,7 +153,7 @@ def create_app():
                 # out += f"<td>{show_img}{show_vid}"
                 out += f"<td>"
                 if len(frames) > 0 and show_img == "True":
-                    tmp_ds = list(range(0, len(frames), int(len(frames)/ds)))
+                    tmp_ds = [0] + list(range(1, len(frames), int(len(frames)/ds)))
                     frames = sort_by_frame(frames)
                     if show_itmd == "False":
                         frames = [frames[0], frames[-1]]
