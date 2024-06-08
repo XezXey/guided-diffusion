@@ -191,6 +191,8 @@ class HadamartLayer(nn.Module):
                 self.prep_layer = nn.Sigmoid()
             elif self.prep == 'identity':
                 print("[#] Use Hadamart-Identity")
+            elif self.prep == 'addition':
+                print("[#] Use Addition Hadamart(No multiplication)")
             elif self.prep == 'adaptive_patches_gn':
                 print("[#] Use Hadamart-AdaptiveGN")
                 self.prep_layer = AdaptiveGN_Patches_Hadamart(prep=self.prep, 
@@ -220,6 +222,8 @@ class HadamartLayer(nn.Module):
                 out = th.mul(x, self.prep_layer(y))
             elif self.prep == 'identity':
                 out = th.mul(x, (1+y))
+            elif self.prep == 'addition':
+                out = x + y
             elif self.prep in ['adaptive_patches_gn', 'adaptive_reducech_gn']:
                 out = self.prep_layer(x, y)
             else: raise NotImplementedError("[#Hadamart]The clipping method is not found")
