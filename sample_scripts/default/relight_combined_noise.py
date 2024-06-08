@@ -51,7 +51,7 @@ parser.add_argument('--fixed_render', action='store_true', default=False)
 parser.add_argument('--fixed_shadow', action='store_true', default=False)
 parser.add_argument('--postproc_shadow_mask', action='store_true', default=False)
 parser.add_argument('--inverse_with_shadow_diff', action='store_true', default=False)
-parser.add_argument('--inverse_combined_noise', type=float, default=0.0)
+parser.add_argument('--inverse_combined_noise', type=float, default=None)
 parser.add_argument('--shadow_diff_dir', type=str, default=None)
 
 args = parser.parse_args()
@@ -124,11 +124,6 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
                 cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
         
     cond, _ = inference_utils.build_condition_image(cond=cond, misc=misc)
-    # print("AHAHA"*100)
-    # print(cond.keys())
-    # for k in cond.keys():
-    #     print(k, cond[k].shape)
-    # exit()
     cond = inference_utils.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
     cond['cfg'] = cfg
     if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):
@@ -190,7 +185,9 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
                     )
 
     # Reverse 2 times
-    if args.inverse_combined_noise > 0.0:
+    if args.inverse_combined_noise is not None:
+        rev_mean_list = []
+        noise_map_list = []
         for i in range(2):
             cond_rev = copy.deepcopy(cond)
             cond_rev = dict_slice_se(in_d=cond_rev, keys=cond_rev.keys(), s=i, e=i+1) # Slice only 1st image out for inversion
@@ -215,7 +212,18 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
 
             assert noise_map.shape[0] == 1
             rev_mean_first = [x[:1] for x in rev_mean]
-    
+            rev_mean_list.append(rev_mean_first)
+            noise_map_list.append(noise_map)
+            
+        rev_mean_first = th.stack([th.stack(x, dim=0) for x in rev_mean_list], dim=0)
+        # rev_mean_first = th.mean(rev_mean_first, dim=0)
+        rev_mean_first = rev_mean_first[0, ...] * args.inverse_combined_noise + rev_mean_first[1, ...] * (1.0 - args.inverse_combined_noise)
+        rev_mean_first = [x[0:1] for x in rev_mean_first]
+        # noise_map = th.mean(th.stack(noise_map_list, dim=0), dim=0)
+        noise_map = th.stack(noise_map_list, dim=0)
+        noise_map = (noise_map[0, ...] * args.inverse_combined_noise) + (noise_map[1, ...] * (1.0 - args.inverse_combined_noise))
+        # cond = dict_slice_se(in_d=cond, keys=cond.keys(), s=1, e=n_step) # Slice only 1st image out for inversion
+        
     print("[#] Relighting...")
     sub_step = ext_sub_step(n_step)
     relit_out = []

@@ -73,8 +73,9 @@ def create_app():
         show_vid = request.args.get('show_vid', "True")
         show_img = request.args.get('show_img', "True")
         show_shadm = request.args.get('show_shadm', "False")
+        #show_shadm = request.args.get('show_shadm', "True")
         ds = int(request.args.get('ds', 5))
-        sample_json =request.args.get('sample_json', args.sample_pair_json)
+        sample_json = request.args.get('sample_json', args.sample_pair_json)
         
         data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_{args.res}/{args.set_}/"
         assert os.path.isfile(sample_json)
@@ -152,7 +153,8 @@ def create_app():
                     out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
                 # out += f"<td>{show_img}{show_vid}"
                 out += f"<td>"
-                if len(frames) > 0 and show_img == "True":
+                # if len(frames) > 0 and show_img == "True":
+                if len(frames) > 0:
                     tmp_ds = [0] + list(range(1, len(frames), int(len(frames)/ds)))
                     frames = sort_by_frame(frames)
                     if show_itmd == "False":

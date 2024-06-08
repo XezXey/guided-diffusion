@@ -412,8 +412,11 @@ def build_condition_image(cond, misc):
             if args.inverse_with_shadow_diff:
                 print("[#] Inverse with shadow_diff (Replacing frame-0th)...")
                 shadow_diff_tmp[0] = cond['shadow_diff_img'][src_idx]
-            # if args.inverse_with_combination:
-            #     shadow_diff_tmp = shadow_diff_tmp[0:1] + cond['shadow_diff_img'][src_idx:src_idx+1] + shadow_diff_tmp[1:]
+                # shadow_diff_tmp[1] = cond['shadow_diff_img'][src_idx]
+                if args.fixed_shadow:
+                    shadow_diff_tmp = [cond['shadow_diff_img'][src_idx] for _ in range(len(shadow_diff_tmp))]
+            # if args.inverse_combined_noise is not None:
+            #     shadow_diff_tmp = [cond['shadow_diff_img'][src_idx]] + shadow_diff_tmp[0:-1]
             shadow_diff_tmp = np.stack(shadow_diff_tmp, axis=0)
             cond[cond_img_name] = th.tensor(shadow_diff_tmp).cuda()
                 
