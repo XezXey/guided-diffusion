@@ -22,7 +22,8 @@ img_cond_model:
   condition_dim: 256
   override_cond: "spatial_latent"
   prep_image: [Null, Null, dilate=5]
-  noise_dpm_cond_img: [Null, Null, [153, 204]]
+  noise_dpm_cond_img: [Null, Null, Null]
+  canny_thres: [Null, Null, [153, 204]]
 
 relighting:
   use_SH: False
