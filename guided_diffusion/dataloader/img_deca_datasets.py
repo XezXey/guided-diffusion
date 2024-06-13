@@ -134,6 +134,8 @@ def load_data_img_deca(
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.deca_rendered_dir}/{in_image_type}/{set_}/")
             elif 'faceseg' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
+            elif 'face_structure' in in_image_type:
+                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
             elif ('sobel_bg' in in_image_type) or ('sobel_bin_bg' in in_image_type):
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.sobel_dir}/{set_}/")
                 in_image[f'{in_image_type}_mask'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
@@ -154,7 +156,10 @@ def load_data_img_deca(
                     for tk in ['faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses', 'faceseg_eyes&glasses']:
                         in_image[f'{tk}'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
                         in_image[f'{tk}'] = image_path_list_to_dict(in_image[f'{tk}'])
-            elif in_image_type in ['raw', 'face_structure', 'compose']: 
+            # elif 'face_structure' in in_image_type:
+            #     # Extract the face structure from the segmentation mask; e.g. one-hot encoding of each part
+            #     in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/")
+            elif in_image_type in ['raw', 'compose']: 
                 continue
             else:
                 raise NotImplementedError(f"The {in_image_type}-image type not found.")
@@ -321,10 +326,21 @@ class DECADataset(Dataset):
                 faceseg_mask = cv2.resize(faceseg_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                 out_dict[f'{k}_mask'] = np.transpose(faceseg_mask, (2, 0, 1))
                 assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
+            elif 'face_structure' in k:
+                for pi, _ in enumerate(self.cfg.conditioning.face_structure.parts):
+                    tmp_fs = self.prep_cond_img(cond_img[k][pi], k, i)
+                    tmp_fs = cv2.resize(tmp_fs.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                    assert np.allclose(tmp_fs[..., 0], tmp_fs[..., 1]) and np.allclose(tmp_fs[..., 0], tmp_fs[..., 2])
+                    tmp_fs = tmp_fs[..., 0:1]
+                    tmp_fs = np.transpose(tmp_fs, [2, 0, 1])
+                    cond_img[k][pi] = tmp_fs
+                cond_img[k] = np.concatenate(cond_img[k], axis=0)  # Concatenate the face structure parts into n-channels(parts)
+                # Store value
+                out_dict[f'{k}_img'] = cond_img[k]
+
             elif ('sobel_bg' in k) or ('laplacian_bg' in k):
                 mask = cond_img[f'{k}_mask']
                 mask = ~self.prep_cond_img(~mask, k, i)
-                # print(k, cond_img[k].shape, sobel_mask.shape)
                 assert np.allclose(mask[..., 0], mask[..., 1]) and np.allclose(mask[..., 0], mask[..., 2])
                 mask = mask[..., 0:1]
                 each_cond_img = cond_img[k] * mask
@@ -448,7 +464,7 @@ class DECADataset(Dataset):
         for in_image_type in self.condition_image:
             if in_image_type is None:continue
             elif 'faceseg' in in_image_type:
-                condition_image[in_image_type] = self.face_segment(in_image_type, query_img_name)
+                condition_image[in_image_type] = self.face_segment(cond_name=in_image_type, segment_part=in_image_type, query_img_name=query_img_name)
             elif 'deca' in in_image_type:
                 if "woclip" in in_image_type:
                     condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
@@ -456,32 +472,36 @@ class DECADataset(Dataset):
                     condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
             elif ('sobel' in in_image_type) or ('laplacian' in in_image_type):
                 condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
-                condition_image[f"{in_image_type}_mask"] = self.face_segment(segment_part=f"{in_image_type}_mask", query_img_name=query_img_name)
+                condition_image[f"{in_image_type}_mask"] = self.face_segment(cond_name=in_image_type, segment_part=f"{in_image_type}_mask", query_img_name=query_img_name)
             elif 'shadow_mask' in in_image_type:
                 condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
             elif 'shadow_diff' in in_image_type:
                 condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
                 if self.mode == 'sampling':
-                    condition_image[f"{in_image_type}_mface_mask"] = self.face_segment(segment_part=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", query_img_name=query_img_name)
-                    condition_image[f"{in_image_type}_meg_mask"] = self.face_segment(segment_part=f"faceseg_eyes&glasses", query_img_name=query_img_name)
+                    condition_image[f"{in_image_type}_mface_mask"] = self.face_segment(cond_name=in_image_type, segment_part=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", query_img_name=query_img_name)
+                    condition_image[f"{in_image_type}_meg_mask"] = self.face_segment(cond_name=in_image_type, segment_part=f"faceseg_eyes&glasses", query_img_name=query_img_name)
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
             elif in_image_type == 'face_structure':
-                condition_image['face_structure'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
+                condition_image['face_structure'] = self.face_segment_to_onehot(cond_name=in_image_type, segment_part=self.cfg.conditioning.face_structure.parts, query_img_name=query_img_name)
             elif ('canny_edge_bg' in in_image_type):
-                condition_image[f"{in_image_type}_mask"] = self.face_segment(segment_part=f"{in_image_type}_mask", query_img_name=query_img_name)
+                condition_image[f"{in_image_type}_mask"] = self.face_segment(cond_name=in_image_type, segment_part=f"{in_image_type}_mask", query_img_name=query_img_name)
             elif in_image_type in ['compose']:
                 continue
             else: raise ValueError(f"Not supported type of condition image : {in_image_type}")
         return condition_image
+    
+    def face_segment_to_onehot(self, cond_name, segment_part, query_img_name):
+        
+        seg_m = [self.face_segment(cond_name=cond_name, segment_part=f'faceseg_{p}', query_img_name=query_img_name) for p in segment_part]
+        return seg_m
 
-    def face_segment(self, segment_part, query_img_name):
+    def face_segment(self, cond_name, segment_part, query_img_name):
         # print(self.kwargs.keys())
         # print(self.kwargs['in_image_for_cond'].keys())
         # exit()
-        face_segment_anno = self.load_image(self.kwargs['in_image_for_cond'][segment_part][query_img_name.replace(self.img_ext, '.png')])
+        face_segment_anno = self.load_image(self.kwargs['in_image_for_cond'][cond_name][query_img_name.replace(self.img_ext, '.png')])
         
-
         face_segment_anno = np.array(face_segment_anno)
         bg = (face_segment_anno == 0)
         skin = (face_segment_anno == 1)
@@ -510,6 +530,20 @@ class DECADataset(Dataset):
             seg_m = (face | neck | hair)
         elif segment_part == 'faceseg_nohead':
             seg_m = ~(face | neck | hair)
+        elif segment_part == 'faceseg_hair':
+            seg_m = hair
+        elif segment_part == 'faceseg_eyes':
+            seg_m = (l_eye | r_eye)
+        elif segment_part == 'faceseg_ears':
+            seg_m = (l_ear | r_ear | ear_r)
+        elif segment_part == 'faceseg_nose':
+            seg_m = nose
+        elif segment_part == 'faceseg_mouth':
+            seg_m = (mouth | u_lip | l_lip)
+        elif segment_part == 'faceseg_neck':
+            seg_m = neck
+        elif segment_part == 'faceseg_glasses':
+            seg_m = eye_g
         elif segment_part == 'faceseg_face&hair':
             seg_m = ~bg
         elif segment_part == 'faceseg_bg_noface&nohair':
@@ -520,8 +554,6 @@ class DECADataset(Dataset):
             seg_m = bg
         elif segment_part == 'faceseg_bg&noface':
             seg_m = (bg | hair | hat | neck | neck_l | cloth)
-        elif segment_part == 'faceseg_hair':
-            seg_m = hair
         elif segment_part == 'faceseg_faceskin':
             seg_m = skin
         elif segment_part == 'faceseg_faceskin&nose':
@@ -532,14 +564,10 @@ class DECADataset(Dataset):
             seg_m = (skin | nose | mouth | u_lip | l_lip | l_brow | r_brow | l_eye | r_eye | eye_g)
         elif segment_part == 'faceseg_eyes&glasses':
             seg_m = (l_eye | r_eye | eye_g)
-        
         elif segment_part == 'faceseg_face_noglasses':
             seg_m = (~eye_g & face)
         elif segment_part == 'faceseg_face_noglasses_noeyes':
             seg_m = (~(l_eye | r_eye) & ~eye_g & face)
-        elif segment_part == 'faceseg_eyes':
-            seg_m = (l_eye | r_eye)
-        # elif (segment_part == 'sobel_bg_mask') or (segment_part == 'laplacian_bg_mask') or (segment_part == 'sobel_bin_bg_mask'):
         elif segment_part in ['sobel_bg_mask', 'laplacian_bg_mask', 'sobel_bin_bg_mask']:
             seg_m = ~(face | neck | hair)
         elif segment_part in ['canny_edge_bg_mask']:

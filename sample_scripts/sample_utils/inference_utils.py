@@ -415,8 +415,14 @@ def build_condition_image(cond, misc):
                 # shadow_diff_tmp[1] = cond['shadow_diff_img'][src_idx]
                 if args.fixed_shadow:
                     shadow_diff_tmp = [cond['shadow_diff_img'][src_idx] for _ in range(len(shadow_diff_tmp))]
-            # if args.inverse_combined_noise is not None:
-            #     shadow_diff_tmp = [cond['shadow_diff_img'][src_idx]] + shadow_diff_tmp[0:-1]
+
+            if args.combined_mask:
+                print("[#] Combined the mask from rendered face with shadow_mask to prevent the outside face area...")
+                rendered_mask = rendered_tmp[0] > 0.0
+                rendered_mask = rendered_mask[0:1, ...]
+                shadow_diff_tmp = [((sd_tmp * rendered_mask) + (((0.5 * np.ones_like(sd_tmp[0:1, ...])) * ~rendered_mask))) for sd_tmp in shadow_diff_tmp]
+
+
             shadow_diff_tmp = np.stack(shadow_diff_tmp, axis=0)
             cond[cond_img_name] = th.tensor(shadow_diff_tmp).cuda()
                 

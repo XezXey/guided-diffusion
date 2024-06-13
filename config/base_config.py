@@ -213,6 +213,14 @@ cfg.relighting.arch = 'add_channels'
 cfg.relighting.mult_shaded = 'No'
 cfg.relighting.num_shaded_ch = 1
 
+# ---------------------------------------------------------------------------- #
+# Options for face structure (choosing the part of the face)
+# ---------------------------------------------------------------------------- #
+face_structure_parts_chn = {'hair':1, 'faceskin':1, 'eyes':1, 'glasses':1, 'ears':1, 'nose':1, 'mouth':1, 'neck':1}
+cfg.conditioning = CN()
+cfg.conditioning.face_structure = CN() 
+cfg.conditioning.face_structure.parts = ['hair', 'faceskin', 'eyes', 'ears', 'nose', 'mouth', 'neck'] 
+
 
 # ---------------------------------------------------------------------------- #
 # Options for Dataset
@@ -359,12 +367,14 @@ def update_params(cfg):
     # Replace with updated n_params from params_selector
     cfg.img_model.condition_dim = sum(cfg.param_model.n_params)
 
-    cfg.img_model.in_channels, cfg.img_model.each_in_channels = update_img_chns(img_list=cfg.img_model.dpm_cond_img, 
+    cfg.img_model.in_channels, cfg.img_model.each_in_channels = update_img_chns(cfg, 
+                                                                                img_list=cfg.img_model.dpm_cond_img, 
                                                                                 prep_list=cfg.img_model.prep_dpm_cond_img, 
-                                                                                # in_channels=3,
                                                                                 in_channels=cfg.img_model.in_channels,
                                                                             )
-    cfg.img_cond_model.in_channels, cfg.img_cond_model.each_in_channels = update_img_chns(img_list=cfg.img_cond_model.in_image, prep_list=cfg.img_cond_model.prep_image)
+    cfg.img_cond_model.in_channels, cfg.img_cond_model.each_in_channels = update_img_chns(cfg, 
+                                                                                          img_list=cfg.img_cond_model.in_image, 
+                                                                                          prep_list=cfg.img_cond_model.prep_image)
     
     return cfg
     
@@ -382,21 +392,18 @@ def update_dataset_path(cfg):
     cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
     return cfg
 
-def update_img_chns(img_list, prep_list, in_channels=0):
+def update_img_chns(cfg, img_list, prep_list, in_channels=0):
     #TODO: Rework this shit
     # Update conditioning image type for img_model/img_cond_model
     assert len(img_list) == len(prep_list)
     for in_img, prep in zip(img_list, prep_list):
-        # print(prep, in_img)
-        if prep is None:
-            in_c = img_cond_model_img_type[in_img]
-        elif 'color=YUV' in prep:
-            in_c = img_cond_model_img_type[in_img] - 2
-        else:  
+        if in_img == 'face_structure':
+            in_c = sum([face_structure_parts_chn[p] for p in cfg.conditioning.face_structure.parts])
+        else:
             in_c = img_cond_model_img_type[in_img]
         in_channels += in_c
-        
-    each_in_channels = [img_cond_model_img_type[in_img] for in_img in img_list]
+    
+    each_in_channels = [img_cond_model_img_type[in_img] if in_img != 'face_structure' else sum([face_structure_parts_chn[p] for p in cfg.conditioning.face_structure.parts]) for in_img in img_list]
     return in_channels, each_in_channels
 
 def cmd_to_cfg_format(opts):

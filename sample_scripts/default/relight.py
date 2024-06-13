@@ -51,6 +51,7 @@ parser.add_argument('--fixed_render', action='store_true', default=False)
 parser.add_argument('--fixed_shadow', action='store_true', default=False)
 parser.add_argument('--postproc_shadow_mask', action='store_true', default=False)
 parser.add_argument('--inverse_with_shadow_diff', action='store_true', default=False)
+parser.add_argument('--combined_mask', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dir', type=str, default=None)
 
 args = parser.parse_args()

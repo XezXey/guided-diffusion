@@ -158,7 +158,7 @@ def render_shadow_mask(sh_light, cam, verts, deca):
         tmp = []
         for i in range(1, verts.shape[0]):
             tmp.append(th.allclose(verts[[0]], verts[[i]]))
-        assert all(tmp);
+        assert all(tmp)
         
     depth_image, alpha_image = deca.render.render_depth(verts.cuda())   # Depth : B x 1 x H x W
     _, _, h, w = depth_image.shape
