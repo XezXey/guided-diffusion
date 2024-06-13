@@ -485,7 +485,7 @@ class DECADataset(Dataset):
             elif in_image_type == 'face_structure':
                 condition_image['face_structure'] = self.face_segment_to_onehot(cond_name=in_image_type, segment_part=self.cfg.conditioning.face_structure.parts, query_img_name=query_img_name)
             elif ('canny_edge_bg' in in_image_type):
-                condition_image[f"{in_image_type}_mask"] = self.face_segment(cond_name=in_image_type, segment_part=f"{in_image_type}_mask", query_img_name=query_img_name)
+                condition_image[f"{in_image_type}_mask"] = self.face_segment(cond_name=f"{in_image_type}_mask", segment_part=f"{in_image_type}_mask", query_img_name=query_img_name)
             elif in_image_type in ['compose']:
                 continue
             else: raise ValueError(f"Not supported type of condition image : {in_image_type}")
