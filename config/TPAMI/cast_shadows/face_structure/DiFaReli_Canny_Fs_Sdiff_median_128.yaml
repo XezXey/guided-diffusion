@@ -15,14 +15,15 @@ param_model:
 img_cond_model:
   apply: True
   arch: "EncoderUNet_SpatialCondition"
-  in_image: ['deca_masked_face_images_woclip', 'shadow_diff', 'faceseg_nohead', 'face_structure']
+  in_image: ['deca_masked_face_images_woclip', 'shadow_diff', 'canny_edge_bg', 'face_structure']
   in_channels: 7
   image_size: 128
   out_channels: 128
   condition_dim: 256
   override_cond: "spatial_latent"
-  prep_image: [Null, Null, Null, Null]
+  prep_image: [Null, Null, dilate=5, Null]
   noise_dpm_cond_img: [Null, Null, Null, Null]
+  canny_thres: [Null, Null, [153, 204], Null]
 
 conditioning:
   face_structure:
@@ -47,4 +48,4 @@ dataset:
 
 train_misc:
   exp_name: "CastShadows"
-  cfg_name: "DiFaReli_Sdiff_median_128"
+  cfg_name: "DiFaReli_Canny_Fs_Sdiff_median_128"
