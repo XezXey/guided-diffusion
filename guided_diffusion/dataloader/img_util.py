@@ -127,6 +127,7 @@ def make_vis_condimg(data, anno, input_bound, cfg):
                     tmp.append(th.repeat_interleave(each_img[:, ss:ee, ...], dim=1, repeats=3))
                 else:
                     tmp.append(each_img[:, ss:ee, ...])
+                ss += chn
             each_img = th.cat((tmp), dim=0)
         elif 'shadow_mask' in img_type:
             each_img = each_img
