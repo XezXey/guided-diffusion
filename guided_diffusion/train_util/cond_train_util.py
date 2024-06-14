@@ -535,7 +535,8 @@ class TrainLoop(LightningModule):
         if cond['dpm_cond_img'] is not None:
             cond_img = make_vis_condimg(data = cond['dpm_cond_img'], 
                                         anno = zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.each_in_channels),
-                                        input_bound = self.input_bound
+                                        input_bound = self.input_bound,
+                                        cfg = self.cfg
                                     )
             log_image_fn(key=f'{sampling_model} - conditioned_image (UNet)', image=make_grid(cond_img, nrow=4), step=(step_ + 1) * self.n_gpus)
             # self.t_logger.add_image(tag=f'conditioned_image (UNet)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
@@ -544,7 +545,8 @@ class TrainLoop(LightningModule):
         if cond['cond_img'] is not None:
             cond_img = make_vis_condimg(data = cond['cond_img'], 
                                         anno = zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.each_in_channels),
-                                        input_bound = self.input_bound
+                                        input_bound = self.input_bound,
+                                        cfg=self.cfg
                                     )
             log_image_fn(key=f'{sampling_model} - conditioned_image (Encoder)', image=make_grid(cond_img, nrow=4), step=(step_ + 1) * self.n_gpus)
             # tb.add_image(tag=f'conditioned_image (Encoder)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)

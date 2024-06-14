@@ -220,6 +220,7 @@ face_structure_parts_chn = {'hair':1, 'faceskin':1, 'eyes':1, 'glasses':1, 'ears
 cfg.conditioning = CN()
 cfg.conditioning.face_structure = CN() 
 cfg.conditioning.face_structure.parts = ['hair', 'faceskin', 'eyes', 'ears', 'nose', 'mouth', 'neck'] 
+cfg.conditioning.face_structure.chn = [(k, v) for k, v in face_structure_parts_chn.items()] 
 
 
 # ---------------------------------------------------------------------------- #

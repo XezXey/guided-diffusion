@@ -96,7 +96,7 @@ def show(imgs):
         axs[0, i].imshow(np.asarray(img))
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
         
-def make_vis_condimg(data, anno, input_bound):
+def make_vis_condimg(data, anno, input_bound, cfg):
     # data: [N, C, H, W], C is annotated by img_type
     cond_img = []
     s = 0
@@ -116,6 +116,18 @@ def make_vis_condimg(data, anno, input_bound):
             each_img = each_img + 0.5
         elif 'canny_edge_bg' in img_type:
             each_img = each_img + 0.5
+        elif 'face_structure' in img_type:
+            face_structure_parts_chn = {k: v for k, v in cfg.conditioning.face_structure.chn}
+            tmp = []
+            ss = s
+            for part in cfg.conditioning.face_structure.parts:
+                chn = face_structure_parts_chn[part]
+                ee = ss + chn
+                if chn == 1:
+                    tmp.append(th.repeat_interleave(each_img[:, ss:ee, ...], dim=1, repeats=3))
+                else:
+                    tmp.append(each_img[:, ss:ee, ...])
+            each_img = th.cat((tmp), dim=0)
         elif 'shadow_mask' in img_type:
             each_img = each_img
             print(th.max(each_img), th.min(each_img))
