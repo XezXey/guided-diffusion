@@ -119,15 +119,18 @@ def make_vis_condimg(data, anno, input_bound, cfg):
         elif 'face_structure' in img_type:
             face_structure_parts_chn = {k: v for k, v in cfg.conditioning.face_structure.chn}
             tmp = []
-            ss = s
+            ss = 0
             for part in cfg.conditioning.face_structure.parts:
                 chn = face_structure_parts_chn[part]
                 ee = ss + chn
+                assert ss < e and ee <= e
                 if chn == 1:
                     tmp.append(th.repeat_interleave(each_img[:, ss:ee, ...], dim=1, repeats=3))
                 else:
                     tmp.append(each_img[:, ss:ee, ...])
                 ss += chn
+            for gg in tmp:
+                print(gg.shape)
             each_img = th.cat((tmp), dim=0)
         elif 'shadow_mask' in img_type:
             each_img = each_img
