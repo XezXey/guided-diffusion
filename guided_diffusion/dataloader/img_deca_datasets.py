@@ -522,7 +522,9 @@ class DECADataset(Dataset):
         cloth = (face_segment_anno == 16)
         hair = (face_segment_anno == 17)
         hat = (face_segment_anno == 18)
-        face = np.logical_or.reduce((skin, l_brow, r_brow, l_eye, r_eye, eye_g, l_ear, r_ear, ear_r, nose, mouth, u_lip, l_lip))
+        l_pupil = (face_segment_anno == 19)
+        r_pupil = (face_segment_anno == 20)
+        face = np.logical_or.reduce((skin, l_brow, r_brow, l_eye, l_pupil, r_eye, r_pupil, eye_g, l_ear, r_ear, ear_r, nose, mouth, u_lip, l_lip))
 
         if segment_part == 'faceseg_face':
             seg_m = face
@@ -533,7 +535,9 @@ class DECADataset(Dataset):
         elif segment_part == 'faceseg_hair':
             seg_m = hair
         elif segment_part == 'faceseg_eyes':
-            seg_m = (l_eye | r_eye)
+            seg_m = (l_eye | r_eye | l_pupil | r_pupil)
+        elif segment_part == 'faceseg_pupils':
+            seg_m = (l_pupil | r_pupil)
         elif segment_part == 'faceseg_ears':
             seg_m = (l_ear | r_ear | ear_r)
         elif segment_part == 'faceseg_nose':

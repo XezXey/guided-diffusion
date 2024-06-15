@@ -132,6 +132,14 @@ def create_app():
             # Shadow masks for vis
             tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_masks_t5e-1_forvis/{set_}/{img_name}.png'
             out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
+
+            # faceseg masks for vis
+            tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment/{set_}/anno/anno_{img_name}.png'
+            out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
+
+            # faceseg masks for vis
+            tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment_with_pupil/{set_}/anno/anno_{img_name}.png'
+            out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
             
             out += "<br>"
                 
