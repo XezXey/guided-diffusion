@@ -39,7 +39,6 @@ def main():
     # print(img_model.keys())
     # exit()
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
-
     logger.log("[#] Creating data loader...")
     train_loader, _, _ = load_data_img_deca(
         data_dir=cfg.dataset.data_dir,
