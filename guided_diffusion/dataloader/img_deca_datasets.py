@@ -478,8 +478,8 @@ class DECADataset(Dataset):
             elif 'shadow_diff' in in_image_type:
                 condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
                 if self.mode == 'sampling':
-                    condition_image[f"{in_image_type}_mface_mask"] = self.face_segment(cond_name=in_image_type, segment_part=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", query_img_name=query_img_name)
-                    condition_image[f"{in_image_type}_meg_mask"] = self.face_segment(cond_name=in_image_type, segment_part=f"faceseg_eyes&glasses", query_img_name=query_img_name)
+                    condition_image[f"{in_image_type}_mface_mask"] = self.face_segment(cond_name=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", segment_part=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", query_img_name=query_img_name)
+                    condition_image[f"{in_image_type}_meg_mask"] = self.face_segment(cond_name=f"faceseg_eyes&glasses", segment_part=f"faceseg_eyes&glasses", query_img_name=query_img_name)
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs['in_image_for_cond']['raw'][query_img_name]))
             elif in_image_type == 'face_structure':
@@ -544,6 +544,12 @@ class DECADataset(Dataset):
             seg_m = nose
         elif segment_part == 'faceseg_mouth':
             seg_m = (mouth | u_lip | l_lip)
+        elif segment_part == 'faceseg_u_lip':
+            seg_m = u_lip
+        elif segment_part == 'faceseg_l_lip':
+            seg_m = u_lip
+        elif segment_part == 'faceseg_inmouth':
+            seg_m = mouth
         elif segment_part == 'faceseg_neck':
             seg_m = neck
         elif segment_part == 'faceseg_glasses':
@@ -565,9 +571,9 @@ class DECADataset(Dataset):
         elif segment_part == 'faceseg_faceskin&nose&mouth&eyebrows':
             seg_m = (skin | nose | mouth | u_lip | l_lip | l_brow | r_brow | l_eye | r_eye)    
         elif segment_part == 'faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses':
-            seg_m = (skin | nose | mouth | u_lip | l_lip | l_brow | r_brow | l_eye | r_eye | eye_g)
+            seg_m = (skin | nose | mouth | u_lip | l_lip | l_brow | r_brow | l_eye | r_eye | l_pupil | r_pupil | eye_g)
         elif segment_part == 'faceseg_eyes&glasses':
-            seg_m = (l_eye | r_eye | eye_g)
+            seg_m = (l_eye | r_eye | eye_g | l_pupil | r_pupil)
         elif segment_part == 'faceseg_face_noglasses':
             seg_m = (~eye_g & face)
         elif segment_part == 'faceseg_face_noglasses_noeyes':

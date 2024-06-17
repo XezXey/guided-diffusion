@@ -1,15 +1,6 @@
 {
-    "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml" : {
-        "step":"ema_070000", 
-        "alias":"Median",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"60"
-    },
     "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_inv_with_sd" : {
-        "step":"ema_070000", 
+        "step":"ema_400000", 
         "alias":"Median (Inverse with SD)",
         "itp":"render_face",
         "itp_method":"Lerp",
@@ -29,6 +20,24 @@
     "log=DiFaReli_canny=153to204bg_Sdiff_median_128_cfg=DiFaReli_canny=153to204bg_Sdiff_median_128.yaml_inv_with_sd" : {
         "step":"ema_100000", 
         "alias":"Median - canny bg (Inverse with SD)",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Canny_Fs_Sdiff_median_128.yaml_cfg=DiFaReli_Canny_Fs_Sdiff_median_128.yaml_inv_with_sd" : {
+        "step":"ema_100000", 
+        "alias":"Median - Fs",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "log=DiFaReli_Canny_FsPupil_Sdiff_median_128.yaml_cfg=DiFaReli_Canny_FsPupil_Sdiff_median_128.yaml_inv_with_sd" : {
+        "step":"ema_100000", 
+        "alias":"Median - Fs Pupil",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
