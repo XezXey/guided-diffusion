@@ -548,7 +548,9 @@ class TrainLoop(LightningModule):
                                         input_bound = self.input_bound,
                                         cfg=self.cfg
                                     )
-            log_image_fn(key=f'{sampling_model} - conditioned_image (Encoder)', image=make_grid(cond_img, nrow=4), step=(step_ + 1) * self.n_gpus)
+            assert cond_img.shape[1] == 3
+            n_row = cond_img.shape[1] // 3
+            log_image_fn(key=f'{sampling_model} - conditioned_image (Encoder)', image=make_grid(cond_img, nrow=n_row), step=(step_ + 1) * self.n_gpus)
             # tb.add_image(tag=f'conditioned_image (Encoder)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
             # self.t_logger.log_image(key=f'{sampling_model} - conditioned_image (Encoder)', images=[make_grid(cond_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
