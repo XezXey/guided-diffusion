@@ -1,16 +1,7 @@
 {
     "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_inv_with_sd" : {
-        "step":"ema_400000", 
+        "step":"ema_800000", 
         "alias":"Median (Inverse with SD)",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"60"
-    },
-    "log=DiFaReli_nobg_Sdiff_median_128_cfg=DiFaReli_nobg_Sdiff_median_128.yaml_inv_with_sd" : {
-        "step":"ema_100000", 
-        "alias":"Median - nobg (Inverse with SD)",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
