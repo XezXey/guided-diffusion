@@ -547,7 +547,7 @@ class DECADataset(Dataset):
         elif segment_part == 'faceseg_u_lip':
             seg_m = u_lip
         elif segment_part == 'faceseg_l_lip':
-            seg_m = u_lip
+            seg_m = l_lip
         elif segment_part == 'faceseg_inmouth':
             seg_m = mouth
         elif segment_part == 'faceseg_neck':
