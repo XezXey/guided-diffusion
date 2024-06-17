@@ -48,4 +48,4 @@ dataset:
 
 train_misc:
   exp_name: "CastShadows"
-  cfg_name: "DiFaReli_Canny_FsPupil_Sdiff_median_128"
+  cfg_name: "DiFaReli_Canny_FsPupil+Mouth_Sdiff_median_128"
