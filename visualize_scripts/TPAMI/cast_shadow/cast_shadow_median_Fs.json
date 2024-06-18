@@ -1,6 +1,6 @@
 {
     "log=DiFaReli_Sdiff_median_128_cfg=DiFaReli_Sdiff_median_128.yaml_inv_with_sd" : {
-        "step":"ema_800000", 
+        "step":"ema_400000", 
         "alias":"Median (Inverse with SD)",
         "itp":"render_face",
         "itp_method":"Lerp",
