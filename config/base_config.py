@@ -152,6 +152,7 @@ img_cond_model_img_type = {'raw':3,
                            'ldm_vq-f8':4,
                            # For CastShadows
                            'compose':3,
+                           'shadow_diff_with_weight_onehot':3,
                             None:0,
 }
 cfg.img_cond_model = CN()

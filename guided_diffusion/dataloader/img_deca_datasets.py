@@ -150,15 +150,18 @@ def load_data_img_deca(
                 continue
             elif 'shadow_mask' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_mask_dir}/{set_}/")
-            elif 'shadow_diff' in in_image_type:
+            elif 'shadow_diff' == in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
                 if mode == 'sampling':
                     for tk in ['faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses', 'faceseg_eyes&glasses']:
                         in_image[f'{tk}'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
                         in_image[f'{tk}'] = image_path_list_to_dict(in_image[f'{tk}'])
-            # elif 'face_structure' in in_image_type:
-            #     # Extract the face structure from the segmentation mask; e.g. one-hot encoding of each part
-            #     in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/")
+            elif 'shadow_diff_with_weight_onehot' == in_image_type:
+                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
+                if mode == 'sampling':
+                    for tk in ['faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses', 'faceseg_eyes&glasses']:
+                        in_image[f'{tk}'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
+                        in_image[f'{tk}'] = image_path_list_to_dict(in_image[f'{tk}'])
             elif in_image_type in ['raw', 'compose']: 
                 continue
             else:
@@ -296,7 +299,7 @@ class DECADataset(Dataset):
                 each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_AREA)
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                 out_dict[f'{k}_img'] = each_cond_img
-            elif 'shadow_diff' in k:
+            elif k == 'shadow_diff':
                 each_cond_img = cv2.resize(cond_img[k].astype(np.uint8), (self.resolution, self.resolution), cv2.INTER_NEAREST)
                 assert np.allclose(each_cond_img[..., 0], each_cond_img[..., 1]) and np.allclose(each_cond_img[..., 0], each_cond_img[..., 2])
                 each_cond_img = each_cond_img[..., 0:1]
@@ -314,6 +317,10 @@ class DECADataset(Dataset):
                     # out_dict[f'{k}_meg_mask'] = cv2.resize(cond_img[f'{k}_meg_mask'].astype(np.uint8), (self.resolution, self.resolution), cv2.INTER_NEAREST)
                     # out_dict[f'{k}_meg_mask'] = np.transpose(out_dict[f'{k}_meg_mask'], [2, 0, 1])
                     # out_dict[f'{k}_mface_mask'] = out_dict[f'{k}_mface_mask'][0:1, ...]
+            elif k == 'shadow_diff_with_weight_onehot':
+                each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_NEAREST)
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                out_dict[f'{k}_img'] = each_cond_img
             elif 'faceseg' in k:
                 faceseg_mask = self.prep_cond_img(~cond_img[k], k, i)   # Invert mask for dilation
                 faceseg_mask = ~faceseg_mask    # Invert back to original mask
@@ -475,7 +482,12 @@ class DECADataset(Dataset):
                 condition_image[f"{in_image_type}_mask"] = self.face_segment(cond_name=in_image_type, segment_part=f"{in_image_type}_mask", query_img_name=query_img_name)
             elif 'shadow_mask' in in_image_type:
                 condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
-            elif 'shadow_diff' in in_image_type:
+            elif 'shadow_diff_with_weight_onehot' == in_image_type:
+                condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
+                if self.mode == 'sampling':
+                    condition_image[f"{in_image_type}_mface_mask"] = self.face_segment(cond_name=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", segment_part=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", query_img_name=query_img_name)
+                    condition_image[f"{in_image_type}_meg_mask"] = self.face_segment(cond_name=f"faceseg_eyes&glasses", segment_part=f"faceseg_eyes&glasses", query_img_name=query_img_name)
+            elif 'shadow_diff' == in_image_type:
                 condition_image[in_image_type] = np.array(self.load_image(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
                 if self.mode == 'sampling':
                     condition_image[f"{in_image_type}_mface_mask"] = self.face_segment(cond_name=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", segment_part=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", query_img_name=query_img_name)
