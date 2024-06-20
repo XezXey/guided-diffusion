@@ -10,7 +10,7 @@ img_model:
   hadamart_prep: "Tanh"
 
 param_model:
-  params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb', 'shadow']
+  params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb']
 
 img_cond_model:
   apply: True
