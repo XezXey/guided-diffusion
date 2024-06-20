@@ -328,6 +328,8 @@ class DECADataset(Dataset):
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                 out_dict[f'{k}_img'] = each_cond_img
             elif k == 'shadow_diff_with_weight_oneneg':
+                if len(cond_img[k].shape) == 2:
+                    cond_img[k] = cond_img[k][..., None]
                 each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                 out_dict[f'{k}_img'] = each_cond_img
