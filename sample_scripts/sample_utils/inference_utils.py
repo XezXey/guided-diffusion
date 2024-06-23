@@ -217,6 +217,98 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
         
     return cond
 
+def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
+    # This function is used to post-process the shadow_diff mask when we inject shadow weight into shadow_diff
+    condition_img = misc['condition_img']
+    n_step = misc['n_step']
+    src_idx = misc['src_idx']
+    args = misc['args']
+    # Min-Max c-values:  -4.985533880236826 7.383497233314015
+    min_c = -4.985533880236826
+    max_c = 7.383497233314015
+    c_val = (cond['shadow'][src_idx] - min_c) / (max_c - min_c)  # Scale to 0-1
+    c_val = 1 - c_val # Inverse the shadow value
+
+    if args.shadow_diff_inc_c:
+        weight = th.linspace(start=c_val.item(), end=1.0, steps=n_step).to(device)
+        weight = weight[..., None, None, None]
+    elif args.shadow_diff_dec_c:
+        weight = th.linspace(start=c_val.item(), end=0.0, steps=n_step).to(device)
+        weight = weight[..., None, None, None]
+    else:
+        return cond
+
+    for i, cond_img_name in enumerate(condition_img):
+        if cond_img_name == 'shadow_diff_with_weight_oneneg':
+            fidx = int(args.shadow_diff_fidx_frac * n_step)
+            tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
+            sd_img = cond[cond_img_name].clone()
+
+            # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
+            sd_img = th.cat((sd_img[0:1], tmp), dim=0)
+            
+            # From ray-tracing
+            sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
+            sd_no_shadow = th.isclose(sd_img, th.tensor(1.0).type_as(sd_img), atol=1e-5)
+            sd_bg = th.isclose(sd_img, th.tensor(0.5).type_as(sd_img), atol=1e-5)
+            face_use_mask_rt = ~sd_bg
+
+            # From shadow diff
+            shadow_area = (sd_img + weight) * sd_shadow
+            no_shadow_area = sd_img * sd_no_shadow
+            face = (shadow_area + no_shadow_area)
+            bg = -th.ones_like(sd_img)
+            out_sd = (face * face_use_mask_rt) + (bg * ~face_use_mask_rt)
+
+            cond[cond_img_name] = out_sd
+        elif cond_img_name == 'shadow_diff_with_weight_onehot':
+            fidx = int(args.shadow_diff_fidx_frac * n_step)
+            tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
+            sd_img = cond[cond_img_name].clone()
+
+            # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
+            sd_img = th.cat((sd_img[0:1], tmp), dim=0)
+            
+            # From ray-tracing
+            sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
+            sd_no_shadow = th.isclose(sd_img, th.tensor(1.0).type_as(sd_img), atol=1e-5)
+            sd_bg = th.isclose(sd_img, th.tensor(0.5).type_as(sd_img), atol=1e-5)
+
+            shadow_area = (sd_img + weight) * sd_shadow
+            no_shadow_area = sd_img * sd_no_shadow
+
+            face = (shadow_area + no_shadow_area)
+            shadow = (1-face) * sd_shadow
+            bg = sd_bg
+
+            out_sd = th.cat((face, shadow, bg), dim=1)
+            cond[cond_img_name] = out_sd
+        elif cond_img_name == 'shadow_diff':
+            fidx = int(args.shadow_diff_fidx_frac * n_step)
+            tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
+            sd_img = cond[cond_img_name].clone()
+
+            # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
+            sd_img = th.cat((sd_img[0:1], tmp), dim=0)
+            
+            # From ray-tracing
+            sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
+            sd_no_shadow = th.isclose(sd_img, th.tensor(1.0).type_as(sd_img), atol=1e-5)
+            sd_bg = th.isclose(sd_img, th.tensor(0.5).type_as(sd_img), atol=1e-5)
+            face_use_mask_rt = ~sd_bg
+
+            # From shadow diff
+            shadow_area = (sd_img + weight) * sd_shadow
+            no_shadow_area = sd_img * sd_no_shadow
+            face = (shadow_area + no_shadow_area)
+            bg = th.ones_like(sd_img)/2.0
+            out_sd = (face * face_use_mask_rt) + (bg * ~face_use_mask_rt)
+
+            cond[cond_img_name] = out_sd
+
+    return cond
+
+
 def build_condition_image(cond, misc):
     src_idx = misc['src_idx']
     dst_idx = misc['dst_idx']
@@ -401,8 +493,8 @@ def build_condition_image(cond, misc):
                 sd_tmp = (sd_tmp / 255.0)
                 if args.postproc_shadow_mask:
                     # Thresholding & Masking & Fill bg with 0.5
-                    m_glasses_and_eyes = cond['shadow_diff_meg_mask'][src_idx].cpu().numpy()
-                    m_face = cond['shadow_diff_mface_mask'][src_idx].cpu().numpy()
+                    m_glasses_and_eyes = cond[f'{cond_img_name}_meg_mask'][src_idx].cpu().numpy()
+                    m_face = cond[f'{cond_img_name}_mface_mask'][src_idx].cpu().numpy()
                     sd_tmp = (sd_tmp < 0.5) * 1.0
                     sd_tmp = ((sd_tmp * np.abs(1-m_glasses_and_eyes)) + (1.0 * m_glasses_and_eyes))
                     sd_tmp = np.abs(1 - sd_tmp) # Inverse => Shadow = 0, Non-shadow = 1
@@ -412,20 +504,13 @@ def build_condition_image(cond, misc):
             if args.inverse_with_shadow_diff:
                 print("[#] Inverse with shadow_diff (Replacing frame-0th)...")
                 shadow_diff_tmp[0] = cond['shadow_diff_img'][src_idx]
-                # shadow_diff_tmp[1] = cond['shadow_diff_img'][src_idx]
                 if args.fixed_shadow:
                     shadow_diff_tmp = [cond['shadow_diff_img'][src_idx] for _ in range(len(shadow_diff_tmp))]
 
-            if args.combined_mask:
-                print("[#] Combined the mask from rendered face with shadow_mask to prevent the outside face area...")
-                rendered_mask = rendered_tmp[0] > 0.0
-                rendered_mask = rendered_mask[0:1, ...]
-                shadow_diff_tmp = [((sd_tmp * rendered_mask) + (((0.5 * np.ones_like(sd_tmp[0:1, ...])) * ~rendered_mask))) for sd_tmp in shadow_diff_tmp]
-
-
             shadow_diff_tmp = np.stack(shadow_diff_tmp, axis=0)
             cond[cond_img_name] = th.tensor(shadow_diff_tmp).cuda()
-                
+
+    
     return cond, clip_ren
 
 

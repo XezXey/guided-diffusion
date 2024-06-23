@@ -53,6 +53,10 @@ parser.add_argument('--postproc_shadow_mask', action='store_true', default=False
 parser.add_argument('--inverse_with_shadow_diff', action='store_true', default=False)
 parser.add_argument('--combined_mask', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dir', type=str, default=None)
+# Experiment - Shadow weight
+parser.add_argument('--shadow_diff_inc_c', action='store_true', default=False)
+parser.add_argument('--shadow_diff_dec_c', action='store_true', default=False)
+parser.add_argument('--shadow_diff_fidx_frac', type=float, default=0.0)    # set to 0.0 for using first frame
 
 args = parser.parse_args()
 
@@ -122,13 +126,12 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
         for k in cfg.img_model.dpm_cond_img:
             if 'faceseg' in k:
                 cond[f'{k}_mask'] = th.stack([cond[f'{k}_mask'][src_idx]] * n_step, dim=0)
-        
+
+    # Prepare the condition image (e.g., face segmentation, shadow mask, etc.)    
     cond, _ = inference_utils.build_condition_image(cond=cond, misc=misc)
-    # print("AHAHA"*100)
-    # print(cond.keys())
-    # for k in cond.keys():
-    #     print(k, cond[k].shape)
-    # exit()
+    # In case of using the shadow_diff with weight (No more shadow value)
+    cond = inference_utils.shadow_diff_with_weight_postproc(cond=cond, misc=misc)
+
     cond = inference_utils.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
     cond['cfg'] = cfg
     if (cfg.img_model.apply_dpm_cond_img) and (np.any(n is not None for n in cfg.img_model.noise_dpm_cond_img)):
@@ -422,10 +425,22 @@ if __name__ == '__main__':
             vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_cond[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
         
         # Save shadow mask
-        is_shadow = True if (('shadow_diff' in cfg.img_cond_model.in_image) or ('shadow_mask' in cfg.img_cond_model.in_image)) else False
-        if is_shadow:
-            vis_utils.save_images(path=f"{save_res_dir}", fn="shadm", frames=(out_cond[:, 3:4]))        
-        
+        if (('shadow_diff' in cfg.img_cond_model.in_image) or 
+            ('shadow_mask' in cfg.img_cond_model.in_image) or 
+            ('shadow_diff_with_weight_oneneg' in cfg.img_cond_model.in_image)):
+            is_shadow = True
+            sc_s = 3
+            sc_e = 4
+        elif 'shadow_diff_with_weight_onehot' in cfg.img_cond_model.in_image:
+            is_shadow = True
+            sc_s = 3
+            sc_e = 6
+            vis_utils.save_images(path=f"{save_res_dir}", fn="shadm_face", frames=(out_cond[:, 3:4]))
+            vis_utils.save_images(path=f"{save_res_dir}", fn="shadm_shad", frames=(out_cond[:, 4:5]))
+            vis_utils.save_images(path=f"{save_res_dir}", fn="shadm_bg", frames=(out_cond[:, 5:6]))
+        else: 
+            is_shadow = False
+
         if args.save_vid:
             """
             save the video
@@ -454,13 +469,26 @@ if __name__ == '__main__':
                     vid_render_rt = th.cat((vid_render, th.flip(vid_render, dims=[0])))
                     torchvision.io.write_video(video_array=vid_render_rt, filename=f"{save_res_dir}/ren_rt.mp4", fps=args.fps)
                     
-            if is_shadow:
+            if is_shadow and ('shadow_diff_with_weight_oneneg' in cfg.img_cond_model.in_image or 'shadow_diff' in cfg.img_cond_model.in_image):
                 vid_shadm = out_cond[:, 3:4]
                 vid_shadm = vid_shadm.repeat(1, 3, 1, 1)
                 vid_shadm = (vid_shadm.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
                 torchvision.io.write_video(video_array=vid_shadm, filename=f"{save_res_dir}/shadm.mp4", fps=args.fps)
                 vid_shadm_rt = th.cat((vid_shadm, th.flip(vid_shadm, dims=[0])))
                 torchvision.io.write_video(video_array=vid_shadm_rt, filename=f"{save_res_dir}/shadm_rt.mp4", fps=args.fps)
+            elif is_shadow and 'shadow_diff_with_weight_onehot' in cfg.img_cond_model.in_image:
+                part = ['face', 'shad', 'bg']
+                vid_shadm = []
+                for idx, i in enumerate(range(sc_s, sc_e)):
+                    vid_tmp = out_cond[:, i:i+1]
+                    vid_tmp = vid_tmp.repeat(1, 3, 1, 1)
+                    vid_tmp = (vid_tmp.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
+                    torchvision.io.write_video(video_array=vid_tmp, filename=f"{save_res_dir}/shadm_{part}.mp4", fps=args.fps)
+                    vid_tmp_rt = th.cat((vid_tmp, th.flip(vid_tmp, dims=[0])))
+                    torchvision.io.write_video(video_array=vid_tmp_rt, filename=f"{save_res_dir}/shadm_{part}_rt.mp4", fps=args.fps)
+                    vid_shadm.append(vid_tmp)
+                vid_shadm = th.cat(vid_shadm, dim=2)
+
             
             if is_render and is_shadow:
                 all_out = th.cat((vid_render, vid_relit, vid_shadm), dim=2)
@@ -472,11 +500,6 @@ if __name__ == '__main__':
             torchvision.io.write_video(video_array=all_out_rt, filename=f"{save_res_dir}/out_rt.mp4", fps=args.fps)
                 
 
-                
-                
-                
-                
-                
         with open(f'{save_res_dir}/res_desc.json', 'w') as fj:
             log_dict = {'sampling_args' : vars(args), 
                         'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_fn':itp_fn_str, 'itp':itp_str}}
