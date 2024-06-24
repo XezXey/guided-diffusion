@@ -230,22 +230,33 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
     c_val = 1 - c_val # Inverse the shadow value
 
     if args.shadow_diff_inc_c:
+        print("[#] Increasing the shadow_diff with weight...")
         weight = th.linspace(start=c_val.item(), end=1.0, steps=n_step).to(device)
         weight = weight[..., None, None, None]
+        fix_frame = True 
     elif args.shadow_diff_dec_c:
+        print("[#] Decreasing the shadow_diff with weight...")
         weight = th.linspace(start=c_val.item(), end=0.0, steps=n_step).to(device)
         weight = weight[..., None, None, None]
+        fix_frame = True 
     else:
-        return cond
+        print("[#] No re-weighting for shadow_diff...")
+        print(f"[#] Processing with weight = {c_val} and relight...")
+        weight = c_val[..., None, None, None].to(device)
+        fix_frame = False
 
-    for i, cond_img_name in enumerate(condition_img):
+    for _, cond_img_name in enumerate(condition_img):
         if cond_img_name == 'shadow_diff_with_weight_oneneg':
-            fidx = int(args.shadow_diff_fidx_frac * n_step)
-            tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
-            sd_img = cond[cond_img_name].clone()
+            # Choose the shadow_diff frame to be reshadow
+            if fix_frame:
+                fidx = int(args.shadow_diff_fidx_frac * n_step)
+                tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
+                # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
+                sd_img = cond[cond_img_name].clone()
+                sd_img = th.cat((sd_img[0:1], tmp), dim=0)
+            else: 
+                sd_img = cond[cond_img_name].clone()
 
-            # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
-            sd_img = th.cat((sd_img[0:1], tmp), dim=0)
             
             # From ray-tracing
             sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
@@ -261,13 +272,16 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
             out_sd = (face * face_use_mask_rt) + (bg * ~face_use_mask_rt)
 
             cond[cond_img_name] = out_sd
+            print("Value: ", th.unique(out_sd))
         elif cond_img_name == 'shadow_diff_with_weight_onehot':
-            fidx = int(args.shadow_diff_fidx_frac * n_step)
-            tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
-            sd_img = cond[cond_img_name].clone()
-
-            # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
-            sd_img = th.cat((sd_img[0:1], tmp), dim=0)
+            if fix_frame:
+                fidx = int(args.shadow_diff_fidx_frac * n_step)
+                tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
+                # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
+                sd_img = cond[cond_img_name].clone()
+                sd_img = th.cat((sd_img[0:1], tmp), dim=0)
+            else:
+                sd_img = cond[cond_img_name].clone()
             
             # From ray-tracing
             sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
@@ -283,13 +297,16 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
 
             out_sd = th.cat((face, shadow, bg), dim=1)
             cond[cond_img_name] = out_sd
+            print("Value: ", th.unique(out_sd))
         elif cond_img_name == 'shadow_diff':
-            fidx = int(args.shadow_diff_fidx_frac * n_step)
-            tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
-            sd_img = cond[cond_img_name].clone()
-
-            # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
-            sd_img = th.cat((sd_img[0:1], tmp), dim=0)
+            if fix_frame:
+                fidx = int(args.shadow_diff_fidx_frac * n_step)
+                tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
+                # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
+                sd_img = cond[cond_img_name].clone()
+                sd_img = th.cat((sd_img[0:1], tmp), dim=0)
+            else:
+                sd_img = cond[cond_img_name].clone()
             
             # From ray-tracing
             sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)

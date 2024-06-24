@@ -155,7 +155,7 @@ def create_app():
                 out += f"<td>"
                 # if len(frames) > 0 and show_img == "True":
                 if len(frames) > 0:
-                    tmp_ds = [0] + list(range(1, len(frames), int(len(frames)/ds)))
+                    tmp_ds = [0] + list(range(1, len(frames)-1, int(len(frames)/ds))) + [len(frames)-1]
                     frames = sort_by_frame(frames)
                     if show_itmd == "False":
                         frames = [frames[0], frames[-1]]

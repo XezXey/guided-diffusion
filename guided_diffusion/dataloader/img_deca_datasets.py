@@ -317,6 +317,7 @@ class DECADataset(Dataset):
                 out_dict[f'{k}_img'] = each_cond_img / 255.0
                 # Loading mask for inference
                 if self.mode == 'sampling':
+                    out_dict[f'{k}_img'][out_dict[f'{k}_img'] == 127/255.] = 0.5
                     for tk in ['mface_mask', 'meg_mask']:
                         out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                         out_dict[f'{k}_{tk}'] = np.transpose(out_dict[f'{k}_{tk}'], [2, 0, 1])
@@ -337,6 +338,7 @@ class DECADataset(Dataset):
                     sd = sd[..., 0:1]
                     sd = np.transpose(sd, [2, 0, 1])
                     out_dict[f'shadow_diff_img'] = sd / 255.0
+                    out_dict[f'shadow_diff_img'][out_dict[f'shadow_diff_img'] == 127/255.] = 0.5
                     for tk in ['mface_mask', 'meg_mask']:
                         out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                         out_dict[f'{k}_{tk}'] = np.transpose(out_dict[f'{k}_{tk}'], [2, 0, 1])
@@ -354,6 +356,7 @@ class DECADataset(Dataset):
                     sd = sd[..., 0:1]
                     sd = np.transpose(sd, [2, 0, 1])
                     out_dict[f'shadow_diff_img'] = sd / 255.0
+                    out_dict[f'shadow_diff_img'][out_dict[f'shadow_diff_img'] == 127/255.] = 0.5
                     for tk in ['mface_mask', 'meg_mask']:
                         out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                         out_dict[f'{k}_{tk}'] = np.transpose(out_dict[f'{k}_{tk}'], [2, 0, 1])
