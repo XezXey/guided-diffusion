@@ -136,3 +136,4 @@ experiment_scripts/TPAMI/pre_copy_dataloader/data_tmp/*
 experiment_scripts/TPAMI/pre_copy_dataloader/lightning_logs/*
 
 experiment_scripts/mint_sh_rotate/*
+experiment_scripts/TPAMI/sh_to_envs/example/rotate_SH/mint_sh_rotate/pyshtools/
