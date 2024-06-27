@@ -242,7 +242,12 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
     else:
         print("[#] No re-weighting for shadow_diff...")
         print(f"[#] Processing with weight = {c_val} and relight...")
-        weight = c_val[..., None, None, None].to(device)
+        if 'shadow_diff' in condition_img:
+            print("[#] Conditioning is shadow_diff, set the weight to 0.0...")
+            weight = 0.0
+        elif ('shadow_diff_with_weight_oneneg' in condition_img) or ('shadow_diff_with_weight_onehot' in condition_img):
+            print("[#] Conditioning is shadow_diff_with_weight_oneneg or shadow_diff_with_weight_onehot, set the weight to c_val...")
+            weight = c_val[..., None, None, None].to(device)
         fix_frame = False
 
     for _, cond_img_name in enumerate(condition_img):

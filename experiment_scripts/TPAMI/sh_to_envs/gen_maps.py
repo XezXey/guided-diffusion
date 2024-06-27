@@ -143,4 +143,4 @@ for j in ['ball', 'map', 'map_centered', 'map_clean', 'combined']:
 # drawSH(inp_sh_np)
 # drawSH(tgt_sh_np)
 
-interpolateSH(inp_sh_np, tgt_sh_np, 5, 256)
+interpolateSH(inp_sh_np, tgt_sh_np, 60, 256)
