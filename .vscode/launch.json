@@ -2165,7 +2165,7 @@
             "name": "Python: sh_to_envs_map",
             "type": "python",
             "request": "launch",
-            "program": "rotate2.py",
+            "program": "gen_maps.py",
             "args": [
             ],
             "console": "integratedTerminal",

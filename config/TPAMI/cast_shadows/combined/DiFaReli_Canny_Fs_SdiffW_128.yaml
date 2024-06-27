@@ -45,7 +45,6 @@ dataset:
   deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
   shadow_diff_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_with_weight_onehot/"
 
-
 train_misc:
   exp_name: "CastShadows"
   cfg_name: "DiFaReli_Canny_Fs_SdiffW_128"

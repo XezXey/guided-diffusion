@@ -15,15 +15,15 @@ param_model:
 img_cond_model:
   apply: True
   arch: "EncoderUNet_SpatialCondition"
-  in_image: ['deca_masked_face_images_woclip', 'shadow_diff_with_weight_oneneg', 'face_structure', 'canny_edge_bg']
+  in_image: ['deca_masked_face_images_woclip', 'shadow_diff_with_weight_onehot', 'face_structure']
   in_channels: 5
   image_size: 128
   out_channels: 128
   condition_dim: 256
   override_cond: "spatial_latent"
-  prep_image: [Null, Null, Null, dilate=5]
-  noise_dpm_cond_img: [Null, Null, Null, Null]
-  canny_thres: [Null, Null, Null, [153, 204]]
+  prep_image: [Null, Null, Null]
+  noise_dpm_cond_img: [Null, Null, Null]
+  canny_thres: [Null, Null, Null]
 
 relighting:
   use_SH: False
@@ -43,8 +43,8 @@ dataset:
   face_segment_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment/"
   deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
   deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
-  shadow_diff_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_with_weight_oneneg/"
+  shadow_diff_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_with_weight_onehot/"
 
 train_misc:
   exp_name: "CastShadows"
-  cfg_name: "DiFaReli_Canny_Fs_SdiffWneg_128"
+  cfg_name: "DiFaReli_Fs_SdiffW_128"
