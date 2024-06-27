@@ -2172,6 +2172,18 @@
             "cwd": "/home/mint/Dev/DiFaReli/difareli-faster/experiment_scripts/TPAMI/sh_to_envs",
             "justMyCode": true
 
+        },
+        {
+            "name": "Python: rotate_sh",
+            "type": "python",
+            "request": "launch",
+            "program": "rotate_sh.py",
+            "args": [
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/Dev/DiFaReli/difareli-faster/experiment_scripts/TPAMI/sh_to_envs",
+            "justMyCode": true
+
         }
 
     ]

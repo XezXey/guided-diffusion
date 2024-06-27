@@ -73,6 +73,7 @@ def create_app():
         show_vid = request.args.get('show_vid', "True")
         show_img = request.args.get('show_img', "True")
         show_shadm = request.args.get('show_shadm', "False")
+        n_frame  = request.args.get('n_frame', 20)
         #show_shadm = request.args.get('show_shadm', "True")
         ds = int(request.args.get('ds', 5))
         sample_json = request.args.get('sample_json', args.sample_pair_json)
@@ -84,6 +85,7 @@ def create_app():
         sample_pairs = json.load(f)['pair']
         
         out += f"<h2> Sample json file: {sample_json} </h2>"
+        out += f"<h2> Model name: {m_name} </h2>"
         out += "Transpose : <button onclick='transposeAllTables()'>Transpose</button>"
         
         # path example : /data/mint/sampling/FFHQ_Reshadow_mintomax/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps50/ema_085000/valid/shadow/reverse_sampling/src=60000.jpg/dst=60000.jpg 
@@ -109,7 +111,6 @@ def create_app():
                 itp_method = 'Lerp'
                 diff_step = '1000'
                 time_respace = ''
-                n_frame= '20'
                 ckpt = ckpt.split('/')[-2]
                 out+= ckpt
                 

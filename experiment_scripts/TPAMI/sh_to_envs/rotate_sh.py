@@ -8,6 +8,7 @@ from PIL import Image
 import itertools
 import os
 from scipy.spatial.transform import Rotation as R
+import matplotlib.pyplot as plt
 
 import pyshtools as pysh
 
@@ -157,18 +158,59 @@ def rotateSH(sh_np, x, y, z, degree):
 def stackResult():
   count = 0
   while True:
-    if not os.path.exists(f"video_out/0_{count:02d}.png"): break
-    im = [readImage(f"video_out/{x}_{count:02d}.png") for x in range(3)]
+    if not os.path.exists(f"rotate_out/0_{count:02d}.png"): break
+    im = [readImage(f"rotate_out/{x}_{count:02d}.png") for x in range(3)]
     
-    save_image(pt.cat(im, 1), f"video_out/c_{count:02d}.png")
+    save_image(pt.cat(im, 1), f"rotate_out/c_{count:02d}.png")
     count += 1
 
-  os.system(f"ffmpeg -y -i video_out/c_%02d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_combined.mp4")
+  os.system(f"ffmpeg -y -i rotate_out/c_%02d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_combined.mp4")
 
 
 # stackResult()
 # exit()
 
+def drawLD(ld, output):
+  # Draw xy, xz, yz from ld (1 x 3)
+  ld = ld.flatten()
+  ld = ld / np.linalg.norm(ld)
+  x = ld[0]
+  y = ld[1]
+  z = ld[2]
+  # 3D plot
+  fig = plt.figure(figsize=(10, 5))
+  ax1 = fig.add_subplot(121, projection='3d')
+  ax1.scatter(x, y, z, c='r', marker='o')
+  ax1.set_xlabel('X axis')
+  ax1.set_ylabel('Y axis')
+  ax1.set_zlabel('Z axis')
+  ax1.set_title('3D Plot')
+
+  # XY plane projection
+  ax2 = fig.add_subplot(122)
+  ax2.scatter(x, y, c='r', marker='o')
+  ax2.set_xlabel('X axis')
+  ax2.set_ylabel('Y axis')
+  ax2.set_title('Projection in XY Plane')
+
+  # Add grid lines
+  ax1.grid(True)
+  ax2.grid(True)
+  # Add dot markers to the axes
+  for ax in [ax1, ax2]:
+    ax.scatter(0, 1, c='k', marker='.')
+    ax.scatter(1, 0, c='k', marker='.')
+    
+    ax.scatter(0, -1, c='k', marker='.')
+    ax.scatter(-1, 0, c='k', marker='.')
+
+  # Adjust layout
+  plt.tight_layout()
+
+  # Save the figure
+  plt.savefig(output)
+  plt.close()
+  
 
 def spiralLight(sh_np, cx, cy):
   xyz  = genSurfaceNormals(256)
@@ -183,36 +225,47 @@ def spiralLight(sh_np, cx, cy):
   centered = rotateSH(centered, 1, 0, 0, np.arcsin(float(v[1])) * 180 / np.pi)
   drawSH(centered, f"centered.png")
   
-  rounds = 5
-  n = 100
+  rounds = 1
+  n = 60
   for i in tqdm.tqdm(range(n)):
     # print(i)
-    t = i / n 
+    t = i / n # Fraction of rotation
     tt = t * rounds * 2 * np.pi
-    rad = t * 0.9
+    # rad = t * 0.9
+    rad = 1
 
     x = np.sin(tt) * rad
     y = np.cos(tt) * rad
-    moved = rotateSH(centered, 0, 1, 0, -np.arcsin(x) * 180 / np.pi)
-    moved = rotateSH(moved   , 1, 0, 0, -np.arcsin(y) * 180 / np.pi)
+    # moved = rotateSH(centered, 0, 0, 1, -np.arcsin(x) * 180 / np.pi)
+    # moved = rotateSH(centered, 0, 1, 0, -np.arcsin(x) * 180 / np.pi)  # Rotate over y axis by -np.arcsin(x) * 180 / np.pi
+    # moved = rotateSH(centered, 1, 0, 0, -np.arcsin(x) * 180 / np.pi)  # Rotate over y axis by -np.arcsin(x) * 180 / np.pi
+    
+    moved = rotateSH(centered, 0, 1, 0, -np.arcsin(x) * 180 / np.pi)  # Rotate over y axis by -np.arcsin(x) * 180 / np.pi
+    moved = rotateSH(moved   , 1, 0, 0, -np.arcsin(y) * 180 / np.pi)  # Rotate over x axis by -np.arcsin(y) * 180 / np.pi
+    sh_moved = np.array(moved).reshape(-1, 9, 3)
+    ld = np.mean(sh_moved[0:1, 1:4, :], axis=2)
+    
+    
+    drawLD(ld, f"rotate_out/ld_{i:03d}.png")
+    drawSH(moved, f"./rotate_out/m_{i:03d}.png")
 
-    drawSH(moved, f"./video_out/m_{i:03d}.png")
-
-  os.system(f"ffmpeg -y -i video_out/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_spiral4.mp4")
+  os.system(f"ffmpeg -y -i rotate_out/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 ./rotate_out/spiral_out.mp4")
+  os.system(f"ffmpeg -y -i rotate_out/ld_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 ./rotate_out/LD_spiral_out.mp4")
   exit()
 
 
 # sh_text = "3.7467763 3.7607439 3.7748303 -0.17061733 -0.18169762 -0.18631022 0.07023415 0.07821477 0.07901665 -0.41905978 -0.40052396 -0.3687197 0.1470597 0.14538132 0.14575471 -0.28285792 -0.294153 -0.29541978 0.6458615 0.65194905 0.65252924 0.63551205 0.64745045 0.6551203 0.049085654 0.04447888 0.051973432"
-# sh_text = "3.4063814 3.4182117 3.4240203 0.2447223 0.2731144 0.27873707 0.36326286 0.37438118 0.37373984 -0.53145957 -0.511477 -0.49685538 -0.02802198 -0.02605348 -0.025497597 0.15530688 0.17207308 0.17424926 0.5655835 0.57417613 0.5728966 0.25129333 0.25584137 0.25848323 0.7325827 0.7334002 0.73769367"
+sh_text = "3.4063814 3.4182117 3.4240203 0.2447223 0.2731144 0.27873707 0.36326286 0.37438118 0.37373984 -0.53145957 -0.511477 -0.49685538 -0.02802198 -0.02605348 -0.025497597 0.15530688 0.17207308 0.17424926 0.5655835 0.57417613 0.5728966 0.25129333 0.25584137 0.25848323 0.7325827 0.7334002 0.73769367"
 # sh_text = "4.1208167 4.113482 4.119587 -0.35264063 -0.38354635 -0.3695604 0.22570051 0.23566791 0.2297648 -0.46458092 -0.48861718 -0.47885132 -0.31964195 -0.3250893 -0.32510865 -0.03330686 -0.05441852 -0.047533773 0.5244178 0.5305497 0.52580774 -0.10181245 -0.107420176 -0.10384175 0.097432286 0.091219686 0.09322698"
-sh_text = "3.4756186 3.4662082 3.4709003 -0.32444367 -0.3257522 -0.3201226 0.22026052 0.23849344 0.23579775 -0.53786767 -0.5714127 -0.5618794 -0.054980133 -0.056462407 -0.056166932 -0.14991328 -0.15211679 -0.14935327 0.32371297 0.33627337 0.33428767 0.22112036 0.22257182 0.22352639 0.7944299 0.7839997 0.7864212"
+# sh_text = "3.4756186 3.4662082 3.4709003 -0.32444367 -0.3257522 -0.3201226 0.22026052 0.23849344 0.23579775 -0.53786767 -0.5714127 -0.5618794 -0.054980133 -0.056462407 -0.056166932 -0.14991328 -0.15211679 -0.14935327 0.32371297 0.33627337 0.33428767 0.22112036 0.22257182 0.22352639 0.7944299 0.7839997 0.7864212"
 
 sh_np = np.array([float(x) for x in sh_text.split(" ")])
 
-os.makedirs("video_out/", exist_ok=True)
+out_dir = 'rotate_out/'
+os.makedirs("rotate_out/", exist_ok=True)
 # spiralLight(sh_np, 161, 212)
 # spiralLight(sh_np, 5, 120)
-spiralLight(sh_np, 0, 128)
+spiralLight(sh_np, 128, 128)
 # spiralLight(sh_np, 128, 0)
 # spiralLight(sh_np, 128, 128)
 
@@ -222,8 +275,8 @@ spiralLight(sh_np, 0, 128)
   # count = 0
   # for i in range(0, 360, 10):
     # mod_sh_np = rotateSH(sh_np, axis==0, axis==1, axis==2, i)
-    # drawSH(mod_sh_np, f"video_out/{axis}_{count:02d}.png")
+    # drawSH(mod_sh_np, f"rotate_out/{axis}_{count:02d}.png")
     # count += 1
-  # os.system(f"ffmpeg -y -i video_out/{axis}_%02d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_axis{axis}.mp4")
+  # os.system(f"ffmpeg -y -i rotate_out/{axis}_%02d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_axis{axis}.mp4")
 #
 
