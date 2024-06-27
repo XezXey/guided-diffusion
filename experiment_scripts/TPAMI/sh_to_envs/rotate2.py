@@ -172,6 +172,10 @@ def stackResult():
 
 def spiralLight(sh_np, cx, cy):
   xyz  = genSurfaceNormals(256)
+  save_image(xyz, 'normals.png')
+  save_image(xyz[0:1, ...], 'normals_x.png')
+  save_image(xyz[1:2, ...], 'normals_y.png')
+  save_image(xyz[2:3, ...], 'normals_z.png')
   v = xyz[:, cy, cx]
   print("V : ", v)
   drawSH(sh_np, f"original.png")
@@ -208,7 +212,9 @@ sh_np = np.array([float(x) for x in sh_text.split(" ")])
 os.makedirs("video_out/", exist_ok=True)
 # spiralLight(sh_np, 161, 212)
 # spiralLight(sh_np, 5, 120)
-spiralLight(sh_np, 128, 128)
+spiralLight(sh_np, 0, 128)
+# spiralLight(sh_np, 128, 0)
+# spiralLight(sh_np, 128, 128)
 
 
 # cc = toRGBCoeff(sh_np)

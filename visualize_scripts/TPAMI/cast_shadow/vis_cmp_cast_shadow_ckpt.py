@@ -109,7 +109,7 @@ def create_app():
                 itp_method = 'Lerp'
                 diff_step = '1000'
                 time_respace = ''
-                n_frame= '60'
+                n_frame= '20'
                 ckpt = ckpt.split('/')[-2]
                 out+= ckpt
                 
