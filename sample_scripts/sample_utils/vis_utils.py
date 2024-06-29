@@ -4,7 +4,8 @@ import torch as th
 import torchvision
 import numpy as np
 import sys, os
-sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/sample_utils/')
+# sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/sample_utils/')
+sys.path.append('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/sample_utils')
 import params_utils as params_utils
 import cv2
 

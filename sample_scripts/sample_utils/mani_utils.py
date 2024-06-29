@@ -5,6 +5,7 @@ import blobfile as bf
 import PIL
 import vis_utils, img_utils, file_utils
 from scipy.spatial.transform import Rotation as R
+import itertools
 
 def lerp(r, src, dst):
     return ((1-r) * src) + (r * dst)
@@ -188,56 +189,74 @@ def interchange_cond(cond, interchange, base_idx, n):
             cond[p] = np.repeat(cond[p][[base_idx]], repeats=n, axis=0)
     return cond
 
-def toCoeff(c):
-  t = pysh.SHCoeffs.from_zeros(2)
-  t.set_coeffs(c[0], 0, 0)
-  t.set_coeffs(c[1], 1, 1)
-  t.set_coeffs(c[2], 1, -1)
-  t.set_coeffs(c[3], 1, 0)
-  t.set_coeffs(c[4], 2, -2)
-  t.set_coeffs(c[5], 2, 1)
-  t.set_coeffs(c[6], 2, -1)
-  t.set_coeffs(c[7], 2, 2)
-  t.set_coeffs(c[8], 2, 0)
-  return t
-
-def toRGBCoeff(c):
-  return [toCoeff(c[::3]), toCoeff(c[1::3]), toCoeff(c[2::3])]
-
-def toDeca(c):
-  a = c.coeffs
-  lst = [a[0, 0, 0],
-         a[0, 1, 1],
-         a[1, 1, 1],
-         a[0, 1, 0],
-         a[1, 2, 2],
-         a[0, 2, 1],
-         a[1, 2, 1],
-         a[0, 2, 2],
-         a[0, 2, 0]]
-  return np.array(lst)
-
-def toRGBDeca(cc):
-  return list(itertools.chain(*zip(toDeca(cc[0]), toDeca(cc[1]), toDeca(cc[2]))))
-
-def axisAngleToEuler(x, y, z, degree):
-  xyz = np.array([x, y, z])
-  xyz = xyz / np.linalg.norm(xyz)
-
-  rot = R.from_mrp(xyz * np.tan(degree * np.pi / 180 / 4))
-  return rot.as_euler('zyz', degrees=True)
-
-def rotateSH(sh_np, x, y, z, degree):
-  cc = toRGBCoeff(sh_np)
-  euler = axisAngleToEuler(x, y, z, degree)
-  cc[0] = cc[0].rotate(*euler)
-  cc[1] = cc[1].rotate(*euler)
-  cc[2] = cc[2].rotate(*euler)
-  return toRGBDeca(cc)
-
 def rotate_sh(cond, interp_set, src_idx, dst_idx, n_step):
-    inp_sh = cond['light'][[src_idx]]   # [1, 27]
-    rounds = 3
+
+    import pyshtools as pysh
+    def toCoeff(c):
+      t = pysh.SHCoeffs.from_zeros(2)
+      t.set_coeffs(c[0], 0, 0)
+      t.set_coeffs(c[1], 1, 1)
+      t.set_coeffs(c[2], 1, -1)
+      t.set_coeffs(c[3], 1, 0)
+      t.set_coeffs(c[4], 2, -2)
+      t.set_coeffs(c[5], 2, 1)
+      t.set_coeffs(c[6], 2, -1)
+      t.set_coeffs(c[7], 2, 2)
+      t.set_coeffs(c[8], 2, 0)
+      return t
+
+    def toRGBCoeff(c):
+      return [toCoeff(c[::3]), toCoeff(c[1::3]), toCoeff(c[2::3])]
+
+    def toDeca(c):
+      a = c.coeffs
+      lst = [a[0, 0, 0],
+             a[0, 1, 1],
+             a[1, 1, 1],
+             a[0, 1, 0],
+             a[1, 2, 2],
+             a[0, 2, 1],
+             a[1, 2, 1],
+             a[0, 2, 2],
+             a[0, 2, 0]]
+      return np.array(lst)
+
+    def toRGBDeca(cc):
+      return list(itertools.chain(*zip(toDeca(cc[0]), toDeca(cc[1]), toDeca(cc[2]))))
+
+    def axisAngleToEuler(x, y, z, degree):
+      xyz = np.array([x, y, z])
+      xyz = xyz / np.linalg.norm(xyz)
+
+      rot = R.from_mrp(xyz * np.tan(degree * np.pi / 180 / 4))
+      return rot.as_euler('zyz', degrees=True)
+
+    def rotateSH(sh_np, x, y, z, degree):
+      cc = toRGBCoeff(sh_np)
+      euler = axisAngleToEuler(x, y, z, degree)
+      cc[0] = cc[0].rotate(*euler)
+      cc[1] = cc[1].rotate(*euler)
+      cc[2] = cc[2].rotate(*euler)
+      return toRGBDeca(cc)
+    
+    def genSurfaceNormals(n):
+        x = th.linspace(-1, 1, n)
+        y = th.linspace(1, -1, n)
+        y, x = th.meshgrid(y, x)
+
+        z = (1 - x ** 2 - y ** 2)
+        z[z < 0] = 0
+        z = th.sqrt(z)
+        return th.stack([x, y, z], 0)
+
+    img_size = 128
+    xyz = genSurfaceNormals(img_size)
+    cx = img_size // 2
+    cy = img_size // 2
+    v = xyz[:, cy, cx]
+
+    inp_sh = cond['light'][[src_idx]].flatten()   # [1, 27] -> [27,]
+    rounds = 5
     n = n_step
     out_sh = []
     centered = rotateSH(inp_sh,    0, 1, 0, np.arcsin(float(v[0])) * 180 / np.pi)
@@ -253,11 +272,13 @@ def rotate_sh(cond, interp_set, src_idx, dst_idx, n_step):
         
         moved = rotateSH(centered, 0, 1, 0, -np.arcsin(x) * 180 / np.pi)  # Rotate over y axis by -np.arcsin(x) * 180 / np.pi
         moved = rotateSH(moved   , 1, 0, 0, -np.arcsin(y) * 180 / np.pi)  # Rotate over x axis by -np.arcsin(y) * 180 / np.pi
-        sh_moved = np.array(moved).reshape(-1, 9, 3)
-        ld = np.mean(sh_moved[0:1, 1:4, :], axis=2)
-    
-    
-    
+        sh_moved = np.array(moved)
+        out_sh.append(sh_moved)
+
+    out_sh = np.stack(out_sh, 0)
+
+    return {'light':out_sh}
+
 
 def interp_cond(src_cond, dst_cond, n_step, interp_fn):
     '''
