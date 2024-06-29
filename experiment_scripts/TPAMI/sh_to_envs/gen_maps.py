@@ -8,6 +8,7 @@ from PIL import Image
 import itertools
 import os
 from scipy.spatial.transform import Rotation as R
+from matplotlib import pyplot as plt
 
 import pyshtools as pysh
 
@@ -72,6 +73,59 @@ def drawSphere(sh, img_size=256):
   out[:, xyz[2] == 0] = 0
   return out
 
+def drawUnwrappedSphere(x, y, z, output='unwrapped_sphere.png'):
+  # 3D plot
+  fig = plt.figure(figsize=(10, 5))
+  ax1 = fig.add_subplot(121, projection='3d')
+  ax1.scatter(x, y, z, c='r', marker='o')
+  ax1.set_xlabel('X axis')
+  ax1.set_ylabel('Y axis')
+  ax1.set_zlabel('Z axis')
+  ax1.set_title('3D Plot')
+
+  # XY plane projection
+  ax2 = fig.add_subplot(122)
+  ax2.scatter(x, y, c='r', marker='o')
+  ax2.set_xlabel('X axis')
+  ax2.set_ylabel('Y axis')
+  ax2.set_title('Projection in XY Plane')
+
+  # Add grid lines
+  ax1.grid(True)
+  ax2.grid(True)
+  # Add dot markers to the axes
+  for ax in [ax1, ax2]:
+    ax.scatter(0, 1, c='k', marker='.')
+    ax.scatter(1, 0, c='k', marker='.')
+    
+    ax.scatter(0, -1, c='k', marker='.')
+    ax.scatter(-1, 0, c='k', marker='.')
+
+  # Adjust layout
+  plt.tight_layout()
+
+  # Save the figure
+  plt.savefig(output)
+  plt.close()
+
+# Draw using plotly and save as html
+def drawUnwrappedSpherePlotly(x, y, z, output='unwrapped_sphere.html'):
+  import plotly.express as px
+  import plotly.graph_objects as go
+  import pandas as pd
+
+  # Create a figure
+  fig = go.Figure()
+  fig.add_trace(go.Scatter3d(x=x, y=y, z=z, mode='markers', marker=dict(size=0.5), name='3D Plot'))
+
+  # # Add grid lines
+  # fig.update_layout(scene=dict(xaxis=dict(showgrid=True, gridwidth=1, gridcolor='black'),
+  #                             yaxis=dict(showgrid=True, gridwidth=1, gridcolor='black'),
+  #                             zaxis=dict(showgrid=True, gridwidth=1, gridcolor='black')))
+
+  # Save the figure
+  fig.write_html(output)
+
 def drawMap(sh, img_size=256):
 
   n = img_size
@@ -83,9 +137,13 @@ def drawMap(sh, img_size=256):
   # so the left-most column is the furthest-away point on the sphere
   # lr going counter-clockwise = increasing in value.
   # ud starting from 0 (top) to pi (bottom).
-  x = -pt.sin(ud) * pt.sin(lr)
-  y = pt.cos(ud)
-  z = -pt.sin(ud) * pt.cos(lr)
+  # Lattitude = azimuth = deg from one of xz axis
+  # Longtitude = elevation = deg from y-axis
+  # In standard unitsphere orientation;
+  # z = up (so set y = pt(cos(ud))) ref. https://www.learningaboutelectronics.com/Articles/Spherical-to-cartesian-rectangular-coordinate-converter-calculator.php
+  x = -pt.sin(ud) * pt.sin(lr)  # Negative to ensure correct left-right orientation
+  y = pt.cos(ud)                # No negative sign needed for up-down orientation
+  z = -pt.sin(ud) * pt.cos(lr)  # Negative to ensure correct front-back orientation
 
   lm = n // 2
   rm = n + (n // 2)

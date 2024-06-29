@@ -1,0 +1,29 @@
+{
+    "log=DiFaReli_Canny_FsPupil+Mouth_Sdiff_median_128_cfg=DiFaReli_Canny_FsPupil+Mouth_Sdiff_median_128.yaml_inv_with_sd" : {
+        "step":"ema_100000", 
+        "alias":"Relight: FsPupil + Mouth",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    },
+    "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd": {
+        "step":"ema_100000", 
+        "alias":"Relight: Fs",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    },
+    "log=DiFaReli_Canny_Fs_SdiffW_128_cfg=DiFaReli_Canny_Fs_SdiffW_128.yaml_inv_with_sd": {
+        "step":"ema_100000", 
+        "alias":"Relight: Canny + Fs",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    }
+}

@@ -225,14 +225,13 @@ def spiralLight(sh_np, cx, cy):
   centered = rotateSH(centered, 1, 0, 0, np.arcsin(float(v[1])) * 180 / np.pi)
   drawSH(centered, f"centered.png")
   
-  rounds = 1
+  rounds = 5
   n = 60
   for i in tqdm.tqdm(range(n)):
     # print(i)
     t = i / n # Fraction of rotation
     tt = t * rounds * 2 * np.pi
-    # rad = t * 0.9
-    rad = 1
+    rad = t * 0.9
 
     x = np.sin(tt) * rad
     y = np.cos(tt) * rad
@@ -279,4 +278,3 @@ spiralLight(sh_np, 128, 128)
     # count += 1
   # os.system(f"ffmpeg -y -i rotate_out/{axis}_%02d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_axis{axis}.mp4")
 #
-
