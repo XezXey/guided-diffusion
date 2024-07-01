@@ -498,6 +498,8 @@ def build_condition_image(cond, misc):
             cond[cond_img_name] = th.tensor(shadow_mask_tmp).cuda()
         elif 'shadow_diff' in cond_img_name:
             shadow_diff_tmp = []
+            m_face_tmp = []
+            m_face_sd_tmp = []
             for j in range(n_step):
                 sd_tmp = shadow_mask[j].mul(255).add_(0.5).clamp_(0, 255)   # Scale back to 0-255
                 sd_tmp = sd_tmp.repeat_interleave(repeats=3, dim=0)
@@ -511,8 +513,19 @@ def build_condition_image(cond, misc):
                 if args.postproc_shadow_mask:
                     # Thresholding & Masking & Fill bg with 0.5
                     m_glasses_and_eyes = cond[f'{cond_img_name}_meg_mask'][src_idx].cpu().numpy()
-                    m_face = cond[f'{cond_img_name}_mface_mask'][src_idx].cpu().numpy()
-                    sd_tmp = (sd_tmp < 0.5) * 1.0
+
+                    # Masking out the bg area
+                    m_face_parsing = cond[f'{cond_img_name}_mface_mask'][src_idx].cpu().numpy()
+                    m_face_sd = sd_tmp > 0.01
+                    if args.use_ray_mask:
+                        m_face = m_face_parsing * m_face_sd
+                    else:
+                        m_face = m_face_parsing
+
+                    m_face_tmp.append(m_face)
+                    m_face_sd_tmp.append(m_face_sd)
+
+                    sd_tmp = (sd_tmp < 0.5) * 1.0   # Bg
                     sd_tmp = ((sd_tmp * np.abs(1-m_glasses_and_eyes)) + (1.0 * m_glasses_and_eyes))
                     sd_tmp = np.abs(1 - sd_tmp) # Inverse => Shadow = 0, Non-shadow = 1
                     sd_tmp = (((sd_tmp * np.abs(1-m_glasses_and_eyes)) + (1.0 * m_glasses_and_eyes)) * m_face) + (0.5 * np.abs(1-m_face))
@@ -520,7 +533,7 @@ def build_condition_image(cond, misc):
                 
             if args.inverse_with_shadow_diff:
                 print("[#] Inverse with shadow_diff (Replacing frame-0th)...")
-                shadow_diff_tmp[0] = cond['shadow_diff_img'][src_idx]
+                shadow_diff_tmp[0] = cond['shadow_diff_img'][src_idx] * m_face + (0.5 * np.abs(1-m_face))
                 if args.fixed_shadow:
                     shadow_diff_tmp = [cond['shadow_diff_img'][src_idx] for _ in range(len(shadow_diff_tmp))]
 

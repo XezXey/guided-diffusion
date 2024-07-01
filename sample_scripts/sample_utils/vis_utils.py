@@ -66,7 +66,7 @@ def plot_deca(sample, min_value, max_value, cfg):
     plot_sample(th.cat(img_, dim=0))
     return th.cat(img_, dim=0)
 
-def plot_image(img, c_len=[], fn='./temp', range="-1to1"):
+def plot_image(img, c_len=[], range="-1to1", fn='./temp'):
     """
     :param img: image tensor in B x C x H x W
     """
