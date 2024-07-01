@@ -8,9 +8,18 @@
         "time_respace":"",
         "n_frame":"20"
     },
-    "log=DiFaReli_Canny_SdiffW_128_cfg=DiFaReli_Canny_SdiffW_128.yaml_inv_with_sd": {
+    "log=DiFaReli_canny=153to204bg_Sdiff_median_128_cfg=DiFaReli_canny=153to204bg_Sdiff_median_128.yaml_inv_with_sd": {
         "step":"ema_100000", 
         "alias":"Relight: Canny",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    },
+        "log=DiFaReli_canny=153to204bg_Sdiff_median_128_cfg=DiFaReli_canny=153to204bg_Sdiff_median_128.yaml_inv_with_sd_ray_mask": {
+        "step":"ema_100000", 
+        "alias":"Relight: Canny (ray mask)",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
@@ -29,6 +38,15 @@
     "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_ray_mask": {
         "step":"ema_100000", 
         "alias":"Relight: Fs (ray mask)",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    },
+        "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_ray_mask_scalp": {
+        "step":"ema_100000", 
+        "alias":"Relight: Fs (ray mask + scalp)",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",

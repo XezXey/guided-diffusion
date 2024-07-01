@@ -420,11 +420,22 @@ def build_condition_image(cond, misc):
                                                                 deca_obj=deca_obj,
                                                                 repeat=True)
             # Shadow_mask : B x H x W
-            shadow_mask = params_utils.render_shadow_mask(
-                                            sh_light=sub_cond['light'], 
-                                            cam=sub_cond['cam'][src_idx],
-                                            verts=orig_visdict['trans_verts_orig'], 
-                                            deca=deca_obj)
+            if args.render_same_mask:
+                print("[#] Rendering with the shadow mask from same render face...")
+                shadow_mask = params_utils.render_shadow_mask(
+                                                sh_light=sub_cond['light'], 
+                                                cam=sub_cond['cam'][src_idx],
+                                                verts=orig_visdict['trans_verts_orig'], 
+                                                deca=deca_obj)
+            else:
+                print("[#] Rendering with the shadow mask from face + scalp of render face...")
+                shadow_mask_tmp = params_utils.load_flame_mask(['face', 'scalp'])
+                deca_obj_tmp = params_utils.init_deca(mask=shadow_mask_tmp)
+                shadow_mask = params_utils.render_shadow_mask(
+                                                sh_light=sub_cond['light'], 
+                                                cam=sub_cond['cam'][src_idx],
+                                                verts=orig_visdict['trans_verts_orig'], 
+                                                deca=deca_obj_tmp)
             all_render.append(deca_rendered)
             render_time.append(time.time() - start_t)
             

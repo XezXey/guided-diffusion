@@ -55,6 +55,7 @@ parser.add_argument('--inverse_with_shadow_diff', action='store_true', default=F
 parser.add_argument('--combined_mask', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dir', type=str, default=None)
 parser.add_argument('--use_ray_mask', action='store_true', default=False)
+parser.add_argument('--render_same_mask', action='store_true', default=False)
 # Experiment - Shadow weight
 parser.add_argument('--shadow_diff_inc_c', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dec_c', action='store_true', default=False)

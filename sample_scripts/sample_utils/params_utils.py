@@ -119,12 +119,12 @@ def grid_sh(n_grid, sh=None, sx=[-1, 1], sy=[1, 0], sh_scale=1.0, use_sh=False):
     print(f"[#] Out grid sh : \n{sh_light.shape}")
     return sh_light
 
-def load_flame_mask(part='face'):
+def load_flame_mask(parts=['face']):
     f_mask = np.load('/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/data/FLAME_masks_face-id.pkl', allow_pickle=True, encoding='latin1')
     v_mask = np.load('/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/data/FLAME_masks.pkl', allow_pickle=True, encoding='latin1')
     mask={
-        'v_mask':v_mask[part].tolist(),
-        'f_mask':f_mask[part].tolist() 
+        'v_mask':sum([v_mask[part].tolist() for part in parts], []),
+        'f_mask':sum([f_mask[part].tolist() for part in parts], [])
     }
     return mask        
 
