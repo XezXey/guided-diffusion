@@ -381,13 +381,6 @@ def build_condition_image(cond, misc):
                 print("[#] Interpolating SH mode from src->dst light...")
                 interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
             cond.update(interp_cond)
-        # elif 'render_face' in args.interpolate:
-        #     #NOTE: Render w/ interpolated light (For aj jumras or any itw)
-        #     # print(cond['light'])
-        #     # print(cond['mod_light'])
-        #     interp_cond = mani_utils.iter_interp_cond_lightfile(cond, itp_src='light', itp_dst='mod_light', src_idx=src_idx, n_step=n_step, interp_fn=itp_func)
-        #     # print(interp_cond)
-        #     cond.update(interp_cond)
         elif 'render_face_modSH' in args.interpolate:
             #NOTE: Render w/ interpolated light
             repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
@@ -399,9 +392,6 @@ def build_condition_image(cond, misc):
             #NOTE: Render w/ same light
             repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
             cond.update(repeated_cond)
-            # interp_cond = mani_utils.iter_interp_cond(cond, interp_set=args.interpolate, src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
-            # interp_cond['pose'] = th.tensor(interp_cond['pose'])
-            # cond.update(interp_cond)
         
         start_t = time.time()
         if np.any(['deca_masked' in n for n in condition_img]) or np.any(['shadow_mask' in n for n in condition_img]) or np.any(['shadow_diff' in n for n in condition_img]):

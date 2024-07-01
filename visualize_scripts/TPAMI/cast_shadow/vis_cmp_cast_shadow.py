@@ -29,12 +29,12 @@ def create_app():
     @app.route('/')
     def root():
         out = f"<h1> Comparison: {args.comparison_candidate} </h1>"
-        out += f"<a href=\"/model_compare/sampling=reverse&show_itmd=True&show_recon=True&show_relit=True\"> Model Comparison </a> <br>"
+        out += f"<a href=\"/model_compare/\"> Model Comparison </a> <br>"
         
         return out
         
-    @app.route("/model_compare/sampling=<sampling>&show_itmd=<show_itmd>&show_recon=<show_recon>&show_relit=<show_relit>")
-    def model_compare(sampling, show_itmd, show_recon, show_relit):
+    @app.route("/model_compare/")
+    def model_compare():
         # Fixed the training step and varying the diffusion step
         out = """<style>
                 th, tr, td{
@@ -73,20 +73,27 @@ def create_app():
         show_vid = request.args.get('show_vid', "True")
         show_img = request.args.get('show_img', "True")
         show_shadm = request.args.get('show_shadm', "False")
-        #show_shadm = request.args.get('show_shadm', "True")
+        show_itmd = request.args.get('show_itmd', "True")
+        show_recon = request.args.get('show_recon', "True")
+        show_relit = request.args.get('show_relit', "True")
+        sampling = request.args.get('sampling', 'reverse')
         ds = int(request.args.get('ds', 5))
-        sample_json = request.args.get('sample_json', args.sample_pair_json)
+        sample_json = str(request.args.get('sample_json', args.sample_pair_json))
+        model_json = str(request.args.get('model_json', args.comparison_candidate))
         
         data_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_{args.res}/{args.set_}/"
-        assert os.path.isfile(sample_json)
-        f = open(sample_json)
-        sample_pairs = json.load(f)['pair']
+        try:
+            os.path.isfile(sample_json)
+            f = open(sample_json)
+            sample_pairs = json.load(f)['pair']
+        except:
+            raise ValueError(f"Sample json file not found: {sample_json}")
         
         out += f"<h2> Sample json file: {sample_json} </h2>"
         out += "Transpose : <button onclick='transposeAllTables()'>Transpose</button>"
         
         # path example : /data/mint/sampling/FFHQ_Reshadow_mintomax/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps50/ema_085000/valid/shadow/reverse_sampling/src=60000.jpg/dst=60000.jpg 
-        f = open(args.comparison_candidate)
+        f = open(model_json)
         candidates = json.load(f)
         print(candidates)
         
