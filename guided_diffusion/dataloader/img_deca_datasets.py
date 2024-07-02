@@ -160,6 +160,7 @@ def load_data_img_deca(
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
                 if mode == 'sampling':
                     in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/median5_5e-2/{set_}/")
+                    # in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/futschik_2e-1/{set_}/")
                     in_image[f'shadow_diff'] = image_path_list_to_dict(in_image[f'shadow_diff'])
                     for tk in ['faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses', 'faceseg_eyes&glasses']:
                         in_image[f'{tk}'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")

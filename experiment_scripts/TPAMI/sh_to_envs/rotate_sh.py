@@ -245,12 +245,44 @@ def spiralLight(sh_np, cx, cy):
     ld = np.mean(sh_moved[0:1, 1:4, :], axis=2)
     
     
-    drawLD(ld, f"rotate_out/ld_{i:03d}.png")
-    drawSH(moved, f"./rotate_out/m_{i:03d}.png")
+    drawLD(ld, f"rotate_out/spiral/ld_{i:03d}.png")
+    drawSH(moved, f"./rotate_out/spiral/m_{i:03d}.png")
 
-  os.system(f"ffmpeg -y -i rotate_out/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 ./rotate_out/spiral_out.mp4")
-  os.system(f"ffmpeg -y -i rotate_out/ld_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 ./rotate_out/LD_spiral_out.mp4")
+  os.system(f"ffmpeg -y -i rotate_out/spiral/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 ./rotate_out/spiral_out.mp4")
+  os.system(f"ffmpeg -y -i rotate_out/spiral/ld_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 ./rotate_out/LD_spiral_out.mp4")
   exit()
+
+def orbitalLight(sh_np, cx, cy, axis):
+  if not os.path.exists(f"orbit_out/{axis}"):
+    os.makedirs(f"orbit_out/{axis}", exist_ok=True)
+  xyz  = genSurfaceNormals(256)
+  save_image(xyz, 'normals.png')
+  save_image(xyz[0:1, ...], 'normals_x.png')
+  save_image(xyz[1:2, ...], 'normals_y.png')
+  save_image(xyz[2:3, ...], 'normals_z.png')
+  v = xyz[:, cy, cx]
+  print("V : ", v)
+  drawSH(sh_np, f"original.png")
+  centered = rotateSH(sh_np,    0, 1, 0, np.arcsin(float(v[0])) * 180 / np.pi)
+  centered = rotateSH(centered, 1, 0, 0, np.arcsin(float(v[1])) * 180 / np.pi)
+  drawSH(centered, f"centered.png")
+  moved = centered
+  
+  n = 60
+  i = 0
+  for j in tqdm.tqdm(np.linspace(0, 360, n)):
+    
+    moved = rotateSH(centered, axis==0, axis==1, axis==2, j)
+    sh_moved = np.array(moved).reshape(-1, 9, 3)
+    ld = np.mean(sh_moved[0:1, 1:4, :], axis=2)
+    
+    
+    drawLD(ld, f"orbit_out/{axis}/ld_{i:03d}.png")
+    drawSH(moved, f"./orbit_out/{axis}/m_{i:03d}.png")
+    i += 1
+
+  os.system(f"ffmpeg -y -i orbit_out/{axis}/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 ./orbit_out/orbital_{axis}_out.mp4")
+  os.system(f"ffmpeg -y -i orbit_out/{axis}/ld_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 ./orbit_out/LD_orbital_{axis}_out.mp4")
 
 
 # sh_text = "3.7467763 3.7607439 3.7748303 -0.17061733 -0.18169762 -0.18631022 0.07023415 0.07821477 0.07901665 -0.41905978 -0.40052396 -0.3687197 0.1470597 0.14538132 0.14575471 -0.28285792 -0.294153 -0.29541978 0.6458615 0.65194905 0.65252924 0.63551205 0.64745045 0.6551203 0.049085654 0.04447888 0.051973432"
@@ -260,21 +292,27 @@ sh_text = "3.4063814 3.4182117 3.4240203 0.2447223 0.2731144 0.27873707 0.363262
 
 sh_np = np.array([float(x) for x in sh_text.split(" ")])
 
-out_dir = 'rotate_out/'
-os.makedirs("rotate_out/", exist_ok=True)
+out_dir = 'rotate_out/spiral/'
+os.makedirs("rotate_out/spiral/", exist_ok=True)
 # spiralLight(sh_np, 161, 212)
 # spiralLight(sh_np, 5, 120)
-spiralLight(sh_np, 128, 128)
+# spiralLight(sh_np, 128, 128)
 # spiralLight(sh_np, 128, 0)
 # spiralLight(sh_np, 128, 128)
+
+out_dir = 'orbit/'
+os.makedirs("orbit/", exist_ok=True)
+orbitalLight(sh_np, 128, 128, 0)
+orbitalLight(sh_np, 128, 128, 1)
+orbitalLight(sh_np, 128, 128, 2)
 
 
 # cc = toRGBCoeff(sh_np)
 # for axis in range(3):
-  # count = 0
-  # for i in range(0, 360, 10):
-    # mod_sh_np = rotateSH(sh_np, axis==0, axis==1, axis==2, i)
-    # drawSH(mod_sh_np, f"rotate_out/{axis}_{count:02d}.png")
-    # count += 1
-  # os.system(f"ffmpeg -y -i rotate_out/{axis}_%02d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_axis{axis}.mp4")
-#
+#   count = 0
+#   for i in range(0, 360, 10):
+#     mod_sh_np = rotateSH(sh_np, axis==0, axis==1, axis==2, i)
+#     drawSH(mod_sh_np, f"rotate_out/{axis}_{count:02d}.png")
+#     count += 1
+#   os.system(f"ffmpeg -y -i rotate_out/{axis}_%02d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_axis{axis}.mp4")
+

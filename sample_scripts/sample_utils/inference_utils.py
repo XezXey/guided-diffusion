@@ -374,9 +374,12 @@ def build_condition_image(cond, misc):
             cond['light'] = params_utils.grid_sh(sh=cond['light'][src_idx], n_grid=args.sh_grid_size, sx=args.sh_span_x, sy=args.sh_span_y, sh_scale=args.sh_scale, use_sh=args.use_sh).reshape(-1, 27)
         elif 'render_face' in args.interpolate:
             #NOTE: Render w/ interpolated light (Mainly use this)
-            if args.rotate_sh:
+            if args.spiral_sh:
+                print("[#] Spiral SH mode of src light...")
+                interp_cond = mani_utils.spiral_sh(cond, src_idx=src_idx, n_step=n_step)
+            elif args.rotate_sh:
                 print("[#] Rotate SH mode of src light...")
-                interp_cond = mani_utils.rotate_sh(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step)
+                interp_cond = mani_utils.rotate_sh(cond, src_idx=src_idx, n_step=n_step, axis=args.rotate_sh_axis)
             else:
                 print("[#] Interpolating SH mode from src->dst light...")
                 interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
