@@ -312,12 +312,6 @@ class TrainLoop(LightningModule):
         
         #NOTE: Prepare condition : Utilize the same schedule from DPM, Add background or any condition.
         cond['no_preserved_cond'] = True
-        cond = self.forward_composite_network(cond)
-        # print(cond.keys())
-        # print(th.equal(cond['shadow_diff_img'][:, 0:1], cond['shadow_diff_img'][:, 1:2]))
-        # print(th.equal(cond['shadow_diff_img'][:, 0:1], cond['shadow_diff_img'][:, 2:3]))
-        # print(th.equal(cond['shadow_diff'][:, 0:1], cond['shadow_diff'][:, 1:2]))
-        # print(th.equal(cond['shadow_diff'][:, 0:1], cond['shadow_diff'][:, 2:3]))
         cond = self.prepare_cond_train(dat=batch, cond=cond, t=t, noise=noise)
         cond = self.forward_cond_network(cond)
         
