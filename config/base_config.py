@@ -218,7 +218,7 @@ cfg.relighting.num_shaded_ch = 1
 # ---------------------------------------------------------------------------- #
 # Options for face structure (choosing the part of the face)
 # ---------------------------------------------------------------------------- #
-face_structure_parts_chn = {'hair':1, 'faceskin':1, 'eyes':1, 'pupils':1, 'glasses':1, 'ears':1, 'nose':1, 'mouth':1, 'inmouth':1, 'u_lip':1, 'l_lip':1, 'neck':1, 'cloth':1}
+face_structure_parts_chn = {'hair':1, 'faceskin':1, 'eyes':1, 'pupils':1, 'glasses':1, 'ears':1, 'nose':1, 'mouth':1, 'inmouth':1, 'u_lip':1, 'l_lip':1, 'neck':1, 'cloth':1, 'hat':1}
 cfg.conditioning = CN()
 cfg.conditioning.face_structure = CN() 
 cfg.conditioning.face_structure.parts = ['hair', 'faceskin', 'eyes', 'ears', 'nose', 'mouth', 'neck'] 
@@ -234,6 +234,7 @@ cfg.dataset.root_path = '/data/mint/DPM_Dataset/'
 cfg.dataset.deca_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
 cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
 cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
+cfg.dataset.face_structure_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_onehot/"
 cfg.dataset.deca_rendered_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
 cfg.dataset.laplacian_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
 cfg.dataset.latent_ldm_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/ldm_encoding/"
@@ -268,6 +269,7 @@ cfg.train.accelerator = 'gpu'
 cfg.train.accumulate_grad_batches = None
 cfg.train.deterministic = True
 cfg.train.find_unused_parameters = False
+cfg.train.use_prep_data = False
 
 cfg.train_misc = CN()
 cfg.train_misc.exp_name = ""

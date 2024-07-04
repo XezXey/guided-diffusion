@@ -140,9 +140,14 @@ if __name__ == '__main__':
     save_dir = f'{args.save_dir}/{args.set}/anno/'
     os.makedirs(save_dir, exist_ok=True)
     os.system(f"echo {' '.join(args.segment_part)} > {args.save_dir}/segment_parts_{args.set}.txt")
-    for img in tqdm.tqdm(imgs):
+        
+    def proc_i(img):
         img_name = img.split('/')[-1].split('.')[0]
         out = get_face_structure(img, resolution=args.resolution)
         np.save(f'{save_dir}/{img_name}.npy', out)
+        
+    # Parallel processing
+    import multiprocessing as mp
+    mp.Pool(mp.cpu_count()).map(proc_i, imgs)
 
 

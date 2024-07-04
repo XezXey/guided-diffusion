@@ -33,11 +33,17 @@ def main():
             img_model[k] = v[0]
         else:
             img_model[k] = v
+    
+    
+    if cfg.train.use_prep_data:
+        print("[#] Using preprocessed data, Using lib: img_deca_datasets_preprocessed.py")
+        from guided_diffusion.dataloader.img_deca_datasets_preprocessed import load_data_img_deca
+    else:
+        print("[#] Using raw data, Using lib: img_deca_datasets.py")
+        from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
+        
             
-    # print(img_model.keys())
     img_model = {k: v for k, v in img_model.items() if v is not None}
-    # print(img_model.keys())
-    # exit()
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
     logger.log("[#] Creating data loader...")
     train_loader, _, _ = load_data_img_deca(

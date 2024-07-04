@@ -378,6 +378,7 @@ class TrainLoop(LightningModule):
                             tmp_img = self.diffusion.q_sample(cond[f'{k}_img'], t)
                     else: raise NotImplementedError("[#] Input Features are not available")
                 cond_img.append(tmp_img)
+                print(k, tmp_img.shape)
 
             return th.cat((cond_img), dim=1)
         
