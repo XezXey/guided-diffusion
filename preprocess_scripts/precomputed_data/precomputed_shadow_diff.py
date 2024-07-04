@@ -18,6 +18,9 @@ if __name__ == '__main__':
     if args.resolution == 256:
         exit("[#] Original resolution is already 256.")
     
+    print(f"Resizing {args.set} images to {args.resolution}x{args.resolution}")
+    exit()
+    
     os.makedirs(f'{args.save_dir}/{args.set}', exist_ok=True)
     imgs = glob.glob(f'{args.data_dir}/{args.set}/*.npy')
     

@@ -616,6 +616,8 @@ class DECADataset(Dataset):
             seg_m = eye_g
         elif segment_part == 'faceseg_cloth':
             seg_m = cloth
+        elif segment_part == 'faceseg_hat':
+            seg_m = hat
         elif segment_part == 'faceseg_face&hair':
             seg_m = ~bg
         elif segment_part == 'faceseg_bg_noface&nohair':

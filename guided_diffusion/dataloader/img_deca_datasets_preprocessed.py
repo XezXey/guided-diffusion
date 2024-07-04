@@ -238,10 +238,10 @@ class DECADataset(Dataset):
                 each_cond_img = cond_img[k]
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                 out_dict[f'{k}_img'] = each_cond_img
-            elif 'face_structure' in k:
+            elif k == 'face_structure':
                 fs = cond_img[k]
                 fs = np.transpose(fs, [2, 0, 1])
-                out_dict[f'{k}_img'] = cond_img[k]
+                out_dict[f'{k}_img'] = fs
 
         # Consturct the 'cond_params' for non-spatial conditioning
         if self.cfg.img_model.conditioning: 

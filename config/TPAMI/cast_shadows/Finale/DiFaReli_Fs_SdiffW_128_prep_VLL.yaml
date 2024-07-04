@@ -39,6 +39,7 @@ train:
   use_prep_data: True
 
 dataset:
+  training_data: "ffhq_with_anno_preprocessed"
   deca_dir: "/data/mint/DPM_Dataset/ffhq_with_anno_preprocessed/res128/params/"
   data_dir: "/data/mint/DPM_Dataset/ffhq_with_anno_preprocessed/res128/ffhq_128/"
   face_segment_dir: "/data/mint/DPM_Dataset/ffhq_with_anno_preprocessed/res128/face_segment/"
