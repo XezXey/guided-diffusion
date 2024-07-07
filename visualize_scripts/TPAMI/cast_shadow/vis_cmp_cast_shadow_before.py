@@ -111,9 +111,8 @@ def create_app():
             else:
                 out += f"[#{k}] {src}=>{dst} : <img src=/files/{data_path}/{src}>, {dst} : <img src=/files/{data_path}/{dst}>" + "<br>" + "<br>"
             # Model 
-            for m_idx, metadat in candidates.items():
+            for m_name, metadat in candidates.items():
                 # Model's metadata
-                m_name = metadat['m_name']
                 ckpt = metadat['step']
                 alias = metadat['alias']
                 itp = metadat['itp']

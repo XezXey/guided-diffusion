@@ -97,7 +97,8 @@ def load_data_img_deca(
     augment_mode=None,
     in_image_UNet="raw",
     mode='train',
-    img_ext='.jpg'
+    img_ext='.jpg',
+    args=None   # For sampling
 ):
     """
     For a dataset, create a generator over (images, kwargs) pairs.
@@ -199,7 +200,8 @@ def load_data_img_deca(
         cfg=cfg,
         in_image_for_cond=in_image,
         mode=mode,
-        img_ext=img_ext
+        img_ext=img_ext,
+        args = args
     )
     print("[#] Parameters Conditioning")
     print("Params keys order : ", img_dataset.precomp_params_key)
@@ -334,14 +336,20 @@ class DECADataset(Dataset):
                 out_dict[f'{k}_img'] = each_cond_img
                 # Loading mask for inference
                 if self.mode == 'sampling':
-                    sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                    if self.kwargs['args'].anti_aliasing:
+                        sd = cond_img['shadow_diff'].astype(np.uint8)
+                    else:
+                        sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                     assert np.allclose(sd[..., 0], sd[..., 1]) and np.allclose(sd[..., 0], sd[..., 2])
                     sd = sd[..., 0:1]
                     sd = np.transpose(sd, [2, 0, 1])
                     out_dict[f'shadow_diff_img'] = sd / 255.0
                     out_dict[f'shadow_diff_img'][out_dict[f'shadow_diff_img'] == 127/255.] = 0.5
                     for tk in ['mface_mask', 'meg_mask']:
-                        out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                        if self.kwargs['args'].anti_aliasing:
+                            out_dict[f'{k}_{tk}'] = cond_img[f'{k}_{tk}'].astype(np.uint8)
+                        else:
+                            out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                         out_dict[f'{k}_{tk}'] = np.transpose(out_dict[f'{k}_{tk}'], [2, 0, 1])
                         out_dict[f'{k}_{tk}'] = out_dict[f'{k}_{tk}'][0:1, ...]
             elif k == 'shadow_diff_with_weight_oneneg':
@@ -438,6 +446,7 @@ class DECADataset(Dataset):
                 # print(k, cond_img[k].shape, sobel_mask.shape)
                 min_val, max_val = self.cfg.img_cond_model.canny_thres[i]
                 grey_img = cv2.cvtColor(raw_img[..., ::-1], cv2.COLOR_BGR2GRAY)
+                grey_img = cv2.blur(grey_img, (5, 5))
                 each_cond_img = cv2.Canny(grey_img, int(min_val), int(max_val))
                 each_cond_img = each_cond_img[..., None] / 255.0
                 # print(each_cond_img.shape, mask.shape)

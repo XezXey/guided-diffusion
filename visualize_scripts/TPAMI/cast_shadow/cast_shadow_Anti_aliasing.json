@@ -1,0 +1,32 @@
+{
+    "1": {
+        "m_name": "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd",
+        "step":"ema_100000", 
+        "alias":"W/o Anti-aliasing ",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    },
+    "2": {
+        "m_name": "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_Aa",
+        "step":"ema_100000", 
+        "alias":"W/ Anti-aliasing",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    },
+    "3": {
+        "m_name": "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_Aa_256",
+        "step":"ema_100000", 
+        "alias":"W/ Anti-aliasing",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    }
+}

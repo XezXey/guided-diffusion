@@ -1,32 +1,6 @@
 {
-    "log=DiFaReli_canny=153to204bg_Sdiff_median_128_cfg=DiFaReli_canny=153to204bg_Sdiff_median_128.yaml_inv_with_sd" : {
-        "step":"ema_100000", 
-        "alias":"Relight: Baseline",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"60"
-    },
-    "log=DiFaReli_Canny_SdiffW_128_cfg=DiFaReli_Canny_SdiffW_128.yaml_inv_with_sd" : {
-        "step":"ema_100000", 
-        "alias":"Relight: Woh - Inv with SD",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"20"
-    },
-    "log=DiFaReli_Canny_SdiffWneg_128_cfg=DiFaReli_Canny_SdiffWneg_128.yaml_inv_with_sd" : {
-        "step":"ema_100000", 
-        "alias":"Relight: Wneg - Inv with SD",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"20"
-    },
-    "log=DiFaReli_canny=153to204bg_Sdiff_median_128_cfg=DiFaReli_canny=153to204bg_Sdiff_median_128.yaml_inv_with_sd_inc_c" : {
+    "4" : {
+        "m_name": "log=DiFaReli_canny=153to204bg_Sdiff_median_128_cfg=DiFaReli_canny=153to204bg_Sdiff_median_128.yaml_inv_with_sd_inc_c",
         "step":"ema_100000", 
         "alias":"Reshadow: Baseline - Inv with SD",
         "itp":"render_face",
@@ -35,7 +9,8 @@
         "time_respace":"",
         "n_frame":"20"
     },
-    "log=DiFaReli_Canny_SdiffWneg_128_cfg=DiFaReli_Canny_SdiffWneg_128.yaml_inv_with_sd_inc_c" : {
+    "5" : {
+        "m_name": "log=DiFaReli_Canny_SdiffWneg_128_cfg=DiFaReli_Canny_SdiffWneg_128.yaml_inv_with_sd_inc_c",
         "step":"ema_100000", 
         "alias":"Reshadow: Wneg - Inv with SD",
         "itp":"render_face",
@@ -44,7 +19,8 @@
         "time_respace":"",
         "n_frame":"20"
     },
-    "log=DiFaReli_Canny_SdiffW_128_cfg=DiFaReli_Canny_SdiffW_128.yaml_inv_with_sd_inc_c" : {
+    "6" : {
+        "m_name": "log=DiFaReli_Canny_SdiffW_128_cfg=DiFaReli_Canny_SdiffW_128.yaml_inv_with_sd_inc_c",
         "step":"ema_100000", 
         "alias":"Reshadow: Woh - Inv with SD",
         "itp":"render_face",
@@ -53,7 +29,28 @@
         "time_respace":"",
         "n_frame":"20"
     },
-        "log=DiFaReli_Canny_SdiffWneg_128_cfg=DiFaReli_Canny_SdiffWneg_128.yaml_inv_with_sd_inc_c_frac0.5" : {
+    "g" : {
+        "m_name": "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_inc_c",
+        "step":"ema_100000", 
+        "alias":"Reshadow: Woh Fs - Inv with SD",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    },
+    "g2" : {
+        "m_name": "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_inc_c",
+        "step":"ema_200000", 
+        "alias":"Reshadow: Woh Fs - Inv with SD",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    },
+    "7" : {
+        "m_name": "log=DiFaReli_Canny_SdiffWneg_128_cfg=DiFaReli_Canny_SdiffWneg_128.yaml_inv_with_sd_inc_c_frac0.5",
         "step":"ema_100000", 
         "alias":"Reshadow: Inv with SD (frac=0.5)",
         "itp":"render_face",
@@ -62,7 +59,8 @@
         "time_respace":"",
         "n_frame":"20"
     },
-        "log=DiFaReli_Canny_SdiffW_128_cfg=DiFaReli_Canny_SdiffW_128.yaml_inv_with_sd_inc_c_frac0.5" : {
+    "8" : {
+        "m_name": "log=DiFaReli_Canny_SdiffW_128_cfg=DiFaReli_Canny_SdiffW_128.yaml_inv_with_sd_inc_c_frac0.5",
         "step":"ema_100000", 
         "alias":"Reshadow: Inv with SD (frac=0.5)",
         "itp":"render_face",

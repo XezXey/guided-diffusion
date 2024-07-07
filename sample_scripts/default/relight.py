@@ -58,10 +58,13 @@ parser.add_argument('--combined_mask', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dir', type=str, default=None)
 parser.add_argument('--use_ray_mask', action='store_true', default=False)
 parser.add_argument('--render_same_mask', action='store_true', default=False)
+parser.add_argument('--anti_aliasing', action='store_true', default=False)
 # Experiment - Shadow weight
 parser.add_argument('--shadow_diff_inc_c', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dec_c', action='store_true', default=False)
 parser.add_argument('--shadow_diff_fidx_frac', type=float, default=0.0)    # set to 0.0 for using first frame
+# Experiment - Canny Edge
+parser.add_argument('--canny_edge', nargs=2, type=int, default=None)
 
 args = parser.parse_args()
 
@@ -266,6 +269,15 @@ if __name__ == '__main__':
         args.cfg_name = args.log_dir + '.yaml'
     ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
     cfg = ckpt_loader.cfg
+
+    if args.canny_edge is not None:
+        try:
+            canny_idx = cfg.img_cond_model.in_image.index('canny_edge_bg')
+            print(f"[#] Before canny mod: {cfg.img_cond_model.canny_thres}")
+            cfg.img_cond_model.canny_thres[canny_idx] = args.canny_edge
+            print(f"[#] After canny mod: {cfg.img_cond_model.canny_thres}")
+        except:
+            print("[#] No canny_edge_bg in the condition image...")
     
     print(f"[#] Sampling with diffusion_steps = {args.diffusion_steps}")
     print(f"[#] Sampling with timestep respacing = {args.timestep_respacing}")
@@ -273,6 +285,7 @@ if __name__ == '__main__':
     cfg.diffusion.timestep_respacing = args.timestep_respacing
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
     model_dict = inference_utils.eval_mode(model_dict)
+        
 
     # Load dataset
     if args.dataset == 'itw':
@@ -334,7 +347,8 @@ if __name__ == '__main__':
         set_=args.set,
         cfg=cfg,
         img_ext=img_ext,
-        mode='sampling'
+        mode='sampling',
+        args=args,
     )
     
     data_size = dataset.__len__()

@@ -5,6 +5,7 @@ import blobfile as bf
 import mani_utils, params_utils
 import cv2, PIL
 import time
+from torchvision.transforms import Resize
 
 class PLSampling(pl.LightningModule):
     def __init__(self, 
@@ -273,6 +274,15 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
             shadow_area = (sd_img + weight) * sd_shadow
             no_shadow_area = sd_img * sd_no_shadow
             face = (shadow_area + no_shadow_area)
+
+            # Anti-aliasing
+            if args.anti_aliasing:
+                _, _, H, W = face.shape
+                scale = 4
+                up = Resize((H*scale, W*scale))
+                down = Resize((H, W))
+                face = down(up(face))
+
             bg = -th.ones_like(sd_img)
             out_sd = (face * face_use_mask_rt) + (bg * ~face_use_mask_rt)
 
@@ -299,6 +309,22 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
             face = (shadow_area + no_shadow_area)
             shadow = (1-face) * sd_shadow
             bg = sd_bg
+
+            # Anti-aliasing
+            if args.anti_aliasing:
+                print("[#] Anti-aliasing for shadow_diff_with_weight_onehot...")
+
+                img_size = misc['img_size']
+                print(img_size)
+                _, _, H, W = face.shape
+                scale = 4
+                up = Resize((H*scale, W*scale))
+                down = Resize((img_size, img_size))
+                shadow = down(up(shadow))
+                face = down(up(face))
+                down_NEAREST = Resize((img_size, img_size), interpolation=PIL.Image.NEAREST)
+                bg = down_NEAREST(bg)
+
 
             out_sd = th.cat((face, shadow, bg), dim=1)
             cond[cond_img_name] = out_sd
@@ -522,7 +548,8 @@ def build_condition_image(cond, misc):
                 sd_tmp = sd_tmp.repeat_interleave(repeats=3, dim=0)
                 sd_tmp = np.transpose(sd_tmp.cpu().numpy(), (1, 2, 0))  # HxWxC
                 sd_tmp = sd_tmp.astype(np.uint8)
-                sd_tmp = dataset.augmentation(PIL.Image.fromarray(sd_tmp))
+                if not args.anti_aliasing:
+                    sd_tmp = dataset.augmentation(PIL.Image.fromarray(sd_tmp))
                 sd_tmp = dataset.prep_cond_img(sd_tmp, cond_img_name, i)
                 sd_tmp = np.transpose(sd_tmp, (2, 0, 1))    # CxHxW
                 sd_tmp = sd_tmp[0:1, ...]

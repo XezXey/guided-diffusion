@@ -1,5 +1,6 @@
 {
-    "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_spiralSH": {
+    "1": {
+        "m_name": "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_spiralSH",
         "step":"ema_100000", 
         "alias":"Relight: Fs",
         "itp":"render_face",
@@ -8,7 +9,8 @@
         "time_respace":"",
         "n_frame":"60"
     },
-    "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_rotateSH_axis0": {
+    "2": {
+        "m_name":"log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_rotateSH_axis0",
         "step":"ema_200000", 
         "alias":"Relight: Fs (rotateSH_axis0)",
         "itp":"render_face",
@@ -17,7 +19,8 @@
         "time_respace":"",
         "n_frame":"60"
     },
-    "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_rotateSH_axis1": {
+    "3": {
+        "m_name": "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_rotateSH_axis1",
         "step":"ema_100000", 
         "alias":"Relight: Fs (rotateSH_axis1)",
         "itp":"render_face",
@@ -26,7 +29,8 @@
         "time_respace":"",
         "n_frame":"60"
     },
-    "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_rotateSH_axis1_rp500": {
+    "4": {
+        "m_name":"log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_rotateSH_axis1_rp500",
         "step":"ema_100000", 
         "alias":"Relight: Fs (rotateSH_axis1) - t = 500",
         "itp":"render_face",
@@ -35,7 +39,8 @@
         "time_respace":"",
         "n_frame":"60"
     },
-    "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_rotateSH_axis2": {
+    "5": {
+        "m_name":"log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_rotateSH_axis2",
         "step":"ema_100000", 
         "alias":"Relight: Fs (rotateSH_axis2)",
         "itp":"render_face",
@@ -44,7 +49,8 @@
         "time_respace":"",
         "n_frame":"60"
     },
-    "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_rotateSH_axis2_rp500": {
+    "6": {
+        "m_name":"log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_rotateSH_axis2_rp500",
         "step":"ema_100000", 
         "alias":"Relight: Fs (rotateSH_axis2) - t = 500",
         "itp":"render_face",
@@ -53,7 +59,18 @@
         "time_respace":"",
         "n_frame":"60"
     },
-    "log=DiFaReli_Canny_Fs_SdiffW_128_cfg=DiFaReli_Canny_Fs_SdiffW_128.yaml_inv_with_sd_spiralSH": {
+    "7": {
+        "m_name":"log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_rotateSH_axis2_rp500",
+        "step":"ema_100000", 
+        "alias":"Relight: Fs (rotateSH_axis2) - t = 500, 120frames",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"120"
+    },
+    "8": {
+        "m_name":"log=DiFaReli_Canny_Fs_SdiffW_128_cfg=DiFaReli_Canny_Fs_SdiffW_128.yaml_inv_with_sd_spiralSH",
         "step":"ema_100000", 
         "alias":"Relight: Canny + Fs",
         "itp":"render_face",
