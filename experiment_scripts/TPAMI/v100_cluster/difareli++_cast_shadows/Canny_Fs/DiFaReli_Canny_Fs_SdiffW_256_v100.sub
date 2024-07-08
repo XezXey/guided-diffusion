@@ -14,11 +14,11 @@
 path='/ist/users/puntawatp/Dev/DiFaReli/difareli-faster'
 model_path='/ist/ist-share/vision/mint/model_logs/'
 logger_path='/ist/ist-share/vision/mint/tb_logs/'
-cfg_name='difareli_Canny_Fs_SdiffW_256_v100'
+cfg_name='DiFaReli_Canny_Fs_SdiffW_256_v100'
 
 conda activate /ist/users/puntawatp/miniconda3/envs/3dr_conda_training
 
-cmd="${path}/train_scripts/image_train.py --train.log_dir ${model_path}/${cfg_name} --train.logger_dir ${logger_path} --train.batch_size 5 --train.n_gpus 4 --cfg ${path}/config/TPAMI/Finale/v100/${cfg_name}.yaml --train.save_interval 5000 --train.logger_mode tb"
+cmd="${path}/train_scripts/image_train.py --train.log_dir ${model_path}/${cfg_name} --train.logger_dir ${logger_path} --train.batch_size 5 --train.n_gpus 4 --cfg ${path}/config/TPAMI/cast_shadows/Finale/v100/${cfg_name}.yaml --train.save_interval 5000 --train.logger_mode tb"
 
 echo $cmd
 python $cmd
