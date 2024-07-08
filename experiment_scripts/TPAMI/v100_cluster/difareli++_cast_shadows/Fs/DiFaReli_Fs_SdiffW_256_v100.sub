@@ -1,7 +1,5 @@
 #!/bin/bash -l
 
-
-cfg_name='DiFaReli_Fs_SdiffW_256_v100'
 #SBATCH --error=./output/DiFaReli_Fs_SdiffW_256_v100.err.%j # STDOUT output is written in slurm.out.JOBID
 #SBATCH --output=./output/DiFaReli_Fs_SdiffW_256_v100.task.out.%j # STDOUT error is written in slurm.err.JOBID
 #SBATCH --job-name=DiFaReli_Fs_SdiffW_256_v100      # Job name
@@ -15,6 +13,7 @@ cfg_name='DiFaReli_Fs_SdiffW_256_v100'
 path='/ist/users/puntawatp/Dev/DiFaReli/difareli-faster'
 model_path='/ist/ist-share/vision/mint/model_logs/'
 logger_path='/ist/ist-share/vision/mint/tb_logs/'
+cfg_name='DiFaReli_Fs_SdiffW_256_v100'
 
 conda activate /ist/users/puntawatp/miniconda3/envs/3dr_conda_training
 
