@@ -36,17 +36,15 @@ train:
   weight_decay: 0.0
   sampling_interval: 100000
   save_interval: 100000
-  use_prep_data: True
+  use_prep_data: False
 
 dataset:
-  training_data: "ffhq_with_anno_preprocessed"
-  deca_dir: "/data/mint/DPM_Dataset/ffhq_with_anno_preprocessed/res128/params/"
-  data_dir: "/data/mint/DPM_Dataset/ffhq_with_anno_preprocessed/res128/ffhq_128/"
-  face_segment_dir: "/data/mint/DPM_Dataset/ffhq_with_anno_preprocessed/res128/face_segment/"
-  face_structure_dir: "/data/mint/DPM_Dataset/ffhq_with_anno_preprocessed/res128/face_segment_onehot/"
-  deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_with_anno_preprocessed/res128/rendered_images/"
-  shadow_diff_dir: "/data/mint/DPM_Dataset/ffhq_with_anno_preprocessed/res128/shadow_diff_with_weight_onehot/"
+  deca_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
+  data_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
+  face_segment_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment_with_pupil/"
+  deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
+  shadow_diff_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_with_weight_onehot/"
 
 train_misc:
   exp_name: "CastShadows"
-  cfg_name: "DiFaReli_Fs_SdiffW_128_prep_VLL"
+  cfg_name: "DiFaReli_Fs_SdiffW_128_VLL"

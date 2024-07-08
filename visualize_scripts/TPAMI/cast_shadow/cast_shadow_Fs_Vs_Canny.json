@@ -1,5 +1,6 @@
 {
-    "log=DiFaReli_Canny_SdiffW_128_cfg=DiFaReli_Canny_SdiffW_128.yaml_inv_with_sd" : {
+    "1" : {
+        "m_name":"log=DiFaReli_Canny_SdiffW_128_cfg=DiFaReli_Canny_SdiffW_128.yaml_inv_with_sd",
         "step":"ema_100000", 
         "alias":"W/ Canny",
         "itp":"render_face",
@@ -8,7 +9,8 @@
         "time_respace":"",
         "n_frame":"20"
     },
-    "log=DiFaReli_Canny_SdiffW_128_cfg=DiFaReli_Canny_SdiffW_128.yaml_inv_with_sd_canny_detail": {
+    "2": {
+        "m_name": "log=DiFaReli_Canny_SdiffW_128_cfg=DiFaReli_Canny_SdiffW_128.yaml_inv_with_sd_canny_detail",
         "step":"ema_100000", 
         "alias":"Relight: Canny (10-30)",
         "itp":"render_face",
@@ -17,7 +19,8 @@
         "time_respace":"",
         "n_frame":"20"
     },
-    "log=DiFaReli_Canny_SdiffW_128_cfg=DiFaReli_Canny_SdiffW_128.yaml_inv_with_sd_canny_rough": {
+    "3": {
+        "m_name": "log=DiFaReli_Canny_SdiffW_128_cfg=DiFaReli_Canny_SdiffW_128.yaml_inv_with_sd_canny_rough",
         "step":"ema_100000", 
         "alias":"Relight: Canny (230-255)",
         "itp":"render_face",
@@ -26,16 +29,18 @@
         "time_respace":"",
         "n_frame":"20"
     },
-    "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd": {
+    "4": {
+        "m_name": "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd",
         "step":"ema_100000", 
-        "alias":"W/ Clothes + Hat Mask",
+        "alias":"W/ Fs",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"20"
     },
-    "log=DiFaReli_Canny_Fs_SdiffW_128_cfg=DiFaReli_Canny_Fs_SdiffW_128.yaml_inv_with_sd": {
+    "5": {
+        "m_name": "log=DiFaReli_Canny_Fs_SdiffW_128_cfg=DiFaReli_Canny_Fs_SdiffW_128.yaml_inv_with_sd",
         "step":"ema_100000", 
         "alias":"Relight: Canny + Fs",
         "itp":"render_face",
@@ -44,7 +49,8 @@
         "time_respace":"",
         "n_frame":"20"
     },
-    "log=DiFaReli_Canny_Fs_SdiffW_128_cfg=DiFaReli_Canny_Fs_SdiffW_128.yaml_inv_with_sd_canny_detail": {
+    "6": {
+        "m_name":"log=DiFaReli_Canny_Fs_SdiffW_128_cfg=DiFaReli_Canny_Fs_SdiffW_128.yaml_inv_with_sd_canny_detail",
         "step":"ema_100000", 
         "alias":"Relight: Canny (10-30) + Fs",
         "itp":"render_face",
@@ -53,27 +59,10 @@
         "time_respace":"",
         "n_frame":"20"
     },
-    "log=DiFaReli_Canny_Fs_SdiffW_128_cfg=DiFaReli_Canny_Fs_SdiffW_128.yaml_inv_with_sd_canny_rough": {
+    "7":{
+        "m_name":"log=DiFaReli_Canny_Fs_SdiffW_128_cfg=DiFaReli_Canny_Fs_SdiffW_128.yaml_inv_with_sd_canny_rough",
         "step":"ema_100000", 
         "alias":"Relight: Canny (230-255) + Fs",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"20"
-    },
-    "log=DiFaReli_Fs_SdiffW_128_cfg=DiFaReli_Fs_SdiffW_128.yaml_inv_with_sd_rp1000": {
-        "step":"ema_100000", 
-        "alias":"Relight: Fs",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"20"
-    },
-    "log=DiFaReli_Canny_Fs_SdiffW_128_cfg=DiFaReli_Canny_Fs_SdiffW_128.yaml_inv_with_sd_rp1000": {
-        "step":"ema_100000", 
-        "alias":"Relight: Canny + Fs",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
