@@ -4,7 +4,7 @@
 cfg_name='DiFaReli_Fs_SdiffW_256_v100'
 #SBATCH --error=./output/DiFaReli_Fs_SdiffW_256_v100.err.%j # STDOUT output is written in slurm.out.JOBID
 #SBATCH --output=./output/DiFaReli_Fs_SdiffW_256_v100.task.out.%j # STDOUT error is written in slurm.err.JOBID
-#SBATCH --job-name=${cfg_name}      # Job name
+#SBATCH --job-name=DiFaReli_Fs_SdiffW_256_v100      # Job name
 #SBATCH --mem=128GB                  # Memory request for this job
 #SBATCH --nodes=1                   # The number of nodes
 #SBATCH --partition=gpu-cluster
