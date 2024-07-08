@@ -42,7 +42,6 @@ dataset:
   data_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
   face_segment_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment/"
   deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
-  deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
   shadow_diff_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_with_weight_onehot/"
 
 train_misc:

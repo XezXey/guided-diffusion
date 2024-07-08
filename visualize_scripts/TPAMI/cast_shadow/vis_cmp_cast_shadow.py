@@ -153,7 +153,7 @@ def create_app():
                     out += f"""
                         <td>  
                         <video controls autoplay muted loop>
-                            <source src=/files/{path}/{itp_method}_{diff_step}/n_frames={n_frame}/out_rt.mp4 type="video/mp4">
+                            <source src=/files/{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_rt.mp4 type="video/mp4">
                         </video>
                         </td>
                     """
