@@ -1,9 +1,10 @@
 #!/bin/bash -l
 
 
-#SBATCH --error=./output/difareli_canny=51to51bg_256_v100.err.%j # STDOUT output is written in slurm.out.JOBID
-#SBATCH --output=./output/difareli_canny=51to51bg_256_v100.task.out.%j # STDOUT error is written in slurm.err.JOBID
-#SBATCH --job-name=difareli_canny=51to51bg_256_v100      # Job name
+cfg_name='DiFaReli_Fs_SdiffW_256_v100'
+#SBATCH --error=./output/${cfg_name}.err.%j # STDOUT output is written in slurm.out.JOBID
+#SBATCH --output=./output/${cfg_name}.task.out.%j # STDOUT error is written in slurm.err.JOBID
+#SBATCH --job-name=${cfg_name}      # Job name
 #SBATCH --mem=128GB                  # Memory request for this job
 #SBATCH --nodes=1                   # The number of nodes
 #SBATCH --partition=gpu-cluster
@@ -14,7 +15,6 @@
 path='/ist/users/puntawatp/Dev/DiFaReli/difareli-faster'
 model_path='/ist/ist-share/vision/mint/model_logs/'
 logger_path='/ist/ist-share/vision/mint/tb_logs/'
-cfg_name='DiFaReli_Fs_SdiffW_256_v100'
 
 conda activate /ist/users/puntawatp/miniconda3/envs/3dr_conda_training
 
