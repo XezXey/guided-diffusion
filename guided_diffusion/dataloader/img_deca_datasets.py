@@ -217,7 +217,7 @@ def load_data_img_deca(
         )
     else:
         loader = DataLoader(
-            img_dataset, batch_size=batch_size, shuffle=True, num_workers=1, drop_last=True, pin_memory=True,
+            img_dataset, batch_size=batch_size, shuffle=True, num_workers=4, drop_last=True, pin_memory=True,
             persistent_workers=True
         )
 
