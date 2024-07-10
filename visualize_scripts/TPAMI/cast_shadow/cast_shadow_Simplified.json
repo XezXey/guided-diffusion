@@ -1,0 +1,22 @@
+{
+    "1": {
+        "m_name": "log=DiFaReli_Fs_SdiffWSimInv_128_VLL_cfg=DiFaReli_Fs_SdiffWSimInv_128_VLL.yaml_inv_with_sd",
+        "step":"ema_000000", 
+        "alias":"Simplified Inverse",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    },
+    "2": {
+        "m_name": "log=DiFaReli_Fs_SdiffWSim_128_VLL_cfg=DiFaReli_Fs_SdiffWSim_128_VLL.yaml_inv_with_sd",
+        "step":"ema_000000", 
+        "alias":"Simplified",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    }
+}
