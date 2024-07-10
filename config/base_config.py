@@ -154,6 +154,7 @@ img_cond_model_img_type = {'raw':3,
                            'compose':3,
                            'shadow_diff_with_weight_onehot':3,
                            'shadow_diff_with_weight_oneneg':1,
+                           'shadow_diff_with_weight_simplified':1,
                             None:0,
 }
 cfg.img_cond_model = CN()
