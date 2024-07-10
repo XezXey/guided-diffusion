@@ -142,6 +142,10 @@ def make_vis_condimg(data, anno, input_bound, cfg):
             print(each_img.shape)
         elif 'shadow_diff_with_weight_onehot' == img_type:
             each_img = th.cat([th.repeat_interleave(each_img[:, i:i+1, ...], dim=1, repeats=3) for i in range(each_img.shape[1])], dim=0)
+        elif 'shadow_diff_with_weight_simplified' == img_type or 'shadow_diff_with_weight_simplified_inverse' == img_type:
+            each_img = each_img
+            print(th.max(each_img), th.min(each_img), th.unique(each_img))
+            print(each_img.shape)
         elif 'shadow_diff_with_weight_oneneg' == img_type:
             each_img = each_img
             print(th.max(each_img), th.min(each_img), th.unique(each_img))

@@ -155,6 +155,7 @@ img_cond_model_img_type = {'raw':3,
                            'shadow_diff_with_weight_onehot':3,
                            'shadow_diff_with_weight_oneneg':1,
                            'shadow_diff_with_weight_simplified':1,
+                           'shadow_diff_with_weight_simplified_inverse':1,
                             None:0,
 }
 cfg.img_cond_model = CN()
@@ -219,7 +220,7 @@ cfg.relighting.num_shaded_ch = 1
 # ---------------------------------------------------------------------------- #
 # Options for face structure (choosing the part of the face)
 # ---------------------------------------------------------------------------- #
-face_structure_parts_chn = {'hair':1, 'faceskin':1, 'eyes':1, 'pupils':1, 'glasses':1, 'ears':1, 'nose':1, 'mouth':1, 'inmouth':1, 'u_lip':1, 'l_lip':1, 'neck':1, 'cloth':1, 'hat':1}
+face_structure_parts_chn = {'hair':1, 'faceskin':1, 'eyes':1, 'pupils':1, 'glasses':1, 'ears':1, 'nose':1, 'mouth':1, 'inmouth':1, 'u_lip':1, 'l_lip':1, 'neck':1, 'cloth':1, 'hat':1, 'bg':1}
 cfg.conditioning = CN()
 cfg.conditioning.face_structure = CN() 
 cfg.conditioning.face_structure.parts = ['hair', 'faceskin', 'eyes', 'ears', 'nose', 'mouth', 'neck'] 
