@@ -475,7 +475,7 @@ class DECADataset(Dataset):
                 # print(k, cond_img[k].shape, sobel_mask.shape)
                 min_val, max_val = self.cfg.img_cond_model.canny_thres[i]
                 grey_img = cv2.cvtColor(raw_img[..., ::-1], cv2.COLOR_BGR2GRAY)
-                grey_img = cv2.blur(grey_img, (5, 5))
+                # grey_img = cv2.blur(grey_img, (5, 5))
                 each_cond_img = cv2.Canny(grey_img, int(min_val), int(max_val))
                 each_cond_img = each_cond_img[..., None] / 255.0
                 # print(each_cond_img.shape, mask.shape)

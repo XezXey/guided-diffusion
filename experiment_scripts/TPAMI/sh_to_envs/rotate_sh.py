@@ -9,6 +9,9 @@ import itertools
 import os
 from scipy.spatial.transform import Rotation as R
 import matplotlib.pyplot as plt
+import plotly.graph_objs as go
+from plotly.subplots import make_subplots
+
 
 import pyshtools as pysh
 
@@ -178,26 +181,53 @@ def drawLD(ld, output):
   y = ld[1]
   z = ld[2]
   # 3D plot
-  fig = plt.figure(figsize=(10, 5))
-  ax1 = fig.add_subplot(121, projection='3d')
+  fig = plt.figure(figsize=(20, 5))
+  ax1 = fig.add_subplot(141, projection='3d')
   ax1.scatter(x, y, z, c='r', marker='o')
   ax1.set_xlabel('X axis')
   ax1.set_ylabel('Y axis')
   ax1.set_zlabel('Z axis')
   ax1.set_title('3D Plot')
+  # Add dot markers as a cuber corner 8 points
+  ax1.scatter(0, 1, 1, c='k', marker='.')
+  ax1.scatter(1, 0, 1, c='k', marker='.')
+  ax1.scatter(0, -1, 1, c='k', marker='.')
+  ax1.scatter(-1, 0, 1, c='k', marker='.')
+  ax1.scatter(0, 1, -1, c='k', marker='.')
+  ax1.scatter(1, 0, -1, c='k', marker='.')
+  ax1.scatter(0, -1, -1, c='k', marker='.')
+  ax1.scatter(-1, 0, -1, c='k', marker='.')
+  
 
   # XY plane projection
-  ax2 = fig.add_subplot(122)
+  ax2 = fig.add_subplot(142)
   ax2.scatter(x, y, c='r', marker='o')
   ax2.set_xlabel('X axis')
   ax2.set_ylabel('Y axis')
   ax2.set_title('Projection in XY Plane')
+  
+  # XZ plane projection
+  ax3 = fig.add_subplot(143)
+  ax3.scatter(x, z, c='r', marker='o')
+  ax3.set_xlabel('X axis')
+  ax3.set_ylabel('z axis')
+  ax3.set_title('Projection in XZ Plane')
+  
+  # YZ plane projection
+  ax4 = fig.add_subplot(144)
+  ax4.scatter(y, z, c='r', marker='o')
+  ax4.set_xlabel('Y axis')
+  ax4.set_ylabel('Z axis')
+  ax4.set_title('Projection in YZ Plane')
 
   # Add grid lines
   ax1.grid(True)
   ax2.grid(True)
+  ax3.grid(True)
+  ax4.grid(True)
+  
   # Add dot markers to the axes
-  for ax in [ax1, ax2]:
+  for ax in [ax1, ax2, ax3, ax4]:
     ax.scatter(0, 1, c='k', marker='.')
     ax.scatter(1, 0, c='k', marker='.')
     
@@ -210,6 +240,65 @@ def drawLD(ld, output):
   # Save the figure
   plt.savefig(output)
   plt.close()
+  
+def drawLD_animated(ld, output):
+    # Normalize the input vector
+    print(ld.shape)
+    ld = ld / np.linalg.norm(ld, axis=0)
+    print(ld.shape)
+    x = ld[:, 0]
+    y = ld[:, 1]
+    z = ld[:, 2]
+
+    print(x.shape, y.shape, z.shape)
+    # Create subplots with 1 row and 2 columns
+    fig = make_subplots(
+        rows=1, cols=2,
+        specs=[[{'type': 'scatter3d'}, {'type': 'scatter'}]],
+        subplot_titles=('3D Plot', 'Projection in XY Plane')
+    )
+
+    # 3D plot
+    trace3d = go.Scatter3d(
+        x=x, y=y, z=z,
+        mode='markers',
+        marker=dict(size=5, color='red'),
+        name='3D Point'
+    )
+    fig.add_trace(trace3d, row=1, col=1)
+    # Add dota markers as a cuber corner 8 points
+    fig.add_trace(go.Scatter3d(
+      x = [0, 1, 0, -1, 0, 1, 0, -1],
+      y = [1, 1, 1, 1, -1, -1, -1, -1],
+      z = [1, 1, 1, 1, -1, -1, -1, -1],
+      mode = 'markers',
+      marker = dict(size=5, color='black')
+    ), row=1, col=1)
+
+    # XY plane projection
+    trace2d = go.Scatter(
+        x=x, y=y,
+        mode='markers',
+        marker=dict(size=10, color='red'),
+        name='XY Projection'
+    )
+    fig.add_trace(trace2d, row=1, col=2)
+
+    # Add grid lines and dot markers to the axes for 3D plot
+    fig.update_layout(
+        scene=dict(
+            xaxis=dict(gridcolor='lightgrey'),
+            yaxis=dict(gridcolor='lightgrey'),
+            zaxis=dict(gridcolor='lightgrey')
+        ),
+        showlegend=False
+    )
+
+    # Add dot markers for 2D plot
+    fig.add_trace(go.Scatter(x=[0, 1, 0, -1], y=[1, 0, -1, 0], mode='markers', marker=dict(color='black')), row=1, col=2)
+
+    # Save the figure as an HTML file
+    fig.write_html(output)
   
 
 def spiralLight(sh_np, cx, cy):
@@ -270,11 +359,13 @@ def orbitalLight(sh_np, cx, cy, axis):
   
   n = 60
   i = 0
+  LD = []
   for j in tqdm.tqdm(np.linspace(0, 360, n)):
     
     moved = rotateSH(centered, axis==0, axis==1, axis==2, j)
     sh_moved = np.array(moved).reshape(-1, 9, 3)
     ld = np.mean(sh_moved[0:1, 1:4, :], axis=2)
+    LD.append(ld)
     
     
     drawLD(ld, f"orbit_out/{axis}/ld_{i:03d}.png")
@@ -283,6 +374,7 @@ def orbitalLight(sh_np, cx, cy, axis):
 
   os.system(f"ffmpeg -y -i orbit_out/{axis}/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 ./orbit_out/orbital_{axis}_out.mp4")
   os.system(f"ffmpeg -y -i orbit_out/{axis}/ld_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 ./orbit_out/LD_orbital_{axis}_out.mp4")
+  drawLD_animated(np.concatenate(LD, axis=0), f"orbit_out/LD_orbital_{axis}_out.html")
 
 
 # sh_text = "3.7467763 3.7607439 3.7748303 -0.17061733 -0.18169762 -0.18631022 0.07023415 0.07821477 0.07901665 -0.41905978 -0.40052396 -0.3687197 0.1470597 0.14538132 0.14575471 -0.28285792 -0.294153 -0.29541978 0.6458615 0.65194905 0.65252924 0.63551205 0.64745045 0.6551203 0.049085654 0.04447888 0.051973432"

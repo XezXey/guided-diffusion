@@ -224,9 +224,9 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
     n_step = misc['n_step']
     src_idx = misc['src_idx']
     args = misc['args']
-    # Min-Max c-values:  -4.985533880236826 7.383497233314015
-    min_c = -4.985533880236826
+    # Max-Min c-values:  -4.985533880236826 7.383497233314015
     max_c = 7.383497233314015
+    min_c = -4.985533880236826
     c_val = (cond['shadow'][src_idx] - min_c) / (max_c - min_c)  # Scale to 0-1
     c_val = 1 - c_val # Inverse the shadow value
 
@@ -271,7 +271,8 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
             face_use_mask_rt = ~sd_bg
 
             # From shadow diff
-            shadow_area = (sd_img + weight) * sd_shadow
+            # shadow_area = (sd_img + weight) * sd_shadow
+            shadow_area = sd_shadow * weight
             no_shadow_area = sd_img * sd_no_shadow
             face = (shadow_area + no_shadow_area)
 
@@ -284,6 +285,7 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                 face = down(up(face))
 
             bg = -th.ones_like(sd_img)
+            # bg = th.ones_like(sd_img) * 0
             out_sd = (face * face_use_mask_rt) + (bg * ~face_use_mask_rt)
 
             cond[cond_img_name] = out_sd

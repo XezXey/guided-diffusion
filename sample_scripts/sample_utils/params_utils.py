@@ -174,6 +174,7 @@ def render_shadow_mask(sh_light, cam, verts, deca):
         #NOTE: Render the shadow mask from light direction
         ld = sh_to_ld(sh=th.tensor(sh_light[[i]])).cuda()
         ld = util.batch_orth_proj(ld[None, ...], cam[None, ...].cuda()); ld[:,:,1:] = -ld[:,:,1:]    # This fn takes pts=Bx3, cam=Bx3
+        # ld = util.batch_orth_proj(ld[None, ...], cam[None, ...].cuda())
         ray = ld.view(3).cuda()
         ray[2] *= 0.5
         n = 256
