@@ -31,9 +31,39 @@
         "n_frame":"20"
     },
     "1": {
-        "m_name": "log=DiFaReli_Fs_SdiffWSimInv_128_VLL_cfg=DiFaReli_Fs_SdiffWSimInv_128_VLL.yaml_inv_with_sd",
+        "m_name": "log=DiFaReli_Fs_SdiffWSimInv_128_VLL_cfg=DiFaReli_Fs_SdiffWSimInv_128_VLL.yaml_inv_with_sd_inc_c",
         "step":"ema_100000", 
         "alias":"Simplified Inverse",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    },
+    "1_bg-1": {
+        "m_name": "log=DiFaReli_Fs_SdiffWSimInv_128_VLL_cfg=DiFaReli_Fs_SdiffWSimInv_128_VLL.yaml_inv_with_sd_inc_c_bgset-1",
+        "step":"ema_100000", 
+        "alias":"Simplified Inverse",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    },
+    "2_": {
+        "m_name": "log=DiFaReli_Fs_SdiffWSim_128_VLL_cfg=DiFaReli_Fs_SdiffWSim_128_VLL.yaml_inv_with_sd_inc_c",
+        "step":"ema_100000", 
+        "alias":"Relight: Simplified",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20"
+    },
+    "2_bg": {
+        "m_name": "log=DiFaReli_Fs_SdiffWSim_128_VLL_cfg=DiFaReli_Fs_SdiffWSim_128_VLL.yaml_inv_with_sd_inc_c_bgset-1",
+        "step":"ema_100000", 
+        "alias":"Relight: Simplified (bg-1)",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",

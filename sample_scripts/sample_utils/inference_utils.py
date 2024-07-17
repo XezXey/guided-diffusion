@@ -285,7 +285,7 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                 face = down(up(face))
 
             bg = -th.ones_like(sd_img)
-            # bg = th.ones_like(sd_img) * 0
+            # bg = -th.ones_like(sd_img) * 0
             out_sd = (face * face_use_mask_rt) + (bg * ~face_use_mask_rt)
 
             cond[cond_img_name] = out_sd
@@ -345,11 +345,11 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
             sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
             sd_no_shadow = th.isclose(sd_img, th.tensor(1.0).type_as(sd_img), atol=1e-5)
 
-            shadow_area = (sd_img + weight) * sd_shadow
-            no_shadow_area = sd_img * sd_no_shadow
+            shadow_area = sd_shadow * weight    # Shadow area assigned weight
+            no_shadow_area = sd_no_shadow
 
             face = (shadow_area + no_shadow_area)
-            shadow = (1-face) * sd_shadow
+            shadow = ((1-face) * sd_shadow)
 
             # Anti-aliasing
             if args.anti_aliasing:
