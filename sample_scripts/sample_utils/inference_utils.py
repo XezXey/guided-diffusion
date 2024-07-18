@@ -232,7 +232,10 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
 
     if args.shadow_diff_inc_c:
         print("[#] Increasing the shadow_diff with weight...")
-        weight = th.linspace(start=c_val.item(), end=1.0, steps=n_step).to(device)
+        # weight = th.linspace(start=c_val.item(), end=1.0, steps=n_step).to(device)
+        # weight = th.linspace(start=c_val.item(), end=1.0, steps=n_step).to(device)
+        weight = th.cat((th.linspace(start=c_val.item(), end=c_val.item(), steps=1).to(device), th.linspace(start=0.9, end=1.0, steps=n_step-1).to(device)), dim=0)
+        
         weight = weight[..., None, None, None]
         fix_frame = True 
     elif args.shadow_diff_dec_c:
