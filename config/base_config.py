@@ -37,7 +37,7 @@ cfg.param_model.bound = 1.0
 
 # Shadow specific
 cfg.param_model.shadow_val = CN()
-cfg.param_model.shadow_val.norm = True 
+cfg.param_model.shadow_val.norm = False
 cfg.param_model.shadow_val.inverse = False
 cfg.param_model.shadow_val.max_c = 7.383497233314015
 cfg.param_model.shadow_val.min_c = -4.985533880236826 

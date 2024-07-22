@@ -48,5 +48,15 @@
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"60"
+    },
+    "sim_strengthen_non_overflow": {
+        "m_name":"log=DiFaReli_Fs_SdiffWSim_128_VLL_cfg=DiFaReli_Fs_SdiffWSim_128_VLL.yaml_inv_with_sd_strengthen_non_overflow",
+        "step":"ema_100000", 
+        "alias":"Strengthen shadow (non overflow)",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
     }
 }
