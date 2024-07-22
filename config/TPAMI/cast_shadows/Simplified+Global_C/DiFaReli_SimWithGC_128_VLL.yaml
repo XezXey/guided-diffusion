@@ -49,4 +49,4 @@ dataset:
 
 train_misc:
   exp_name: "CastShadows"
-  cfg_name: "DiFaReli_Fs_SdiffWSim_128_VLL"
+  cfg_name: "DiFaReli_SimWithGC_128_VLL"
