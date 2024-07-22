@@ -39,8 +39,11 @@ cfg.param_model.bound = 1.0
 cfg.param_model.shadow_val = CN()
 cfg.param_model.shadow_val.norm = False
 cfg.param_model.shadow_val.inverse = False
-cfg.param_model.shadow_val.max_c = 7.383497233314015
-cfg.param_model.shadow_val.min_c = -4.985533880236826 
+# cfg.param_model.shadow_val.max_c = 7.383497233314015
+# cfg.param_model.shadow_val.min_c = -4.985533880236826 
+cfg.param_model.shadow_val.max_c = 8.481700287326827
+cfg.param_model.shadow_val.min_c = -4.989461058405101
+
 
 # Compute the in_channels to be used
 params_dict = {'shape':100, 'pose':6, 'exp':50, 'cam':3, 'light':27, 'faceemb':512, 'shadow':1, 'src_light':27, 'dst_light':27}

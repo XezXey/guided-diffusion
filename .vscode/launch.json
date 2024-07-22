@@ -31,6 +31,24 @@
             "cwd": "/home/mint/Dev/DiFaReli/difareli-faster/",
             "justMyCode": true
         }, 
+
+        {
+            "name": "Python: train_simplified",
+            "type": "python",
+            "request": "launch",
+            "env": {"CUDA_VISIBLE_DEVICES":"0", "WANDB_MODE":"offline"},
+            "program": "./train_scripts/image_train.py",
+            "args": ["--train.log_dir",
+                    "/data/mint/model_logs/test",
+                    "--train.batch_size", "5", 
+                    "--train.n_gpus", "1", 
+                    "--cfg", "/home/mint/Dev/DiFaReli/difareli-faster/config/TPAMI/cast_shadows/Simplified+Global_C/DiFaReli_SimWithGC_128_VLL.yaml",
+                    "--train.sampling_interval", "1",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/Dev/DiFaReli/difareli-faster/",
+            "justMyCode": true
+        }, 
         {
             "name": "Python: train_face_structure",
             "type": "python",
