@@ -149,7 +149,7 @@ def sh_to_ld(sh):
     ld = th.mean(sh[0:1, 1:4, :], dim=2)
     return ld
 
-def render_shadow_mask(sh_light, cam, verts, deca):
+def render_shadow_mask(sh_light, cam, verts, deca, axis_1=False):
     sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
     from decalib.utils import util
     
@@ -174,8 +174,10 @@ def render_shadow_mask(sh_light, cam, verts, deca):
         #NOTE: Render the shadow mask from light direction
         ld = sh_to_ld(sh=th.tensor(sh_light[[i]])).cuda()
         ld = util.batch_orth_proj(ld[None, ...], cam[None, ...].cuda());     # This fn takes pts=Bx3, cam=Bx3
+        ld[:, :, 1:] = -ld[:, :, 1:]
         ray = ld.view(3).cuda()
-        ray[1] *= -1    # FM
+        if axis_1:
+            ray[1] *= -1    # This for jst temporarly fix the axis 1 which the shading is bright in the middle, but the light direction is back of the head
         ray[2] *= 0.5
         n = 256
         ray = ray / th.norm(ray)

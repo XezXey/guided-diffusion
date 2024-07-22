@@ -107,7 +107,8 @@ def create_app():
             dst = v['dst']
             
             if args.res == 128:
-                out += f"[#{k}] {src}=>{dst} : <img src=/files/{data_path}/{src.replace('jpg', 'png')}>, {dst} : <img src=/files/{data_path}/{dst.replace('jpg', 'png')}>" + "<br>" + "<br>"
+                shadow_area_pth = '/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_with_weight_simplified/vis/'
+                out += f"[#{k}] {src}=>{dst} : <img src=/files/{data_path}/{src.replace('jpg', 'png')}>, {dst} : <img src=/files/{data_path}/{dst.replace('jpg', 'png')}>" + ", Shadow area = " + f"<img height=\"128\" src=/files/{shadow_area_pth}/{args.set_}/{src.replace('jpg', 'png')}>" + "<br>" + "<br>"
             else:
                 out += f"[#{k}] {src}=>{dst} : <img src=/files/{data_path}/{src}>, {dst} : <img src=/files/{data_path}/{dst}>" + "<br>" + "<br>"
             # Model 
@@ -185,6 +186,10 @@ def create_app():
                 
                 if args.res == 128:
                     out += f"<td> <img src=/files/{data_path}/{src.replace('jpg', 'png')}> </td>"
+                    tmp = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/shadm_*.png")
+                    if len(tmp) > 0:
+                        tmp = sort_by_frame(tmp)
+                        out += f"<td> <img src=/files/{data_path}/{tmp[0].replace('jpg', 'png')}> </td>"
                 else:
                     out += f"<td> <img src=/files/{data_path}/{src}> </td>"
                 

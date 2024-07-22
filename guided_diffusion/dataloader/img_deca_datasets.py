@@ -43,18 +43,36 @@ def load_deca_params(deca_dir, cfg):
     deca_params = {}
 
     # face params 
-    params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'tform', 'albedo', 'detail', 'shadow']
-    # params_key = ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'shadow']
+    params_key = ['shadow', 'shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'tform', 'albedo', 'detail']
     for k in tqdm.tqdm(params_key, desc="Loading deca params..."):
         params_path = glob.glob(f"{deca_dir}/*{k}-anno.txt")
         for path in params_path:
             deca_params[k] = read_params(path=path)
+            if k == 'shadow':
+                if cfg.param_model.shadow_val.norm:
+                    print(f"[#] Normalizing the shadow values...")
+                    # for img_name in list(deca_params[k].keys())[:10]:
+                    #     print(f"Before : {deca_params[k][img_name]}")
+                    deca_params[k] = process_shadow(deca_params[k], cfg)
+                    # for img_name in list(deca_params[k].keys())[:10]:
+                    #     print(f"After : {deca_params[k][img_name]}")
         deca_params[k] = preprocess_light(deca_params[k], k, cfg)
     
     avg_dict = avg_deca(deca_params)
     
     deca_params = swap_key(deca_params)
     return deca_params, avg_dict
+
+def process_shadow(shadow_params, cfg):
+    min_c = cfg.param_model.shadow_val.min_c
+    max_c = cfg.param_model.shadow_val.max_c
+    for img_name in shadow_params.keys():
+        c_val = np.array(shadow_params[img_name])
+        c_val = (c_val - min_c) / (max_c - min_c)
+        if cfg.param_model.shadow_val.inverse:
+            c_val = 1 - c_val
+        shadow_params[img_name] = c_val
+    return shadow_params
 
 def avg_deca(deca_params):
     

@@ -458,6 +458,7 @@ if __name__ == '__main__':
             is_shadow = True
             sc_s = 3
             sc_e = 4
+            vis_utils.save_images(path=f"{save_res_dir}", fn="shadm_shad", frames=(out_cond[:, 4:5]))
         elif 'shadow_diff_with_weight_onehot' in cfg.img_cond_model.in_image:
             is_shadow = True
             sc_s = 3

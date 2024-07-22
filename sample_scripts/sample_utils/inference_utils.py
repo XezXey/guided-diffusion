@@ -231,15 +231,21 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
     c_val = 1 - c_val # Inverse the shadow value
 
     if args.shadow_diff_inc_c:
-        print("[#] Increasing the shadow_diff with weight...")
+        print(f"[#] Increasing the shadow_diff with weight...")
+        print(f"[#] Default C is {c_val.item()}")
+        # weight = th.linspace(start=c_val.item(), end=2.0, steps=n_step).to(device)
         # weight = th.linspace(start=c_val.item(), end=1.0, steps=n_step).to(device)
-        # weight = th.linspace(start=c_val.item(), end=1.0, steps=n_step).to(device)
-        weight = th.cat((th.linspace(start=c_val.item(), end=c_val.item(), steps=1).to(device), th.linspace(start=0.9, end=1.0, steps=n_step-1).to(device)), dim=0)
+        # 30% of the weight is 0.95, the rest is 1.0
+        weight = th.cat((
+            th.linspace(start=c_val.item(), end=0.9, steps=int(np.floor(n_step * 0.2))).to(device), 
+            th.linspace(start=0.9, end=0.95, steps=int(np.floor(n_step * 0.6))).to(device), 
+            th.linspace(start=0.95, end=1.0, steps=int(np.ceil(n_step * 0.2))).to(device)), dim=0)
         
         weight = weight[..., None, None, None]
         fix_frame = True 
     elif args.shadow_diff_dec_c:
         print("[#] Decreasing the shadow_diff with weight...")
+        print(f"[#] Default C is {c_val.item()}")
         weight = th.linspace(start=c_val.item(), end=0.0, steps=n_step).to(device)
         weight = weight[..., None, None, None]
         fix_frame = True 
@@ -504,11 +510,14 @@ def build_condition_image(cond, misc):
                 if i == 0:
                     shadow_mask_tmp = params_utils.load_flame_mask(['face', 'scalp'])
                 deca_obj_tmp = params_utils.init_deca(mask=shadow_mask_tmp)
+                if args.rotate_sh_axis == 1:
+                    print("[#] Fixing the axis 1...")
                 shadow_mask = params_utils.render_shadow_mask(
                                                 sh_light=sub_cond['light'], 
                                                 cam=sub_cond['cam'][src_idx],
                                                 verts=orig_visdict['trans_verts_orig'], 
-                                                deca=deca_obj_tmp)
+                                                deca=deca_obj_tmp, 
+                                                axis_1=args.rotate_sh_axis==1)
                 if i == len(sub_step)-2:
                     del deca_obj_tmp
             all_render.append(deca_rendered)
