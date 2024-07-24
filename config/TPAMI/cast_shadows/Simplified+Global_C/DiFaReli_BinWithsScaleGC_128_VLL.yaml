@@ -12,7 +12,7 @@ img_model:
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb', 'shadow']
   shadow_val:
-    norm: False
+    norm: True
 
 img_cond_model:
   apply: True
@@ -49,4 +49,4 @@ dataset:
 
 train_misc:
   exp_name: "CastShadows"
-  cfg_name: "DiFaReli_BinWithGC_128_VLL"
+  cfg_name: "DiFaReli_BinWithScaleGC_128_VLL"
