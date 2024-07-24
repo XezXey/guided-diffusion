@@ -521,10 +521,11 @@ class TrainLoop(LightningModule):
         if self.cfg.img_cond_model.apply:
             self.forward_cond_network(cond=cond, model_dict=sampling_model_dict)
         
-        # print(cond['cond_img'].shape)
-        # for i in range(cond['cond_img'].shape[0]):
-        #     print("IMG UNIQ : ", th.unique(cond['cond_img'][i, 3:4]))
-        #     print("SHADOW: ", cond['shadow'][i])
+        print(cond['cond_img'].shape)
+        for i in range(cond['cond_img'].shape[0]):
+            print("IMG UNIQ : ", th.unique(cond['cond_img'][i, 3:4]))
+            print("SHADOW: ", cond['shadow'][i])
+        exit()
         # Source Image
         source_img = convert2rgb(dat, bound=self.input_bound) / 255.
         log_image_fn(key=f'{sampling_model} - conditioned_image', image=make_grid(source_img, nrow=4), step=(step_ + 1) * self.n_gpus)
