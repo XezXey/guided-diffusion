@@ -166,6 +166,8 @@ img_cond_model_img_type = {'raw':3,
                            'shadow_diff_with_weight_oneneg':1,
                            'shadow_diff_with_weight_simplified':1,
                            'shadow_diff_with_weight_simplified_inverse':1,
+                           'shadow_diff_binary_simplified':1,
+                           'shadow_diff_binary_simplified_inverse':1,
                             None:0,
 }
 cfg.img_cond_model = CN()
