@@ -12,7 +12,7 @@ img_model:
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb', 'shadow']
   shadow_val:
-    norm: False
+    norm: True
 
 img_cond_model:
   apply: True
