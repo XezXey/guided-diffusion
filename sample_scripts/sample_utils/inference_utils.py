@@ -233,20 +233,21 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
     if args.shadow_diff_inc_c:
         print(f"[#] Increasing the shadow_diff with weight...")
         print(f"[#] Default C is {c_val.item()}")
-        # weight = th.linspace(start=c_val.item(), end=2.0, steps=n_step).to(device)
+        weight = th.linspace(start=c_val.item(), end=2.0, steps=n_step).to(device)
         # weight = th.linspace(start=c_val.item(), end=1.0, steps=n_step).to(device)
         # 30% of the weight is 0.95, the rest is 1.0
-        weight = th.cat((
-            th.linspace(start=c_val.item(), end=0.9, steps=int(np.floor(n_step * 0.2))).to(device), 
-            th.linspace(start=0.9, end=0.95, steps=int(np.floor(n_step * 0.6))).to(device), 
-            th.linspace(start=0.95, end=1.0, steps=int(np.ceil(n_step * 0.2))).to(device)), dim=0)
+        # weight = th.cat((
+        #     th.linspace(start=c_val.item(), end=0.9, steps=int(np.floor(n_step * 0.2))).to(device), 
+        #     th.linspace(start=0.9, end=0.95, steps=int(np.floor(n_step * 0.6))).to(device), 
+        #     th.linspace(start=0.95, end=1.0, steps=int(np.ceil(n_step * 0.2))).to(device)), dim=0)
         
-        weight = weight[..., None, None, None]
+        # weight = weight[..., None, None, None]
         fix_frame = True 
     elif args.shadow_diff_dec_c:
         print("[#] Decreasing the shadow_diff with weight...")
         print(f"[#] Default C is {c_val.item()}")
         weight = th.linspace(start=c_val.item(), end=0.0, steps=n_step).to(device)
+        # weight = th.linspace(start=c_val.item(), end=-1.0, steps=n_step).to(device)
         weight = weight[..., None, None, None]
         fix_frame = True 
     else:
