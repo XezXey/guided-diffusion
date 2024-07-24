@@ -146,6 +146,10 @@ def make_vis_condimg(data, anno, input_bound, cfg):
             each_img = each_img
             print(th.max(each_img), th.min(each_img), th.unique(each_img))
             print(each_img.shape)
+        elif 'shadow_diff_binary_simplified' == img_type or 'shadow_diff_binary_simplified_inverse' == img_type:
+            each_img = each_img
+            print(th.max(each_img), th.min(each_img), th.unique(each_img))
+            print(each_img.shape)
         elif 'shadow_diff_with_weight_oneneg' == img_type:
             each_img = each_img
             print(th.max(each_img), th.min(each_img), th.unique(each_img))
