@@ -224,16 +224,17 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
     n_step = misc['n_step']
     src_idx = misc['src_idx']
     args = misc['args']
-    # Max-Min c-values:  -4.985533880236826 7.383497233314015
-    max_c = 7.383497233314015
-    min_c = -4.985533880236826
+    # Max-Min c-values:  -4.985533880236826 7.383497233314015 from valid set
+    # Max-Min c-values: -4.989461058405101 8.481700287326827
+    max_c = 8.481700287326827 # 7.383497233314015
+    min_c = -4.989461058405101 # -4.985533880236826
     c_val = (cond['shadow'][src_idx] - min_c) / (max_c - min_c)  # Scale to 0-1
     c_val = 1 - c_val # Inverse the shadow value
 
     if args.shadow_diff_inc_c:
         print(f"[#] Increasing the shadow_diff with weight...")
         print(f"[#] Default C is {c_val.item()}")
-        weight = th.linspace(start=c_val.item(), end=2.0, steps=n_step).to(device)
+        weight = th.linspace(start=c_val.item(), end=1.0, steps=n_step).to(device)
         # weight = th.linspace(start=c_val.item(), end=1.0, steps=n_step).to(device)
         # 30% of the weight is 0.95, the rest is 1.0
         # weight = th.cat((
@@ -241,7 +242,7 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
         #     th.linspace(start=0.9, end=0.95, steps=int(np.floor(n_step * 0.6))).to(device), 
         #     th.linspace(start=0.95, end=1.0, steps=int(np.ceil(n_step * 0.2))).to(device)), dim=0)
         
-        # weight = weight[..., None, None, None]
+        weight = weight[..., None, None, None]
         fix_frame = True 
     elif args.shadow_diff_dec_c:
         print("[#] Decreasing the shadow_diff with weight...")
@@ -377,6 +378,7 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                 out_sd = 1 - shadow
             else: 
                 out_sd = shadow
+                weight = 1 - weight
             cond[cond_img_name] = out_sd
             print("Value: ", th.unique(out_sd))
         elif cond_img_name == 'shadow_diff':
@@ -404,7 +406,7 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
 
             cond[cond_img_name] = out_sd
 
-    return cond
+    return cond, weight
 
 
 def build_condition_image(cond, misc):

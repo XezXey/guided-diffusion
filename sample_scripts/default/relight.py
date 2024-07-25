@@ -63,6 +63,7 @@ parser.add_argument('--anti_aliasing', action='store_true', default=False)
 parser.add_argument('--shadow_diff_inc_c', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dec_c', action='store_true', default=False)
 parser.add_argument('--shadow_diff_fidx_frac', type=float, default=0.0)    # set to 0.0 for using first frame
+parser.add_argument('--same_shadow_as_sd', action='store_true', default=False)
 # Experiment - Canny Edge
 parser.add_argument('--canny_edge', nargs=2, type=int, default=None)
 
@@ -142,7 +143,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     # Prepare the condition image (e.g., face segmentation, shadow mask, etc.)    
     cond, _ = inference_utils.build_condition_image(cond=cond, misc=misc)
     # In case of using the shadow_diff with weight (No more shadow value)
-    cond = inference_utils.shadow_diff_with_weight_postproc(cond=cond, misc=misc)
+    cond, shadow_weight = inference_utils.shadow_diff_with_weight_postproc(cond=cond, misc=misc)
 
     cond = inference_utils.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
     cond['cfg'] = cfg
@@ -169,6 +170,9 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     # Repeated non-spatial
     repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=mani_utils.without(cfg.param_model.params_selector, args.itp + ['light', 'img_latent']))
     cond.update(repeated_cond)
+
+    if args.same_shadow_as_sd:
+        cond['shadow'] = shadow_weight.flatten()[..., None]
 
     # Finalize the cond_params
     cond = mani_utils.create_cond_params(cond=cond, key=mani_utils.without(cfg.param_model.params_selector, cfg.param_model.rmv_params))
@@ -278,7 +282,11 @@ if __name__ == '__main__':
             print(f"[#] After canny mod: {cfg.img_cond_model.canny_thres}")
         except:
             print("[#] No canny_edge_bg in the condition image...")
-    
+
+    if cfg.param_model.shadow_val.norm:
+        print("[#] Setted shadow_val.norm to False... (So the rest of the code will work the same...)")
+        cfg.param_model.shadow_val.norm = False
+
     print(f"[#] Sampling with diffusion_steps = {args.diffusion_steps}")
     print(f"[#] Sampling with timestep respacing = {args.timestep_respacing}")
     cfg.diffusion.diffusion_steps = args.diffusion_steps
