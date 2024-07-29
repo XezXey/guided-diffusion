@@ -28,5 +28,15 @@
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"60"
+    },
+    "bin_scale_global": {
+        "m_name": "log=DiFaReli_BinWithScaleGC_128_VLL_cfg=DiFaReli_BinWithScaleGC_128_VLL.yaml_inv_with_sd_inc_c",
+        "step":"ema_100000", 
+        "alias":"Reshadow: Binary + Scale GC",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
     }
 }

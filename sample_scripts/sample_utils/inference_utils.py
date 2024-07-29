@@ -397,10 +397,6 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
 
             shadow_area = sd_shadow   # Shadow area assigned weight
             shadow = shadow_area
-            # no_shadow_area = sd_no_shadow
-
-            # face = (shadow_area + no_shadow_area)
-            # shadow = ((face) * sd_shadow)
 
             # Anti-aliasing
             if args.anti_aliasing:

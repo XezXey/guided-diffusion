@@ -181,6 +181,11 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     else:    
         to_tensor_key = ['cond_params'] + cfg.param_model.params_selector
     cond = inference_utils.to_tensor(cond, key=to_tensor_key, device=ckpt_loader.device)
+    # print(cond['cond_params'].shape)
+    # print(cond['shadow'].shape)
+    # print(cond['shadow'])
+    # print("Cond_Params : ", cond['cond_params'][..., -2:-1])
+    # print("Cond_Params : ", cond['cond_params'][..., -1:])
     
     return cond
     
@@ -467,6 +472,11 @@ if __name__ == '__main__':
             sc_s = 3
             sc_e = 4
             vis_utils.save_images(path=f"{save_res_dir}", fn="shadm_shad", frames=(out_cond[:, 4:5]))
+        elif 'shadow_diff_binary_simplified' in cfg.img_cond_model.in_image:
+            is_shadow = True
+            sc_s = 3
+            sc_e = 4
+            vis_utils.save_images(path=f"{save_res_dir}", fn="shadm_shad", frames=(out_cond[:, 4:5]))
         elif 'shadow_diff_with_weight_onehot' in cfg.img_cond_model.in_image:
             is_shadow = True
             sc_s = 3
@@ -514,6 +524,14 @@ if __name__ == '__main__':
                 torchvision.io.write_video(video_array=vid_shadm_rt, filename=f"{save_res_dir}/shadm_rt.mp4", fps=args.fps)
 
             elif is_shadow and ('shadow_diff_with_weight_simplified' in cfg.img_cond_model.in_image or 'shadow_diff_with_weight_simplified_inverse' in cfg.img_cond_model.in_image):
+                vid_shadm = out_cond[:, 3:4]
+                vid_shadm = vid_shadm.repeat(1, 3, 1, 1)
+                vid_shadm = (vid_shadm.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
+                torchvision.io.write_video(video_array=vid_shadm, filename=f"{save_res_dir}/shadm.mp4", fps=args.fps)
+                vid_shadm_rt = th.cat((vid_shadm, th.flip(vid_shadm, dims=[0])))
+                torchvision.io.write_video(video_array=vid_shadm_rt, filename=f"{save_res_dir}/shadm_rt.mp4", fps=args.fps)
+
+            elif is_shadow and ('shadow_diff_binary_simplified' in cfg.img_cond_model.in_image):
                 vid_shadm = out_cond[:, 3:4]
                 vid_shadm = vid_shadm.repeat(1, 3, 1, 1)
                 vid_shadm = (vid_shadm.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
