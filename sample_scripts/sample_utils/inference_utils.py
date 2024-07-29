@@ -381,6 +381,43 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                 weight = 1 - weight
             cond[cond_img_name] = out_sd
             print("Value: ", th.unique(out_sd))
+        elif (cond_img_name == 'shadow_diff_binary_simplified'):
+            if fix_frame:
+                fidx = int(args.shadow_diff_fidx_frac * n_step)
+                tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
+                # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
+                sd_img = cond[cond_img_name].clone()
+                sd_img = th.cat((sd_img[0:1], tmp), dim=0)
+            else:
+                sd_img = cond[cond_img_name].clone()
+            
+            # From ray-tracing
+            sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
+            sd_no_shadow = th.isclose(sd_img, th.tensor(1.0).type_as(sd_img), atol=1e-5)
+
+            shadow_area = sd_shadow   # Shadow area assigned weight
+            shadow = shadow_area
+            # no_shadow_area = sd_no_shadow
+
+            # face = (shadow_area + no_shadow_area)
+            # shadow = ((face) * sd_shadow)
+
+            # Anti-aliasing
+            if args.anti_aliasing:
+                print("[#] Anti-aliasing for shadow_diff_with_weight_simplifed(or inverse)...")
+
+                img_size = misc['img_size']
+                print(img_size)
+                _, _, H, W = face.shape
+                scale = 4
+                up = Resize((H*scale, W*scale))
+                down = Resize((img_size, img_size))
+                shadow = down(up(shadow))
+
+            out_sd = shadow
+            weight = 1 - weight
+            cond[cond_img_name] = out_sd
+            print("Value: ", th.unique(out_sd))
         elif cond_img_name == 'shadow_diff':
             if fix_frame:
                 fidx = int(args.shadow_diff_fidx_frac * n_step)
