@@ -514,6 +514,14 @@ if __name__ == '__main__':
                     torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
                     vid_render_rt = th.cat((vid_render, th.flip(vid_render, dims=[0])))
                     torchvision.io.write_video(video_array=vid_render_rt, filename=f"{save_res_dir}/ren_rt.mp4", fps=args.fps)
+
+            if is_shadow and ('shadow_diff' in cfg.img_cond_model.in_image):
+                vid_shadm = out_cond[:, 3:4]
+                vid_shadm = vid_shadm.repeat(1, 3, 1, 1)
+                vid_shadm = (vid_shadm.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
+                torchvision.io.write_video(video_array=vid_shadm, filename=f"{save_res_dir}/shadm.mp4", fps=args.fps)
+                vid_shadm_rt = th.cat((vid_shadm, th.flip(vid_shadm, dims=[0])))
+                torchvision.io.write_video(video_array=vid_shadm_rt, filename=f"{save_res_dir}/shadm_rt.mp4", fps=args.fps)
                     
             if is_shadow and ('shadow_diff_with_weight_oneneg' in cfg.img_cond_model.in_image):
                 vid_shadm = out_cond[:, 3:4]
