@@ -545,7 +545,7 @@ def build_condition_image(cond, misc):
                 print("[#] Rendering with the shadow mask from face + scalp of render face...")
                 if i == 0:
                     shadow_mask_tmp = params_utils.load_flame_mask(['face', 'scalp'])
-                deca_obj_tmp = params_utils.init_deca(mask=shadow_mask_tmp)
+                    deca_obj_tmp = params_utils.init_deca(mask=shadow_mask_tmp, rasterize_type=args.rasterize_type) # Init DECA with mask only once
                 if args.rotate_sh_axis == 1:
                     print("[#] Fixing the axis 1...")
                 shadow_mask = params_utils.render_shadow_mask(

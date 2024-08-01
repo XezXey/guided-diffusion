@@ -40,6 +40,7 @@ parser.add_argument('--sh_grid_size', type=int, default=None)
 parser.add_argument('--sh_span', type=float, default=None)
 parser.add_argument('--diffuse_sh', type=float, default=None)
 parser.add_argument('--diffuse_perc', type=float, default=None)
+parser.add_argument('--rasterize_type', type=str, default='standard')
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--timestep_respacing', type=str, default="")
@@ -334,7 +335,7 @@ if __name__ == '__main__':
     if np.any(['deca_masked' in n for n in list(filter(None, dataset.condition_image))]):
         mask = params_utils.load_flame_mask()
     else: mask=None
-    deca_obj = params_utils.init_deca(mask=mask)
+    deca_obj = params_utils.init_deca(mask=mask, rasterize_type=args.rasterize_type)
         
     # Run from start->end idx
     start, end = int(args.idx[0]), int(args.idx[1])
