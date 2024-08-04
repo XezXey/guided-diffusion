@@ -10,7 +10,7 @@ import torchvision
 from sample_scripts.cond_utils.arcface.config_arcface import IMG_DIR
 
 def resize_arr(pil_image, image_size):
-    img = pil_image.resize((image_size, image_size), PIL.Image.ANTIALIAS)
+    img = pil_image.resize((image_size, image_size), PIL.Image.LANCZOS)
     return np.array(img)
 
 def center_crop_arr(pil_image, image_size):
