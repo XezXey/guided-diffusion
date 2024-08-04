@@ -221,9 +221,9 @@ def render_deca(deca_params, idx, n, render_mode='shape',
     #warnings.filterwarnings("ignore")
     # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
     if deca_obj is None:
+        print("[#] No deca_obj, re-init...")
         # sys.path.insert(1, '/home/mint/guided-diffusion/preprocess_scripts/Relighting_preprocessing_tools/DECA/')
         sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
-
         from decalib import deca
         from decalib.utils.config import cfg as deca_cfg
         deca_cfg.model.use_tex = useTex

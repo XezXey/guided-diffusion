@@ -9,7 +9,7 @@ from ..recolor_util import convert2rgb
 
 
 def resize_arr(pil_image, image_size):
-    img = pil_image.resize((image_size, image_size), PIL.Image.ANTIALIAS)
+    img = pil_image.resize((image_size, image_size), PIL.Image.LANSCOZ)
     return np.array(img)
 
 def center_crop_arr(pil_image, image_size):
