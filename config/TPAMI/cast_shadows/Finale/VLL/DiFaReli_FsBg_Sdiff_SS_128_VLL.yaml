@@ -15,7 +15,7 @@ param_model:
 img_cond_model:
   apply: True
   arch: "EncoderUNet_SpatialCondition"
-  in_image: ['deca_masked_face_images_woclip', 'shadow_diff_with_weight_onehot', 'face_structure']
+  in_image: ['deca_masked_face_images_woclip', 'shadow_diff_with_weight_simplified', 'face_structure']
   in_channels: 5
   image_size: 128
   out_channels: 128
@@ -30,12 +30,12 @@ relighting:
 
 conditioning:
   face_structure:
-    parts: ['hair', 'faceskin', 'eyes', 'pupils', 'glasses', 'ears', 'nose', 'inmouth', 'u_lip', 'l_lip', 'neck', 'cloth', 'hat']
+    parts: ['hair', 'faceskin', 'eyes', 'pupils', 'glasses', 'ears', 'nose', 'inmouth', 'u_lip', 'l_lip', 'neck', 'cloth', 'hat', 'bg']
 
 train:
   weight_decay: 0.0
   sampling_interval: 100000
-  save_interval: 100000
+  save_interval: 50000
   use_prep_data: False
 
 dataset:
@@ -43,8 +43,8 @@ dataset:
   data_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
   face_segment_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment_with_pupil/"
   deca_rendered_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/"
-  shadow_diff_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_with_weight_onehot/"
+  shadow_diff_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/"
 
 train_misc:
   exp_name: "CastShadows"
-  cfg_name: "DiFaReli_Fs_SdiffW_128_VLL"
+  cfg_name: "DiFaReli_FsBg_Sdiff_SS_128_VLL"
