@@ -65,6 +65,8 @@ parser.add_argument('--shadow_diff_inc_c', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dec_c', action='store_true', default=False)
 parser.add_argument('--shadow_diff_fidx_frac', type=float, default=0.0)    # set to 0.0 for using first frame
 parser.add_argument('--same_shadow_as_sd', action='store_true', default=False)
+parser.add_argument('--relight_with_strongest_c', action='store_true', default=False)
+parser.add_argument('--inverse_with_strongest_c', action='store_true', default=False)
 # Experiment - Canny Edge
 parser.add_argument('--canny_edge', nargs=2, type=int, default=None)
 
@@ -220,9 +222,17 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     if cfg.img_cond_model.apply:
         cond_rev = pl_sampling.forward_cond_network(model_kwargs=cond_rev)
     
+    # print("DAT")
+    # print(dat.shape)
+    # print(th.max(dat), th.min(dat))
+    # exit()
+    # Replace bg here
+
     rev_time = time.time()
     print("[#] Apply Mean-matching...")
-    reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
+    # reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
+    tmp_bg = (dat[0:1, ...] * (1-cond['face_structure_img'][0:1, 13:14, ...])) + (th.zeros_like(dat[0:1, ...]) * (cond['face_structure_img'][0:1, 13:14, ...]))
+    reverse_ddim_sample = pl_sampling.reverse_proc(x=tmp_bg, model_kwargs=cond_rev, store_mean=True)
     noise_map = reverse_ddim_sample['final_output']['sample']
     rev_mean = reverse_ddim_sample['intermediate']
     

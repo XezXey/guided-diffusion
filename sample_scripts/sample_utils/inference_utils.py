@@ -260,6 +260,9 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
         elif ('shadow_diff_with_weight_oneneg' in condition_img) or ('shadow_diff_with_weight_onehot' in condition_img) or ('shadow_diff_with_weight_simplified' in condition_img) or ('shadow_diff_with_weight_simplified_inverse' in condition_img):
             print("[#] Conditioning is shadow_diff_with_weight_oneneg or shadow_diff_with_weight_onehot, set the weight to c_val...")
             weight = c_val[..., None, None, None].to(device)
+            if args.relight_with_strongest_c:
+                print("[#] Relight with the strongest c_val, set the weight to 0.0...")
+                weight = (c_val * 0.0).to(device)
         fix_frame = False
 
     for _, cond_img_name in enumerate(condition_img):

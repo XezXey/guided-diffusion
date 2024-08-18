@@ -16,6 +16,17 @@ parser.add_argument('--rank_shadow_iou', action='store_true', default=False)
 argsp = parser.parse_args()
 
 
+def sort_by_frame(path_list):
+    frame_anno = []
+    for p in path_list:
+        frame_idx = os.path.splitext(p.split('/')[-1].split('_')[-1])[0][5:]   # 0-4 is "frame", so we used [5:] here
+        frame_anno.append(int(frame_idx))
+    sorted_idx = np.argsort(frame_anno)
+    sorted_path_list = []
+    for idx in sorted_idx:
+      sorted_path_list.append(path_list[idx])
+    return sorted_path_list
+
 def create_app():
     app = Flask(__name__)
     
@@ -79,23 +90,25 @@ def create_app():
             # Where (start, end) can be (0, 5000), (5000, 10000), (10000, 15000), (15000, 20000), (20000, 25000), ...
             idx = int(img_name) // 5000
             tmp = [[0, 5000], [5000, 10000], [10000, 15000], [15000, 20000], [20000, 25000], [25000, 30000], [30000, 35000], [35000, 40000], [40000, 45000], [45000, 50000], [50000, 55000], [55000, 60000]]
-            print(idx, img_name)
+            # print(idx, img_name)
             x = tmp[idx]
-            print(x)
+            # print(x)
             sub_f = f'train_{x[0]}_to_{x[1]}'
 
-            stregthen_pth_tp = glob.glob(f'{stregthen_pth}/{sub_f}/shadow/reverse_sampling/src={img_name}.jpg/dst={x[0]}.jpg/Lerp_1000/n_frames=5/res_frame*.png')
-            print(f'{stregthen_pth}/{sub_f}/shadow/reverse_sampling/src={img_name}.jpg/dst={x[0]}.jpg/Lerp_1000/n_frames=5/res_frame*.png')
-            out += f"<h2> Strengthen Shadow </h2>"
-            out += f"<img src=/files/{stregthen_pth_tp[-1]} width=\"768\" height=\"256\"><br>"
+            strengthen_pth_tp = sort_by_frame(glob.glob(f'{stregthen_pth}/{sub_f}/shadow/reverse_sampling/src={img_name}.jpg/dst={x[0]}.jpg/Lerp_1000/n_frames=5/res_frame*.png'))
+            # print(f'{stregthen_pth}/{sub_f}/shadow/reverse_sampling/src={img_name}.jpg/dst={x[0]}.jpg/Lerp_1000/n_frames=5/res_frame*.png')
+            out += f"<h2> Strengthen Shadow ===> </h2>"
+            if len(strengthen_pth_tp) > 0:
+                for tp in strengthen_pth_tp:
+                    out += f"<img src=/files/{tp} width=\"128\" height=\"128\">"
+            out += "<br>"
 
-            print(f'{soften_pth}/{sub_f}/shadow/reverse_sampling/src={img_name}.jpg/dst={x[0]}.jpg/Lerp_1000/n_frames=3/res_frame*.png')
-            soften_pth_tp = glob.glob(f'{soften_pth}/{sub_f}/shadow/reverse_sampling/src={img_name}.jpg/dst={x[0]}.jpg/Lerp_1000/n_frames=3/res_frame*.png')
-            out += f"<h2> Strengthen Shadow </h2>"
-            out += f"<img src=/files/{soften_pth_tp[-1]} width=\"768\" height=\"256\"><br>"
-
-
-            
+            # print(f'{soften_pth}/{sub_f}/shadow/reverse_sampling/src={img_name}.jpg/dst={x[0]}.jpg/Lerp_1000/n_frames=3/res_frame*.png')
+            soften_pth_tp = sort_by_frame(glob.glob(f'{soften_pth}/{sub_f}/shadow/reverse_sampling/src={img_name}.jpg/dst={x[0]}.jpg/Lerp_1000/n_frames=3/res_frame*.png'))
+            out += f"<h2> Soften Shadow ===> </h2>"
+            if len(soften_pth_tp) > 0:
+                for tp in soften_pth_tp:
+                    out += f"<img src=/files/{tp} width=\"128\" height=\"128\">"
             out += "<br>"
                 
         return out

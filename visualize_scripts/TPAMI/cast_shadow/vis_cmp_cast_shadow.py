@@ -77,6 +77,9 @@ def create_app():
         show_recon = request.args.get('show_recon', "True")
         show_relit = request.args.get('show_relit', "True")
         sampling = request.args.get('sampling', 'reverse')
+        n_frame = request.args.get('n_frame', None)
+        s = request.args.get('s', 0)
+        e = request.args.get('e', 100)
         ds = int(request.args.get('ds', 5))
         sample_json = str(request.args.get('sample_json', args.sample_pair_json))
         model_json = str(request.args.get('model_json', args.comparison_candidate))
@@ -98,7 +101,10 @@ def create_app():
         print(candidates)
         
         count = 0
-        for k, v in sample_pairs.items():
+        to_show = list(sample_pairs.items())[int(s):int(e)]
+        # for k, v in sample_pairs.items():
+        for ts in to_show:
+            k, v = ts
             count += 1
             if count > 100: break
             out += "<table>"
@@ -121,7 +127,7 @@ def create_app():
                 itp_method = metadat['itp_method']
                 diff_step = metadat['diff_step']
                 time_respace = metadat['time_respace']
-                n_frame= metadat['n_frame']
+                n_frame= metadat['n_frame'] if n_frame is None else n_frame
                 
                 path = f"{args.sampling_dir}/{args.exp_dir}/{m_name}/{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src}/dst={dst}/"
             
