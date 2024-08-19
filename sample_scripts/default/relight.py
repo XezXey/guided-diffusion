@@ -230,9 +230,9 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
 
     rev_time = time.time()
     print("[#] Apply Mean-matching...")
-    # reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
-    tmp_bg = (dat[0:1, ...] * (1-cond['face_structure_img'][0:1, 13:14, ...])) + (th.zeros_like(dat[0:1, ...]) * (cond['face_structure_img'][0:1, 13:14, ...]))
-    reverse_ddim_sample = pl_sampling.reverse_proc(x=tmp_bg, model_kwargs=cond_rev, store_mean=True)
+    reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
+    # tmp_bg = (dat[0:1, ...] * (1-cond['face_structure_img'][0:1, 13:14, ...])) + (th.zeros_like(dat[0:1, ...]) * (cond['face_structure_img'][0:1, 13:14, ...]))
+    # reverse_ddim_sample = pl_sampling.reverse_proc(x=tmp_bg, model_kwargs=cond_rev, store_mean=True)
     noise_map = reverse_ddim_sample['final_output']['sample']
     rev_mean = reverse_ddim_sample['intermediate']
     
