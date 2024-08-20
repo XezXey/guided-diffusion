@@ -216,6 +216,8 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
                         n_step=n_step, itp_func=itp_func
                     )
 
+    # print(cond.keys())
+    # exit()
     # Reverse 
     cond_rev = copy.deepcopy(cond)
     cond_rev = dict_slice(in_d=cond_rev, keys=cond_rev.keys(), n=1) # Slice only 1st image out for inversion
@@ -230,11 +232,21 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
 
     rev_time = time.time()
     print("[#] Apply Mean-matching...")
-    reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
+    # Change BG
+    # from PIL import Image
+    # bg = Image.open('./katja.jpg')
+    # bg = bg.resize((128, 128))
+    # bg = np.array(bg)
+    # bg = th.from_numpy(bg).permute(2, 0, 1).unsqueeze(0).float() / 128.0 - 1.0
     # tmp_bg = (dat[0:1, ...] * (1-cond['face_structure_img'][0:1, 13:14, ...])) + (th.zeros_like(dat[0:1, ...]) * (cond['face_structure_img'][0:1, 13:14, ...]))
+    # tmp_bg = (dat[0:1, ...] * (1-cond['face_structure_img'][0:1, 13:14, ...])) + (bg * (cond['face_structure_img'][0:1, 13:14, ...]))
     # reverse_ddim_sample = pl_sampling.reverse_proc(x=tmp_bg, model_kwargs=cond_rev, store_mean=True)
+    
+    # Default
+    reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
     noise_map = reverse_ddim_sample['final_output']['sample']
     rev_mean = reverse_ddim_sample['intermediate']
+    
     
     #NOTE: rev_mean WILL BE MODIFIED; This is for computing the ratio of inversion (brightness correction).
     sample_ddim = pl_sampling.forward_proc(
@@ -482,12 +494,12 @@ if __name__ == '__main__':
             is_shadow = True
             sc_s = 3
             sc_e = 4
-            vis_utils.save_images(path=f"{save_res_dir}", fn="shadm_shad", frames=(out_cond[:, 4:5]))
+            vis_utils.save_images(path=f"{save_res_dir}", fn="shadm_shad", frames=(out_cond[:, 3:4]))
         elif 'shadow_diff_binary_simplified' in cfg.img_cond_model.in_image:
             is_shadow = True
             sc_s = 3
             sc_e = 4
-            vis_utils.save_images(path=f"{save_res_dir}", fn="shadm_shad", frames=(out_cond[:, 4:5]))
+            vis_utils.save_images(path=f"{save_res_dir}", fn="shadm_shad", frames=(out_cond[:, 3:4]))
         elif 'shadow_diff_with_weight_onehot' in cfg.img_cond_model.in_image:
             is_shadow = True
             sc_s = 3

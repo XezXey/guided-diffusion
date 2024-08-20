@@ -92,7 +92,7 @@ def create_app():
         except:
             raise ValueError(f"Sample json file not found: {sample_json}")
         
-        out += f"<h2> Sample json file: {sample_json} </h2>"
+        out += f"<h2> Sample json file: {sample_json} {n_frame} </h2>"
         out += "Transpose : <button onclick='transposeAllTables()'>Transpose</button>"
         
         # path example : /data/mint/sampling/FFHQ_Reshadow_mintomax/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_steps50/ema_085000/valid/shadow/reverse_sampling/src=60000.jpg/dst=60000.jpg 
@@ -127,7 +127,7 @@ def create_app():
                 itp_method = metadat['itp_method']
                 diff_step = metadat['diff_step']
                 time_respace = metadat['time_respace']
-                n_frame= metadat['n_frame'] if n_frame is None else n_frame
+                n_frame = metadat['n_frame'] if n_frame is None else n_frame
                 
                 path = f"{args.sampling_dir}/{args.exp_dir}/{m_name}/{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src}/dst={dst}/"
             

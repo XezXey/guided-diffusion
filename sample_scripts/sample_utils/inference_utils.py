@@ -355,6 +355,7 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
             else:
                 sd_img = cond[cond_img_name].clone()
             
+            print(np.unique(sd_img.cpu().numpy()))
             # From ray-tracing
             sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
             sd_no_shadow = th.isclose(sd_img, th.tensor(1.0).type_as(sd_img), atol=1e-5)
@@ -668,7 +669,8 @@ def build_condition_image(cond, misc):
                 
             if args.inverse_with_shadow_diff:
                 print("[#] Inverse with shadow_diff (Replacing frame-0th)...")
-                shadow_diff_tmp[0] = cond['shadow_diff_img'][src_idx] * m_face + (0.5 * np.abs(1-m_face))
+                # shadow_diff_tmp[0] = cond['shadow_diff_img'][src_idx] * m_face + (0.5 * np.abs(1-m_face))
+                shadow_diff_tmp[0] = cond['shadow_diff_img'][src_idx]
                 if args.fixed_shadow:
                     shadow_diff_tmp = [cond['shadow_diff_img'][src_idx] for _ in range(len(shadow_diff_tmp))]
 
