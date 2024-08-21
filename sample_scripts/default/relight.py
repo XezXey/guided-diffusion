@@ -232,15 +232,6 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
 
     rev_time = time.time()
     print("[#] Apply Mean-matching...")
-    # Change BG
-    # from PIL import Image
-    # bg = Image.open('./katja.jpg')
-    # bg = bg.resize((128, 128))
-    # bg = np.array(bg)
-    # bg = th.from_numpy(bg).permute(2, 0, 1).unsqueeze(0).float() / 128.0 - 1.0
-    # tmp_bg = (dat[0:1, ...] * (1-cond['face_structure_img'][0:1, 13:14, ...])) + (th.zeros_like(dat[0:1, ...]) * (cond['face_structure_img'][0:1, 13:14, ...]))
-    # tmp_bg = (dat[0:1, ...] * (1-cond['face_structure_img'][0:1, 13:14, ...])) + (bg * (cond['face_structure_img'][0:1, 13:14, ...]))
-    # reverse_ddim_sample = pl_sampling.reverse_proc(x=tmp_bg, model_kwargs=cond_rev, store_mean=True)
     
     # Default
     reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)

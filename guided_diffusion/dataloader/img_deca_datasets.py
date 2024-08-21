@@ -195,8 +195,8 @@ def load_data_img_deca(
             elif 'shadow_diff_with_weight_simplified' == in_image_type or 'shadow_diff_with_weight_simplified_inverse' == in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
                 if mode == 'sampling':
-                    # in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/median5_5e-2/{set_}/")
-                    in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/{set_}/")
+                    in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/median5_5e-2/{set_}/")
+                    # in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/{set_}/")
                     in_image[f'shadow_diff'] = image_path_list_to_dict(in_image[f'shadow_diff'])
                     for tk in ['faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses', 'faceseg_eyes&glasses']:
                         in_image[f'{tk}'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
@@ -405,12 +405,11 @@ class DECADataset(Dataset):
                         sd = cond_img['shadow_diff'].astype(np.uint8)
                     else:
                         sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                        sd = sd[..., None]
-                    # assert np.allclose(sd[..., 0], sd[..., 1]) and np.allclose(sd[..., 0], sd[..., 2])
+                    assert np.allclose(sd[..., 0], sd[..., 1]) and np.allclose(sd[..., 0], sd[..., 2])
                     sd = sd[..., 0:1]
                     sd = np.transpose(sd, [2, 0, 1])
-                    # out_dict[f'shadow_diff_img'] = sd / 255.0
-                    # out_dict[f'shadow_diff_img'][out_dict[f'shadow_diff_img'] == 127/255.] = 0.5
+                    out_dict[f'shadow_diff_img'] = sd / 255.0
+                    out_dict[f'shadow_diff_img'][out_dict[f'shadow_diff_img'] == 127/255.] = 0.5
                     for tk in ['mface_mask', 'meg_mask']:
                         if self.kwargs['args'].anti_aliasing:
                             out_dict[f'{k}_{tk}'] = cond_img[f'{k}_{tk}'].astype(np.uint8)
@@ -634,8 +633,7 @@ class DECADataset(Dataset):
             elif 'shadow_diff_with_weight_simplified' == in_image_type or 'shadow_diff_with_weight_simplified_inverse' == in_image_type:
                 condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
                 if self.mode == 'sampling':
-                    # condition_image["shadow_diff"] = np.array(self.load_image(self.kwargs['in_image_for_cond']['shadow_diff'][query_img_name.replace(self.img_ext, '.png')]))
-                    condition_image["shadow_diff"] = np.load(self.kwargs['in_image_for_cond']['shadow_diff'][query_img_name.replace(self.img_ext, '.npy')])
+                    condition_image["shadow_diff"] = np.array(self.load_image(self.kwargs['in_image_for_cond']['shadow_diff'][query_img_name.replace(self.img_ext, '.png')]))
                     condition_image[f"{in_image_type}_mface_mask"] = self.face_segment(cond_name=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", segment_part=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", query_img_name=query_img_name)
                     condition_image[f"{in_image_type}_meg_mask"] = self.face_segment(cond_name=f"faceseg_eyes&glasses", segment_part=f"faceseg_eyes&glasses", query_img_name=query_img_name)
             elif 'shadow_diff_binary_simplified' == in_image_type or 'shadow_diff_binary_simplified_inverse' == in_image_type:
