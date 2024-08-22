@@ -417,7 +417,7 @@ def shadow_diff_final_postproc(cond, misc):
                 print("[#] Anti-aliasing for shadow_diff_with_weight_simplifed(or inverse)...")
                 img_size = misc['img_size']
                 _, _, H, W = cond[cond_img_name].shape
-                scale = 4
+                scale = 8
 
                 # from torchvision.transforms import Resize, GaussianBlur
                 # up = Resize((H*scale, W*scale), interpolation=PIL.Image.NEAREST)

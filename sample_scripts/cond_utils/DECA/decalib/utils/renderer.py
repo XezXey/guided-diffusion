@@ -440,7 +440,7 @@ class SRenderY(nn.Module):
         else:
             return shape_images
     
-    def render_depth(self, transformed_vertices):
+    def render_depth(self, transformed_vertices, up_rate):
         '''
         -- rendering depth
         '''
@@ -454,7 +454,9 @@ class SRenderY(nn.Module):
         attributes = util.face_vertices(z, self.faces.expand(batch_size, -1, -1))
         # rasterize
         transformed_vertices[:,:,2] = transformed_vertices[:,:,2] + 10
-        rendering = self.rasterizer(transformed_vertices, self.faces.expand(batch_size, -1, -1), attributes, h=256, w=256)
+        # rendering = self.rasterizer(transformed_vertices, self.faces.expand(batch_size, -1, -1), attributes, h=256, w=256)
+        rendering = self.rasterizer(transformed_vertices, self.faces.expand(batch_size, -1, -1), attributes, h=256 * up_rate, w=256*up_rate)
+        # rendering = self.rasterizer(transformed_vertices, self.faces.expand(batch_size, -1, -1), attributes, h=1024, w=1024)
 
         ####
         alpha_images = rendering[:, -1, :, :][:, None, :, :].detach()
