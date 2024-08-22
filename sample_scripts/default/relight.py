@@ -60,6 +60,9 @@ parser.add_argument('--shadow_diff_dir', type=str, default=None)
 parser.add_argument('--use_ray_mask', action='store_true', default=False)
 parser.add_argument('--render_same_mask', action='store_true', default=False)
 parser.add_argument('--anti_aliasing', action='store_true', default=False)
+parser.add_argument('--smooth_FL_erode', action='store_true', default=False)
+parser.add_argument('--smooth_FL_reshadow', action='store_true', default=False)
+parser.add_argument('--AA', action='store_true', default=False)
 # Experiment - Shadow weight
 parser.add_argument('--shadow_diff_inc_c', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dec_c', action='store_true', default=False)
@@ -147,6 +150,8 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     cond, _ = inference_utils.build_condition_image(cond=cond, misc=misc)
     # In case of using the shadow_diff with weight (No more shadow value)
     cond, shadow_weight = inference_utils.shadow_diff_with_weight_postproc(cond=cond, misc=misc)
+    cond, misc = inference_utils.shadow_diff_final_postproc(cond=cond, misc=misc)
+    n_step = misc['n_step']
 
     cond = inference_utils.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True)
     cond['cfg'] = cfg
@@ -190,7 +195,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     # print("Cond_Params : ", cond['cond_params'][..., -2:-1])
     # print("Cond_Params : ", cond['cond_params'][..., -1:])
     
-    return cond
+    return cond, n_step
     
 def ext_sub_step(n_step):
     sub_step = []
@@ -211,7 +216,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     '''
     # Rendering
     cond = copy.deepcopy(model_kwargs)
-    cond = make_condition(cond=cond, 
+    cond, n_step = make_condition(cond=cond, 
                         src_idx=src_idx, dst_idx=dst_idx, 
                         n_step=n_step, itp_func=itp_func
                     )

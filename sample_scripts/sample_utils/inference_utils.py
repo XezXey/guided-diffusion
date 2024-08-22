@@ -5,7 +5,6 @@ import blobfile as bf
 import mani_utils, params_utils
 import cv2, PIL
 import time
-from torchvision.transforms import Resize
 
 class PLSampling(pl.LightningModule):
     def __init__(self, 
@@ -266,86 +265,7 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
         fix_frame = False
 
     for _, cond_img_name in enumerate(condition_img):
-        if cond_img_name == 'shadow_diff_with_weight_oneneg':
-            # Choose the shadow_diff frame to be reshadow
-            if fix_frame:
-                fidx = int(args.shadow_diff_fidx_frac * n_step)
-                tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
-                # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
-                sd_img = cond[cond_img_name].clone()
-                sd_img = th.cat((sd_img[0:1], tmp), dim=0)
-            else: 
-                sd_img = cond[cond_img_name].clone()
-
-            
-            # From ray-tracing
-            sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
-            sd_no_shadow = th.isclose(sd_img, th.tensor(1.0).type_as(sd_img), atol=1e-5)
-            sd_bg = th.isclose(sd_img, th.tensor(0.5).type_as(sd_img), atol=1e-5)
-            face_use_mask_rt = ~sd_bg
-
-            # From shadow diff
-            # shadow_area = (sd_img + weight) * sd_shadow
-            shadow_area = sd_shadow * weight
-            no_shadow_area = sd_img * sd_no_shadow
-            face = (shadow_area + no_shadow_area)
-
-            # Anti-aliasing
-            if args.anti_aliasing:
-                _, _, H, W = face.shape
-                scale = 4
-                up = Resize((H*scale, W*scale))
-                down = Resize((H, W))
-                face = down(up(face))
-
-            bg = -th.ones_like(sd_img)
-            # bg = -th.ones_like(sd_img) * 0
-            out_sd = (face * face_use_mask_rt) + (bg * ~face_use_mask_rt)
-
-            cond[cond_img_name] = out_sd
-            print("Value: ", th.unique(out_sd))
-        elif cond_img_name == 'shadow_diff_with_weight_onehot':
-            if fix_frame:
-                fidx = int(args.shadow_diff_fidx_frac * n_step)
-                tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
-                # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
-                sd_img = cond[cond_img_name].clone()
-                sd_img = th.cat((sd_img[0:1], tmp), dim=0)
-            else:
-                sd_img = cond[cond_img_name].clone()
-            
-            # From ray-tracing
-            sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
-            sd_no_shadow = th.isclose(sd_img, th.tensor(1.0).type_as(sd_img), atol=1e-5)
-            sd_bg = th.isclose(sd_img, th.tensor(0.5).type_as(sd_img), atol=1e-5)
-
-            shadow_area = (sd_img + weight) * sd_shadow
-            no_shadow_area = sd_img * sd_no_shadow
-
-            face = (shadow_area + no_shadow_area)
-            shadow = (1-face) * sd_shadow
-            bg = sd_bg
-
-            # Anti-aliasing
-            if args.anti_aliasing:
-                print("[#] Anti-aliasing for shadow_diff_with_weight_onehot...")
-
-                img_size = misc['img_size']
-                print(img_size)
-                _, _, H, W = face.shape
-                scale = 4
-                up = Resize((H*scale, W*scale))
-                down = Resize((img_size, img_size))
-                shadow = down(up(shadow))
-                face = down(up(face))
-                down_NEAREST = Resize((img_size, img_size), interpolation=PIL.Image.NEAREST)
-                bg = down_NEAREST(bg)
-
-
-            out_sd = th.cat((face, shadow, bg), dim=1)
-            cond[cond_img_name] = out_sd
-            print("Value: ", th.unique(out_sd))
-        elif (cond_img_name == 'shadow_diff_with_weight_simplified') or (cond_img_name == 'shadow_diff_with_weight_simplified_inverse'):
+        if (cond_img_name == 'shadow_diff_with_weight_simplified') or (cond_img_name == 'shadow_diff_with_weight_simplified_inverse'):
             if fix_frame:
                 fidx = int(args.shadow_diff_fidx_frac * n_step)
                 tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
@@ -374,6 +294,8 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                 print(img_size)
                 _, _, H, W = face.shape
                 scale = 4
+
+                from torchvision.transforms import Resize
                 up = Resize((H*scale, W*scale))
                 down = Resize((img_size, img_size))
                 shadow = down(up(shadow))
@@ -385,66 +307,138 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                 weight = 1 - weight
             cond[cond_img_name] = out_sd
             print("Value: ", th.unique(out_sd))
-        elif (cond_img_name == 'shadow_diff_binary_simplified'):
-            if fix_frame:
-                fidx = int(args.shadow_diff_fidx_frac * n_step)
-                tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
-                # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
-                sd_img = cond[cond_img_name].clone()
-                sd_img = th.cat((sd_img[0:1], tmp), dim=0)
-            else:
-                sd_img = cond[cond_img_name].clone()
-            
-            # From ray-tracing
-            sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
-            sd_no_shadow = th.isclose(sd_img, th.tensor(1.0).type_as(sd_img), atol=1e-5)
-
-            shadow_area = sd_shadow   # Shadow area assigned weight
-            shadow = shadow_area
-
-            # Anti-aliasing
-            if args.anti_aliasing:
-                print("[#] Anti-aliasing for shadow_diff_with_weight_simplifed(or inverse)...")
-
-                img_size = misc['img_size']
-                print(img_size)
-                _, _, H, W = face.shape
-                scale = 4
-                up = Resize((H*scale, W*scale))
-                down = Resize((img_size, img_size))
-                shadow = down(up(shadow))
-
-            out_sd = shadow
-            weight = 1 - weight
-            cond[cond_img_name] = out_sd
-            print("Value: ", th.unique(out_sd))
-        elif cond_img_name == 'shadow_diff':
-            if fix_frame:
-                fidx = int(args.shadow_diff_fidx_frac * n_step)
-                tmp = th.repeat_interleave(cond[cond_img_name][fidx:fidx+1], repeats=n_step-1, dim=0)
-                # Always preserve first frame, the rest is determined by the shadow_diff_fidx_frac
-                sd_img = cond[cond_img_name].clone()
-                sd_img = th.cat((sd_img[0:1], tmp), dim=0)
-            else:
-                sd_img = cond[cond_img_name].clone()
-            
-            # From ray-tracing
-            sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
-            sd_no_shadow = th.isclose(sd_img, th.tensor(1.0).type_as(sd_img), atol=1e-5)
-            sd_bg = th.isclose(sd_img, th.tensor(0.5).type_as(sd_img), atol=1e-5)
-            face_use_mask_rt = ~sd_bg
-
-            # From shadow diff
-            shadow_area = (sd_img + weight) * sd_shadow
-            no_shadow_area = sd_img * sd_no_shadow
-            face = (shadow_area + no_shadow_area)
-            bg = th.ones_like(sd_img)/2.0
-            out_sd = (face * face_use_mask_rt) + (bg * ~face_use_mask_rt)
-
-            cond[cond_img_name] = out_sd
 
     return cond, weight
 
+def shadow_diff_final_postproc(cond, misc):
+    # This function for post-processing the shadow_diff mask 
+    # 1. Smoothing the first and second frame
+    # 2. Anti-aliasing
+    condition_img = misc['condition_img']
+    n_step = misc['n_step']
+    src_idx = misc['src_idx']
+    args = misc['args']
+
+    for _, cond_img_name in enumerate(condition_img):
+        if (cond_img_name == 'shadow_diff_with_weight_simplified') or (cond_img_name == 'shadow_diff_with_weight_simplified_inverse'):
+            if args.smooth_FL_erode:
+                def erode(img, up_rate=1, aa=False):
+                    out = [img]
+
+                    if up_rate > 1:
+                        img = cv2.resize(img, (img.shape[1]*up_rate, img.shape[0]*up_rate), cv2.INTER_NEAREST)
+                        erosion_size = 4
+                    else:
+                        erosion_size = 2
+
+                    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * erosion_size + 1, 2 * erosion_size + 1),
+                                (erosion_size, erosion_size))
+                    while len(np.unique(img)) > 1:
+                        img_erd = cv2.erode(img, kernel, iterations=1)
+                        img = img_erd
+                        if up_rate > 1:
+                            img_erd = cv2.resize(img_erd, (img.shape[1]//up_rate, img.shape[0]//up_rate), cv2.INTER_NEAREST)
+                        if len(img_erd.shape) == 2:
+                            img_erd = img_erd[..., None]
+                        out.append(img_erd)
+                    return out
+
+                def sub_frame(n, ne):
+                    interval = n / ne
+                    idx = [int(interval * i) for i in range(ne)]
+                    return idx
+
+                # Input shape is B x 1 x H x W
+                sdiff = cond[cond_img_name][0:1].cpu().numpy().squeeze(0).transpose((1, 2, 0))
+                sm = cond[cond_img_name][1:2].cpu().numpy().squeeze(0).transpose((1, 2, 0))
+                sdiff_erd = erode(sdiff, up_rate=8)
+                sm_erd = erode(sm, up_rate=8)
+                sdiff_erd = np.stack(sdiff_erd, axis=0).transpose((0, 3, 1, 2))
+                sm_erd = np.stack(sm_erd, axis=0).transpose((0, 3, 1, 2))
+
+                # sub_idx = sub_frame(sdiff_erd.shape[0], 6)
+                # sub_idx = sub_idx + [sdiff_erd.shape[0]-1] if sub_idx[-1] != sdiff_erd.shape[0]-1 else sub_idx
+                # sdiff_erd = sdiff_erd[sub_idx]
+                # sub_idx = sub_frame(sdiff_erd.shape[0], 6)
+                # sub_idx = sub_idx + [sdiff_erd.shape[0]-1] if sub_idx[-1] != sdiff_erd.shape[0]-1 else sub_idx
+                # sm_erd = sm_erd[sub_idx]
+
+                smooth_FL = np.concatenate((sdiff_erd, sm_erd[::-1]), axis=0)
+                print("[#] Total frames after smoothing (Erode): ", smooth_FL.shape)
+                final_out = np.concatenate((smooth_FL, cond[cond_img_name][2:].cpu().numpy()), axis=0)
+                final_out = th.tensor(final_out).cuda()
+                cond[cond_img_name] = final_out
+
+                # Append shading referece to have same length with shadow_diff
+                sr_0 = cond['deca_masked_face_images_woclip'][0:1].repeat_interleave(repeats=sdiff_erd.shape[0], dim=0)
+                sr_1 = cond['deca_masked_face_images_woclip'][1:2].repeat_interleave(repeats=sm_erd.shape[0], dim=0)
+                sr = th.cat((sr_0, sr_1, cond['deca_masked_face_images_woclip'][2:]), dim=0)
+                cond['deca_masked_face_images_woclip'] = sr
+                assert cond[cond_img_name].shape[0] == cond['deca_masked_face_images_woclip'].shape[0]
+                misc['n_step'] = final_out.shape[0]
+                cond['face_structure'] = cond['face_structure'][0:1].repeat_interleave(repeats=final_out.shape[0], dim=0)
+
+            elif args.smooth_FL_reshadow:
+                # Input shape is B x 1 x H x W
+                sdiff = cond[cond_img_name][0:1].cpu().numpy().squeeze(0).transpose((1, 2, 0))
+                sm = cond[cond_img_name][1:2].cpu().numpy().squeeze(0).transpose((1, 2, 0))
+                if len(np.unique(sdiff)) < 2 or len(np.unique(sm)) < 2:
+                    print("[#] Skip smoothing (reshadow) due to unique values are less than 2")
+                    break
+                else:
+                    assert np.sort(np.unique(sdiff))[-1] == np.sort(np.unique(sm))[-1]
+                    c_val = np.sort(np.unique(sdiff))[-1]
+                    n_smooth = 10
+                    c_val_smooth = np.linspace(start=c_val, stop=0.0, num=n_smooth)
+                    sdiff_smooth = sdiff != 0.
+                    sdiff_smooth = np.repeat(sdiff_smooth[None, ...], repeats=n_smooth, axis=0)
+                    sdiff_smooth = sdiff_smooth * c_val_smooth[..., None, None, None]
+
+                    sm_smooth = sm != 0.
+                    sm_smooth = np.repeat(sm_smooth[None, ...], repeats=n_smooth, axis=0)
+                    sm_smooth = sm_smooth * c_val_smooth[..., None, None, None]
+
+                    smooth_FL = np.concatenate((sdiff_smooth, sm_smooth[::-1]), axis=0).transpose((0, 3, 1, 2))
+                    print("[#] Total frames after smoothing (reshadow): ", smooth_FL.shape)
+                    final_out = np.concatenate((smooth_FL, cond[cond_img_name][2:].cpu().numpy()), axis=0)
+                    final_out = th.tensor(final_out).cuda()
+                    cond[cond_img_name] = final_out
+
+                    # Append shading referece to have same length with shadow_diff
+                    sr_0 = cond['deca_masked_face_images_woclip'][0:1].repeat_interleave(repeats=sdiff_smooth.shape[0], dim=0)
+                    sr_1 = cond['deca_masked_face_images_woclip'][1:2].repeat_interleave(repeats=sm_smooth.shape[0], dim=0)
+                    sr = th.cat((sr_0, sr_1, cond['deca_masked_face_images_woclip'][2:]), dim=0)
+                    cond['deca_masked_face_images_woclip'] = sr
+                    assert cond[cond_img_name].shape[0] == cond['deca_masked_face_images_woclip'].shape[0]
+                    misc['n_step'] = final_out.shape[0]
+                    cond['face_structure'] = cond['face_structure'][0:1].repeat_interleave(repeats=final_out.shape[0], dim=0)
+
+            if args.AA:
+                print("[#] Anti-aliasing for shadow_diff_with_weight_simplifed(or inverse)...")
+                img_size = misc['img_size']
+                _, _, H, W = cond[cond_img_name].shape
+                scale = 4
+
+                # from torchvision.transforms import Resize, GaussianBlur
+                # up = Resize((H*scale, W*scale), interpolation=PIL.Image.NEAREST)
+                # down = Resize((img_size, img_size), interpolation=PIL.Image.BILINEAR)
+                # blur = GaussianBlur(kernel_size=11, sigma=2.0)
+                # shadow = down(blur(up(cond[cond_img_name])))
+
+                shadow = cond[cond_img_name].clone().permute(0, 2, 3, 1).cpu().numpy().astype(np.float32)
+                out = []
+                for i in range(shadow.shape[0]):
+                    # shadow_tmp = cv2.resize(np.repeat(shadow[i], repeats=3, axis=-1), (H*scale, W*scale), cv2.INTER_AREA)
+                    # shadow_tmp = cv2.resize(np.repeat(shadow[i], repeats=3, axis=-1), (H*scale, W*scale), cv2.INTER_AREA)
+                    shadow_tmp = cv2.resize(shadow[i], (H*scale, W*scale), cv2.INTER_NEAREST)
+                    shadow_tmp = cv2.GaussianBlur(shadow_tmp, (11, 11), 2.0)
+                    shadow_tmp = cv2.resize(shadow_tmp, (img_size, img_size), cv2.INTER_AREA)
+                    out.append(shadow_tmp)
+                out = th.tensor(np.stack(out)[..., None]).permute(0, 3, 1, 2).cuda()
+
+                cond[cond_img_name] = out 
+
+    return cond, misc
 
 def build_condition_image(cond, misc):
     src_idx = misc['src_idx']
@@ -549,6 +543,7 @@ def build_condition_image(cond, misc):
                 print("[#] Rendering with the shadow mask from face + scalp of render face...")
                 if i == 0:
                     shadow_mask_tmp = params_utils.load_flame_mask(['face', 'scalp'])
+                    # shadow_mask_tmp = params_utils.load_flame_mask(['face', 'scalp', 'neck', 'boundary'])
                     deca_obj_tmp = params_utils.init_deca(mask=shadow_mask_tmp, rasterize_type=args.rasterize_type) # Init DECA with mask only once
                 if args.rotate_sh_axis == 1:
                     print("[#] Fixing the axis 1...")

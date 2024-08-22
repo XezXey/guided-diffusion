@@ -127,7 +127,8 @@ def create_app():
                 itp_method = metadat['itp_method']
                 diff_step = metadat['diff_step']
                 time_respace = metadat['time_respace']
-                n_frame = metadat['n_frame'] if n_frame is None else n_frame
+
+                n_frame_tmp = metadat['n_frame'] if n_frame is None else n_frame
                 
                 path = f"{args.sampling_dir}/{args.exp_dir}/{m_name}/{ckpt}/{args.set_}/{itp}/{sampling}_sampling/src={src}/dst={dst}/"
             
@@ -145,22 +146,22 @@ def create_app():
                 # Show results
                 # if 'baseline' in alias:
                 if 'Single pass' in alias:
-                    frames = glob.glob(f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame}/res_*.png")
+                    frames = glob.glob(f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame_tmp}/res_*.png")
                     # out += f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png"
                 else:
                     if show_shadm == "True":
-                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/shadm_*.png")
+                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/shadm_*.png")
                     else:
-                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png")
+                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/res_*.png")
                     # out += f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png"
                 # out += str(show_itmd)
                         # <video width="320" height="240" controls autoplay muted>
                 # print(frames)
-                if os.path.exists(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/out_rt.mp4") and show_vid == "True":
+                if os.path.exists(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/out_rt.mp4") and show_vid == "True":
                     out += f"""
                         <td>  
                         <video controls autoplay muted loop>
-                            <source src=/files/{path}/{itp_method}_{diff_step}/n_frames={n_frame}/out_rt.mp4 type="video/mp4">
+                            <source src=/files/{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/out_rt.mp4 type="video/mp4">
                         </video>
                         </td>
                     """
@@ -192,7 +193,7 @@ def create_app():
                 
                 if args.res == 128:
                     out += f"<td> <img src=/files/{data_path}/{src.replace('jpg', 'png')}> </td>"
-                    tmp = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/shadm_*.png")
+                    tmp = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/shadm_*.png")
                     if len(tmp) > 0:
                         tmp = sort_by_frame(tmp)
                         out += f"<td> <img src=/files/{data_path}/{tmp[0].replace('jpg', 'png')}> </td>"
