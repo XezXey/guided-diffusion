@@ -286,13 +286,15 @@ if __name__ == '__main__':
         img_ext = '.jpg'
         cfg.dataset.training_data = 'ffhq_256_with_anno'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
-    elif args.dataset in ['mp_valid', 'mp_test', 'mp_test2']:
+    elif args.dataset in ['mp_valid', 'mp_test', 'mp_test2', 'mp_valid2']:
         if args.dataset == 'mp_test':
             sub_f = '/MultiPIE_testset/'
         elif args.dataset == 'mp_test2':
             sub_f = '/MultiPIE_testset2/'
         elif args.dataset == 'mp_valid':
             sub_f = '/MultiPIE_validset/'
+        elif args.dataset == 'mp_valid2':
+            sub_f = '/MultiPIE_validset2/'
         else: raise ValueError
         img_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/{sub_f}/mp_aligned/"
         deca_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/{sub_f}/params/"
