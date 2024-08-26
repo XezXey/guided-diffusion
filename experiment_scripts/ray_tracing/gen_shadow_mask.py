@@ -25,12 +25,13 @@ from sample_scripts.sample_utils import (
 from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
 parser = argparse.ArgumentParser()
 parser.add_argument('--trans_verts_orig_file', type=str, required=True)
-parser.add_argument('--image_path', type=str, default='/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/')
-parser.add_argument('--deca_path', type=str, default='/data/mint/DPM_Dataset/ffhq_256_with_anno/params/')
+# parser.add_argument('--image_path', type=str, default='/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/')
+# parser.add_argument('--deca_path', type=str, default='/data/mint/DPM_Dataset/ffhq_256_with_anno/params/')
 parser.add_argument('--output_path', type=str, required=True)
 parser.add_argument('--s_e', nargs='+', type=int, default=None)
 parser.add_argument('--pair_file', type=str, default=None)
 parser.add_argument('--set_', type=str, required=True)
+parser.add_argument('--dataset', type=str, required=True)
 args = parser.parse_args()
 
 def sh_to_ld(sh):
@@ -97,10 +98,8 @@ if __name__ == '__main__':
     cfg = ckpt_loader.cfg
     cfg.img_model.image_size = 256
     # Load dataset
-    dataset = 'ffhq'
+    dataset = args.dataset
     set_ = args.set_
-    img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
-    deca_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
     # Load dataset
     if dataset == 'itw':
         cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
@@ -116,13 +115,15 @@ if __name__ == '__main__':
         img_ext = '.jpg'
         cfg.dataset.training_data = 'ffhq_256_with_anno'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
-    elif dataset in ['mp_valid', 'mp_test', 'mp_test2']:
+    elif dataset in ['mp_test', 'mp_test2', 'mp_valid', 'mp_valid2']:
         if dataset == 'mp_test':
             sub_f = '/MultiPIE_testset/'
         elif dataset == 'mp_test2':
             sub_f = '/MultiPIE_testset2/'
         elif dataset == 'mp_valid':
             sub_f = '/MultiPIE_validset/'
+        elif dataset == 'mp_valid2':
+            sub_f = '/MultiPIE_validset2/'
         else: raise ValueError
         img_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/{sub_f}/mp_aligned/"
         deca_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/{sub_f}/params/"
@@ -133,14 +134,15 @@ if __name__ == '__main__':
     else: raise ValueError
 
     cfg.dataset.deca_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
-    cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
+    # cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
+    cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
     cfg.dataset.deca_rendered_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
     cfg.dataset.laplacian_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/eyes_segment/"
     cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
 
     loader, dataset, _ = load_data_img_deca(
-        data_dir=args.image_path,
-        deca_dir=args.deca_path,
+        data_dir=img_dataset_path,
+        deca_dir=deca_dataset_path,
         batch_size=int(1e7),
         image_size=cfg.img_model.image_size,
         deterministic=cfg.train.deterministic,
@@ -174,9 +176,10 @@ if __name__ == '__main__':
     deca_cfg.model.use_tex = True 
     deca = DECA(config = deca_cfg, device='cuda', mode='shape', mask=mask)
 
-    print(deca)
+    print("[#] DECA: ", deca)
     
-    img_path = file_utils._list_image_files_recursively(f"{args.image_path}/{set_}/")
+    img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{set_}/")
+    print(img_path)
     
     if args.s_e is not None:
         img_idx = file_utils.search_index_from_listpath(list_path=img_path, search=[name.split('/')[-1] for name in img_path][args.s_e[0]:args.s_e[1]])
@@ -193,7 +196,8 @@ if __name__ == '__main__':
     dat = th.utils.data.Subset(dataset, indices=img_idx)
     subset_loader = th.utils.data.DataLoader(dat, batch_size=1,
                                         shuffle=False, num_workers=24)
-    os.makedirs(f'./output/{set_}', exist_ok=True)
+    # os.makedirs(f'./output/{set_}', exist_ok=True)
+    os.makedirs(f'{args.output_path}/{set_}', exist_ok=True)
     import tqdm
     
     trans_verts_orig_dict = np.load(args.trans_verts_orig_file, allow_pickle=True).item()
@@ -222,7 +226,9 @@ if __name__ == '__main__':
         # print("[#] SHADOW_MASK's shape : ", shadow_mask.shape)
         if '.jpg' in img_name:
             img_name = img_name.replace('.jpg', '')
-        torchvision.utils.save_image(shadow_mask/255.0, f"./output/{set_}/{img_name}.png")
+        elif '.png' in img_name:
+            img_name = img_name.replace('.png', '')
+        # torchvision.utils.save_image(shadow_mask/255.0, f"./output/{set_}/{img_name}.png")
         torchvision.utils.save_image(shadow_mask/255.0, f"{args.output_path}/{set_}/{img_name}.png")
         t.set_description(text)
         t.refresh()
