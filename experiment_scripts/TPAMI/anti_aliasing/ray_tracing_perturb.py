@@ -213,3 +213,5 @@ if __name__ == '__main__':
     print(f"[#] min = {th.min(shadow_mask)}, max = {th.max(shadow_mask)}")
     # torchvision.utils.save_image(shadow_mask/255.0, f'out_sd_AAx{args.up_rate}.png')
     torchvision.utils.save_image(shadow_mask/(256.0*args.up_rate), f'out_sd_AAx{args.up_rate}.png')
+
+# %%
