@@ -132,8 +132,8 @@ def init_deca(useTex=False, extractTex=True, device='cuda',
               deca_mode='only_renderer', mask=None, deca_obj=None, rasterize_type='standard'):
     
     # sys.path.insert(1, '/home/mint/guided-diffusion/preprocess_scripts/Relighting_preprocessing_tools/DECA/')
-    sys.path.insert(1, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
-    # sys.path.insert(1, '/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/')
+    # sys.path.insert(1, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+    sys.path.insert(1, '/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/')
 
     from decalib import deca
     from decalib.utils.config import cfg as deca_cfg
@@ -151,6 +151,7 @@ def sh_to_ld(sh):
 
 def render_shadow_mask(sh_light, cam, verts, deca, axis_1=False):
     sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+
     from decalib.utils import util
     
     shadow_mask_all = []
@@ -192,14 +193,98 @@ def render_shadow_mask(sh_light, cam, verts, deca, axis_1=False):
         diff = coords[..., 2] - output[:, 0] 
         shadow_mask[i] *= (th.min(diff, dim=0)[0] > -0.1) * 0.5 + 0.5
         
-    #     print(shadow_mask.shape)
-    #     print(th.max(shadow_mask))
-    #     print(th.min(shadow_mask))
-    #     import torchvision
-    #     torchvision.utils.save_image(shadow_mask[[i]]/255.0, f'inf{i}.png')
-    #     torchvision.utils.save_image(shadow_mask[[i]], f'inf2{i}.png')
-    # torchvision.utils.save_image(shadow_mask[:, None, ...]/255.0, f'infall.png')
     return th.clip(shadow_mask, 0, 255.0)/255.0
+
+def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, axis_1=False, up_rate=1, smooth_depth=False, perturb_ld=False, perturb_dict=None, device='cuda', org_h=128, org_w=128):
+    sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+    from decalib.utils import util
+    import cv2, tqdm
+    
+    if verts.shape[0] >= 2:
+        tmp = []
+        for i in range(1, verts.shape[0]):
+            tmp.append(th.allclose(verts[[0]], verts[[i]]))
+        assert all(tmp)
+
+    verts = verts[0:1, ...].cuda()  # Save memory by rendering only 1st image
+    depth_image, _ = deca.render.render_depth(verts, up_rate=up_rate)   # Depth : B x 1 x H x W
+    B, C, h, w = depth_image.shape
+
+    depth_image_smooth = depth_image.detach().clone().cpu().numpy()
+    depth_image_smooth = th.tensor(cv2.bilateralFilter(depth_image_smooth[0, 0, ...], d=9, sigmaColor=256, sigmaSpace=256))
+    depth_image_smooth = depth_image_smooth[None, None, ...]
+    assert depth_image_smooth.shape == depth_image.shape
+
+    # plt.imshow(depth_image[0, 0].cpu().numpy().squeeze(), cmap='gray')
+    # plt.show()
+    # plt.imshow(depth_image_smooth, cmap='gray')
+    # plt.show()
+    # assert False
+
+    depth_grid = np.meshgrid(np.arange(h), np.arange(w), indexing='xy')
+    depth_grid = np.stack((depth_grid), axis=-1)[None, ...]   # 1 x H x W x 2
+
+    if smooth_depth:
+        depth_grid = np.concatenate((depth_grid, depth_image_smooth.permute(0, 2, 3, 1)[..., 0:1].cpu().numpy()), axis=-1) # B x H x W x 3
+    else:
+        depth_grid = np.concatenate((depth_grid, depth_image.permute(0, 2, 3, 1)[..., 0:1].cpu().numpy()), axis=-1) # B x H x W x 3
+
+    depth_grid[..., 2] *= (256 * up_rate)
+    depth_grid = th.tensor(depth_grid).to(device)
+    shadow_mask = th.clone((depth_image.permute(0, 2, 3, 1)[:, :, :, 0]) * 256 * up_rate).to(device)
+
+    out_shadow_mask = []
+    for i in tqdm.tqdm(range(sh_light.shape[0]), position=0, desc="Rendering Shadow Mask on each Sh..."):
+        #NOTE: Render the shadow mask from light direction
+        ld = sh_to_ld(sh=th.tensor(sh_light[[i]]))
+        ld = util.batch_orth_proj(ld[None, ...].cuda(), cam[None, ...].cuda());     # This fn takes pts=Bx3, cam=Bx3
+        ld[:, :, 1:] = -ld[:, :, 1:]
+
+        if perturb_ld:
+            ld_to_cast = []
+            for eps_pt in np.linspace(-perturb_dict['eps'], perturb_dict['eps'], perturb_dict['dense']):
+                ld_to_cast.append(ld.clone() + eps_pt)
+        else:
+            ld_to_cast = [ld]
+
+        perturb_out = []
+        # print("[#] Render each perturbed light direction...")
+        for ld_i in tqdm.tqdm(ld_to_cast, position=1, leave=False, desc="Rendering each perturbed light direction..."):
+            ray = ld_i.view(3).to(device)
+
+            if axis_1:
+                ray[1] *= -1    # This for jst temporarly fix the axis 1 which the shading is bright in the middle, but the light direction is back of the head
+            ray[2] *= 0.5
+            n = 256 * up_rate
+            ray = ray / th.norm(ray)
+            mxaxis = max(abs(ray[0]), abs(ray[1]))
+            shift = ray / mxaxis * th.arange(n).view(n, 1).to(device)
+
+            each_depth_grid = depth_grid[0].clone()
+            coords = each_depth_grid.view(1, n, n, 3) + shift.view(n, 1, 1, 3)
+
+            output = th.nn.functional.grid_sample(
+                th.tensor(np.tile(each_depth_grid[:, :, 2].view(1, 1, n, n).cpu().numpy(), [n, 1, 1, 1])).to(device),
+                coords[..., :2] / (n - 1) * 2 - 1,
+                align_corners=True)
+            diff = coords[..., 2] - output[:, 0] 
+            tmp = shadow_mask.clone() * ((th.min(diff, dim=0)[0] > -0.1) * 0.5 + 0.5)   # output is in 1 x H x W
+            # tmp = th.clip(tmp, 0, 255.0) / (256 * up_rate)
+            tmp = th.clip(tmp, 0, (256*up_rate)) / (256 * up_rate)
+            perturb_out.append(tmp)
+
+        perturb_out = th.cat(perturb_out, dim=0)
+        # print("[#] Perturb Out : ", perturb_out.shape)
+        out_sd = th.mean(perturb_out, dim=0, keepdim=True)
+        # print("[#] Out SD : ", out_sd.shape)
+
+        if up_rate > 1 or (out_sd.shape[1:] != (org_h, org_w)):
+            out_sd = cv2.resize(out_sd.permute(1, 2, 0).cpu().numpy(), (org_h, org_w), interpolation=cv2.INTER_AREA)[None, ...] # Get the shape 1 x H x W
+        else:
+            out_sd = out_sd.cpu().numpy()   # Get the shape 1 x H x W
+        out_shadow_mask.append(th.tensor(out_sd).to(device))
+
+    return th.cat(out_shadow_mask)
 
 def render_deca(deca_params, idx, n, render_mode='shape', 
                 useTex=False, extractTex=False, device='cuda', 
@@ -327,7 +412,7 @@ def render_deca_return_all(deca_params, idx, n, render_mode='shape',
         
     from decalib.datasets import datasets 
     testdata = datasets.TestData([deca_params['raw_image_path'][0]], iscrop=True, face_detector='fan', sample_step=10)
-    print(len(testdata), len(deca_params['raw_image_path']))
+    # print(len(testdata), len(deca_params['raw_image_path']))
     if repeat:
         codedict = {'shape':deca_params['shape'][[idx]].repeat(n, 1).to(device).float(),
                     'pose':deca_params['pose'][[idx]].repeat(n, 1).to(device).float(),

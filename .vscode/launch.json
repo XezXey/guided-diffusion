@@ -2243,6 +2243,41 @@
             "cwd": "/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/default/",
             "justMyCode": true
         },
+        {
+            "name": "Python: relight_cast_shadows_with_SS_smoothSM",
+            "type": "python",
+            "request": "launch",
+            "program": "./relight.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"0", "WANDB_MODE":"offline"},
+            "args": [
+                "--ckpt_selector", "ema",
+                "--dataset", "ffhq", "--set", "valid",
+                "--step", "100000", 
+                "--out_dir", "/data/mint/sampling/TPAMI/cast_shadows_results/",
+                "--cfg_name", "DiFaReli_FsBg_Sdiff_SS_128_VLL.yaml", 
+                "--log_dir", "DiFaReli_FsBg_Sdiff_SS_128_VLL",
+                "--diffusion_steps", "1000", "--timestep_respacing", "100",
+                "--seed", "47",
+                "--sample_pair_json", "/home/mint/Dev/DiFaReli/difareli-faster/experiment_scripts/TPAMI/cast_shadows/sample_json_cs/for_rotate_spiral.json",
+                "--sample_pair_mode", "pair",
+                "--itp", "render_face",
+                "--itp_step", "20", "--batch_size", "20",
+                "--gpu_id", "1", "--lerp",
+                "--idx", "0", "1",
+                "--postproc_shadow_mask_smooth_keep_shadow_shading",
+                "--postfix", "inv_with_sd_rotateSH_axis2_smoothSM",
+                "--inverse_with_shadow_diff",
+                "--rotate_sh",
+                "--rotate_sh_axis", "2",
+                "--up_rate_for_AA", "1",
+                "--smooth_depth",
+                "--perturb_ld",
+                "--shadow_diff_dir", "/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_with_weight_simplified/",
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/default/",
+            "justMyCode": true
+        },
 
 
 

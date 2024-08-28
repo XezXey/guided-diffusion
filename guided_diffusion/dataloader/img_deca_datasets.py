@@ -375,20 +375,14 @@ class DECADataset(Dataset):
                 out_dict[f'{k}_img'] = each_cond_img
                 # Loading mask for inference
                 if self.mode == 'sampling':
-                    if self.kwargs['args'].anti_aliasing:
-                        sd = cond_img['shadow_diff'].astype(np.uint8)
-                    else:
-                        sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                    sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                     assert np.allclose(sd[..., 0], sd[..., 1]) and np.allclose(sd[..., 0], sd[..., 2])
                     sd = sd[..., 0:1]
                     sd = np.transpose(sd, [2, 0, 1])
                     out_dict[f'shadow_diff_img'] = sd / 255.0
                     out_dict[f'shadow_diff_img'][out_dict[f'shadow_diff_img'] == 127/255.] = 0.5
                     for tk in ['mface_mask', 'meg_mask']:
-                        if self.kwargs['args'].anti_aliasing:
-                            out_dict[f'{k}_{tk}'] = cond_img[f'{k}_{tk}'].astype(np.uint8)
-                        else:
-                            out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                        out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                         out_dict[f'{k}_{tk}'] = np.transpose(out_dict[f'{k}_{tk}'], [2, 0, 1])
                         out_dict[f'{k}_{tk}'] = out_dict[f'{k}_{tk}'][0:1, ...]
             elif k == 'shadow_diff_with_weight_simplified' or k == 'shadow_diff_with_weight_simplified_inverse':
@@ -401,20 +395,14 @@ class DECADataset(Dataset):
                 out_dict[f'{k}_img'] = each_cond_img
                 # Loading mask for inference
                 if self.mode == 'sampling':
-                    if self.kwargs['args'].anti_aliasing:
-                        sd = cond_img['shadow_diff'].astype(np.uint8)
-                    else:
-                        sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                    sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                     assert np.allclose(sd[..., 0], sd[..., 1]) and np.allclose(sd[..., 0], sd[..., 2])
                     sd = sd[..., 0:1]
                     sd = np.transpose(sd, [2, 0, 1])
                     out_dict[f'shadow_diff_img'] = sd / 255.0
                     out_dict[f'shadow_diff_img'][out_dict[f'shadow_diff_img'] == 127/255.] = 0.5
                     for tk in ['mface_mask', 'meg_mask']:
-                        if self.kwargs['args'].anti_aliasing:
-                            out_dict[f'{k}_{tk}'] = cond_img[f'{k}_{tk}'].astype(np.uint8)
-                        else:
-                            out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                        out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                         out_dict[f'{k}_{tk}'] = np.transpose(out_dict[f'{k}_{tk}'], [2, 0, 1])
                         out_dict[f'{k}_{tk}'] = out_dict[f'{k}_{tk}'][0:1, ...]
 
@@ -428,20 +416,14 @@ class DECADataset(Dataset):
                 out_dict[f'{k}_img'] = each_cond_img
                 # Loading mask for inference
                 if self.mode == 'sampling':
-                    if self.kwargs['args'].anti_aliasing:
-                        sd = cond_img['shadow_diff'].astype(np.uint8)
-                    else:
-                        sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                    sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                     assert np.allclose(sd[..., 0], sd[..., 1]) and np.allclose(sd[..., 0], sd[..., 2])
                     sd = sd[..., 0:1]
                     sd = np.transpose(sd, [2, 0, 1])
                     out_dict[f'shadow_diff_img'] = sd / 255.0
                     out_dict[f'shadow_diff_img'][out_dict[f'shadow_diff_img'] == 127/255.] = 0.5
                     for tk in ['mface_mask', 'meg_mask']:
-                        if self.kwargs['args'].anti_aliasing:
-                            out_dict[f'{k}_{tk}'] = cond_img[f'{k}_{tk}'].astype(np.uint8)
-                        else:
-                            out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                        out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                         out_dict[f'{k}_{tk}'] = np.transpose(out_dict[f'{k}_{tk}'], [2, 0, 1])
                         out_dict[f'{k}_{tk}'] = out_dict[f'{k}_{tk}'][0:1, ...]
             elif k == 'shadow_diff_with_weight_oneneg':

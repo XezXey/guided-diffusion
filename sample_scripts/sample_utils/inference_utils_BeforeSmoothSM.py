@@ -275,45 +275,38 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
             else:
                 sd_img = cond[cond_img_name].clone()
             
-            if args.postproc_shadow_mask_smooth_keep_shadow_shading:
-                # Keep the shadow shading from perturbed light
-                # First frame
-                sd_shadow = th.isclose(sd_img[0:1], th.tensor(0.0).type_as(sd_img), atol=1e-5)
-                sd_no_shadow = th.isclose(sd_img[0:1], th.tensor(1.0).type_as(sd_img), atol=1e-5)
+            print(np.unique(sd_img.cpu().numpy()))
+            # From ray-tracing
+            sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
+            sd_no_shadow = th.isclose(sd_img, th.tensor(1.0).type_as(sd_img), atol=1e-5)
 
-                shadow_area = sd_shadow * (1-weight)     # Shadow area assigned weight
-                no_shadow_area = sd_no_shadow
+            shadow_area = sd_shadow * weight    # Shadow area assigned weight
+            no_shadow_area = sd_no_shadow
 
-                face = (shadow_area + no_shadow_area)
-                shadow_ff = ((1-face) * sd_shadow)
-                # Rest of the frames
-                sd_shadow_mask = (sd_img[1:] >= 0.5) * 1.0
-                shadow_rf = (sd_img[1:] * (1-weight))*sd_shadow_mask    # Shadow area assigned weight
+            face = (shadow_area + no_shadow_area)
+            shadow = ((1-face) * sd_shadow)
 
-                shadow = th.cat((shadow_ff, shadow_rf), dim=0)
+            # Anti-aliasing
+            if args.anti_aliasing:
+                print("[#] Anti-aliasing for shadow_diff_with_weight_simplifed(or inverse)...")
+
+                img_size = misc['img_size']
+                print(img_size)
+                _, _, H, W = face.shape
+                scale = 4
+
+                from torchvision.transforms import Resize
+                up = Resize((H*scale, W*scale))
+                down = Resize((img_size, img_size))
+                shadow = down(up(shadow))
+
+            if cond_img_name == 'shadow_diff_with_weight_simplified_inverse':
+                out_sd = 1 - shadow
+            else: 
                 out_sd = shadow
-                cond[cond_img_name] = out_sd
-                print("Value: ", th.unique(out_sd))
-
-            else:
-                print("[#] SD image uniqueness: ", np.unique(sd_img.cpu().numpy()))
-                # From ray-tracing
-                sd_shadow = th.isclose(sd_img, th.tensor(0.0).type_as(sd_img), atol=1e-5)
-                sd_no_shadow = th.isclose(sd_img, th.tensor(1.0).type_as(sd_img), atol=1e-5)
-
-                shadow_area = sd_shadow * weight    # Shadow area assigned weight
-                no_shadow_area = sd_no_shadow
-
-                face = (shadow_area + no_shadow_area)
-                shadow = ((1-face) * sd_shadow)
-
-                if cond_img_name == 'shadow_diff_with_weight_simplified_inverse':
-                    out_sd = 1 - shadow
-                else: 
-                    out_sd = shadow
-                    weight = 1 - weight
-                cond[cond_img_name] = out_sd
-                print("Value: ", th.unique(out_sd))
+                weight = 1 - weight
+            cond[cond_img_name] = out_sd
+            print("Value: ", th.unique(out_sd))
 
     return cond, weight
 
@@ -420,6 +413,31 @@ def shadow_diff_final_postproc(cond, misc):
                     misc['n_step'] = final_out.shape[0]
                     cond['face_structure'] = cond['face_structure'][0:1].repeat_interleave(repeats=final_out.shape[0], dim=0)
 
+            if args.AA:
+                print("[#] Anti-aliasing for shadow_diff_with_weight_simplifed(or inverse)...")
+                img_size = misc['img_size']
+                _, _, H, W = cond[cond_img_name].shape
+                scale = 8
+
+                # from torchvision.transforms import Resize, GaussianBlur
+                # up = Resize((H*scale, W*scale), interpolation=PIL.Image.NEAREST)
+                # down = Resize((img_size, img_size), interpolation=PIL.Image.BILINEAR)
+                # blur = GaussianBlur(kernel_size=11, sigma=2.0)
+                # shadow = down(blur(up(cond[cond_img_name])))
+
+                shadow = cond[cond_img_name].clone().permute(0, 2, 3, 1).cpu().numpy().astype(np.float32)
+                out = []
+                for i in range(shadow.shape[0]):
+                    # shadow_tmp = cv2.resize(np.repeat(shadow[i], repeats=3, axis=-1), (H*scale, W*scale), cv2.INTER_AREA)
+                    # shadow_tmp = cv2.resize(np.repeat(shadow[i], repeats=3, axis=-1), (H*scale, W*scale), cv2.INTER_AREA)
+                    shadow_tmp = cv2.resize(shadow[i], (H*scale, W*scale), cv2.INTER_NEAREST)
+                    shadow_tmp = cv2.GaussianBlur(shadow_tmp, (11, 11), 2.0)
+                    shadow_tmp = cv2.resize(shadow_tmp, (img_size, img_size), cv2.INTER_AREA)
+                    out.append(shadow_tmp)
+                out = th.tensor(np.stack(out)[..., None]).permute(0, 3, 1, 2).cuda()
+
+                cond[cond_img_name] = out 
+
     return cond, misc
 
 def build_condition_image(cond, misc):
@@ -516,7 +534,7 @@ def build_condition_image(cond, misc):
             # Shadow_mask : B x H x W
             if args.render_same_mask:
                 print("[#] Rendering with the shadow mask from same render face...")
-                shadow_mask = params_utils.render_shadow_mask_with_smooth(
+                shadow_mask = params_utils.render_shadow_mask(
                                                 sh_light=sub_cond['light'], 
                                                 cam=sub_cond['cam'][src_idx],
                                                 verts=orig_visdict['trans_verts_orig'], 
@@ -529,19 +547,12 @@ def build_condition_image(cond, misc):
                     deca_obj_tmp = params_utils.init_deca(mask=shadow_mask_tmp, rasterize_type=args.rasterize_type) # Init DECA with mask only once
                 if args.rotate_sh_axis == 1:
                     print("[#] Fixing the axis 1...")
-                shadow_mask = params_utils.render_shadow_mask_with_smooth(
+                shadow_mask = params_utils.render_shadow_mask(
                                                 sh_light=sub_cond['light'], 
                                                 cam=sub_cond['cam'][src_idx],
                                                 verts=orig_visdict['trans_verts_orig'], 
                                                 deca=deca_obj_tmp, 
-                                                axis_1=args.rotate_sh_axis==1,
-                                                device='cpu',   # Prevent OOM
-                                                up_rate=args.up_rate_for_AA,
-                                                smooth_depth=args.smooth_depth,
-                                                perturb_ld=args.perturb_ld,
-                                                perturb_dict={'eps':0.5, 'dense':30},
-                                                org_h=img_size, org_w=img_size,
-                                            )
+                                                axis_1=args.rotate_sh_axis==1)
                 if i == len(sub_step)-2:
                     del deca_obj_tmp
             all_render.append(deca_rendered)
@@ -624,6 +635,8 @@ def build_condition_image(cond, misc):
                 sd_tmp = sd_tmp.repeat_interleave(repeats=3, dim=0)
                 sd_tmp = np.transpose(sd_tmp.cpu().numpy(), (1, 2, 0))  # HxWxC
                 sd_tmp = sd_tmp.astype(np.uint8)
+                if not args.anti_aliasing:
+                    sd_tmp = dataset.augmentation(PIL.Image.fromarray(sd_tmp))
                 sd_tmp = dataset.prep_cond_img(sd_tmp, cond_img_name, i)
                 sd_tmp = np.transpose(sd_tmp, (2, 0, 1))    # CxHxW
                 sd_tmp = sd_tmp[0:1, ...]
@@ -640,57 +653,13 @@ def build_condition_image(cond, misc):
                     else:
                         m_face = m_face_parsing
 
-                    m_face_tmp.append(m_face)   # Mask from face parsing
-                    m_face_sd_tmp.append(m_face_sd) # Mask from Ray-tracing
+                    m_face_tmp.append(m_face)
+                    m_face_sd_tmp.append(m_face_sd)
 
                     sd_tmp = (sd_tmp < 0.5) * 1.0   # Bg
                     sd_tmp = ((sd_tmp * np.abs(1-m_glasses_and_eyes)) + (1.0 * m_glasses_and_eyes))
                     sd_tmp = np.abs(1 - sd_tmp) # Inverse => Shadow = 0, Non-shadow = 1
                     sd_tmp = (((sd_tmp * np.abs(1-m_glasses_and_eyes)) + (1.0 * m_glasses_and_eyes)) * m_face) + (0.5 * np.abs(1-m_face))
-                
-                elif args.postproc_shadow_mask_smooth_keep_shadow_shading:
-                    # Thresholding & Masking & Fill bg with 0.5
-                    m_glasses_and_eyes = cond[f'{cond_img_name}_meg_mask'][src_idx].cpu().numpy()
-
-                    # Masking out the bg area
-                    m_face_parsing = cond[f'{cond_img_name}_mface_mask'][src_idx].cpu().numpy()
-                    m_face_sd = sd_tmp > 0.01
-                    if args.use_ray_mask:
-                        m_face = m_face_parsing * m_face_sd
-                    else:
-                        m_face = m_face_parsing
-
-                    m_face_tmp.append(m_face)   # Mask from face parsing
-                    m_face_sd_tmp.append(m_face_sd) # Mask from Ray-tracing
-
-                    sd_tmp_proc = (sd_tmp)
-                    sd_tmp_proc = ((sd_tmp_proc * np.abs(1-m_glasses_and_eyes)) + (1.0 * m_glasses_and_eyes))
-                    sd_tmp_proc = np.abs(1 - sd_tmp_proc) # Inverse => Shadow = 0, Non-shadow = 1
-                    sd_tmp_proc = (((sd_tmp_proc * np.abs(1-m_glasses_and_eyes)) + (1.0 * m_glasses_and_eyes)) * m_face) + (1 * np.abs(1-m_face))
-                    mask_for_sd = th.tensor(sd_tmp_proc >= 0.5) * th.tensor(sd_tmp_proc < 1.0) * 1.0
-                    sd_tmp_proc = mask_for_sd * sd_tmp_proc
-                    sd_tmp = sd_tmp_proc
-
-                elif args.postproc_shadow_mask_smooth:
-                    # Thresholding & Masking & Fill bg with 0.5
-                    m_glasses_and_eyes = cond[f'{cond_img_name}_meg_mask'][src_idx].cpu().numpy()
-
-                    # Masking out the bg area
-                    m_face_parsing = cond[f'{cond_img_name}_mface_mask'][src_idx].cpu().numpy()
-                    m_face_sd = sd_tmp > 0.01
-                    if args.use_ray_mask:
-                        m_face = m_face_parsing * m_face_sd
-                    else:
-                        m_face = m_face_parsing
-
-                    m_face_tmp.append(m_face)   # Mask from face parsing
-                    m_face_sd_tmp.append(m_face_sd) # Mask from Ray-tracing
-
-                    sd_tmp = (sd_tmp < 0.5) * 1.0   # Bg
-                    sd_tmp = ((sd_tmp * np.abs(1-m_glasses_and_eyes)) + (1.0 * m_glasses_and_eyes))
-                    sd_tmp = np.abs(1 - sd_tmp) # Inverse => Shadow = 0, Non-shadow = 1
-                    sd_tmp = (((sd_tmp * np.abs(1-m_glasses_and_eyes)) + (1.0 * m_glasses_and_eyes)) * m_face) + (0.5 * np.abs(1-m_face))
-
                 shadow_diff_tmp.append(sd_tmp)
                 
             if args.inverse_with_shadow_diff:
