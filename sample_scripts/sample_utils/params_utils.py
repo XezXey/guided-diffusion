@@ -293,6 +293,98 @@ def render_deca(deca_params, idx, n, render_mode='shape',
     rendered_image = orig_visdict['shape_images']
     return rendered_image, orig_visdict
 
+def render_deca_return_all(deca_params, idx, n, render_mode='shape', 
+                useTex=False, extractTex=False, device='cuda', 
+                avg_dict=None, rotate_normals=False, use_detail=False,
+                deca_mode='only_renderer', mask=None, repeat=True,
+                deca_obj=None):
+    '''
+    TODO: Adding the rendering with template shape, might need to load mean of camera/tform
+    # Render the deca face image that used to condition the network
+    :param deca_params: dict of deca params = {'light': Bx27, 'shape':BX50, ...}
+    :param idx: index of data in batch to render
+    :param n: n of repeated tensor (For interpolation)
+    :param render_mode: render mode = 'shape', 'template_shape'
+    :param useTex: render with texture ***Need the codedict['albedo'] data***
+    :param extractTex: for deca texture (set by default of deca decoding pipeline)
+    :param device: device for 'cuda' or 'cpu'
+    '''
+    #import warnings
+    #warnings.filterwarnings("ignore")
+    # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
+    if deca_obj is None:
+        print("[#] No deca_obj, re-init...")
+        # sys.path.insert(1, '/home/mint/guided-diffusion/preprocess_scripts/Relighting_preprocessing_tools/DECA/')
+        sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+        from decalib import deca
+        from decalib.utils.config import cfg as deca_cfg
+        deca_cfg.model.use_tex = useTex
+        deca_cfg.rasterizer_type = 'standard'
+        deca_cfg.model.extract_tex = extractTex
+        deca_obj = deca.DECA(config = deca_cfg, device=device, mode=deca_mode, mask=mask)
+    else:
+        deca_obj = deca_obj
+        
+    from decalib.datasets import datasets 
+    testdata = datasets.TestData([deca_params['raw_image_path'][0]], iscrop=True, face_detector='fan', sample_step=10)
+    print(len(testdata), len(deca_params['raw_image_path']))
+    if repeat:
+        codedict = {'shape':deca_params['shape'][[idx]].repeat(n, 1).to(device).float(),
+                    'pose':deca_params['pose'][[idx]].repeat(n, 1).to(device).float(),
+                    # 'pose':th.tensor(deca_params['pose']).to(device).float(),
+                    'exp':deca_params['exp'][[idx]].repeat(n, 1).to(device).float(),
+                    'cam':deca_params['cam'][[idx]].repeat(n, 1).to(device).float(),
+                    'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
+                    # 'tform':deca_params['tform'][[idx]].repeat(n, 1).to(device).reshape(-1, 3, 3).float(),
+                    'tform':testdata[idx]['tform'][None].repeat(n, 1, 1).to(device).float(),
+                    'images':testdata[idx]['image'].to(device)[None,...].float().repeat(n, 1, 1, 1),
+                    'tex':deca_params['albedo'][[idx]].repeat(n, 1).to(device).float(),
+                    'detail':deca_params['detail'][[idx]].repeat(n, 1).to(device).float(),
+        }
+        # print(codedict['pose'])
+        # print(codedict['light'])
+        # exit()
+        original_image = deca_params['raw_image'][[idx]].to(device).float().repeat(n, 1, 1, 1) / 255.0
+    else:
+        codedict = {'shape':th.tensor(deca_params['shape']).to(device).float(),
+                    'pose':th.tensor(deca_params['pose']).to(device).float(),
+                    'exp':th.tensor(deca_params['exp']).to(device).float(),
+                    'cam':th.tensor(deca_params['cam']).to(device).float(),
+                    'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
+                    # 'tform':th.tensor(deca_params['tform']).to(device).reshape(-1, 3, 3).float(),
+                    'tform':testdata[idx]['tform'][None].to(device).float(),
+                    'images':th.stack([testdata[i]['image'] for i in range(len(deca_params['raw_image_path']))]).to(device).float(),
+                    'tex':th.tensor(deca_params['albedo']).to(device).float(),
+                    'detail':(deca_params['detail']).to(device).float(),
+        }
+        original_image = deca_params['raw_image'].to(device).float() / 255.0
+        
+    if rotate_normals:
+        codedict.update({'R_normals': th.tensor(deca_params['R_normals']).to(device).float()})
+        
+    if render_mode == 'shape':
+        use_template = False
+        mean_cam = None
+        tform_inv = th.inverse(codedict['tform']).transpose(1,2)
+    elif render_mode == 'template_shape':
+        use_template = True
+        mean_cam = th.tensor(avg_dict['cam'])[None, ...].repeat(n, 1).to(device).float()
+        tform = th.tensor(avg_dict['tform'])[None, ...].repeat(n, 1).to(device).reshape(-1, 3, 3).float()
+        tform_inv = th.inverse(tform).transpose(1,2)
+    else: raise NotImplementedError
+    orig_opdict, orig_visdict = deca_obj.decode(codedict, 
+                                  render_orig=True, 
+                                  original_image=original_image, 
+                                  tform=tform_inv, 
+                                  use_template=use_template, 
+                                  mean_cam=mean_cam, 
+                                  use_detail=use_detail,
+                                  rotate_normals=rotate_normals,
+                                  )  
+    orig_visdict.update(orig_opdict)
+    rendered_image = orig_visdict['shape_images']
+    return rendered_image, orig_visdict, orig_opdict
+
 def render_deca_rotateSH(deca_params, render_mode='shape', 
                 useTex=False, extractTex=False, device='cuda', 
                 avg_dict=None, rotate_normals=False, use_detail=False,
