@@ -163,14 +163,6 @@ def load_data_img_deca(
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
             elif 'face_structure' in in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
-            elif ('sobel_bg' in in_image_type) or ('sobel_bin_bg' in in_image_type):
-                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.sobel_dir}/{set_}/")
-                in_image[f'{in_image_type}_mask'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
-                in_image[f'{in_image_type}_mask'] = image_path_list_to_dict(in_image[f'{in_image_type}_mask'])
-            elif 'laplacian_bg' in in_image_type:
-                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.laplacian_dir}/{set_}/")
-                in_image[f'{in_image_type}_mask'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
-                in_image[f'{in_image_type}_mask'] = image_path_list_to_dict(in_image[f'{in_image_type}_mask'])
             elif 'canny_edge_bg' in in_image_type:
                 in_image[f'{in_image_type}_mask'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
                 in_image[f'{in_image_type}_mask'] = image_path_list_to_dict(in_image[f'{in_image_type}_mask'])
@@ -183,19 +175,13 @@ def load_data_img_deca(
                     for tk in ['faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses', 'faceseg_eyes&glasses']:
                         in_image[f'{tk}'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
                         in_image[f'{tk}'] = image_path_list_to_dict(in_image[f'{tk}'])
-            elif 'shadow_diff_with_weight_onehot' == in_image_type:
-                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
-                if mode == 'sampling':
-                    in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/median5_5e-2/{set_}/")
-                    # in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/futschik_2e-1/{set_}/")
-                    in_image[f'shadow_diff'] = image_path_list_to_dict(in_image[f'shadow_diff'])
-                    for tk in ['faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses', 'faceseg_eyes&glasses']:
-                        in_image[f'{tk}'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
-                        in_image[f'{tk}'] = image_path_list_to_dict(in_image[f'{tk}'])
             elif 'shadow_diff_with_weight_simplified' == in_image_type or 'shadow_diff_with_weight_simplified_inverse' == in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
                 if mode == 'sampling':
                     in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/median5_5e-2/{set_}/")
+                    # NOTE: FOR LOAD .NPY Shadow diff
+                    # in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/MultiPIE/MultiPIE_testset/shadow_diff_SS_with_c_simplified/{set_}/")
+                    # NOTE: FOR LOAD .PNG Shadow diff
                     # in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/{set_}/")
                     in_image[f'shadow_diff'] = image_path_list_to_dict(in_image[f'shadow_diff'])
                     for tk in ['faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses', 'faceseg_eyes&glasses']:
@@ -396,6 +382,8 @@ class DECADataset(Dataset):
                 # Loading mask for inference
                 if self.mode == 'sampling':
                     sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+                    # NOTE: FOR LOAD .NPY Shadow diff
+                    # sd = np.repeat(sd[..., None], 3, axis=-1)
                     assert np.allclose(sd[..., 0], sd[..., 1]) and np.allclose(sd[..., 0], sd[..., 2])
                     sd = sd[..., 0:1]
                     sd = np.transpose(sd, [2, 0, 1])
@@ -615,7 +603,10 @@ class DECADataset(Dataset):
             elif 'shadow_diff_with_weight_simplified' == in_image_type or 'shadow_diff_with_weight_simplified_inverse' == in_image_type:
                 condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
                 if self.mode == 'sampling':
+                    # NOTE: FOR LOAD .PNG Shadow diff
                     condition_image["shadow_diff"] = np.array(self.load_image(self.kwargs['in_image_for_cond']['shadow_diff'][query_img_name.replace(self.img_ext, '.png')]))
+                    # NOTE: FOR LOAD .NPY Shadow diff
+                    # condition_image["shadow_diff"] = np.load(self.kwargs['in_image_for_cond']['shadow_diff'][query_img_name.replace(self.img_ext, '.npy')])
                     condition_image[f"{in_image_type}_mface_mask"] = self.face_segment(cond_name=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", segment_part=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", query_img_name=query_img_name)
                     condition_image[f"{in_image_type}_meg_mask"] = self.face_segment(cond_name=f"faceseg_eyes&glasses", segment_part=f"faceseg_eyes&glasses", query_img_name=query_img_name)
             elif 'shadow_diff_binary_simplified' == in_image_type or 'shadow_diff_binary_simplified_inverse' == in_image_type:

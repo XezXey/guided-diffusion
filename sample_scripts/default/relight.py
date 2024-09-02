@@ -360,6 +360,7 @@ if __name__ == '__main__':
         cfg.dataset.training_data = f'/MultiPIE/{sub_f}/'
         cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/mp_aligned/'
+        cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
     else: raise ValueError
 
     cfg.dataset.deca_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'

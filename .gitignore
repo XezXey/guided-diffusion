@@ -141,3 +141,6 @@ experiment_scripts/TPAMI/sh_to_envs/video_out/*
 experiment_scripts/TPAMI/sh_to_envs/pyshtools/*
 experiment_scripts/TPAMI/sh_to_envs/orbit_out/
 experiment_scripts/TPAMI/sh_to_envs/rotate_out/
+experiment_scripts/TPAMI/anti_aliasing/perturb_ld_disc/*.png
+experiment_scripts/TPAMI/anti_aliasing/perturb_ld_disc/*.mp4
+tmp/
