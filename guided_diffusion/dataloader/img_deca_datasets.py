@@ -178,28 +178,12 @@ def load_data_img_deca(
             elif 'shadow_diff_with_weight_simplified' == in_image_type or 'shadow_diff_with_weight_simplified_inverse' == in_image_type:
                 in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
                 if mode == 'sampling':
-                    in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/median5_5e-2/{set_}/")
+                    # in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/median5_5e-2_npy/{set_}/")
+                    in_image['shadow_diff'] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
                     # NOTE: FOR LOAD .NPY Shadow diff
                     # in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/MultiPIE/MultiPIE_testset/shadow_diff_SS_with_c_simplified/{set_}/")
                     # NOTE: FOR LOAD .PNG Shadow diff
                     # in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/{set_}/")
-                    in_image[f'shadow_diff'] = image_path_list_to_dict(in_image[f'shadow_diff'])
-                    for tk in ['faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses', 'faceseg_eyes&glasses']:
-                        in_image[f'{tk}'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
-                        in_image[f'{tk}'] = image_path_list_to_dict(in_image[f'{tk}'])
-
-            elif 'shadow_diff_binary_simplified' == in_image_type or 'shadow_diff_binary_simplified_inverse' == in_image_type:
-                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
-                if mode == 'sampling':
-                    in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/median5_5e-2/{set_}/")
-                    in_image[f'shadow_diff'] = image_path_list_to_dict(in_image[f'shadow_diff'])
-                    for tk in ['faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses', 'faceseg_eyes&glasses']:
-                        in_image[f'{tk}'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
-                        in_image[f'{tk}'] = image_path_list_to_dict(in_image[f'{tk}'])
-            elif 'shadow_diff_with_weight_oneneg' == in_image_type:
-                in_image[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
-                if mode == 'sampling':
-                    in_image['shadow_diff'] = _list_image_files_recursively(f"/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff/median5_5e-2/{set_}/")
                     in_image[f'shadow_diff'] = image_path_list_to_dict(in_image[f'shadow_diff'])
                     for tk in ['faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses', 'faceseg_eyes&glasses']:
                         in_image[f'{tk}'] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
@@ -355,22 +339,6 @@ class DECADataset(Dataset):
                         out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                         out_dict[f'{k}_{tk}'] = np.transpose(out_dict[f'{k}_{tk}'], [2, 0, 1])
                         out_dict[f'{k}_{tk}'] = out_dict[f'{k}_{tk}'][0:1, ...]
-            elif k == 'shadow_diff_with_weight_onehot':
-                each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                out_dict[f'{k}_img'] = each_cond_img
-                # Loading mask for inference
-                if self.mode == 'sampling':
-                    sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                    assert np.allclose(sd[..., 0], sd[..., 1]) and np.allclose(sd[..., 0], sd[..., 2])
-                    sd = sd[..., 0:1]
-                    sd = np.transpose(sd, [2, 0, 1])
-                    out_dict[f'shadow_diff_img'] = sd / 255.0
-                    out_dict[f'shadow_diff_img'][out_dict[f'shadow_diff_img'] == 127/255.] = 0.5
-                    for tk in ['mface_mask', 'meg_mask']:
-                        out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                        out_dict[f'{k}_{tk}'] = np.transpose(out_dict[f'{k}_{tk}'], [2, 0, 1])
-                        out_dict[f'{k}_{tk}'] = out_dict[f'{k}_{tk}'][0:1, ...]
             elif k == 'shadow_diff_with_weight_simplified' or k == 'shadow_diff_with_weight_simplified_inverse':
                 each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                 if k == 'shadow_diff_with_weight_simplified_inverse':
@@ -381,53 +349,12 @@ class DECADataset(Dataset):
                 out_dict[f'{k}_img'] = each_cond_img
                 # Loading mask for inference
                 if self.mode == 'sampling':
-                    sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                    # NOTE: FOR LOAD .NPY Shadow diff
-                    # sd = np.repeat(sd[..., None], 3, axis=-1)
+                    sd = cv2.resize(cond_img['shadow_diff'].astype(np.float32), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)    # Input is H, W, 1; Output after reshape is (h, w)
+                    sd = np.repeat(sd[..., None], 3, axis=-1)
                     assert np.allclose(sd[..., 0], sd[..., 1]) and np.allclose(sd[..., 0], sd[..., 2])
                     sd = sd[..., 0:1]
                     sd = np.transpose(sd, [2, 0, 1])
-                    out_dict[f'shadow_diff_img'] = sd / 255.0
-                    out_dict[f'shadow_diff_img'][out_dict[f'shadow_diff_img'] == 127/255.] = 0.5
-                    for tk in ['mface_mask', 'meg_mask']:
-                        out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                        out_dict[f'{k}_{tk}'] = np.transpose(out_dict[f'{k}_{tk}'], [2, 0, 1])
-                        out_dict[f'{k}_{tk}'] = out_dict[f'{k}_{tk}'][0:1, ...]
-
-            elif k == 'shadow_diff_binary_simplified' or k == 'shadow_diff_binary_simplified_inverse':
-                each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                if k == 'shadow_diff_binary_simplified_inverse':
-                    each_cond_img = 1 - each_cond_img
-                if len(each_cond_img.shape) == 2:
-                    each_cond_img = each_cond_img[..., None]
-                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                out_dict[f'{k}_img'] = each_cond_img
-                # Loading mask for inference
-                if self.mode == 'sampling':
-                    sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                    assert np.allclose(sd[..., 0], sd[..., 1]) and np.allclose(sd[..., 0], sd[..., 2])
-                    sd = sd[..., 0:1]
-                    sd = np.transpose(sd, [2, 0, 1])
-                    out_dict[f'shadow_diff_img'] = sd / 255.0
-                    out_dict[f'shadow_diff_img'][out_dict[f'shadow_diff_img'] == 127/255.] = 0.5
-                    for tk in ['mface_mask', 'meg_mask']:
-                        out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                        out_dict[f'{k}_{tk}'] = np.transpose(out_dict[f'{k}_{tk}'], [2, 0, 1])
-                        out_dict[f'{k}_{tk}'] = out_dict[f'{k}_{tk}'][0:1, ...]
-            elif k == 'shadow_diff_with_weight_oneneg':
-                each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                if len(each_cond_img.shape) == 2:
-                    each_cond_img = each_cond_img[..., None]
-                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                out_dict[f'{k}_img'] = each_cond_img
-                # Loading mask for inference
-                if self.mode == 'sampling':
-                    sd = cv2.resize(cond_img['shadow_diff'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                    assert np.allclose(sd[..., 0], sd[..., 1]) and np.allclose(sd[..., 0], sd[..., 2])
-                    sd = sd[..., 0:1]
-                    sd = np.transpose(sd, [2, 0, 1])
-                    out_dict[f'shadow_diff_img'] = sd / 255.0
-                    out_dict[f'shadow_diff_img'][out_dict[f'shadow_diff_img'] == 127/255.] = 0.5
+                    out_dict[f'shadow_diff_img'] = sd
                     for tk in ['mface_mask', 'meg_mask']:
                         out_dict[f'{k}_{tk}'] = cv2.resize(cond_img[f'{k}_{tk}'].astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
                         out_dict[f'{k}_{tk}'] = np.transpose(out_dict[f'{k}_{tk}'], [2, 0, 1])
@@ -455,47 +382,6 @@ class DECADataset(Dataset):
                 cond_img[k] = np.concatenate(cond_img[k], axis=0)  # Concatenate the face structure parts into n-channels(parts)
                 # Store value
                 out_dict[f'{k}_img'] = cond_img[k]
-
-            elif ('sobel_bg' in k) or ('laplacian_bg' in k):
-                mask = cond_img[f'{k}_mask']
-                mask = ~self.prep_cond_img(~mask, k, i)
-                assert np.allclose(mask[..., 0], mask[..., 1]) and np.allclose(mask[..., 0], mask[..., 2])
-                mask = mask[..., 0:1]
-                each_cond_img = cond_img[k] * mask
-                
-                each_cond_img = cv2.resize(each_cond_img, (self.resolution, self.resolution), interpolation=cv2.INTER_AREA)
-                each_cond_img = each_cond_img[..., None]
-                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                # Store mask & img
-                out_dict[f'{k}_img'] = each_cond_img
-                mask = cv2.resize(mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                mask = mask[..., None]
-                out_dict[f'{k}_mask'] = np.transpose(mask, (2, 0, 1))
-                assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
-            elif ('sobel_bin_bg' in k):
-                mask = cond_img[f'{k}_mask']
-                mask = ~self.prep_cond_img(~mask, k, i)
-                # print(k, cond_img[k].shape, sobel_mask.shape)
-                assert np.allclose(mask[..., 0], mask[..., 1]) and np.allclose(mask[..., 0], mask[..., 2])
-                mask = mask[..., 0:1]
-                each_cond_img = cond_img[k] * mask
-                # print(np.max(each_cond_img), np.min(each_cond_img))
-                each_cond_img = cv2.normalize(each_cond_img, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
-                # print(np.max(each_cond_img), np.min(each_cond_img))
-                thres, each_cond_img = cv2.threshold(each_cond_img, int(self.cfg.img_cond_model.thres_img[i]), 255, cv2.THRESH_BINARY)
-                # print(each_cond_img)
-                # print(np.max(each_cond_img), np.min(each_cond_img))
-                
-                each_cond_img = cv2.resize(each_cond_img, (self.resolution, self.resolution), cv2.INTER_AREA)
-                each_cond_img = each_cond_img[..., None] / 255.0
-                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
-                # Store mask & img
-                out_dict[f'{k}_img'] = each_cond_img
-                mask = cv2.resize(mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
-                mask = mask[..., None]
-                out_dict[f'{k}_mask'] = np.transpose(mask, (2, 0, 1))
-                # print("MINT : ", np.max(each_cond_img), np.min(each_cond_img))
-                assert np.all(np.isin(out_dict[f'{k}_mask'], [0, 1]))
             elif ('canny_edge_bg' in k):
                 mask = cond_img[f'{k}_mask']
                 mask = ~self.prep_cond_img(~mask, k, i)
@@ -603,22 +489,7 @@ class DECADataset(Dataset):
             elif 'shadow_diff_with_weight_simplified' == in_image_type or 'shadow_diff_with_weight_simplified_inverse' == in_image_type:
                 condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
                 if self.mode == 'sampling':
-                    # NOTE: FOR LOAD .PNG Shadow diff
-                    condition_image["shadow_diff"] = np.array(self.load_image(self.kwargs['in_image_for_cond']['shadow_diff'][query_img_name.replace(self.img_ext, '.png')]))
-                    # NOTE: FOR LOAD .NPY Shadow diff
-                    # condition_image["shadow_diff"] = np.load(self.kwargs['in_image_for_cond']['shadow_diff'][query_img_name.replace(self.img_ext, '.npy')])
-                    condition_image[f"{in_image_type}_mface_mask"] = self.face_segment(cond_name=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", segment_part=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", query_img_name=query_img_name)
-                    condition_image[f"{in_image_type}_meg_mask"] = self.face_segment(cond_name=f"faceseg_eyes&glasses", segment_part=f"faceseg_eyes&glasses", query_img_name=query_img_name)
-            elif 'shadow_diff_binary_simplified' == in_image_type or 'shadow_diff_binary_simplified_inverse' == in_image_type:
-                condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
-                if self.mode == 'sampling':
-                    condition_image["shadow_diff"] = np.array(self.load_image(self.kwargs['in_image_for_cond']['shadow_diff'][query_img_name.replace(self.img_ext, '.png')]))
-                    condition_image[f"{in_image_type}_mface_mask"] = self.face_segment(cond_name=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", segment_part=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", query_img_name=query_img_name)
-                    condition_image[f"{in_image_type}_meg_mask"] = self.face_segment(cond_name=f"faceseg_eyes&glasses", segment_part=f"faceseg_eyes&glasses", query_img_name=query_img_name)
-            elif 'shadow_diff_with_weight_oneneg' == in_image_type:
-                condition_image[in_image_type] = np.load(self.kwargs['in_image_for_cond'][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
-                if self.mode == 'sampling':
-                    condition_image["shadow_diff"] = np.array(self.load_image(self.kwargs['in_image_for_cond']['shadow_diff'][query_img_name.replace(self.img_ext, '.png')]))
+                    condition_image["shadow_diff"] = np.load(self.kwargs['in_image_for_cond']['shadow_diff'][query_img_name.replace(self.img_ext, '.npy')])
                     condition_image[f"{in_image_type}_mface_mask"] = self.face_segment(cond_name=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", segment_part=f"faceseg_faceskin&nose&mouth&eyebrows&eyes&glasses", query_img_name=query_img_name)
                     condition_image[f"{in_image_type}_meg_mask"] = self.face_segment(cond_name=f"faceseg_eyes&glasses", segment_part=f"faceseg_eyes&glasses", query_img_name=query_img_name)
             elif 'shadow_diff' == in_image_type:

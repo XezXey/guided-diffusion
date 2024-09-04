@@ -143,6 +143,111 @@ def init_deca(useTex=False, extractTex=True, device='cuda',
     deca_obj = deca.DECA(config = deca_cfg, device=device, mode=deca_mode, mask=mask)
     return deca_obj
 
+def sh_to_ld_brightest_region(sh):
+    from scipy.spatial.transform import Rotation as R
+    from matplotlib import pyplot as plt
+    import cv2
+
+    import pyshtools as pysh
+
+    def applySHlight(normal_images, sh_coeff):
+        N = normal_images
+        sh = th.stack(
+            [
+            N[0] * 0.0 + 1.0,
+            N[0],
+            N[1],
+            N[2],
+            N[0] * N[1],
+            N[0] * N[2],
+            N[1] * N[2],
+            N[0] ** 2 - N[1] ** 2,
+            3 * (N[2] ** 2) - 1,
+            ],
+            0,
+        )  # [9, h, w]
+        pi = np.pi
+        constant_factor = th.tensor(
+            [
+            1 / np.sqrt(4 * pi),
+            ((2 * pi) / 3) * (np.sqrt(3 / (4 * pi))),
+            ((2 * pi) / 3) * (np.sqrt(3 / (4 * pi))),
+            ((2 * pi) / 3) * (np.sqrt(3 / (4 * pi))),
+            (pi / 4) * (3) * (np.sqrt(5 / (12 * pi))),
+            (pi / 4) * (3) * (np.sqrt(5 / (12 * pi))),
+            (pi / 4) * (3) * (np.sqrt(5 / (12 * pi))),
+            (pi / 4) * (3 / 2) * (np.sqrt(5 / (12 * pi))),
+            (pi / 4) * (1 / 2) * (np.sqrt(5 / (4 * pi))),
+            ]
+        ).float()
+        sh = sh * constant_factor[:, None, None]
+
+        shading = th.sum(
+            sh_coeff[:, :, None, None] * sh[:, None, :, :], 0
+        )  # [9, 3, h, w]
+        return shading
+
+    def applySHlightXYZ(xyz, sh):
+        out = applySHlight(xyz, sh)
+        # out /= pt.max(out)
+        out *= 0.7
+        return th.clip(out, 0, 1)
+
+    def genSurfaceNormals(n):
+        x = th.linspace(-1, 1, n)
+        y = th.linspace(1, -1, n)
+        y, x = th.meshgrid(y, x)
+
+        z = (1 - x ** 2 - y ** 2)
+        z[z < 0] = 0
+        z = th.sqrt(z)
+        return th.stack([x, y, z], 0)
+
+    def drawSphere(sh, img_size=256):
+        n = img_size
+        xyz = genSurfaceNormals(n)
+        out = applySHlightXYZ(xyz, sh)
+        out[:, xyz[2] == 0] = 0
+        return out, xyz
+    
+    sh = sh.reshape(-1, 9, 3)[0]
+    visible_sphere, normals_sphere = drawSphere(sh)
+    visible_sphere = visible_sphere.permute(1, 2, 0).cpu().numpy()
+    plt.imshow(visible_sphere)
+    plt.savefig('./visible_sphere.png')
+    # Locate the brightest point
+    visible_sphere_draw = (visible_sphere.copy() * 255).astype(np.uint8)
+    
+    # Gray scale
+    visible_sphere_tmp = cv2.cvtColor(visible_sphere_draw, cv2.COLOR_RGB2GRAY)
+    brightest = np.unravel_index(visible_sphere_tmp.argmax(), visible_sphere_tmp.shape)
+    
+    # RGB
+    # visible_sphere_tmp = visible_sphere_draw.sum(axis=2)
+    # brightest = np.unravel_index(visible_sphere_tmp.argmax(), visible_sphere_tmp.shape)
+    # Center is at (128, 128)
+    # light direction is vector from center to brightest point, or the index in normal_sphere
+    
+    bright_area = np.isclose(a=visible_sphere_tmp, b=visible_sphere_tmp.max(), atol=50)
+    import scipy
+    cm = scipy.ndimage.center_of_mass(bright_area)
+    
+    # print(bright_area.shape)
+    bright_area = np.repeat(bright_area[..., None] * 255, 3, axis=2).astype(np.uint8)
+    cv2.circle(bright_area, (int(cm[1]), int(cm[0])), 5, (255, 0, 0), -1)
+    plt.imshow(bright_area)
+    plt.savefig('./bright_area.png')
+    
+    cv2.circle(visible_sphere_draw, (int(cm[1]), int(cm[0])), 5, (0, 255, 0), -1)
+    plt.imshow(visible_sphere_draw)
+    plt.savefig('./visible_sphere_draw.png')
+    
+    normals_sphere = normals_sphere.permute(1, 2, 0).cpu().numpy()
+    light_direction = normals_sphere[brightest[0], brightest[1]]
+    light_direction = normals_sphere[int(cm[0]), int(cm[1])]
+    
+    return th.tensor(light_direction)[None, ...], (normals_sphere, visible_sphere, visible_sphere_draw, bright_area)
+
 def sh_to_ld(sh):
     #NOTE: Roughly Convert the SH to light direction
     sh = sh.reshape(-1, 9, 3)
@@ -195,7 +300,7 @@ def render_shadow_mask(sh_light, cam, verts, deca, axis_1=False):
         
     return th.clip(shadow_mask, 0, 255.0)/255.0
 
-def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, axis_1=False, up_rate=1, smooth_depth=False, perturb_ld=False, perturb_dict=None, device='cuda', org_h=128, org_w=128):
+def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, pt_dict, use_sh_to_ld_region=True, axis_1=False, up_rate=1, device='cuda', org_h=128, org_w=128):
     sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
     from decalib.utils import util
     from torchvision.transforms import GaussianBlur
@@ -208,8 +313,8 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, axis_1=False, up_
         assert all(tmp)
 
     verts = verts[0:1, ...].cuda()  # Save memory by rendering only 1st image
-    depth_image_f, _ = deca['face'].render.render_depth(verts, up_rate=up_rate)   # Depth : B x 1 x H x W
-    depth_image_fe, _ = deca['face_eyes'].render.render_depth(verts, up_rate=up_rate)   # Depth : B x 1 x H x W
+    # depth_image_f, _ = deca['face'].render.render_depth(verts, up_rate=up_rate)   # Depth : B x 1 x H x W
+    # depth_image_fe, _ = deca['face_eyes'].render.render_depth(verts, up_rate=up_rate)   # Depth : B x 1 x H x W
     depth_image_fs, _ = deca['face_scalp'].render.render_depth(verts, up_rate=up_rate)   # Depth : B x 1 x H x W
     B, C, h, w = depth_image_fs.shape
 
@@ -229,8 +334,6 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, axis_1=False, up_
     blurred_mask[blurred_mask == 0] = 1e-10
     blurred_orig = blurred_orig / blurred_mask
 
-    mask_nonface = (orig == 0).float()
-    # blurred_orig = blurred_orig * (1 - mask_nonface)
     blurred_orig = blurred_orig * (mask_face)
 
     depth_image_smooth = blurred_orig * 100
@@ -248,7 +351,11 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, axis_1=False, up_
         #NOTE: Render the shadow mask from light direction
 
         shadow_mask = th.clone((depth_image_fs.permute(0, 2, 3, 1)[:, :, :, 0])).to(device)
-        ld = sh_to_ld(sh=th.tensor(sh_light[[i]]))
+        if use_sh_to_ld_region:
+            ld = sh_to_ld_brightest_region(sh=th.tensor(sh_light[[i]]))[0]  # Output shape = (1, 3)
+            ld[:, 2] *= -1
+        else:
+            ld = sh_to_ld(sh=th.tensor(sh_light[[i]]))  # Output shape = (1, 3)
         ld = util.batch_orth_proj(ld[None, ...].cuda(), cam[None, ...].cuda());     # This fn takes pts=Bx3, cam=Bx3
         ld[:, :, 1:] = -ld[:, :, 1:]
         ray = ld.view(3).to(device)
@@ -263,9 +370,9 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, axis_1=False, up_
         orth = orth / th.norm(orth)
         orth2 = orth2 / th.norm(orth2)
 
-        max_radius = 0.2
+        max_radius = pt_dict['pt_radius']
         big_coords = []
-        pt_round = 30
+        pt_round = pt_dict['pt_round']
 
         for ti in tqdm.tqdm(range(pt_round), position=1, leave=False, desc="Rendering each perturbed light direction..."):
 
