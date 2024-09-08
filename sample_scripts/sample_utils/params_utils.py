@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import scipy.ndimage
 import torch as th
 import glob, os, sys
 import cv2
@@ -222,12 +223,6 @@ def sh_to_ld_brightest_region(sh):
     visible_sphere_tmp = cv2.cvtColor(visible_sphere_draw, cv2.COLOR_RGB2GRAY)
     brightest = np.unravel_index(visible_sphere_tmp.argmax(), visible_sphere_tmp.shape)
     
-    # RGB
-    # visible_sphere_tmp = visible_sphere_draw.sum(axis=2)
-    # brightest = np.unravel_index(visible_sphere_tmp.argmax(), visible_sphere_tmp.shape)
-    # Center is at (128, 128)
-    # light direction is vector from center to brightest point, or the index in normal_sphere
-    
     bright_area = np.isclose(a=visible_sphere_tmp, b=visible_sphere_tmp.max(), atol=50)
     import scipy
     cm = scipy.ndimage.center_of_mass(bright_area)
@@ -247,6 +242,141 @@ def sh_to_ld_brightest_region(sh):
     light_direction = normals_sphere[int(cm[0]), int(cm[1])]
     
     return th.tensor(light_direction)[None, ...], (normals_sphere, visible_sphere, visible_sphere_draw, bright_area)
+
+def sh_to_ld_brightest_region_G(sh, scale=0.03):
+    from scipy.spatial.transform import Rotation as R
+    from matplotlib import pyplot as plt
+    import cv2
+
+    import pyshtools as pysh
+
+    def applySHlight(normal_images, sh_coeff):
+        N = normal_images
+        sh = th.stack(
+            [
+            N[0] * 0.0 + 1.0,
+            N[0],
+            N[1],
+            N[2],
+            N[0] * N[1],
+            N[0] * N[2],
+            N[1] * N[2],
+            N[0] ** 2 - N[1] ** 2,
+            3 * (N[2] ** 2) - 1,
+            ],
+            0,
+        )  # [9, h, w]
+        pi = np.pi
+        constant_factor = th.tensor(
+            [
+            1 / np.sqrt(4 * pi),
+            ((2 * pi) / 3) * (np.sqrt(3 / (4 * pi))),
+            ((2 * pi) / 3) * (np.sqrt(3 / (4 * pi))),
+            ((2 * pi) / 3) * (np.sqrt(3 / (4 * pi))),
+            (pi / 4) * (3) * (np.sqrt(5 / (12 * pi))),
+            (pi / 4) * (3) * (np.sqrt(5 / (12 * pi))),
+            (pi / 4) * (3) * (np.sqrt(5 / (12 * pi))),
+            (pi / 4) * (3 / 2) * (np.sqrt(5 / (12 * pi))),
+            (pi / 4) * (1 / 2) * (np.sqrt(5 / (4 * pi))),
+            ]
+        ).float()
+        sh = sh * constant_factor[:, None, None]
+
+        shading = th.sum(
+            sh_coeff[:, :, None, None] * sh[:, None, :, :], 0
+        )  # [9, 3, h, w]
+        return shading
+
+    def applySHlightXYZ(xyz, sh):
+        out = applySHlight(xyz, sh)
+        # out /= pt.max(out)
+        out *= 0.7
+        return th.clip(out, 0, 1)
+
+    def genSurfaceNormals(n):
+        x = th.linspace(-1, 1, n)
+        y = th.linspace(1, -1, n)
+        y, x = th.meshgrid(y, x)
+
+        z = (1 - x ** 2 - y ** 2)
+        z[z < 0] = 0
+        z = th.sqrt(z)
+        return th.stack([x, y, z], 0)
+
+    def drawSphere(sh, img_size=256):
+        n = img_size
+        xyz = genSurfaceNormals(n)
+        out = applySHlightXYZ(xyz, sh)
+        out[:, xyz[2] == 0] = 0
+        return out, xyz
+    
+    sh = sh.reshape(-1, 9, 3)[0]
+    visible_sphere, normals_sphere = drawSphere(sh)
+    mask = (normals_sphere[2:3].permute(1, 2, 0) != 0).cpu().numpy()
+    visible_sphere = visible_sphere.permute(1, 2, 0).cpu().numpy()
+
+
+    plt.imshow(visible_sphere)
+    plt.savefig('./visible_sphere.png')
+
+    # Gray scale
+    visible_sphere_proc = (visible_sphere.copy() * 255).astype(np.uint8)
+    visible_sphere_proc = cv2.cvtColor(visible_sphere_proc, cv2.COLOR_RGB2GRAY)
+    sphere_intensity = visible_sphere_proc.copy() / 255.0
+    import scipy
+
+    def gaussian(x, mean, sigma):
+        # Define the Gaussian function
+        return (1.0 / (sigma * np.sqrt(2 * np.pi))) * np.exp(-0.5 * ((x - mean) / sigma) ** 2)
+
+    # Use max intensity as mean for representing the brightest point
+    max_as_mean = np.max(sphere_intensity)
+    sigma = max_as_mean * scale  # You can adjust this value for spread
+
+    sphere_to_gaussian = gaussian(sphere_intensity, max_as_mean, sigma)[..., None]
+
+    total_mass = np.sum(sphere_to_gaussian * mask)
+    assert total_mass > 0
+    h, w, _ = sphere_to_gaussian.shape
+    grid = np.meshgrid(np.arange(w), np.arange(h))
+
+    x_centroid = np.sum(grid[0][..., None] * sphere_to_gaussian * mask) / total_mass  # vertical axis
+    y_centroid = np.sum(grid[1][..., None] * sphere_to_gaussian * mask) / total_mass  # horizontal axis
+    cm = scipy.ndimage.center_of_mass(sphere_to_gaussian * mask)
+
+    # Visualize the original image and the Gaussian distribution
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1, 3, 1)
+    plt.imshow(sphere_intensity, cmap='gray')
+    plt.title('Original Grayscale Image')
+    plt.axis('off')
+
+    plt.subplot(1, 3, 2)
+    plt.imshow(sphere_to_gaussian, cmap='gray')
+    plt.axhline(cm[0], color='red', linestyle='--')
+    plt.axvline(cm[1], color='red', linestyle='--')
+    plt.title('Scipy (mu={:.2f}, f={:.3f}, std={:.2f})'.format(max_as_mean, scale, sigma))
+
+    plt.subplot(1, 3, 3)
+    plt.imshow(sphere_to_gaussian, cmap='gray')
+    plt.axhline(y_centroid, color='blue', linestyle='--')
+    plt.axvline(x_centroid, color='blue', linestyle='--')
+    plt.title('W/ mask (mu={:.2f}, f={:.3f}, std={:.2f})'.format(max_as_mean, scale, sigma))
+    plt.axis('off')
+    fig = plt.gcf()
+    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+    canvas = FigureCanvas(fig)
+    canvas.draw()
+    # Convert canvas to an image array
+    image_sph_ld = np.frombuffer(canvas.tostring_rgb(), dtype=np.uint8) # H x W x 3
+    image_sph_ld = image_sph_ld.reshape(canvas.get_width_height()[::-1] + (3,)) # H x W x 3
+    plt.close()
+
+    normals_sphere = normals_sphere.permute(1, 2, 0).cpu().numpy()
+    # light_direction = normals_sphere[int(cm[0]), int(cm[1])]
+    light_direction = normals_sphere[int(y_centroid), int(x_centroid)]
+    
+    return th.tensor(light_direction)[None, ...], (normals_sphere, visible_sphere, visible_sphere_proc, image_sph_ld)
 
 def sh_to_ld(sh):
     #NOTE: Roughly Convert the SH to light direction
@@ -347,15 +477,18 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, pt_dict, use_sh_t
 
     out_shadow_mask = []
     out_kk = []
+    out_sph_ld = []
     for i in tqdm.tqdm(range(sh_light.shape[0]), position=0, desc="Rendering Shadow Mask on each Sh..."):
         #NOTE: Render the shadow mask from light direction
 
         shadow_mask = th.clone((depth_image_fs.permute(0, 2, 3, 1)[:, :, :, 0])).to(device)
         if use_sh_to_ld_region:
-            ld = sh_to_ld_brightest_region(sh=th.tensor(sh_light[[i]]))[0]  # Output shape = (1, 3)
+            ld, misc_dat = sh_to_ld_brightest_region_G(sh=th.tensor(sh_light[[i]]))  # Output shape = (1, 3)
+            image_sph_ld = misc_dat[-1]
             ld[:, 2] *= -1
         else:
             ld = sh_to_ld(sh=th.tensor(sh_light[[i]]))  # Output shape = (1, 3)
+            image_sph_ld = None
         ld = util.batch_orth_proj(ld[None, ...].cuda(), cam[None, ...].cuda());     # This fn takes pts=Bx3, cam=Bx3
         ld[:, :, 1:] = -ld[:, :, 1:]
         ray = ld.view(3).to(device)
@@ -401,8 +534,9 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, pt_dict, use_sh_t
             out_sd = out_sd.cpu().numpy()   # Get the shape 1 x H x W
         out_shadow_mask.append(th.tensor(out_sd).to(device))
         out_kk.append(kk[None, ...])
+        out_sph_ld.append(th.tensor(image_sph_ld[None, ...]) if image_sph_ld is not None else None)
 
-    return th.cat(out_shadow_mask), th.cat(out_kk)
+    return th.cat(out_shadow_mask), th.cat(out_kk), th.cat(out_sph_ld) if image_sph_ld is not None else None
 
 def render_deca(deca_params, idx, n, render_mode='shape', 
                 useTex=False, extractTex=False, device='cuda', 

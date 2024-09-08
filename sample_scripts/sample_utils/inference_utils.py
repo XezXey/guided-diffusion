@@ -459,6 +459,7 @@ def build_condition_image(cond, misc):
         render_time = []
         all_shadow_mask = []
         all_shadow_kk = []
+        all_render_ld = []
         for i in range(len(sub_step)-1):
             print(f"[#] Sub step rendering : {sub_step[i]} to {sub_step[i+1]}")
             start = sub_step[i]
@@ -485,15 +486,11 @@ def build_condition_image(cond, misc):
             else:
                 print("[#] Rendering with the shadow mask from face + scalp of render face...")
                 if i == 0:
-                    # flame_face = params_utils.load_flame_mask(['face'])
-                    # flame_face_eyes = params_utils.load_flame_mask(['face', 'left_eyeball', 'right_eyeball'])
                     flame_face_scalp = params_utils.load_flame_mask(['face', 'scalp', 'left_eyeball', 'right_eyeball'])
-                    # deca_obj_face = params_utils.init_deca(mask=flame_face, rasterize_type=args.rasterize_type) # Init DECA with mask only once
-                    # deca_obj_face_eyes = params_utils.init_deca(mask=flame_face_eyes, rasterize_type=args.rasterize_type) # Init DECA with mask only once
                     deca_obj_face_scalp = params_utils.init_deca(mask=flame_face_scalp, rasterize_type=args.rasterize_type) # Init DECA with mask only once
                 if args.rotate_sh_axis == 1:
                     print("[#] Fixing the axis 1...")
-                shadow_mask, shadow_kk = params_utils.render_shadow_mask_with_smooth(
+                shadow_mask, shadow_kk, render_ld = params_utils.render_shadow_mask_with_smooth(
                                                 sh_light=sub_cond['light'], 
                                                 cam=sub_cond['cam'][src_idx],
                                                 verts=orig_visdict['trans_verts_orig'], 
@@ -512,7 +509,16 @@ def build_condition_image(cond, misc):
             
             all_shadow_mask.append(shadow_mask[:, None, ...])
             all_shadow_kk.append(shadow_kk[:, None, ...])
+            all_render_ld.append(render_ld)
             
+        
+        if args.use_sh_to_ld_region:
+            all_render_ld = th.cat(all_render_ld, dim=0)
+            cond['render_ld'] = all_render_ld
+        else:
+            all_render_ld = None
+            cond['render_ld'] = None
+
         render_time = np.mean(render_time) + load_deca_time
         cond['render_time'] = render_time
         print("Rendering time : ", time.time() - start_t)

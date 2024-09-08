@@ -297,7 +297,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
     
     
-    return relit_out, cond['cond_img'], {'rev_time':reverse_time, 'relit_time':relight_time}
+    return relit_out, cond['cond_img'], {'rev_time':reverse_time, 'relit_time':relight_time}, {'render_ld':cond['render_ld']}
 
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -460,7 +460,7 @@ if __name__ == '__main__':
         itp_str = '_'.join(args.itp)
         
         model_kwargs['use_render_itp'] = True
-        out_relit, out_cond, time_dict = relight(dat = dat,
+        out_relit, out_cond, time_dict, misc_dict = relight(dat = dat,
                                     model_kwargs=model_kwargs,
                                     src_idx=src_idx, dst_idx=dst_idx,
                                     itp_func=itp_fn,
@@ -475,6 +475,11 @@ if __name__ == '__main__':
         os.makedirs(out_dir_relit, exist_ok=True)
         save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
         os.makedirs(save_res_dir, exist_ok=True)
+
+
+        if misc_dict['render_ld'] is not None and args.use_sh_to_ld_region:
+            misc_dict['render_ld'] = misc_dict['render_ld'].permute(0, 3, 1, 2)
+            vis_utils.save_images(path=f"{save_res_dir}", fn="render_ld", frames=misc_dict['render_ld']/255.)
         
         f_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0
         vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=f_relit)

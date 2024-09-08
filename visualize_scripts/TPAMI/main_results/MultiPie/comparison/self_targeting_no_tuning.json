@@ -118,6 +118,24 @@
         "alias":"DiFaReli++ (SS - 256) maxC ld region negZ 100",
         "misc" : "ours",
         "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_100/DiFaReli_FsBg_Sdiff_SS_256_V100_maxC_ldregion_negZ/mp_test/ema_085000/out/"
+    },
+    "ours_256_DiFaReli_FsBg_Sdiff_SS_256_V100_256_ldregion_negZ_ts100" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ (SS - 256) ld region negZ 100",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_100/DiFaReli_FsBg_Sdiff_SS_256_V100_ldregion_negZ/mp_test/ema_085000/out/"
+    },
+    "ours_256_DiFaReli_FsBg_Sdiff_SS_256_V100_256_ldregion_negZ_ts1000" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ (SS - 256) ld region negZ 1000",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_1000/DiFaReli_FsBg_Sdiff_SS_256_V100_ldregion_negZ/mp_test/ema_085000/out/"
+    },
+    "ours_256_DiFaReli_FsBg_Sdiff_SS_256_V100_256_ldregion_negZ_dstC_ts100" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ (SS - 256) ld region negZ dstC 100",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_100/DiFaReli_FsBg_Sdiff_SS_256_V100_ldregion_negZ_dstC/mp_test/ema_085000/out/"
     }
 
 
