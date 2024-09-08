@@ -145,3 +145,5 @@ experiment_scripts/TPAMI/anti_aliasing/perturb_ld_disc/*.png
 experiment_scripts/TPAMI/anti_aliasing/perturb_ld_disc/*.mp4
 tmp/
 experiment_scripts/TPAMI/ld_from_bspot/ld_G
+experiment_scripts/TPAMI/anti_aliasing/perturb_ld_disc/r1
+experiment_scripts/TPAMI/anti_aliasing/perturb_ld_disc/r30

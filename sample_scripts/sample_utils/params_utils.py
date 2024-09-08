@@ -507,16 +507,23 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, pt_dict, use_sh_t
         big_coords = []
         pt_round = pt_dict['pt_round']
 
-        for ti in tqdm.tqdm(range(pt_round), position=1, leave=False, desc="Rendering each perturbed light direction..."):
+        if pt_round > 1:
+            for ti in tqdm.tqdm(range(pt_round), position=1, leave=False, desc="Rendering each perturbed light direction..."):
 
-            tt = ti / (pt_round - 1) * 2 * np.pi * 3
+                tt = ti / (pt_round - 1) * 2 * np.pi * 3
+                n = 256 * up_rate
+                pray = (orth * np.cos(tt) + orth2 * np.sin(tt)) * (ti / (pt_round - 1)) * max_radius + ray
+
+                mxaxis = max(abs(pray[0]), abs(pray[1]))
+                shift = pray / mxaxis * th.arange(n).view(n, 1).to(device)
+                coords = depth_grid.view(1, n, n, 3) + shift.view(n, 1, 1, 3)
+                big_coords.append(coords)
+        else:
             n = 256 * up_rate
-            pray = (orth * np.cos(tt) + orth2 * np.sin(tt)) * (ti / (pt_round - 1)) * max_radius + ray
-
+            pray = ray.copy()
             mxaxis = max(abs(pray[0]), abs(pray[1]))
             shift = pray / mxaxis * th.arange(n).view(n, 1).to(device)
-            coords = depth_grid.view(1, n, n, 3) + shift.view(n, 1, 1, 3)
-            big_coords.append(coords)
+            big_coords = depth_grid.view(1, n, n, 3) + shift.view(n, 1, 1, 3)
 
         big_coords = th.cat(big_coords, dim=0)  # [pt_round * n, n, n, 3]
         output = th.nn.functional.grid_sample(

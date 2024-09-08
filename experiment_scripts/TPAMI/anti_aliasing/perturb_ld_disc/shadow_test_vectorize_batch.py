@@ -1,7 +1,7 @@
 import numpy as np
 import torch as pt
 from torchvision.utils import save_image
-import time
+import time, os
 from torchvision.transforms import GaussianBlur
 
 data = np.load('./depth_grid.npy', allow_pickle=True)
@@ -51,18 +51,26 @@ for b in range(100):
 
   big_coords = []
   round = 30
-  for ti in range(round):
-    tt = ti / (round - 1) * 2 * np.pi * 3
+  
+  if round > 1:
+    for ti in range(round):
+      tt = ti / (round - 1) * 2 * np.pi * 3
 
+      n = 224
+      pray = (orth * np.cos(tt) + orth2 * np.sin(tt)) * (ti / (round - 1)) * max_radius + ray
+
+      mxaxis = max(abs(pray[0]), abs(pray[1]))
+      shift = pray / mxaxis * pt.arange(n).view(n, 1)
+      # exit()
+      coords = grid.view(1, n, n, 3) + shift.view(n, 1, 1, 3)
+      big_coords.append(coords)
+    big_coords = pt.cat(big_coords, dim=0)
+  else:
     n = 224
-    pray = (orth * np.cos(tt) + orth2 * np.sin(tt)) * (ti / (round - 1)) * max_radius + ray
+    mxaxis = max(abs(ray[0]), abs(ray[1]))
+    shift = ray / mxaxis * pt.arange(n).view(n, 1)
+    big_coords = grid.view(1, n, n, 3) + shift.view(n, 1, 1, 3)
 
-    mxaxis = max(abs(pray[0]), abs(pray[1]))
-    shift = pray / mxaxis * pt.arange(n).view(n, 1)
-    # exit()
-    coords = grid.view(1, n, n, 3) + shift.view(n, 1, 1, 3)
-    big_coords.append(coords)
-  big_coords = pt.cat(big_coords, dim=0)
   # print(big_coords.shape)
   # exit()
 #
@@ -90,7 +98,7 @@ for b in range(100):
   # exit()
 
   output = pt.nn.functional.grid_sample(
-    pt.tile(grid[:, :, 2].view(1, 1, n, n), [n * round, 1, 1, 1]),
+    pt.tensor(np.tile(grid[:, :, 2].view(1, 1, n, n), [n * round, 1, 1, 1])),
     big_coords[..., :2] / (n - 1) * 2 - 1,
     align_corners=True)
   diff = big_coords[..., 2] - output[:, 0] 
@@ -102,6 +110,7 @@ for b in range(100):
   # print(kk.shape)
   # exit()
   # vis *= (pt.min(diff, dim=0)[0] > -0.1) * 0.5 + 0.5
-  save_image(vis, "output_%03d.png" % b)
+  os.makedirs("./r30", exist_ok=True)
+  save_image(vis, "./r30/output_%03d.png" % b)
   # exit()
   # save_image(vis, "output_vec.png")
