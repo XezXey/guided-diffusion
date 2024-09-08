@@ -520,7 +520,7 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, pt_dict, use_sh_t
                 big_coords.append(coords)
         else:
             n = 256 * up_rate
-            pray = ray.copy()
+            pray = ray.clone()
             mxaxis = max(abs(pray[0]), abs(pray[1]))
             shift = pray / mxaxis * th.arange(n).view(n, 1).to(device)
             big_coords = depth_grid.view(1, n, n, 3) + shift.view(n, 1, 1, 3)
