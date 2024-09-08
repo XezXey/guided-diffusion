@@ -518,6 +518,7 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, pt_dict, use_sh_t
                 shift = pray / mxaxis * th.arange(n).view(n, 1).to(device)
                 coords = depth_grid.view(1, n, n, 3) + shift.view(n, 1, 1, 3)
                 big_coords.append(coords)
+            big_coords = th.cat(big_coords, dim=0)  # [pt_round * n, n, n, 3]
         else:
             n = 256 * up_rate
             pray = ray.clone()
@@ -525,7 +526,6 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, pt_dict, use_sh_t
             shift = pray / mxaxis * th.arange(n).view(n, 1).to(device)
             big_coords = depth_grid.view(1, n, n, 3) + shift.view(n, 1, 1, 3)
 
-        big_coords = th.cat(big_coords, dim=0)  # [pt_round * n, n, n, 3]
         output = th.nn.functional.grid_sample(
             th.tensor(np.tile(depth_grid[:, :, 2].view(1, 1, n, n).cpu().numpy(), [n*pt_round, 1, 1, 1])).to(device),
             big_coords[..., :2] / (n - 1) * 2 - 1,
