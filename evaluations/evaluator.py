@@ -143,9 +143,6 @@ class Evaluator():
                     gt_path = f'{args.save_for_dssim_path}/{args.postfix}/gt/'
                     pred_path = f'{args.save_for_dssim_path}/{args.postfix}/pred/'
                     mask_path = f'{args.save_for_dssim_path}/{args.postfix}/mask/'
-                    # gt_path = f'{args.pred}/out_for_dssim/gt/'
-                    # pred_path = f'{args.pred}/out_for_dssim/pred/'
-                    # mask_path = f'{args.pred}/out_for_dssim/mask/'
                     os.makedirs(gt_path, exist_ok=True)
                     os.makedirs(pred_path, exist_ok=True)
                     os.makedirs(mask_path, exist_ok=True)
@@ -203,9 +200,11 @@ def main():
         sub_pred = sub_batch['pred'].float()
         sub_mask = sub_batch['mask'].float()
         if args.ds_mask:
+            print("[#] Downsampling mask (to 128x128)...")
             resize = torchvision.transforms.Resize(size=(128, 128), interpolation=PIL.Image.NEAREST)
             sub_mask = resize(sub_mask)
         if args.ds_img:
+            print("[#] Downsampling image (to 128x128)...")
             resize = torchvision.transforms.Resize(size=(128, 128), interpolation=PIL.Image.BICUBIC)
             sub_pred = resize(sub_pred)
         # print(sub_gt.shape, sub_pred.shape, sub_mask.shape)

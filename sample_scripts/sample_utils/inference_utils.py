@@ -500,7 +500,7 @@ def build_condition_image(cond, misc):
                                                 device='cpu',   # Prevent OOM
                                                 up_rate=args.up_rate_for_AA,
                                                 org_h=img_size, org_w=img_size,
-                                                pt_dict={'pt_round':args.pt_round, 'pt_radius':args.pt_radius}
+                                                rt_dict={'pt_round':args.pt_round, 'pt_radius':args.pt_radius, 'rt_regionG_scale':args.rt_regionG_scale}
                                             )
                 if i == len(sub_step)-2:
                     del deca_obj_face_scalp

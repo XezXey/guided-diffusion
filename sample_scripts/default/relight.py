@@ -54,6 +54,7 @@ parser.add_argument('--fps', action='store_true', default=False)
 parser.add_argument('--fixed_render', action='store_true', default=False)
 parser.add_argument('--fixed_shadow', action='store_true', default=False)
 parser.add_argument('--use_sh_to_ld_region', action='store_true', default=False)
+parser.add_argument('--rt_regionG_scale', type=float, default=0.03)
 ## Post-processing of shadow mask's mode
 parser.add_argument('--postproc_shadow_mask', action='store_true', default=False)
 parser.add_argument('--postproc_shadow_mask_smooth', action='store_true', default=False)
@@ -352,13 +353,15 @@ if __name__ == '__main__':
         img_ext = '.png'
         cfg.dataset.training_data = 'TR_samples'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/aligned_images/'
-    elif args.dataset in ['mp_valid', 'mp_test', 'mp_test2']:
+    elif args.dataset in ['mp_test', 'mp_test2', 'mp_valid', 'mp_valid2']:
         if args.dataset == 'mp_test':
             sub_f = '/MultiPIE_testset/'
         elif args.dataset == 'mp_test2':
             sub_f = '/MultiPIE_testset2/'
         elif args.dataset == 'mp_valid':
             sub_f = '/MultiPIE_validset/'
+        elif args.dataset == 'mp_valid2':
+            sub_f = '/MultiPIE_validset2/'
         else: raise ValueError
         img_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/{sub_f}/mp_aligned/"
         deca_dataset_path = f"/data/mint/DPM_Dataset/MultiPIE/{sub_f}/params/"

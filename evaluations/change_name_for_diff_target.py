@@ -24,7 +24,7 @@ for p in glob.glob(args.pred_path + '/*'):
             
             
             fn = f"input={src}#pred={ref}.png"
-            fn_fp = f"{p}/out/{fn}"
+            fn_fp = f"{p}/out_eval/{fn}"
             if not os.path.exists(fn_fp):
                 print(f"Missing: {fn}, ID: {pid}, path: {fn_fp}")
                 continue

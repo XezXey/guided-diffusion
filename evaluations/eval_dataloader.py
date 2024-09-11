@@ -171,7 +171,8 @@ class EvalDataset(Dataset):
         cloth = (face_segment_anno == 16)
         hair = (face_segment_anno == 17)
         hat = (face_segment_anno == 18)
-        face = np.logical_or.reduce((skin, l_brow, r_brow, l_eye, r_eye, eye_g, l_ear, r_ear, ear_r, nose, mouth, u_lip, l_lip))
+        face = np.logical_or.reduce((skin, l_brow, r_brow, l_eye, r_eye, eye_g, l_ear, r_ear, nose, mouth, u_lip, l_lip))  # default
+        # face = np.logical_or.reduce((skin, l_brow, r_brow, l_eye, r_eye, l_ear, r_ear, nose, mouth, u_lip, l_lip))   # No eye_g
 
         if segment_part == 'faceseg_face':
             seg_m = face
@@ -180,7 +181,30 @@ class EvalDataset(Dataset):
         elif segment_part == 'faceseg_face_noears':
             seg_m = (~(l_ear | r_ear) & face)
         elif segment_part == 'faceseg_face_noears_noeyes':
+            # Find contours in the mask
+            seg_m = ~(l_eye | r_eye | l_ear | r_ear) & face
+        elif segment_part == 'faceseg_face_noears_noeyes_intreyeg':
+            # Find contours in the mask
             seg_m = (~(l_eye | r_eye | l_ear | r_ear) & face)
+            seg_m = (seg_m * 255).astype(np.uint8)
+            assert np.allclose(seg_m[..., 0], seg_m[..., 1]) and np.allclose(seg_m[..., 1], seg_m[..., 2])
+            seg_m = seg_m[..., 0:1]
+            contours, _ = cv2.findContours(seg_m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            # Filter to keep the largest contour, which should correspond to the face
+            contour_areas = [cv2.contourArea(c) for c in contours]
+            largest_contour_index = np.argmax(contour_areas)
+            largest_contour = contours[largest_contour_index]
+
+            # Create an empty mask to draw the largest contour
+            filtered_mask = np.zeros_like(seg_m)
+
+            # Draw the largest contour on the mask
+            cv2.drawContours(filtered_mask, [largest_contour], -1, (255), thickness=cv2.FILLED)
+            seg_m = filtered_mask == 255
+            if seg_m.shape[-1] == 1:
+                seg_m = np.concatenate([seg_m, seg_m, seg_m], axis=-1)
+
         elif segment_part == 'faceseg_head':
             seg_m = (face | neck | hair)
         elif segment_part == 'faceseg_nohead':

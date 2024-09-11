@@ -315,9 +315,8 @@ def sh_to_ld_brightest_region_G(sh, scale=0.03):
     mask = (normals_sphere[2:3].permute(1, 2, 0) != 0).cpu().numpy()
     visible_sphere = visible_sphere.permute(1, 2, 0).cpu().numpy()
 
-
-    plt.imshow(visible_sphere)
-    plt.savefig('./visible_sphere.png')
+    # plt.imshow(visible_sphere)
+    # plt.savefig('./visible_sphere.png')
 
     # Gray scale
     visible_sphere_proc = (visible_sphere.copy() * 255).astype(np.uint8)
@@ -430,7 +429,7 @@ def render_shadow_mask(sh_light, cam, verts, deca, axis_1=False):
         
     return th.clip(shadow_mask, 0, 255.0)/255.0
 
-def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, pt_dict, use_sh_to_ld_region=True, axis_1=False, up_rate=1, device='cuda', org_h=128, org_w=128):
+def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, rt_dict, use_sh_to_ld_region=True, axis_1=False, up_rate=1, device='cuda', org_h=128, org_w=128):
     sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
     from decalib.utils import util
     from torchvision.transforms import GaussianBlur
@@ -478,12 +477,17 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, pt_dict, use_sh_t
     out_shadow_mask = []
     out_kk = []
     out_sph_ld = []
+    rt_scale = rt_dict['rt_regionG_scale']
+    if use_sh_to_ld_region:
+        print(f"[#] Approximate the light direction from brightest spot with rt_scale={rt_scale}...")
+    else:
+        print(f"[#] Approximate the light direction from the mean of SH coffecients [2nd, 3rd and 4th] ...")
     for i in tqdm.tqdm(range(sh_light.shape[0]), position=0, desc="Rendering Shadow Mask on each Sh..."):
         #NOTE: Render the shadow mask from light direction
 
         shadow_mask = th.clone((depth_image_fs.permute(0, 2, 3, 1)[:, :, :, 0])).to(device)
         if use_sh_to_ld_region:
-            ld, misc_dat = sh_to_ld_brightest_region_G(sh=th.tensor(sh_light[[i]]))  # Output shape = (1, 3)
+            ld, misc_dat = sh_to_ld_brightest_region_G(sh=th.tensor(sh_light[[i]]), scale=rt_scale)  # Output shape = (1, 3)
             image_sph_ld = misc_dat[-1]
             ld[:, 2] *= -1
         else:
@@ -503,9 +507,9 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, pt_dict, use_sh_t
         orth = orth / th.norm(orth)
         orth2 = orth2 / th.norm(orth2)
 
-        max_radius = pt_dict['pt_radius']
+        max_radius = rt_dict['pt_radius']
         big_coords = []
-        pt_round = pt_dict['pt_round']
+        pt_round = rt_dict['pt_round']
 
         if pt_round > 1:
             for ti in tqdm.tqdm(range(pt_round), position=1, leave=False, desc="Rendering each perturbed light direction..."):
