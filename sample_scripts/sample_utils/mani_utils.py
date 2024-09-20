@@ -631,6 +631,50 @@ def get_samples_list(sample_pair_json, sample_pair_mode, src_dst, img_path, n_su
     
     return all_img_idx, all_img_name, n_subject
 
+def get_samples_list_fast(sample_pair_json, sample_pair_mode, src_dst, img_path, n_subject):
+    '''
+    return
+    output of pre-finding pair is list of list : [['60065.jpg', '60001.jpg'], ['60065.jpg', '60012.jpg'], ..., n_subject]
+    '''
+    import json, os
+    from concurrent.futures import ThreadPoolExecutor
+    if (sample_pair_json is not None) and (sample_pair_mode is not None):
+        #NOTE: Sampling with defined pairs
+        assert os.path.isfile(sample_pair_json)
+        f = open(sample_pair_json)
+        sample_pairs = json.load(f)[sample_pair_mode]
+        img_name_to_index = {os.path.basename(p): i for i, p in enumerate(img_path)}  # Create a dict for fast lookup by basename
+        if sample_pair_mode == 'pair':
+            # Adjust number of subjects
+            if n_subject > len(sample_pairs) or n_subject == -1:
+                n_subject = len(sample_pairs.keys())
+
+            # Function to find index from image path efficiently
+            def search_index(name):
+                return img_name_to_index.get(name)
+            # Process pairs and collect indices
+            def process_pair(pair_i):
+                pair = sample_pairs[pair_i]
+                src, dst = pair['src'], pair['dst']
+                src_idx = search_index(src)
+                dst_idx = search_index(dst)
+                if src_idx is not None and dst_idx is not None:
+                    return [src_idx, dst_idx]  # Return the indices
+                return None
+
+            # Using ThreadPoolExecutor for parallel execution
+            with ThreadPoolExecutor() as executor:
+                all_img_idx_fast = list(executor.map(process_pair, list(sample_pairs.keys())))
+
+            # Filter out None results
+            all_img_idx_fast = [x for x in all_img_idx_fast if x is not None]
+
+            # Convert indices to file names
+            all_img_name_fast = [[img_path[idx[0]].split('/')[-1], img_path[idx[1]].split('/')[-1]] for idx in all_img_idx_fast]
+            
+        else: raise NotImplementedError
+        
+    return all_img_idx_fast, all_img_name_fast, n_subject
 
 def get_samples_pair(sample_pair_json, sample_pair_mode, src_dst, img_path, start, end, n_subject):
     '''

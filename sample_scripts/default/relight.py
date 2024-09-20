@@ -400,7 +400,12 @@ if __name__ == '__main__':
     
     data_size = dataset.__len__()
     img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
-    all_img_idx, all_img_name, n_subject = mani_utils.get_samples_list(args.sample_pair_json, 
+    # all_img_idx, all_img_name, n_subject = mani_utils.get_samples_list(args.sample_pair_json, 
+    #                                                                         args.sample_pair_mode, 
+    #                                                                         args.src_dst, img_path, 
+    #                                                                         -1)
+    
+    all_img_idx, all_img_name, n_subject = mani_utils.get_samples_list_fast(args.sample_pair_json, 
                                                                             args.sample_pair_mode, 
                                                                             args.src_dst, img_path, 
                                                                             -1)

@@ -311,14 +311,18 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                     shadow_ff = shadow_area
                     # Rest of the frames
                     if args.relight_with_dst_c:
+                        print(f"[#] Relight with the dst c_val = {weight_dst.flatten()}")
                         shadow_rf = (sd_img[1:] * (1-weight_dst))
                     else:
+                        print(f"[#] Relight with the src c_val = {weight_src.flatten()}")
                         shadow_rf = (sd_img[1:] * (1-weight_src))    # Shadow area assigned weight
                     # Final frames
                     shadow = th.cat((shadow_ff, shadow_rf), dim=0)
                     out_sd = shadow
                     cond[cond_img_name] = out_sd
-                    print("Value: ", th.unique(out_sd))
+                    print("[#] Unique of out_sd: ", th.unique(out_sd))
+                    print("[#] Unique of shadow_ff: ", th.unique(shadow_ff))
+                    print("[#] Unique of shadow_rf: ", th.unique(shadow_rf))
                 else:
                     raise NotImplementedError
 
