@@ -1,0 +1,56 @@
+{
+    "ours_256_DiFaReli_FsBg_Sdiff_SS_256_V100_256_ldregion_rts003_dstC_ts1000" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ (SS - 256) ld region rts003 dstC 1000",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_1000/tuning_rts/rts003/DiFaReli_FsBg_Sdiff_SS_256_V100_ldregionG_dstC/mp_valid2/ema_085000/out/"
+    },
+    "ours_256_DiFaReli_FsBg_Sdiff_SS_256_V100_256_ldregion_rts006_dstC_ts1000" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ (SS - 256) ld region rts006 dstC 1000",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_1000/tuning_rts/rts006/DiFaReli_FsBg_Sdiff_SS_256_V100_ldregionG_dstC/mp_valid2/ema_085000/out/"
+    },
+    "ours_256_DiFaReli_FsBg_Sdiff_SS_256_V100_256_ldregion_rts010_dstC_ts1000" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ (SS - 256) ld region rts010 dstC 1000",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_1000/tuning_rts/rts010/DiFaReli_FsBg_Sdiff_SS_256_V100_ldregionG_dstC/mp_valid2/ema_085000/out/"
+    },
+    "ours_256_DiFaReli_FsBg_Sdiff_SS_256_V100_256_ldregion_rts013_dstC_ts1000" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ (SS - 256) ld region rts013 dstC 1000",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_1000/tuning_rts/rts013/DiFaReli_FsBg_Sdiff_SS_256_V100_ldregionG_dstC/mp_valid2/ema_085000/out/"
+    },
+    "ours_256_DiFaReli_FsBg_Sdiff_SS_256_V100_256_ldregion_rts015_dstC_ts1000" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ (SS - 256) ld region rts015 dstC 1000",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_1000/tuning_rts/rts015/DiFaReli_FsBg_Sdiff_SS_256_V100_ldregionG_dstC/mp_valid2/ema_085000/out/"
+    },
+    "ours_256_DiFaReli_FsBg_Sdiff_SS_256_V100_256_ldregion_rts017_dstC_ts1000" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ (SS - 256) ld region rts017 dstC 1000",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_1000/tuning_rts/rts017/DiFaReli_FsBg_Sdiff_SS_256_V100_ldregionG_dstC/mp_valid2/ema_085000/out/"
+    },
+    "ours_256_DiFaReli_FsBg_Sdiff_SS_256_V100_256_ldregion_rts020_dstC_ts1000" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ (SS - 256) ld region rts020 dstC 1000",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_1000/tuning_rts/rts020/DiFaReli_FsBg_Sdiff_SS_256_V100_ldregionG_dstC/mp_valid2/ema_085000/out/"
+    },
+    "ours_256_DiFaReli_FsBg_Sdiff_SS_256_V100_256_ldregion_rts030_dstC_ts1000" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ (SS - 256) ld region rts030 dstC 1000",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_1000/tuning_rts/rts030/DiFaReli_FsBg_Sdiff_SS_256_V100_ldregionG_dstC/mp_valid2/ema_085000/out/"
+    },
+    "ours_256_DiFaReli_FsBg_Sdiff_SS_256_V100_256_ldregion_rts050_dstC_ts1000" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ (SS - 256) ld region rts050 dstC 1000",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_1000/tuning_rts/rts050/DiFaReli_FsBg_Sdiff_SS_256_V100_ldregionG_dstC/mp_valid2/ema_085000/out/"
+    }
+}

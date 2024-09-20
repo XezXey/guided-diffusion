@@ -147,3 +147,9 @@ tmp/
 experiment_scripts/TPAMI/ld_from_bspot/ld_G
 experiment_scripts/TPAMI/anti_aliasing/perturb_ld_disc/r1
 experiment_scripts/TPAMI/anti_aliasing/perturb_ld_disc/r30
+experiment_scripts/TPAMI/anti_aliasing/perturb_ld_disc/rtest
+experiment_scripts/TPAMI/anti_aliasing/perturb_ld_disc/vis
+experiment_scripts/TPAMI/gen_sh_to_envs/out
+experiment_scripts/TPAMI/gen_sh_to_envs/video_out
+experiment_scripts/TPAMI/sh_to_envs/video_out
+experiment_scripts/TPAMI/sh_to_envs/video_out_mint

@@ -430,6 +430,7 @@ def render_shadow_mask(sh_light, cam, verts, deca, axis_1=False):
     return th.clip(shadow_mask, 0, 255.0)/255.0
 
 def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, rt_dict, use_sh_to_ld_region=True, axis_1=False, up_rate=1, device='cuda', org_h=128, org_w=128):
+    print("[#] Rendering shadow mask with smooth (pertubation version)...")
     sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
     from decalib.utils import util
     from torchvision.transforms import GaussianBlur
@@ -465,7 +466,8 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, rt_dict, use_sh_t
 
     blurred_orig = blurred_orig * (mask_face)
 
-    depth_image_smooth = blurred_orig * 100
+    # depth_image_smooth = blurred_orig * 100
+    depth_image_smooth = blurred_orig * rt_dict['scale_depth']
 
     depth_grid = np.concatenate((depth_grid, depth_image_smooth.permute(0, 2, 3, 1)[..., 0:1].cpu().numpy()), axis=-1) # B x H x W x 3
 
@@ -543,6 +545,97 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, rt_dict, use_sh_t
             out_sd = cv2.resize(out_sd.permute(1, 2, 0).cpu().numpy(), (org_h, org_w), interpolation=cv2.INTER_AREA)[None, ...] # Get the shape 1 x H x W
         else:
             out_sd = out_sd.cpu().numpy()   # Get the shape 1 x H x W
+        out_shadow_mask.append(th.tensor(out_sd).to(device))
+        out_kk.append(kk[None, ...])
+        out_sph_ld.append(th.tensor(image_sph_ld[None, ...]) if image_sph_ld is not None else None)
+
+    return th.cat(out_shadow_mask), th.cat(out_kk), th.cat(out_sph_ld) if image_sph_ld is not None else None
+
+def render_shadow_mask_with_smooth_nopt(sh_light, cam, verts, deca, rt_dict, use_sh_to_ld_region=True, axis_1=False, up_rate=1, device='cuda', org_h=128, org_w=128):
+    print("[#] Rendering shadow mask with smooth (no pertubation version)...")
+    sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+    from decalib.utils import util
+    from torchvision.transforms import GaussianBlur
+    import cv2, tqdm
+    
+    if verts.shape[0] >= 2:
+        tmp = []
+        for i in range(1, verts.shape[0]):
+            tmp.append(th.allclose(verts[[0]], verts[[i]]))
+        assert all(tmp)
+
+    verts = verts[0:1, ...].cuda()  # Save memory by rendering only 1st image
+    depth_image_fs, _ = deca['face_scalp'].render.render_depth(verts, up_rate=up_rate)   # Depth : B x 1 x H x W
+    B, C, h, w = depth_image_fs.shape
+
+    depth_grid = np.meshgrid(np.arange(h), np.arange(w), indexing='xy')
+    depth_grid = np.stack((depth_grid), axis=-1)[None, ...]   # 1 x H x W x 2
+
+    orig = depth_image_fs.detach().clone()
+    mask_face = orig != 0
+    mask_face = mask_face.float()
+
+    blurred_orig = GaussianBlur(kernel_size=13, sigma=2.0)(orig)
+    assert blurred_orig.shape == depth_image_fs.shape
+
+    blurred_mask = GaussianBlur(kernel_size=13, sigma=2.0)(mask_face)
+    blurred_mask[blurred_mask == 0] = 1e-10
+    blurred_orig = blurred_orig / blurred_mask
+
+    blurred_orig = blurred_orig * (mask_face)
+
+    depth_image_smooth = blurred_orig * 100
+
+    depth_grid = np.concatenate((depth_grid, depth_image_smooth.permute(0, 2, 3, 1)[..., 0:1].cpu().numpy()), axis=-1) # B x H x W x 3
+
+    depth_grid = th.tensor(depth_grid).to(device)   # B x H x W x 3; B should be 1
+    assert depth_grid.shape[0] == 1
+    depth_grid = depth_grid.squeeze(0)
+
+    out_shadow_mask = []
+    out_kk = []
+    out_sph_ld = []
+    rt_scale = rt_dict['rt_regionG_scale']
+    if use_sh_to_ld_region:
+        print(f"[#] Approximate the light direction from brightest spot with rt_scale={rt_scale}...")
+    else:
+        print(f"[#] Approximate the light direction from the mean of SH coffecients [2nd, 3rd and 4th] ...")
+    for i in tqdm.tqdm(range(sh_light.shape[0]), position=0, desc="Rendering Shadow Mask on each Sh..."):
+        #NOTE: Render the shadow mask from light direction
+
+        shadow_mask = th.clone((depth_image_fs.permute(0, 2, 3, 1)[:, :, :, 0])).to(device)
+        if use_sh_to_ld_region:
+            ld, misc_dat = sh_to_ld_brightest_region_G(sh=th.tensor(sh_light[[i]]), scale=rt_scale)  # Output shape = (1, 3)
+            image_sph_ld = misc_dat[-1]
+            ld[:, 2] *= -1
+        else:
+            ld = sh_to_ld(sh=th.tensor(sh_light[[i]]))  # Output shape = (1, 3)
+            image_sph_ld = None
+        ld = util.batch_orth_proj(ld[None, ...].cuda(), cam[None, ...].cuda());     # This fn takes pts=Bx3, cam=Bx3
+        ld[:, :, 1:] = -ld[:, :, 1:]
+        ray = ld.view(3).to(device)
+        ray = ray / th.norm(ray)
+
+        if axis_1:
+            ray[1] *= -1    # This for jst temporarly fix the axis 1 which the shading is bright in the middle, but the light direction is back of the head
+        ray[2] *= 0.5
+
+        n = 256 * up_rate
+        pray = ray.clone()
+        mxaxis = max(abs(pray[0]), abs(pray[1]))
+        shift = pray / mxaxis * th.arange(n).view(n, 1).to(device)
+        coords = depth_grid.view(1, n, n, 3) + shift.view(n, 1, 1, 3)
+
+        output = th.nn.functional.grid_sample(
+            th.tensor(np.tile(depth_grid[:, :, 2].view(1, 1, n, n).cpu().numpy(), [n, 1, 1, 1])).to(device),
+            coords[..., :2] / (n - 1) * 2 - 1,
+            align_corners=True)
+
+        diff = coords[..., 2] - output[:, 0] 
+        kk = (th.min(diff, dim=0)[0] > -0.1) * 1.0
+        out_sd = shadow_mask * kk
+
+        out_sd = out_sd.cpu().numpy()   # Get the shape 1 x H x W
         out_shadow_mask.append(th.tensor(out_sd).to(device))
         out_kk.append(kk[None, ...])
         out_sph_ld.append(th.tensor(image_sph_ld[None, ...]) if image_sph_ld is not None else None)

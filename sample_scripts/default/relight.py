@@ -74,6 +74,7 @@ parser.add_argument('--up_rate_for_AA', type=int, default=1)
 parser.add_argument('--smooth_depth', action='store_true', default=False)
 parser.add_argument('--pt_radius', type=float, default=0.2)
 parser.add_argument('--pt_round', type=int, default=30)
+parser.add_argument('--scale_depth', type=float, default=100.0)
 parser.add_argument('--postproc_shadow_mask_smooth_keep_shadow_shading', action='store_true', default=False)
 # Experiment - Shadow weight
 parser.add_argument('--shadow_diff_inc_c', action='store_true', default=False)

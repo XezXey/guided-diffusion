@@ -32,7 +32,7 @@ grid[:, :, 2] *= 100
 # print(grid.shape, pt.std(grid, dim=(0, 1)))
 # exit()
 
-for b in range(100):
+for b in range(60):
   # b = 20
   vis = pt.clone(orig)
   print(b)
@@ -50,7 +50,7 @@ for b in range(100):
   max_radius = 0.2
 
   big_coords = []
-  round = 30
+  round = 1
   
   if round > 1:
     for ti in range(round):
@@ -110,7 +110,7 @@ for b in range(100):
   # print(kk.shape)
   # exit()
   # vis *= (pt.min(diff, dim=0)[0] > -0.1) * 0.5 + 0.5
-  os.makedirs("./r30", exist_ok=True)
-  save_image(vis, "./r30/output_%03d.png" % b)
+  os.makedirs("./rtest", exist_ok=True)
+  save_image(vis, "./rtest/output_%03d.png" % b)
   # exit()
   # save_image(vis, "output_vec.png")

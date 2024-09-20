@@ -500,8 +500,20 @@ def build_condition_image(cond, misc):
                                                 device='cpu',   # Prevent OOM
                                                 up_rate=args.up_rate_for_AA,
                                                 org_h=img_size, org_w=img_size,
-                                                rt_dict={'pt_round':args.pt_round, 'pt_radius':args.pt_radius, 'rt_regionG_scale':args.rt_regionG_scale}
+                                                rt_dict={'pt_round':args.pt_round, 'pt_radius':args.pt_radius, 'rt_regionG_scale':args.rt_regionG_scale, 'scale_depth':args.scale_depth}
                                             )
+                # shadow_mask, shadow_kk, render_ld = params_utils.render_shadow_mask_with_smooth_nopt(
+                #                                 sh_light=sub_cond['light'], 
+                #                                 cam=sub_cond['cam'][src_idx],
+                #                                 verts=orig_visdict['trans_verts_orig'], 
+                #                                 use_sh_to_ld_region=args.use_sh_to_ld_region,
+                #                                 deca={'face_scalp':deca_obj_face_scalp}, 
+                #                                 axis_1=args.rotate_sh_axis==1,
+                #                                 device='cpu',   # Prevent OOM
+                #                                 up_rate=args.up_rate_for_AA,
+                #                                 org_h=img_size, org_w=img_size,
+                #                                 rt_dict={'pt_round':args.pt_round, 'pt_radius':args.pt_radius, 'rt_regionG_scale':args.rt_regionG_scale}
+                #                             )
                 if i == len(sub_step)-2:
                     del deca_obj_face_scalp
             all_render.append(deca_rendered)
