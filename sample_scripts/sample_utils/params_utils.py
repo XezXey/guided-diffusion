@@ -467,6 +467,7 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, rt_dict, use_sh_t
     blurred_orig = blurred_orig * (mask_face)
 
     # depth_image_smooth = blurred_orig * 100
+    print(f"[#] Scale depth with {rt_dict['scale_depth']}...")
     depth_image_smooth = blurred_orig * rt_dict['scale_depth']
 
     depth_grid = np.concatenate((depth_grid, depth_image_smooth.permute(0, 2, 3, 1)[..., 0:1].cpu().numpy()), axis=-1) # B x H x W x 3
