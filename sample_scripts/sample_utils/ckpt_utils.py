@@ -13,6 +13,10 @@ class CkptLoader():
         elif os.path.exists("/data2/mint/model_logs_mount/"):
             self.sshfs_mount_path = "/data2/mint/model_logs_mount/"
             self.sshfs_path = "/data2/mint/model_logs/"
+        else:
+            raise FileNotFoundError("Please check the model path at /data<1-2>/<username>/model_logs_mount/")
+        
+        
 
         self.log_dir = log_dir
         self.cfg_name = cfg_name
