@@ -1,4 +1,4 @@
-import glob
+import glob, os
 from config.base_config import parse_args
 import torch as th
 from guided_diffusion.script_util import (
@@ -7,8 +7,12 @@ from guided_diffusion.script_util import (
 
 class CkptLoader():
     def __init__(self, log_dir, cfg_name, device=None) -> None:
-        self.sshfs_mount_path = "/data/mint/model_logs_mount/"
-        self.sshfs_path = "/data/mint/model_logs/"
+        if os.path.exists("/data/mint/model_logs_mount/"):
+            self.sshfs_mount_path = "/data/mint/model_logs_mount/"
+            self.sshfs_path = "/data/mint/model_logs/"
+        elif os.path.exists("/data2/mint/model_logs_mount/"):
+            self.sshfs_mount_path = "/data2/mint/model_logs_mount/"
+            self.sshfs_path = "/data2/mint/model_logs/"
 
         self.log_dir = log_dir
         self.cfg_name = cfg_name
