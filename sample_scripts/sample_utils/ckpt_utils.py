@@ -26,7 +26,11 @@ class CkptLoader():
 
     # Config file
     def get_cfg(self):
-        cfg_file_path = glob.glob("/home/mint/Dev/DiFaReli/difareli-faster/config/**", recursive=True)
+        import os
+        if os.path.exists(f"/home/mint/Dev/DiFaReli/difareli-faster/config/"):
+            cfg_file_path = glob.glob("/home/mint/Dev/DiFaReli/difareli-faster/config/**", recursive=True)
+        elif os.path.exists(f"/home2/mint/Dev/DiFaReli/difareli-faster/config/"):
+            cfg_file_path = glob.glob("/home2/mint/Dev/DiFaReli/difareli-faster/config/**", recursive=True)
         cfg_file_path = [cfg_path for cfg_path in cfg_file_path if f"/{self.cfg_name}" in cfg_path]    # Add /{}/ to achieve a case-sensitive of folder
         print("[#] Config Path : ", cfg_file_path)
         assert len(cfg_file_path) <= 1
