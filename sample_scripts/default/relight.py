@@ -103,6 +103,7 @@ import torchvision
 import pytorch_lightning as pl
 # sys.path.insert(0, '../')
 # sys.path.insert(0, '/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/')
+sys.path.append('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/')
 sys.path.append('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/')
 from guided_diffusion.script_util import (
     seed_all,
@@ -118,6 +119,7 @@ from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
 # Sample utils
 # sys.path.insert(0, '../')
 # sys.path.insert(0, '/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/')
+sys.path.append('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/')
 sys.path.append('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/')
 from sample_utils import (
     ckpt_utils, 

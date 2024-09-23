@@ -121,8 +121,18 @@ def grid_sh(n_grid, sh=None, sx=[-1, 1], sy=[1, 0], sh_scale=1.0, use_sh=False):
     return sh_light
 
 def load_flame_mask(parts=['face']):
-    f_mask = np.load('/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/data/FLAME_masks_face-id.pkl', allow_pickle=True, encoding='latin1')
-    v_mask = np.load('/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/data/FLAME_masks.pkl', allow_pickle=True, encoding='latin1')
+    if os.path.exists('/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/data/FLAME_masks_face-id.pkl') and os.path.exists('/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/data/FLAME_masks.pkl'):
+        f_mask = np.load('/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/data/FLAME_masks_face-id.pkl', allow_pickle=True, encoding='latin1')
+        v_mask = np.load('/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/data/FLAME_masks.pkl', allow_pickle=True, encoding='latin1')
+    elif os.path.exists('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/data/FLAME_masks_face-id.pkl') and os.path.exists('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/data/FLAME_masks.pkl'):
+        f_mask = np.load('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/data/FLAME_masks_face-id.pkl', allow_pickle=True, encoding='latin1')
+        v_mask = np.load('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/data/FLAME_masks.pkl', allow_pickle=True, encoding='latin1')
+    elif os.path.exists('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/data/FLAME_masks_face-id.pkl') and os.path.exists('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/data/FLAME_masks.pkl'):
+        f_mask = np.load('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/data/FLAME_masks_face-id.pkl', allow_pickle=True, encoding='latin1')
+        v_mask = np.load('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/data/FLAME_masks.pkl', allow_pickle=True, encoding='latin1')
+    else:
+        print("[#] No FLAME_masks found!")
+        exit()
     mask={
         'v_mask':sum([v_mask[part].tolist() for part in parts], []),
         'f_mask':sum([f_mask[part].tolist() for part in parts], [])
@@ -134,6 +144,7 @@ def init_deca(useTex=False, extractTex=True, device='cuda',
     
     # sys.path.insert(1, '/home/mint/guided-diffusion/preprocess_scripts/Relighting_preprocessing_tools/DECA/')
     # sys.path.insert(1, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+    sys.path.append('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/')
     sys.path.insert(1, '/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/')
 
     from decalib import deca
@@ -384,6 +395,8 @@ def sh_to_ld(sh):
     return ld
 
 def render_shadow_mask(sh_light, cam, verts, deca, axis_1=False):
+    sys.path.append('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/')
+    sys.path.append('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/')
     sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
 
     from decalib.utils import util
@@ -432,6 +445,8 @@ def render_shadow_mask(sh_light, cam, verts, deca, axis_1=False):
 def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, rt_dict, use_sh_to_ld_region=True, axis_1=False, up_rate=1, device='cuda', org_h=128, org_w=128):
     print("[#] Rendering shadow mask with smooth (pertubation version)...")
     sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+    sys.path.append('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/')
+    sys.path.append('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/')
     from decalib.utils import util
     from torchvision.transforms import GaussianBlur
     import cv2, tqdm
@@ -666,6 +681,7 @@ def render_deca(deca_params, idx, n, render_mode='shape',
         print("[#] No deca_obj, re-init...")
         # sys.path.insert(1, '/home/mint/guided-diffusion/preprocess_scripts/Relighting_preprocessing_tools/DECA/')
         sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+        sys.path.append('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/')
         from decalib import deca
         from decalib.utils.config import cfg as deca_cfg
         deca_cfg.model.use_tex = useTex
@@ -758,6 +774,7 @@ def render_deca_return_all(deca_params, idx, n, render_mode='shape',
         print("[#] No deca_obj, re-init...")
         # sys.path.insert(1, '/home/mint/guided-diffusion/preprocess_scripts/Relighting_preprocessing_tools/DECA/')
         sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
+        sys.path.append('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/')
         from decalib import deca
         from decalib.utils.config import cfg as deca_cfg
         deca_cfg.model.use_tex = useTex
@@ -826,142 +843,6 @@ def render_deca_return_all(deca_params, idx, n, render_mode='shape',
     orig_visdict.update(orig_opdict)
     rendered_image = orig_visdict['shape_images']
     return rendered_image, orig_visdict, orig_opdict
-
-def render_deca_rotateSH(deca_params, render_mode='shape', 
-                useTex=False, extractTex=False, device='cuda', 
-                avg_dict=None, rotate_normals=False, use_detail=False,
-                deca_mode='only_renderer', mask=None,
-                deca_obj=None):
-    '''
-    # Render the deca face image that used to condition the network
-    :param deca_params: dict of deca params = {'light': Bx27, 'shape':BX50, ...}
-    :param render_mode: render mode = 'shape', 'template_shape'
-    :param useTex: render with texture ***Need the codedict['albedo'] data***
-    :param extractTex: for deca texture (set by default of deca decoding pipeline)
-    :param device: device for 'cuda' or 'cpu'
-    '''
-    #import warnings
-    #warnings.filterwarnings("ignore")
-    # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
-    if deca_obj is None:
-        # sys.path.insert(1, '/home/mint/guided-diffusion/preprocess_scripts/Relighting_preprocessing_tools/DECA/')
-        sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
-
-        from decalib import deca
-        from decalib.utils.config import cfg as deca_cfg
-        deca_cfg.model.use_tex = useTex
-        deca_cfg.rasterizer_type = 'standard'
-        deca_cfg.model.extract_tex = extractTex
-        deca_obj = deca.DECA(config = deca_cfg, device=device, mode=deca_mode, mask=mask)
-    else:
-        deca_obj = deca_obj
-        
-    from decalib.datasets import datasets 
-    num_ren = deca_params['light'].shape[0]
-    idx = 0
-    # Expand the shape to match the light
-    testdata = datasets.TestData([deca_params['raw_image_path'][idx]], iscrop=True, face_detector='fan', sample_step=10)
-    
-    codedict = {'shape':deca_params['shape'][[idx]].repeat(num_ren, 1).to(device).float(),
-                'pose':deca_params['pose'][[idx]].repeat(num_ren, 1).to(device).float(),
-                'exp':deca_params['exp'][[idx]].repeat(num_ren, 1).to(device).float(),
-                'cam':deca_params['cam'][[idx]].repeat(num_ren, 1).to(device).float(),
-                'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
-                'tform':testdata[idx]['tform'][None].repeat(num_ren, 1, 1).to(device).float(),
-                'images':testdata[idx]['image'].to(device)[None,...].float().repeat(num_ren, 1, 1, 1),
-                'tex':deca_params['albedo'][[idx]].repeat(num_ren, 1).to(device).float(),
-                'detail':deca_params['detail'][[idx]].repeat(num_ren, 1).to(device).float(),
-    }
-    # for k in codedict.keys():
-    #     print(k, codedict[k].shape)
-    # original_image = deca_params['raw_image'].to(device).float() / 255.0
-    original_image = deca_params['raw_image'][[idx]].to(device).float().repeat(num_ren, 1, 1, 1) / 255.0
-    # print("ORIG: ", original_image.shape)
-        
-    if render_mode == 'shape':
-        use_template = False
-        mean_cam = None
-        tform_inv = th.inverse(codedict['tform']).transpose(1,2)
-    else: raise NotImplementedError
-    orig_opdict, orig_visdict = deca_obj.decode(codedict, 
-                                  render_orig=True, 
-                                  original_image=original_image, 
-                                  tform=tform_inv, 
-                                  use_template=use_template, 
-                                  mean_cam=mean_cam, 
-                                  use_detail=use_detail,
-                                  rotate_normals=rotate_normals,
-                                  )  
-    orig_visdict.update(orig_opdict)
-    rendered_image = orig_visdict['shape_images']
-    return rendered_image, orig_visdict
-
-
-def render_deca_videos(deca_params, render_mode='shape', 
-                useTex=False, extractTex=False, device='cuda', 
-                avg_dict=None, rotate_normals=False, use_detail=False,
-                deca_mode='only_renderer', mask=None,
-                deca_obj=None):
-    '''
-    TODO: Adding the rendering with template shape, might need to load mean of camera/tform
-    # Render the deca face image that used to condition the network
-    :param deca_params: dict of deca params = {'light': Bx27, 'shape':BX50, ...}
-    :param render_mode: render mode = 'shape', 'template_shape'
-    :param useTex: render with texture ***Need the codedict['albedo'] data***
-    :param extractTex: for deca texture (set by default of deca decoding pipeline)
-    :param device: device for 'cuda' or 'cpu'
-    '''
-    #import warnings
-    #warnings.filterwarnings("ignore")
-    # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../cond_utils/DECA/')))
-    if deca_obj is None:
-        # sys.path.insert(1, '/home/mint/guided-diffusion/preprocess_scripts/Relighting_preprocessing_tools/DECA/')
-        sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
-
-        from decalib import deca
-        from decalib.utils.config import cfg as deca_cfg
-        deca_cfg.model.use_tex = useTex
-        deca_cfg.rasterizer_type = 'standard'
-        deca_cfg.model.extract_tex = extractTex
-        deca_obj = deca.DECA(config = deca_cfg, device=device, mode=deca_mode, mask=mask)
-    else:
-        deca_obj = deca_obj
-        
-    from decalib.datasets import datasets 
-    # testdata = datasets.TestData([deca_params['raw_image_path'][0]], iscrop=True, face_detector='fan', sample_step=10)
-    testdata = datasets.TestData(deca_params['raw_image_path'], iscrop=True, face_detector='fan', sample_step=10)
-    codedict = {'shape':th.tensor(deca_params['shape']).to(device).float(),
-                'pose':th.tensor(deca_params['pose']).to(device).float(),
-                'exp':th.tensor(deca_params['exp']).to(device).float(),
-                'cam':th.tensor(deca_params['cam']).to(device).float(),
-                'light':th.tensor(deca_params['light']).to(device).reshape(-1, 9, 3).float(),
-                'tform':th.tensor(deca_params['tform']).to(device).reshape(-1, 3, 3).float(),
-                'images':th.stack([testdata[i]['image'] for i in range(len(deca_params['raw_image_path']))]).to(device).float(),
-                'tex':th.tensor(deca_params['albedo']).to(device).float(),
-                'detail':th.tensor(deca_params['detail']).to(device).float(),
-    }
-    original_image = deca_params['raw_image'].to(device).float() / 255.0
-        
-    if rotate_normals:
-        codedict.update({'R_normals': th.tensor(deca_params['R_normals']).to(device).float()})
-        
-    if render_mode == 'shape':
-        use_template = False
-        mean_cam = None
-        tform_inv = th.inverse(codedict['tform']).transpose(1,2)
-    else: raise NotImplementedError
-    orig_opdict, orig_visdict = deca_obj.decode(codedict, 
-                                  render_orig=True, 
-                                  original_image=original_image, 
-                                  tform=tform_inv, 
-                                  use_template=use_template, 
-                                  mean_cam=mean_cam, 
-                                  use_detail=use_detail,
-                                  rotate_normals=rotate_normals,
-                                  )  
-    orig_visdict.update(orig_opdict)
-    rendered_image = orig_visdict['shape_images']
-    return rendered_image, orig_visdict
 
 def read_params(path):
     params = pd.read_csv(path, header=None, sep=" ", index_col=False, lineterminator='\n')
