@@ -45,6 +45,7 @@ dataset:
   # face_segment_dir: "/ist/ist-share/vision/mint//DPM_Dataset/ffhq_256_with_anno/face_segment_with_pupil/"
   # deca_rendered_dir: "/ist/ist-share/vision/mint//DPM_Dataset/ffhq_256_with_anno/rendered_images/"
   # shadow_diff_dir: "/ist/ist-share/vision/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/"
+  root_path: "/data2/mint/DPM_Dataset/"
   training_data: "ffhq_256_with_anno"
   deca_dir: "/data2/mint/DPM_Dataset/ffhq_256_with_anno/params/"
   data_dir: "/data2/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
