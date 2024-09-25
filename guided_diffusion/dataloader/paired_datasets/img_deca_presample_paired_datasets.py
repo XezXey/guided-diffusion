@@ -176,6 +176,22 @@ def load_data_img_deca(
                 print(f"[#] Total relit images of render: {len(relit_render_image)}")
             elif 'faceseg' in in_image_type:
                 in_image_dict[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
+            elif 'shadow_diff_with_weight_simplified' in in_image_type:
+                # Separate 'raw' (input image) and 'relit' (output image)
+                if os.path.exists(f"{data_dir}/{set_}/shadow_input_results.pkl"):
+                    print("[#] Loading the pre-saved cast shadows results file lists")
+                    # Preload the image path for faster loading
+                    with open(f"{data_dir}/{set_}/cs_input_results.pkl", 'rb') as f:
+                        input_cs_image = pickle.load(f)
+                    with open(f"{data_dir}/{set_}/cs_relit_results.pkl", 'rb') as f:
+                        relit_cs_image = pickle.load(f)
+                else: 
+                    input_cs_image, relit_cs_image = _list_image_files_recursively_separate(f"{data_dir}/{set_}")
+                in_image_dict[in_image_type] = input_cs_image
+                relit_image_dict[in_image_type] = relit_cs_image
+                print(f"[#] Total input images of shadows: {len(input_cs_image)}")
+                print(f"[#] Total relit images of shadows: {len(relit_cs_image)}")
+                in_image_dict[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
             elif 'raw' in in_image_type: 
                 # Separate 'raw' (input image) and 'relit' (output image)
                 if os.path.exists(f"{data_dir}/{set_}/raw_input_results.pkl"):
@@ -489,6 +505,11 @@ class DECADataset(Dataset):
                 each_cond_img = (raw_img / 127.5) - 1
                 each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
                 out_dict[f'{k}_img'] = each_cond_img  # The shadow mask has the same value across 3-channels
+            elif k == 'shadow_diff_with_weight_simplified':
+                each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_AREA)
+                each_cond_img = each_cond_img[..., None]    # cv2.resize() removes the channel dimension
+                each_cond_img = np.transpose(each_cond_img, [2, 0, 1])
+                out_dict[f'{k}_img'] = each_cond_img
             elif 'woclip' in k:
                 #NOTE: Input is the npy array -> Used cv2.resize() to handle
                 each_cond_img = cv2.resize(cond_img[k], (self.resolution, self.resolution), cv2.INTER_AREA)
@@ -575,7 +596,9 @@ class DECADataset(Dataset):
             elif 'laplacian' in in_image_type:
                 condition_image[in_image_type] = np.load(self.kwargs[kwargs_key][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
             elif 'shadow_mask' in in_image_type:
-                    condition_image[in_image_type] = np.array(self.load_image(self.kwargs[kwargs_key][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
+                condition_image[in_image_type] = np.array(self.load_image(self.kwargs[kwargs_key][in_image_type][query_img_name.replace(self.img_ext, '.png')]))
+            elif 'shadow_diff_with_weight_simplified' in in_image_type:
+                condition_image[in_image_type] = np.load(self.kwargs[kwargs_key][in_image_type][query_img_name.replace(self.img_ext, '.npy')], allow_pickle=True)
             elif in_image_type == 'raw':
                 condition_image['raw'] = np.array(self.load_image(self.kwargs[kwargs_key]['raw'][query_img_name]))
             elif in_image_type == 'face_structure':

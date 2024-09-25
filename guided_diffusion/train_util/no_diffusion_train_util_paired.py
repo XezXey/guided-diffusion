@@ -119,6 +119,12 @@ class TrainLoop(LightningModule):
 
         self.model_trainer_dict = {}
         for name, model in self.model_dict.items():
+            
+            if isinstance(model, tuple) or isinstance(model, list):
+                assert len(model) == 1
+                model = model[0]
+            else:
+                model = model
             self.model_trainer_dict[name] = Trainer(name=name, model=model, pl_module=self)
 
         self.opt = AdamW(
