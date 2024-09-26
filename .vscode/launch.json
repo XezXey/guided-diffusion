@@ -15,6 +15,24 @@
 //                           |___/ |___/                                                |___/ 
 
         {
+            "name": "Python: train_single_shot_cast_shadows",
+            "type": "python",
+            "request": "launch",
+            "env": {"CUDA_VISIBLE_DEVICES":"0", "WANDB_MODE":"offline"},
+            "program": "./train_scripts/train_on_generated_dataset/image_train_no_dpm_presample_paired.py",
+            "args": [
+                "--train.log_dir", "/data/mint/model_logs/TPAMI/single_shot/paired+difareli+cs+nodpm+trainset_256.yaml",
+                "--train.batch_size", "8", 
+                "--train.n_gpus", "1", 
+                "--cfg", "/home/mint/Dev/DiFaReli/difareli-faster/config/TPAMI/cast_shadows/Finale/single_shot/paired+difareli+css+nodpm+trainset_256.yaml",
+                "--train.sampling_interval", "10000", 
+                "--train.save_interval", "10000",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/Dev/DiFaReli/difareli-faster/",
+            "justMyCode": true
+        }, 
+        {
             "name": "Python: train_UNet_SpatialCond_Both",
             "type": "python",
             "request": "launch",

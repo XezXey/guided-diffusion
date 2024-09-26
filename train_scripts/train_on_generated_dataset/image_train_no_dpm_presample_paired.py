@@ -25,6 +25,15 @@ def main():
     img_model, diffusion = create_img_and_diffusion(cfg)
     print(img_model)
     # Filtered out the None model
+    for k, v in img_model.items():
+        if v is None:
+            print(f"[#] Model {k} is None")
+        elif type(v) == tuple:
+            assert len(v) == 1
+            img_model[k] = v[0]
+            
+        else:
+            img_model[k] = v
     img_model = {k: v for k, v in img_model.items() if v is not None}
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
 
