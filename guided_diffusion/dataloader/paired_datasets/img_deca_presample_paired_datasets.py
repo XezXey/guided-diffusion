@@ -177,8 +177,9 @@ def load_data_img_deca(
             elif 'faceseg' in in_image_type:
                 in_image_dict[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
             elif 'shadow_diff_with_weight_simplified' in in_image_type:
+                shadow_path = f"{cfg.dataset.shadow_diff_dir}/"
                 # Separate 'raw' (input image) and 'relit' (output image)
-                if os.path.exists(f"{data_dir}/{set_}/shadow_input_results.pkl"):
+                if os.path.exists(f"{shadow_path}/{set_}/shadow_input_results.pkl"):
                     print("[#] Loading the pre-saved cast shadows results file lists")
                     # Preload the image path for faster loading
                     with open(f"{data_dir}/{set_}/cs_input_results.pkl", 'rb') as f:
@@ -186,12 +187,11 @@ def load_data_img_deca(
                     with open(f"{data_dir}/{set_}/cs_relit_results.pkl", 'rb') as f:
                         relit_cs_image = pickle.load(f)
                 else: 
-                    input_cs_image, relit_cs_image = _list_image_files_recursively_separate(f"{data_dir}/{set_}")
+                    input_cs_image, relit_cs_image = _list_image_files_recursively_separate(f"{shadow_path}/{set_}")
                 in_image_dict[in_image_type] = input_cs_image
                 relit_image_dict[in_image_type] = relit_cs_image
                 print(f"[#] Total input images of shadows: {len(input_cs_image)}")
                 print(f"[#] Total relit images of shadows: {len(relit_cs_image)}")
-                in_image_dict[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.shadow_diff_dir}/{set_}/")
             elif 'raw' in in_image_type: 
                 # Separate 'raw' (input image) and 'relit' (output image)
                 if os.path.exists(f"{data_dir}/{set_}/raw_input_results.pkl"):

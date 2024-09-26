@@ -43,7 +43,7 @@ dataset:
   data_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows/images/"
   face_segment_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows/face_segment/"
   deca_rendered_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows/rendered_images/"
-  shadow_diff_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows/shadow_diff_SS_with_c_simplified/"
+  shadow_diff_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows/shadow_diff_SS_with_c_simplified_npy/"
 
 
 train_misc:
