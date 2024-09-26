@@ -5,7 +5,7 @@ diffusion:
 img_model:
   name: "ImgCond"
   arch: "UNetCond_SpatialCondition_Hadamart_No_DPM_NoTime"
-  image_size: 256
+  image_size: 128
   in_image: ['raw']
   in_channels: 3
   out_channels: 3
@@ -19,7 +19,7 @@ img_cond_model:
   in_image: ['deca_masked_face_images_woclip', 'deca_masked_face_images_woclip', 'shadow_diff_with_weight_simplified', 'shadow_diff_with_weight_simplified']
   sj_paired: ['src', 'dst', 'src', 'dst']
   in_channels: 6
-  image_size: 256
+  image_size: 128
   out_channels: 128
   condition_dim: 256
   override_cond: "spatial_latent"
@@ -48,4 +48,4 @@ dataset:
 
 train_misc:
   exp_name: "TPAMI_main_results"
-  cfg_name: "paired+difareli+cs+nodpm+trainset_256"
+  cfg_name: "paired+difareli+cs+nodpm+trainset_128"
