@@ -526,10 +526,11 @@ if __name__ == '__main__':
             
     with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/runtime.json', 'w') as fj:
         runtime_dict['name'] = f"log={args.log_dir}_cfg={args.cfg_name}{args.postfix}"
-        runtime_dict['mean_rev_time'] = np.mean(runtime_dict['rev_time'])
         runtime_dict['mean_relit_time'] = np.mean(runtime_dict['relit_time'])
-        runtime_dict['std_rev_time'] = np.std(runtime_dict['rev_time'])
         runtime_dict['std_relit_time'] = np.std(runtime_dict['relit_time'])
+        runtime_dict['mean_render_time'] = np.mean(runtime_dict['render_time'])
+        runtime_dict['std_render_time'] = np.std(runtime_dict['render_time'])
+        runtime_dict['set'] = args.set
         runtime_dict['n_sj'] = counter_sj
         json.dump(runtime_dict, fj)
     # Free memory!!!
