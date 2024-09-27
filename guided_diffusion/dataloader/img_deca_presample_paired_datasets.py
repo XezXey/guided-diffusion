@@ -468,9 +468,9 @@ class DECADataset(Dataset):
         return out
 
     def load_image(self, path):
-        with bf.BlobFile(path, "rb") as f:
-            pil_image = PIL.Image.open(f)
-            pil_image.load()
+        # with bf.BlobFile(path, "rb") as f:
+            # pil_image.load()
+        pil_image = PIL.Image.open(path)
         pil_image = pil_image.convert("RGB")
         return pil_image
     
