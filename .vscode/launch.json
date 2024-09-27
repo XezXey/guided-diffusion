@@ -2288,8 +2288,8 @@
                 "--postproc_shadow_mask_smooth",
                 "--postfix", "sim_test",
                 "--inverse_with_shadow_diff",
-                "--rotate_sh",
                 "--pt_round", "1",
+                "--rotate_sh",
                 "--rotate_sh_axis", "2",
                 "--up_rate_for_AA", "1",
                 "--smooth_depth",
@@ -2338,6 +2338,41 @@
             "justMyCode": true
         },
 
+        {
+            // "name": "Python: relight_cast_shadows_with_SS_MP_use_target_Sdiff",
+            "name": "Python: relight_cast_shadows_with_SingleShot",
+            "type": "python",
+            "request": "launch",
+            "program": "./relight_paired_nodpm.py",
+            "env": {"CUDA_VISIBLE_DEVICES":"0", "WANDB_MODE":"offline"},
+            "args": [
+                "--ckpt_selector", "ema",
+                "--dataset", "ffhq",
+                "--set", "valid", 
+                "--step", "040000",
+                "--out_dir", "/data/mint/sampling/TPAMI/main_result/ffhq/",
+                "--cfg_name", "paired+difareli+cs+nodpm+trainset_256.yaml",
+                "--log_dir", "paired+difareli+cs+nodpm+trainset_256_bs1",
+                "--seed", "47", 
+                "--sample_pair_json", "/home/mint/Dev/DiFaReli/difareli-faster/experiment_scripts/TPAMI/cast_shadows/sample_json_cs/for_rotate_spiral.json",
+                "--sample_pair_mode", "pair",
+                "--itp", "render_face", 
+                "--itp_step", "10",
+                "--batch_size", "2", 
+                "--gpu_id", "0", 
+                "--lerp", 
+                "--idx", "0", "1",
+                "--shadow_diff_dir", "/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/",
+                "--scale_depth", "256",
+                "--rotate_sh",
+                "--rotate_sh_axis", "2",
+                "--pt_round", "1",
+                "--postproc_shadow_mask_smooth",
+                ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/single_shot/",
+            "justMyCode": true
+        },
 
 
 

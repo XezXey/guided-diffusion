@@ -35,26 +35,6 @@ parser.add_argument('--diffuse_perc', type=float, default=None)
 parser.add_argument('--force_render', action='store_true', default=False)
 # Diffusion
 parser.add_argument('--diffusion_steps', type=int, default=1000)
-
-# Post-processing of the shadow mask smoothness/jagged/stair-cases
-parser.add_argument('--pt_radius', type=float, default=0.2)
-parser.add_argument('--pt_round', type=int, default=30)
-parser.add_argument('--scale_depth', type=float, default=100.0)
-parser.add_argument('--postproc_shadow_mask_smooth_keep_shadow_shading', action='store_true', default=False)
-# Experiment - Cast shadows
-parser.add_argument('--fixed_render', action='store_true', default=False)
-parser.add_argument('--fixed_shadow', action='store_true', default=False)
-parser.add_argument('--use_sh_to_ld_region', action='store_true', default=False)
-parser.add_argument('--rt_regionG_scale', type=float, default=0.03)
-# Experiment - Shadow weight
-parser.add_argument('--shadow_diff_inc_c', action='store_true', default=False)
-parser.add_argument('--shadow_diff_dec_c', action='store_true', default=False)
-parser.add_argument('--shadow_diff_fidx_frac', type=float, default=0.0)    # set to 0.0 for using first frame
-parser.add_argument('--same_shadow_as_sd', action='store_true', default=False)
-parser.add_argument('--relight_with_strongest_c', action='store_true', default=False)
-parser.add_argument('--inverse_with_strongest_c', action='store_true', default=False)
-
-
 # Misc.
 parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--out_dir', type=str, required=True)
@@ -63,7 +43,9 @@ parser.add_argument('--gpu_id', type=str, default="0")
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--save_vid', action='store_true', default=False)
 parser.add_argument('--fps', action='store_true', default=False)
-
+# Experiment
+parser.add_argument('--fixed_render', action='store_true', default=False)
+parser.add_argument('--fixed_shadow', action='store_true', default=False)
 
 args = parser.parse_args()
 
