@@ -153,3 +153,6 @@ experiment_scripts/TPAMI/gen_sh_to_envs/out
 experiment_scripts/TPAMI/gen_sh_to_envs/video_out
 experiment_scripts/TPAMI/sh_to_envs/video_out
 experiment_scripts/TPAMI/sh_to_envs/video_out_mint
+experiment_scripts/TPAMI/envs_to_bg_sh/envmap/
+experiment_scripts/TPAMI/envs_to_bg_sh/sh2envmap/
+experiment_scripts/TPAMI/envs_to_bg_sh/shcoeffs/

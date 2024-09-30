@@ -2358,7 +2358,7 @@
                 "--sample_pair_mode", "pair",
                 "--itp", "render_face", 
                 "--itp_step", "10",
-                "--batch_size", "2", 
+                "--batch_size", "1", 
                 "--gpu_id", "0", 
                 "--lerp", 
                 "--idx", "0", "1",
