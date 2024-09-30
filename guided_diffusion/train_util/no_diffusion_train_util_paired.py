@@ -309,10 +309,6 @@ class TrainLoop(LightningModule):
             else:
                 output = model(src_xstart.float(), t, **model_kwargs)
             model_output = output['output']
-            # if self.cfg.upsampling.apply:
-            #     target = cond['dst_raw_image']
-            #     dst_xstart = cond['dst_raw_image']
-            # else:
             target = dst_xstart
             assert model_output.shape == target.shape == dst_xstart.shape
             
