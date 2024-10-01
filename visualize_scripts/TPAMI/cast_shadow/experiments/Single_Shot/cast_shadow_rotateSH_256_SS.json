@@ -1,0 +1,33 @@
+{
+    "1": {
+        "m_name": "log=DiFaReli_FsBg_Sdiff_SS_128_VLL_cfg=DiFaReli_FsBg_Sdiff_SS_128_VLL.yaml_inv_with_sd_rotateSH_axis2",
+        "step":"ema_100000", 
+        "alias":"W/o Anti-aliasing ",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "2": {
+        "m_name": "log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_inv_with_sd_rotateSH_axis2_SS_100ts",
+        "step":"ema_085000", 
+        "alias":"256x256 (100ts)",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    },
+    "3": {
+        "m_name": "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml",
+        "step":"ema_085000", 
+        "alias":"256x256 (100ts)",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60"
+    }
+
+}
