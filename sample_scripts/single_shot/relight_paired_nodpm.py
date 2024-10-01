@@ -14,6 +14,7 @@ parser.add_argument('--log_dir', type=str, required=True)
 parser.add_argument('--itp', nargs='+', default=None)
 parser.add_argument('--itp_step', type=int, default=15)
 parser.add_argument('--batch_size', type=int, default=15)
+parser.add_argument('--render_batch_size', type=int, default=15)
 parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
 # Shadows
@@ -137,7 +138,8 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
             'img_size':cfg.img_model.image_size,
             'deca_obj':deca_obj,
             'cfg':cfg,
-            'batch_size':args.batch_size
+            'batch_size':args.batch_size,
+            'render_batch_size':args.render_batch_size,
             }  
     
     if itp_func is not None:

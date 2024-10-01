@@ -419,6 +419,7 @@ def build_condition_image(cond, misc):
     dst_idx = misc['dst_idx']
     n_step = misc['n_step']
     batch_size = misc['batch_size']
+    render_batch_size = misc['render_batch_size']
     avg_dict = misc['avg_dict']
     dataset = misc['dataset']
     args = misc['args']
@@ -457,7 +458,8 @@ def build_condition_image(cond, misc):
         else: mask=None
         
         #TODO: Render DECA in minibatch
-        sub_step = mani_utils.ext_sub_step(n_step, batch_size)
+        # sub_step = mani_utils.ext_sub_step(n_step, batch_size)
+        sub_step = mani_utils.ext_sub_step(n_step, render_batch_size)
         all_render = []
         load_deca_time = time.time() - start_t
         render_time = []
