@@ -226,4 +226,4 @@ if __name__ == "__main__":
     # f"/data/mint/DPM_Dataset/MultiPIE_testset/mp_aligned/{args.set_}/"
     data_path = args.dataset_path
     app = create_app()
-    app.run(host=args.host, port=args.port, debug=True, threaded=False)
+    app.run(host=args.host, port=args.port, debug=True, threaded=True)

@@ -53,6 +53,7 @@ parser.add_argument('--scale_depth', type=float, default=100.0)
 parser.add_argument('--postproc_shadow_mask_smooth', action='store_true', default=False)
 parser.add_argument('--postproc_shadow_mask_smooth_keep_shadow_shading', action='store_true', default=False)
 # Experiment - Cast shadows
+parser.add_argument('--force_zero_src_shadow', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dir', type=str, default=None)
 parser.add_argument('--fixed_render', action='store_true', default=False)
 parser.add_argument('--fixed_shadow', action='store_true', default=False)

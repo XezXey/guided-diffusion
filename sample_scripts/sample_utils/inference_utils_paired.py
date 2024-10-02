@@ -608,9 +608,10 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                 elif args.postproc_shadow_mask_smooth:
                     #NOTE: Do not keep the shadow shading from perturbed light
                     # First frame
-                    sd_shadow = sd_img[0:1] > 0.
-                    shadow_area = sd_shadow * (1-weight_src)     # Shadow area assigned weight
-                    shadow_ff = shadow_area
+                    shadow_ff = sd_img[0:1]
+                    # sd_shadow = sd_img[0:1] > 0.
+                    # shadow_area = sd_shadow * (1-weight_src)     # Shadow area assigned weight
+                    # shadow_ff = shadow_area
                     # Rest of the frames
                     if args.relight_with_dst_c:
                         print(f"[#] Relight with the dst c_val = {weight_dst.flatten()}")
@@ -629,7 +630,11 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                     raise NotImplementedError
     # Update the src_and_dst_shadow_diff_with_weight_simplified into src_shadow_diff_with_weight_simplified and dst_shadow_diff_with_weight_simplified
     if 'src_and_dst_shadow_diff_with_weight_simplified' in condition_img:
-        cond['src_shadow_diff_with_weight_simplified'] = cond['src_and_dst_shadow_diff_with_weight_simplified'][0:1]
+        if args.force_zero_src_shadow:
+            print("[#] Force the src_shadow_diff_with_weight_simplified to 0.0...")
+            cond['src_shadow_diff_with_weight_simplified'] = (cond['src_and_dst_shadow_diff_with_weight_simplified'][0:1] * 0.0)
+        else:
+            cond['src_shadow_diff_with_weight_simplified'] = cond['src_and_dst_shadow_diff_with_weight_simplified'][0:1]
         cond['dst_shadow_diff_with_weight_simplified'] = cond['src_and_dst_shadow_diff_with_weight_simplified'][1:]
         print("[#] Shape of src_dst_shadow_diff_with_weight_simplified: ", cond['src_and_dst_shadow_diff_with_weight_simplified'].shape)
         print("[#] Shape of src_shadow_diff_with_weight_simplified: ", cond['src_shadow_diff_with_weight_simplified'].shape)
