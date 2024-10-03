@@ -297,6 +297,13 @@ cfg.inference = CN()
 cfg.inference.exc_params = [None]
 
 # ---------------------------------------------------------------------------- #
+# Options for loss calculation
+# ---------------------------------------------------------------------------- #
+cfg.loss = CN()
+cfg.loss.train_with_mask = False
+cfg.loss.mask_part = 'faceseg_onlyface'
+
+# ---------------------------------------------------------------------------- #
 # Options for diffusion 
 # ---------------------------------------------------------------------------- #
 cfg.diffusion = CN()

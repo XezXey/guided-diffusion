@@ -288,7 +288,7 @@ class TrainLoop(LightningModule):
     def forward_backward(self, src, dst):
 
         t, _ = self.schedule_sampler.sample(src['arr'].shape[0], self.device)
-        def training_losses(model, src_xstart, dst_xstart, t, model_kwargs=None):
+        def training_losses(model, src_xstart, dst_xstart, t, model_kwargs=None, mask_loss=None):
             """
             Compute training losses for a single timestep.
 
@@ -312,7 +312,11 @@ class TrainLoop(LightningModule):
             target = dst_xstart
             assert model_output.shape == target.shape == dst_xstart.shape
             
-            losses = mean_flat((target.type_as(model_output) - model_output) ** 2)
+            if mask_loss is not None:
+                masked_losses = ((target.type_as(model_output) - model_output) ** 2) * mask_loss
+                losses = masked_losses.sum(dim=list(range(1, len(masked_losses.shape)))) / mask_loss.sum(dim=list(range(1, len(mask_loss.shape))))
+            else:
+                losses = mean_flat((target.type_as(model_output) - model_output) ** 2)
             return {"loss":losses}, None
         
         #NOTE: Prepare condition : Utilize the same schedule from DPM, Add background or any condition.
@@ -328,6 +332,7 @@ class TrainLoop(LightningModule):
             dst_xstart=dst['dict']['raw_image'] if self.cfg.upsampling.apply else dst['dict']['image'],
             t=t,
             model_kwargs=cond,
+            mask_loss=src['dict'][f'{self.cfg.loss.mask_part}_mask'] if self.cfg.loss.train_with_mask else None,
         )
         model_losses, _ = model_compute_losses()
 

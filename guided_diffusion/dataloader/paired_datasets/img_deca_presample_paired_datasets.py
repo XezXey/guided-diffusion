@@ -154,6 +154,12 @@ def load_data_img_deca(
     # For conditioning images
     condition_image = cfg.img_cond_model.in_image + cfg.img_model.dpm_cond_img
     input_image = cfg.img_model.in_image
+    
+    if cfg.loss.train_with_mask:
+        in_image_dict[cfg.loss.mask_part] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
+        print(f"[#] Training with mask: {cfg.loss.mask_part}")
+        print(f"[#] Total input images of mask: {len(in_image_dict[cfg.loss.mask_part])}")
+    
     for in_image_type in condition_image + input_image:
         if in_image_type is None: continue
         else:
@@ -217,10 +223,8 @@ def load_data_img_deca(
     tstart = time.time()
     deca_params, avg_dict = load_deca_params_parallel(deca_dir + set_, cfg)
     print(f"[#] Time for loading the deca_params: {time.time() - tstart:.2f}s")
-    # deca_params = None
 
     # Shuffling the data (to make the training/sampling can query the multiple sj in one batch)
-    
     for k in in_image_dict.keys():
         shuffle_idx = np.arange(len(input_image))
         np.random.shuffle(shuffle_idx)
@@ -271,12 +275,12 @@ def load_data_img_deca(
 
     if deterministic:
         loader = DataLoader(
-            img_dataset, batch_size=batch_size, shuffle=False, num_workers=16, drop_last=True, pin_memory=True, 
+            img_dataset, batch_size=batch_size, shuffle=False, num_workers=4, drop_last=True, pin_memory=True, 
             persistent_workers=True
         )
     else:
         loader = DataLoader(
-            img_dataset, batch_size=batch_size, shuffle=True, num_workers=16, drop_last=True, pin_memory=True,
+            img_dataset, batch_size=batch_size, shuffle=True, num_workers=4, drop_last=True, pin_memory=True,
             persistent_workers=True
         )
 
@@ -477,8 +481,8 @@ class DECADataset(Dataset):
         # print(src_name, dst_name)
         assert src_name.split('_')[0] == dst_name.split('_')[0]
         
-        src_arr, src_dict = self.get_data_sjdict(src_name)
-        dst_arr, dst_dict = self.get_data_sjdict(dst_name, relit=True)
+        src_arr, src_dict = self.get_data_sjdict(src_name)  # Use src_name to query the data: '<id>_input.png' e.g., '0_input.png', '1_input.png'
+        dst_arr, dst_dict = self.get_data_sjdict(dst_name, relit=True)  # Same as above but with relit=True
         
         # Check different image name "But" same sj
         assert src_dict['image_name'] != dst_dict['image_name']
@@ -534,6 +538,12 @@ class DECADataset(Dataset):
                 each_cond_img = (each_cond_img / 127.5) - 1
                 out_dict[f'{k}_img'] = each_cond_img
                 
+        if self.cfg.loss.train_with_mask and not relit:
+            faceseg_mask = self.face_segment(self.cfg.loss.mask_part, query_img_name.replace('_input', ''), kwargs_key='in_image_for_cond')
+            faceseg_mask = cv2.resize(faceseg_mask.astype(np.uint8), (self.resolution, self.resolution), interpolation=cv2.INTER_NEAREST)
+            out_dict[f'{self.cfg.loss.mask_part}_mask'] = np.transpose(faceseg_mask, (2, 0, 1))
+            assert np.all(np.isin(out_dict[f'{self.cfg.loss.mask_part}_mask'], [0, 1]))
+            
         query_img_name_for_deca = query_img_name.replace('_relit' if relit else '_input', '')
         for k in self.deca_params[query_img_name_for_deca].keys():
             out_dict[k] = self.deca_params[query_img_name_for_deca][k]
@@ -629,10 +639,18 @@ class DECADataset(Dataset):
         cloth = (face_segment_anno == 16)
         hair = (face_segment_anno == 17)
         hat = (face_segment_anno == 18)
-        face = np.logical_or.reduce((skin, l_brow, r_brow, l_eye, r_eye, eye_g, l_ear, r_ear, ear_r, nose, mouth, u_lip, l_lip))
+        l_pupil = (face_segment_anno == 19)
+        r_pupil = (face_segment_anno == 20)
+        face = np.logical_or.reduce((skin, l_brow, r_brow, l_eye, l_pupil, r_eye, r_pupil, eye_g, l_ear, r_ear, ear_r, nose, mouth, u_lip, l_lip))
 
         if segment_part == 'faceseg_face':
             seg_m = face
+        elif segment_part == 'faceseg_onlyexbg':
+            seg_m = ~bg
+        elif segment_part == 'faceseg_onlyface':
+            seg_m = face
+        elif segment_part == 'faceseg_onlyhead':
+            seg_m = (face | neck | hair)
         elif segment_part == 'faceseg_head':
             seg_m = (face | neck | hair)
         elif segment_part == 'faceseg_nohead':
