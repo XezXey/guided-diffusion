@@ -302,6 +302,8 @@ cfg.inference.exc_params = [None]
 cfg.loss = CN()
 cfg.loss.train_with_mask = False
 cfg.loss.mask_part = 'faceseg_onlyface'
+cfg.loss.train_with_sd_mask = False
+cfg.loss.sd_mask_weight = 1.0
 
 # ---------------------------------------------------------------------------- #
 # Options for diffusion 
