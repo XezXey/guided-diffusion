@@ -159,6 +159,8 @@ def load_data_img_deca(
         in_image_dict[cfg.loss.mask_part] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
         print(f"[#] Training with mask: {cfg.loss.mask_part}")
         print(f"[#] Total input images of mask: {len(in_image_dict[cfg.loss.mask_part])}")
+    if cfg.loss.train_with_sd_mask:
+        print(f"[#] Training with shadow mask with weight = {cfg.loss.sd_mask_weight}")
     
     for in_image_type in condition_image + input_image:
         if in_image_type is None: continue
