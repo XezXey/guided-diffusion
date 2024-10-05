@@ -315,6 +315,8 @@ class TrainLoop(LightningModule):
             if self.cfg.loss.train_with_sd_mask:
                 sd_mask_loss = sd_mask_loss != 0
                 masked_losses = ((target.type_as(model_output) - model_output) ** 2) * sd_mask_loss
+                if sd_mask_loss.shape[1] == 1:
+                    masked_losses = masked_losses.repeat(1, 3, 1, 1)
                 masked_losses = masked_losses.sum(dim=list(range(1, len(masked_losses.shape)))) / (sd_mask_loss.sum(dim=list(range(1, len(sd_mask_loss.shape)))) + 1e-10)
                 img_losses = mean_flat((target.type_as(model_output) - model_output) ** 2)
                 losses = masked_losses * self.cfg.loss.sd_mask_weight + img_losses
