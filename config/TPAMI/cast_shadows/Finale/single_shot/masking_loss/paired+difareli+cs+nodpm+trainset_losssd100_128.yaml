@@ -40,7 +40,7 @@ train:
 loss:
   train_with_mask: False
   train_with_sd_mask: True
-  sd_mask_weight: 10.0
+  sd_mask_weight: 100.0
 
 dataset:
   training_data: "Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows/"
@@ -53,4 +53,4 @@ dataset:
 
 train_misc:
   exp_name: "TPAMI_main_results"
-  cfg_name: "paired+difareli+cs+nodpm+trainset_losssd10_128"
+  cfg_name: "paired+difareli+cs+nodpm+trainset_losssd100_128"
