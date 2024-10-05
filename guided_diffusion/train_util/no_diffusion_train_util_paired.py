@@ -313,14 +313,15 @@ class TrainLoop(LightningModule):
             assert model_output.shape == target.shape == dst_xstart.shape
             
             if self.cfg.loss.train_with_sd_mask:
+                sd_mask_loss = sd_mask_loss != 0
                 masked_losses = ((target.type_as(model_output) - model_output) ** 2) * sd_mask_loss
-                masked_losses = masked_losses.sum(dim=list(range(1, len(masked_losses.shape)))) / sd_mask_loss.sum(dim=list(range(1, len(sd_mask_loss.shape))))
+                masked_losses = masked_losses.sum(dim=list(range(1, len(masked_losses.shape)))) / (sd_mask_loss.sum(dim=list(range(1, len(sd_mask_loss.shape)))) + 1e-10)
                 img_losses = mean_flat((target.type_as(model_output) - model_output) ** 2)
                 losses = masked_losses * self.cfg.loss.sd_mask_weight + img_losses
             else:
                 if mask_loss is not None:
                     masked_losses = ((target.type_as(model_output) - model_output) ** 2) * mask_loss
-                    losses = masked_losses.sum(dim=list(range(1, len(masked_losses.shape)))) / mask_loss.sum(dim=list(range(1, len(mask_loss.shape))))
+                    losses = masked_losses.sum(dim=list(range(1, len(masked_losses.shape)))) / (mask_loss.sum(dim=list(range(1, len(mask_loss.shape)))) + 1e-10)
                 else:
                     losses = mean_flat((target.type_as(model_output) - model_output) ** 2)
             return {"loss":losses}, None
