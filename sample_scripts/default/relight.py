@@ -14,7 +14,7 @@ parser.add_argument('--log_dir', type=str, required=True, help='folder that cont
 parser.add_argument('--itp', nargs='+', default='render_face') # Do not change this!
 parser.add_argument('--itp_step', type=int, default=15, help='Number of frames(steps) for interpolation')
 parser.add_argument('--batch_size', type=int, default=15)
-parser.add_argument('--render_batch_size', type=int, default=15)
+parser.add_argument('--render_batch_size', type=int, default=60)
 parser.add_argument('--lerp', action='store_true', default=False)
 parser.add_argument('--slerp', action='store_true', default=False)
 # Shadows
