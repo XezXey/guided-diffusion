@@ -244,7 +244,8 @@ class UniPC:
         correcting_xt_fn=None,
         thresholding_max_val=1.,
         dynamic_thresholding_ratio=0.995,
-        variant='bh1'
+        variant='bh1',
+        verbose=True,
     ):
         """Construct a UniPC. 
 
@@ -265,6 +266,7 @@ class UniPC:
         
         self.variant = variant
         self.predict_x0 = algorithm_type == "data_prediction"
+        self.verbose = verbose
 
     def dynamic_thresholding_fn(self, x0, t=None):
         """
@@ -367,7 +369,8 @@ class UniPC:
             return self.multistep_uni_pc_vary_update(x, model_prev_list, t_prev_list, t, order, **kwargs)
 
     def multistep_uni_pc_vary_update(self, x, model_prev_list, t_prev_list, t, order, use_corrector=True):
-        print(f'using unified predictor-corrector with order {order} (solver type: vary coeff)')
+        if self.verbose:
+            print(f'using unified predictor-corrector with order {order} (solver type: vary coeff)')
         ns = self.noise_schedule
         assert order <= len(model_prev_list)
 
@@ -411,7 +414,8 @@ class UniPC:
             A_p = C_inv_p
 
         if use_corrector:
-            print('using corrector')
+            if self.verbose:
+                print('using corrector')
             C_inv = torch.linalg.inv(C)
             A_c = C_inv
 
@@ -470,7 +474,8 @@ class UniPC:
         return x_t, model_t
 
     def multistep_uni_pc_bh_update(self, x, model_prev_list, t_prev_list, t, order, x_t=None, use_corrector=True):
-        print(f'using unified predictor-corrector with order {order} (solver type: B(h))')
+        if self.verbose:
+            print(f'using unified predictor-corrector with order {order} (solver type: B(h))')
         ns = self.noise_schedule
         assert order <= len(model_prev_list)
 
@@ -539,7 +544,8 @@ class UniPC:
             D1s = None
 
         if use_corrector:
-            print('using corrector')
+            if self.verbose:
+                print('using corrector')
             # for order 1, we use a simplified version
             if order == 1:
                 rhos_c = torch.tensor([0.5], device=b.device)
@@ -658,7 +664,8 @@ class UniPC:
                     else:
                         step_order = order
                     if step == steps:
-                        print('do not run corrector at the last step')
+                        if self.verbose:
+                            print('do not run corrector at the last step')
                         use_corrector = False
                     else:
                         use_corrector = True
