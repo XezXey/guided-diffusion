@@ -278,7 +278,7 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                 if args.relight_with_dst_c:
                     shadow_rf = ((sd_img[1:] > 0.) * (1-weight_dst))
                 elif args.relight_with_rand_max_c:
-                    rand_c = np.random.uniform(0.5, 1.0, size=weight_src.shape)
+                    rand_c = th.tensor(np.random.uniform(0.5, 1.0, size=weight_src.shape)).type_as(weight_src)
                     print(f"[#] Relight with random c_val [0.5 to 1] => {rand_c}")
                     shadow_rf = ((sd_img[1:] > 0.) * ((weight_dst * 0.) + rand_c))
                 else:
@@ -300,7 +300,7 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                     if args.relight_with_dst_c:
                         shadow_rf = (sd_img[1:] * (1-weight_dst))
                     elif args.relight_with_rand_max_c:
-                        rand_c = np.random.uniform(0.5, 1.0, size=weight_src.shape)
+                        rand_c = th.tensor(np.random.uniform(0.5, 1.0, size=weight_src.shape)).type_as(weight_src)
                         print(f"[#] Relight with random c_val [0.5 to 1] => {rand_c}")
                         shadow_rf = ((sd_img[1:] > 0.) * ((weight_dst * 0.) + rand_c))
                     else:
@@ -322,7 +322,7 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                         print(f"[#] Relight with the dst c_val = {weight_dst.flatten()}")
                         shadow_rf = (sd_img[1:] * (1-weight_dst))
                     elif args.relight_with_rand_max_c:
-                        rand_c = np.random.uniform(0.5, 1.0, size=weight_src.shape)
+                        rand_c = th.tensor(np.random.uniform(0.5, 1.0, size=weight_src.shape)).type_as(weight_src)
                         print(f"[#] Relight with random c_val [0.5 to 1] => {rand_c}")
                         shadow_rf = ((sd_img[1:] > 0.) * ((weight_dst * 0.) + rand_c))
                     else:
