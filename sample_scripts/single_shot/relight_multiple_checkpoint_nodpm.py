@@ -51,13 +51,14 @@ for ckpt in args.ckpt_step:
         --seed 47 \
         --sample_pair_json {args.sample_pair_json} --sample_pair_mode pair \
         --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
-        --postfix {postfix} --eval_dir {args.eval_dir} \
+        --eval_dir {args.eval_dir} \
         --postproc_shadow_mask_smooth --up_rate_for_AA 1 --shadow_diff_dir {args.sdiff_dir}  \
         --relight_with_dst_c --pt_round 1 --scale_depth 256.\
         """
         )
     if args.force_render: cmd += ' --force_render'
     if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
+    if postfix != '': cmd += f' --postfix {postfix}'
     print(cmd)
     os.system(cmd)
     print("#"*100)
