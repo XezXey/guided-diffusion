@@ -11,7 +11,7 @@
         "img_dir" : "/data2/mint/sampling/TPAMI/main_result/ffhq/moving_shadows/top_/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml/ema_300000/valid/render_face/reverse_sampling/"
     },
     "ours_256_DiFaReli++_max_shadows" : {
-        "step":"ema_085000", 
+        "step":"ema_300000", 
         "alias":"DiFaReli++ (Axis 2)",
         "misc" : "ours",
         "itp":"render_face",
@@ -19,7 +19,7 @@
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"60",
-        "img_dir" : "/data2/mint/sampling/TPAMI/main_result/ffhq/moving_shadows/top_100_max_shadows/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml/ema_150000/valid/render_face/reverse_sampling/"
+        "img_dir" : "/data2/mint/sampling/TPAMI/main_result/ffhq/moving_shadows/top_100_max_shadows/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml/ema_300000/valid/render_face/reverse_sampling/"
     },
     "ours_256_DiFaReli++" : {
         "step":"ema_085000", 
