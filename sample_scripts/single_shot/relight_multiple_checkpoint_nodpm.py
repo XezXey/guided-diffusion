@@ -20,6 +20,7 @@ parser.add_argument('--eval_dir', type=str, default=None, help='eval dir')
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--sdiff_dir', type=str, required=True, help='Shadow difference directory')
 parser.add_argument('--rasterize_type', type=str, default='standard', help='rasterize type')
+parser.add_argument('--scale_depth', nargs='+', type=int, default=[100, 256])
 args = parser.parse_args()
 
 '''
@@ -42,24 +43,25 @@ if postfix != '':
     postfix = '_' + postfix
 
 for ckpt in args.ckpt_step:
-    print("#"*100)
-    print(f'Running checkpoint {ckpt}...')
-    print("#"*100)
-    cmd = (
-        f"""
-        python relight_paired_nodpm.py --ckpt_selector {args.ckpt_type} --dataset {args.dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
-        --cfg_name {args.cfg_name} --log_dir {args.model_dir} \
-        --seed 47 \
-        --sample_pair_json {args.sample_pair_json} --sample_pair_mode pair \
-        --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
-        --eval_dir {args.eval_dir} \
-        --postproc_shadow_mask_smooth --up_rate_for_AA 1 --shadow_diff_dir {args.sdiff_dir}  \
-        --relight_with_dst_c --pt_round 1 --scale_depth 256 --rasterize_type {args.rasterize_type}\
-        """
-        )
-    if args.force_render: cmd += ' --force_render'
-    if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
-    if postfix != '': cmd += f' --postfix {postfix}'
-    print(cmd)
-    os.system(cmd)
-    print("#"*100)
+    for scale_depth in args.scale_depth:
+        print("#"*100)
+        print(f'Running checkpoint {ckpt}...')
+        print("#"*100)
+        cmd = (
+            f"""
+            python relight_paired_nodpm.py --ckpt_selector {args.ckpt_type} --dataset {args.dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
+            --cfg_name {args.cfg_name} --log_dir {args.model_dir} \
+            --seed 47 \
+            --sample_pair_json {args.sample_pair_json} --sample_pair_mode pair \
+            --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
+            --eval_dir {args.eval_dir} \
+            --postproc_shadow_mask_smooth --up_rate_for_AA 1 --shadow_diff_dir {args.sdiff_dir}  \
+            --relight_with_dst_c --pt_round 1 --scale_depth {scale_depth} --rasterize_type {args.rasterize_type}\
+            """
+            )
+        if args.force_render: cmd += ' --force_render'
+        if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
+        if postfix != '': cmd += f' --postfix SD{scale_depth}_{postfix}'
+        print(cmd)
+        os.system(cmd)
+        print("#"*100)
