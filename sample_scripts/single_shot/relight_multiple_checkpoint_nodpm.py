@@ -17,6 +17,8 @@ parser.add_argument('--sample_pair_json', type=str, required=True, help='sample 
 parser.add_argument('--force_render', action='store_true', default=False)
 parser.add_argument('--dataset', type=str, default='ffhq', help='dataset name')
 parser.add_argument('--eval_dir', type=str, default=None, help='eval dir')
+parser.add_argument('--postfix', type=str, default='')
+parser.add_argument('--sdiff_dir', type=str, required=True, help='Shadow difference directory')
 args = parser.parse_args()
 
 '''
