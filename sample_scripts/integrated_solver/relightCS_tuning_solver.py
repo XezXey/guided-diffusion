@@ -19,6 +19,7 @@ parser.add_argument('--eval_dir', type=str, default=None, help='eval dir')
 parser.add_argument('--force_render', action='store_true', default=False)
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--sdiff_dir', nargs='+', required=True, help='Shadow difference directory')
+parser.add_argument('--scale_depth', nargs='+', type=int, default=[100, 256])
 
 # Solver
 parser.add_argument('--solver_alg', nargs='+', type=str, default=['dpmsolver++'])
@@ -54,37 +55,40 @@ if postfix != '':
 
 for dataset_idx, dataset in enumerate(args.dataset):
     for ckpt in args.ckpt_step:
-        for solver_alg in args.solver_alg:
-            for solver_method in args.solver_method:
-                for solver_order in args.solver_order:
-                    for solver_steps in args.solver_steps:
-                        for solver_correcting_x0_fn in args.solver_correcting_x0_fn:
-                            if (solver_correcting_x0_fn is not None) and (solver_alg != 'dpmsolver++'):
-                                raise ValueError('solver_correcting_x0_fn is only available for dpmsolver++')
-                                            
-                            print("#"*100)
-                            print(f'Running checkpoint: {ckpt}')
-                            print(f'Solver: {solver_alg}')
-                            print(f'Solver method: {solver_method}')
-                            print(f'Solver steps: {solver_steps}')
-                            print(f'Solver order: {solver_order}')
-                            print(f'Solver correcting_x0_fn: {solver_correcting_x0_fn}')
-                            print("#"*100)
-                
-                            cmd = (
-                                f"""
-                                python relightCS_with_solver.py --ckpt_selector {args.ckpt_type} --dataset {dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
-                                --cfg_name {args.cfg_name} --log_dir {args.model_dir} \
-                                --diffusion_steps 1000 --timestep_respacing 1000 --seed 47 \
-                                --sample_pair_json {args.sample_pair_json[dataset_idx]} --sample_pair_mode pair \
-                                --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
-                                --solver_alg {solver_alg} --solver_steps {solver_steps} --solver_method {solver_method} --solver_order {solver_order} --solver_correcting_x0_fn {solver_correcting_x0_fn} \
-                                --postfix {solver_alg}_{solver_order}_{solver_method}_{solver_steps}_{solver_correcting_x0_fn}_{postfix} --eval_dir {args.eval_dir} \
-                                --postproc_shadow_mask_smooth --up_rate_for_AA 1 --shadow_diff_dir {args.sdiff_dir[dataset_idx]} --inverse_with_shadow_diff \
-                                --relight_with_dst_c --pt_round 1 --scale_depth 256.\
-                                """
-                            )
-                            if args.force_render: cmd += ' --force_render'
-                            print(cmd)
-                            os.system(cmd)
-                            print("#"*100)
+        for scale_depth in args.scale_depth:
+            for solver_alg in args.solver_alg:
+                for solver_method in args.solver_method:
+                    for solver_order in args.solver_order:
+                        for solver_steps in args.solver_steps:
+                            for solver_correcting_x0_fn in args.solver_correcting_x0_fn:
+                                if (solver_correcting_x0_fn is not None) and (solver_alg != 'dpmsolver++'):
+                                    raise ValueError('solver_correcting_x0_fn is only available for dpmsolver++')
+                                                
+                                print("#"*100)
+                                print(f'[#] Running checkpoint: {ckpt}')
+                                print(f'[#] Dataset: {dataset}')
+                                print(f'[#] Solver: {solver_alg}')
+                                print(f'[#] Solver method: {solver_method}')
+                                print(f'[#] Solver steps: {solver_steps}')
+                                print(f'[#] Solver order: {solver_order}')
+                                print(f'[#] Solver correcting_x0_fn: {solver_correcting_x0_fn}')
+                                print(f'[#] Scale depth: {scale_depth}')
+                                print("#"*100)
+                    
+                                cmd = (
+                                    f"""
+                                    python relightCS_with_solver.py --ckpt_selector {args.ckpt_type} --dataset {dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
+                                    --cfg_name {args.cfg_name} --log_dir {args.model_dir} \
+                                    --diffusion_steps 1000 --timestep_respacing 1000 --seed 47 \
+                                    --sample_pair_json {args.sample_pair_json[dataset_idx]} --sample_pair_mode pair \
+                                    --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
+                                    --solver_alg {solver_alg} --solver_steps {solver_steps} --solver_method {solver_method} --solver_order {solver_order} --solver_correcting_x0_fn {solver_correcting_x0_fn} \
+                                    --postfix {solver_alg}_{solver_order}_{solver_method}_{solver_steps}_{solver_correcting_x0_fn}_SD{scale_depth}_{postfix} --eval_dir {args.eval_dir} \
+                                    --postproc_shadow_mask_smooth --up_rate_for_AA 1 --shadow_diff_dir {args.sdiff_dir[dataset_idx]} --inverse_with_shadow_diff \
+                                    --relight_with_dst_c --pt_round 1 --scale_depth {scale_depth}\
+                                    """
+                                )
+                                if args.force_render: cmd += ' --force_render'
+                                print(cmd)
+                                os.system(cmd)
+                                print("#"*100)
