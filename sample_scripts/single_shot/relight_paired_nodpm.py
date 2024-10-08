@@ -74,7 +74,6 @@ parser.add_argument('--combined_mask', action='store_true', default=False)
 parser.add_argument('--use_ray_mask', action='store_true', default=False)
 parser.add_argument('--render_same_mask', action='store_true', default=False)
 
-
 # Misc.
 parser.add_argument('--seed', type=int, default=23)
 parser.add_argument('--out_dir', type=str, required=True)
@@ -470,9 +469,7 @@ if __name__ == '__main__':
         vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=f_relit)
         
         if args.eval_dir is not None:
-            # if args.dataset in ['mp_valid', 'mp_test']
-            # eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/{args.dataset}/"
-            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/"
+            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/{args.dataset}/out/"
             os.makedirs(eval_dir, exist_ok=True)
             torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{eval_dir}/input={src_id}#pred={dst_id}.png")
             
@@ -568,15 +565,27 @@ if __name__ == '__main__':
         counter_sj += 1
             
             
-    with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/runtime.json', 'w') as fj:
+    import datetime
+    dt = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/runtime_{dt}.json', 'w') as fj:
         runtime_dict['name'] = f"log={args.log_dir}_cfg={args.cfg_name}{args.postfix}"
+        runtime_dict['mean_rev_time'] = np.mean(runtime_dict['rev_time'])
         runtime_dict['mean_relit_time'] = np.mean(runtime_dict['relit_time'])
+        runtime_dict['std_rev_time'] = np.std(runtime_dict['rev_time'])
         runtime_dict['std_relit_time'] = np.std(runtime_dict['relit_time'])
-        runtime_dict['mean_render_time'] = np.mean(runtime_dict['render_time'])
-        runtime_dict['std_render_time'] = np.std(runtime_dict['render_time'])
+        runtime_dict['all_rev_time'] = runtime_dict['rev_time']
+        runtime_dict['all_relit_time'] = np.stack(runtime_dict['sub_relit_time']).tolist()
+        runtime_dict['all_render_time'] = runtime_dict['render_time'] if 'render_time' in runtime_dict else None
         runtime_dict['set'] = args.set
         runtime_dict['n_sj'] = counter_sj
         json.dump(runtime_dict, fj)
+    
+    if args.eval_dir is not None:
+        eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/{args.dataset}/"
+        os.makedirs(eval_dir, exist_ok=True)
+        with open(f'{eval_dir}/runtime_{dt}.json', 'w') as fj:
+            json.dump(runtime_dict, fj, indent=4)
+    
     # Free memory!!!
     del deca_obj               
         
