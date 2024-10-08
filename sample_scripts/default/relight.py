@@ -382,6 +382,23 @@ if __name__ == '__main__':
         cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/mp_aligned/'
         cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
+    elif args.dataset in ['mp_test_data2', 'mp_test2_data2', 'mp_valid_data2', 'mp_valid2_data2']:
+        if args.dataset == 'mp_test_data2':
+            sub_f = '/MultiPIE_testset/'
+        elif args.dataset == 'mp_test2_data2':
+            sub_f = '/MultiPIE_testset2/'
+        elif args.dataset == 'mp_valid_data2':
+            sub_f = '/MultiPIE_validset/'
+        elif args.dataset == 'mp_valid2_data2':
+            sub_f = '/MultiPIE_validset2/'
+        else: raise ValueError
+        img_dataset_path = f"/data2/mint/DPM_Dataset/MultiPIE/{sub_f}/mp_aligned/"
+        deca_dataset_path = f"/data2/mint/DPM_Dataset/MultiPIE/{sub_f}/params/"
+        img_ext = '.png'
+        cfg.dataset.training_data = f'/MultiPIE/{sub_f}/'
+        cfg.dataset.root_path = f'/data2/mint/DPM_Dataset/'
+        cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/mp_aligned/'
+        cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
     else: raise ValueError
 
     cfg.dataset.deca_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
