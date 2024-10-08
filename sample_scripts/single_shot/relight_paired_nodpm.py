@@ -389,10 +389,10 @@ if __name__ == '__main__':
                                                                             args.src_dst, img_path, 
                                                                             -1)
     #NOTE: Initialize a DECA renderer
-    if np.any(['deca_masked' in n for n in list(filter(None, dataset.condition_image))]) or args.force_render:
+    if np.any(['deca_masked' in n for n in list(filter(None, dataset.condition_image))]):
         mask = params_utils.load_flame_mask()
     else: mask=None
-    deca_obj = params_utils.init_deca(mask=mask)
+    deca_obj = params_utils.init_deca(mask=mask, rasterize_type=args.rasterize_type)
         
     # Run from start->end idx
     start, end = int(args.idx[0]), int(args.idx[1])
