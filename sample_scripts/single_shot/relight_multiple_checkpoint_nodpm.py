@@ -31,25 +31,32 @@ python relight_paired_nodpm.py --ckpt_selector ema --dataset mp_valid2_data2
 --sample_pair_mode pair --itp render_face --itp_step 2 --batch_size 1 --gpu_id 0 --lerp 
 --idx 0 1 --shadow_diff_dir /data2/mint/DPM_Dataset/MultiPIE/MultiPIE_validset2/shadow_diff_SS_with_c_simplified/ 
 --eval_dir /data2/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_single_shot/ 
---rasterize_type pytorch3d --postproc_shadow_mask_smooth
+--rasterize_type pytorch3d --postproc_shadow_mask_smooth --relight_with_dst_c --pt_round 1 --scale_depth 256
 
 '''
 
+postfix = args.postfix
+if postfix != '':
+    postfix = '_' + postfix
+
 for ckpt in args.ckpt_step:
-    for time_respace in args.time_respace:
-        print("#"*100)
-        print(f'Running checkpoint {ckpt}...')
-        print("#"*100)
-        cmd = (
-            f"""
-            python relight_paired_nodpm.py --ckpt_selector {args.ckpt_type} --dataset {args.dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
-            --cfg_name {args.model}.yaml --log_dir {args.model} \
-            --timestep_respacing {time_respace} --seed 47 \
-            --sample_pair_json {args.sample_pair_json} --sample_pair_mode pair \
-            --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]}"""
-            )
-        if args.force_render: cmd += ' --force_render'
-        if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
-        print(cmd)
-        os.system(cmd)
-        print("#"*100)
+    print("#"*100)
+    print(f'Running checkpoint {ckpt}...')
+    print("#"*100)
+    cmd = (
+        f"""
+        python relight_paired_nodpm.py --ckpt_selector {args.ckpt_type} --dataset {args.dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
+        --cfg_name {args.cfg_name} --log_dir {args.model_dir} \
+        --diffusion_steps 1000 --timestep_respacing 1000 --seed 47 \
+        --sample_pair_json {args.sample_pair_json} --sample_pair_mode pair \
+        --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
+        --postfix {postfix} --eval_dir {args.eval_dir} \
+        --postproc_shadow_mask_smooth --up_rate_for_AA 1 --shadow_diff_dir {args.sdiff_dir}  \
+        --relight_with_dst_c --pt_round 1 --scale_depth 256.\
+        """
+        )
+    if args.force_render: cmd += ' --force_render'
+    if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
+    print(cmd)
+    os.system(cmd)
+    print("#"*100)
