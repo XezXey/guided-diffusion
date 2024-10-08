@@ -19,6 +19,7 @@ parser.add_argument('--dataset', type=str, default='ffhq', help='dataset name')
 parser.add_argument('--eval_dir', type=str, default=None, help='eval dir')
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--sdiff_dir', type=str, required=True, help='Shadow difference directory')
+parser.add_argument('--rasterize_type', type=str, default='standard', help='rasterize type')
 args = parser.parse_args()
 
 '''
@@ -53,7 +54,7 @@ for ckpt in args.ckpt_step:
         --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
         --eval_dir {args.eval_dir} \
         --postproc_shadow_mask_smooth --up_rate_for_AA 1 --shadow_diff_dir {args.sdiff_dir}  \
-        --relight_with_dst_c --pt_round 1 --scale_depth 256.\
+        --relight_with_dst_c --pt_round 1 --scale_depth 256 --rasterize_type {args.rasterize_type}\
         """
         )
     if args.force_render: cmd += ' --force_render'
