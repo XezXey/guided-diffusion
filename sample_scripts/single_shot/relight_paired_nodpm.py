@@ -238,8 +238,9 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     sub_step = ext_sub_step(n_step)
     relit_out = []
     relit_time = []
+    start_relight_time = time.time()
     for i in range(len(sub_step)-1):
-        relight_time = time.time()
+        sub_start_relight_time = time.time()
         print(f"[#] Sub step relight : {sub_step[i]} to {sub_step[i+1]}")
         start = sub_step[i]
         end = sub_step[i+1]
@@ -254,14 +255,16 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
             cond_relit = pl_sampling.forward_cond_network(model_kwargs=cond_relit)
         
         relight_out = pl_sampling.forward_nodpm(src_xstart=src_xstart, model_kwargs=cond_relit)
-        
         relit_out.append(relight_out['output'].detach().cpu().numpy())
-        relight_time = time.time() - relight_time
-        print(f"[#] Relight time = {relight_time}")
-        relit_time.append(relight_time)
+        
+        # Record the time
+        sub_relight_time = time.time() - sub_start_relight_time
+        print(f"[#] Relight time = {sub_relight_time}")
+        relit_time.append(sub_relight_time)
+        
+    print(f"[#] Total relight time = {time.time() - start_relight_time}")
     relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
-    
-    out_timing = {'relit_time':np.mean(relit_time), 'render_time':cond['render_time'] if 'render_time' in cond else 0}
+    out_timing = {'relit_time':np.mean(relit_time), 'each_relit_time': relit_time, 'render_time':cond['render_time'] if 'render_time' in cond else 0}
     
     if ('render_face' in args.itp) or args.force_render:
         return relit_out, cond['cond_img'], out_timing, {'render_ld':cond['render_ld']}
@@ -402,7 +405,7 @@ if __name__ == '__main__':
     print(f"[#] Run from index of {start} to {end}...")
         
     counter_sj = 0
-    runtime_dict = {'relit_time':[], 'render_time':[]}
+    runtime_dict = {'relit_time':[], 'sub_relit_time':[], 'render_time':[]}
     for i in range(start, end):
         img_idx = all_img_idx[i]
         img_name = all_img_name[i]
@@ -452,6 +455,7 @@ if __name__ == '__main__':
                                 )
         
         runtime_dict['relit_time'].append(time_dict['relit_time'])
+        runtime_dict['sub_relit_time'].append(time_dict['each_relit_time'])
         runtime_dict['render_time'].append(time_dict['render_time'])
         
         #NOTE: Save result
@@ -569,11 +573,8 @@ if __name__ == '__main__':
     dt = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/runtime_{dt}.json', 'w') as fj:
         runtime_dict['name'] = f"log={args.log_dir}_cfg={args.cfg_name}{args.postfix}"
-        runtime_dict['mean_rev_time'] = np.mean(runtime_dict['rev_time'])
         runtime_dict['mean_relit_time'] = np.mean(runtime_dict['relit_time'])
-        runtime_dict['std_rev_time'] = np.std(runtime_dict['rev_time'])
         runtime_dict['std_relit_time'] = np.std(runtime_dict['relit_time'])
-        runtime_dict['all_rev_time'] = runtime_dict['rev_time']
         runtime_dict['all_relit_time'] = np.stack(runtime_dict['sub_relit_time']).tolist()
         runtime_dict['all_render_time'] = runtime_dict['render_time'] if 'render_time' in runtime_dict else None
         runtime_dict['set'] = args.set
@@ -589,78 +590,3 @@ if __name__ == '__main__':
     # Free memory!!!
     del deca_obj               
         
-    #     #NOTE: Save result
-    #     out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
-    #     os.makedirs(out_dir_relit, exist_ok=True)
-    #     save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_diff={args.diffusion_steps}_respace=/n_frames={n_step}/"
-    #     os.makedirs(save_res_dir, exist_ok=True)
-        
-    #     f_relit = vis_utils.convert2rgb(out_relit, cfg.img_model.input_bound) / 255.0
-    #     vis_utils.save_images(path=f"{save_res_dir}", fn="res", frames=f_relit)
-        
-    #     if args.eval_dir is not None:
-    #         # if args.dataset in ['mp_valid', 'mp_test']
-    #         # eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/{args.dataset}/"
-    #         eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/{args.dataset}/{args.cfg_name}{args.postfix}/out/"
-    #         os.makedirs(eval_dir, exist_ok=True)
-    #         torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{eval_dir}/input={src_id}#pred={dst_id}.png")
-            
-        
-    #     is_render = True if out_render is not None else False
-    #     if is_render:
-    #         clip_ren = True if 'wclip' in dataset.condition_image[0] else False 
-    #         if clip_ren:
-    #             vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=(out_render + 1) * 0.5)
-    #         else:
-    #             vis_utils.save_images(path=f"{save_res_dir}", fn="ren", frames=out_render[:, 0:3].mul(255).add_(0.5).clamp_(0, 255)/255.0)
-                
-    #     if args.save_vid:
-    #         """
-    #         save the video
-    #         Args:
-    #             frames (list of tensor): range = [0, 255] (uint8), and shape = [T x H x W x C]
-    #             fn : path + filename to save
-    #             fps : video fps
-    #         """
-    #         #NOTE: save_video, w/ shape = TxHxWxC and value range = [0, 255]
-    #         vid_relit = out_relit
-    #         vid_relit = vid_relit.permute(0, 2, 3, 1)
-    #         vid_relit = ((vid_relit + 1)*127.5).clamp_(0, 255).type(th.ByteTensor)
-    #         vid_relit_rt = th.cat((vid_relit, th.flip(vid_relit, dims=[0])))
-    #         torchvision.io.write_video(video_array=vid_relit, filename=f"{save_res_dir}/res.mp4", fps=args.fps)
-    #         torchvision.io.write_video(video_array=vid_relit_rt, filename=f"{save_res_dir}/res_rt.mp4", fps=args.fps)
-    #         if is_render:
-    #             out_render = out_render[:, :3]
-    #             vid_render = out_render
-    #             # vid_render = th.cat((out_render, th.flip(out_render, dims=[0])))
-    #             clip_ren = False #if 'wclip' in dataset.condition_image else True
-    #             if clip_ren:
-    #                 vid_render = ((vid_render.permute(0, 2, 3, 1) + 1) * 127.5).clamp_(0, 255).type(th.ByteTensor)
-    #                 torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
-    #             else:
-    #                 vid_render = (vid_render.permute(0, 2, 3, 1).mul(255).add_(0.5).clamp_(0, 255)).type(th.ByteTensor)
-    #                 torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/ren.mp4", fps=args.fps)
-    #                 vid_render_rt = th.cat((vid_render, th.flip(vid_render, dims=[0])))
-    #                 torchvision.io.write_video(video_array=vid_render_rt, filename=f"{save_res_dir}/ren_rt.mp4", fps=args.fps)
-                
-    #     with open(f'{save_res_dir}/res_desc.json', 'w') as fj:
-    #         log_dict = {'sampling_args' : vars(args), 
-    #                     'samples' : {'src_id' : src_id, 'dst_id':dst_id, 'itp_fn':itp_fn_str, 'itp':itp_str}}
-    #         json.dump(log_dict, fj)
-    #     counter_sj += 1
-    
-    # import datetime
-    # # get datetime now to annotate the log
-    # dt = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    # with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/runtime_{dt}.json', 'w') as fj:
-    #     runtime_dict['name'] = f"log={args.log_dir}_cfg={args.cfg_name}{args.postfix}"
-    #     runtime_dict['mean_relit_time'] = np.mean(runtime_dict['relit_time'])
-    #     runtime_dict['std_relit_time'] = np.std(runtime_dict['relit_time'])
-    #     runtime_dict['mean_render_time'] = np.mean(runtime_dict['render_time'])
-    #     runtime_dict['std_render_time'] = np.std(runtime_dict['render_time'])
-    #     runtime_dict['set'] = args.set
-    #     runtime_dict['n_sj'] = counter_sj
-    #     json.dump(runtime_dict, fj)
-            
-    # # Free memory!!!
-    # del deca_obj               
