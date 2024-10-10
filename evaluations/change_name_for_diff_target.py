@@ -4,6 +4,7 @@ import json
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--pred_path', type=str, required=True)
+parser.add_argument('--dup_out_eval', action='store_true', default=False)
 args = parser.parse_args()
 
 if os.path.exists('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/faster_inference_script/sample_json/paper_multipie/multipie_testset2.json'):
@@ -17,6 +18,9 @@ with open(path, 'r') as f:
     data = json.load(f)['pair']
  
 for p in glob.glob(args.pred_path + '/*'):   
+    if os.path.isdir(p + '/out') and args.dup_out_eval:
+        print("[#] Duplicating out to out_eval...")    
+        os.system(f'cp -r {p}/out {p}/out_eval')
     if os.path.isdir(p):
         os.makedirs(f"{p}/out_transf_eval/", exist_ok=True)
         for k, v in data.items():

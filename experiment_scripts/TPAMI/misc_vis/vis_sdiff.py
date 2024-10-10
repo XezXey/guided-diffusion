@@ -49,7 +49,11 @@ def create_app():
             # Alphabetical
             all_path = sorted(glob.glob(f'/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/{set_}/*.jpg'))
             all_path = [os.path.basename(x) for x in all_path]
-            
+         
+        # train_sub/train_0_to_5000/shadow/reverse_sampling
+        strengthen_path = '/data/mint/DPM_Dataset/Soften_Strengthen_Shadows/TPAMI/FFHQ_shadow_face/log=difareli_canny=153to204bg_256_vll_cfg=difareli_canny=153to204bg_256_vll.yaml_tomax_steps=50/ema_085000/'   
+        diffuse_path = '/data/mint/DPM_Dataset/Soften_Strengthen_Shadows/TPAMI/FFHQ_diffuse_face/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_tomin_steps=50/ema_085000/'
+        
         for img_path in all_path[int(s):int(e)]:
             print(img_path)
             img_name = img_path.split('.')[0]
@@ -59,6 +63,20 @@ def create_app():
             # Raw image
             tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/{set_}/{img_name}.jpg'
             out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
+            
+            # Reshadow
+            if set_ == 'train':
+                # find whether the image is in which part of train_sub  [[0, 5000], [5000, 10000], ..., [55000, 60000]]
+                img_num = int(int(img_name) // 5000)
+                sub_idx = [(i, i+5000) for i in range(0, 60000, 5000)]
+                sub = sub_idx[img_num]
+                tp = f"{strengthen_path}/train_sub/train_{sub[0]}_to_{sub[1]}/shadow/reverse_sampling/src={img_name}.jpg/dst={sub[0]}.jpg/Lerp_1000/n_frames=5/res_frame4.png"
+                out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
+                
+                tp = f"{diffuse_path}/train_sub/train_{sub[0]}_to_{sub[1]}/shadow/reverse_sampling/src={img_name}.jpg/dst={sub[0]}.jpg/Lerp_1000/n_frames=3/res_frame2.png"
+                out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
+                
+            
             
             # Shadow masks from ray-tracing
             tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_masks/{set_}/{img_name}.png'
