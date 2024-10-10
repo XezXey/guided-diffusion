@@ -6,7 +6,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--pred_path', type=str, required=True)
 args = parser.parse_args()
 
-path = '/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/faster_inference_script/sample_json/paper_multipie/multipie_testset2.json'
+if os.path.exists('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/faster_inference_script/sample_json/paper_multipie/multipie_testset2.json'):
+    path = '/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/faster_inference_script/sample_json/paper_multipie/multipie_testset2.json'
+elif os.path.exists('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/faster_inference_script/sample_json/paper_multipie/multipie_testset2.json'):
+    path = '/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/faster_inference_script/sample_json/paper_multipie/multipie_testset2.json'
+else:
+    raise FileNotFoundError('[#] multipie_testset2 not found...')
+
 with open(path, 'r') as f:
     data = json.load(f)['pair']
  
