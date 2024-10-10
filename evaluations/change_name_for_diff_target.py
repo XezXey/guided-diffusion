@@ -16,7 +16,7 @@ else:
 with open(path, 'r') as f:
     data = json.load(f)['pair']
  
-for p in glob.glob(args.pred_path + '/*'):   
+for p in glob.glob(args.pred_path + '/*.png'):   
     if os.path.isdir(p):
         os.makedirs(f"{p}/out_transf_eval/", exist_ok=True)
         for k, v in data.items():
