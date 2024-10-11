@@ -1,0 +1,37 @@
+solver_cfg,DSSIM
+dpmsolver++_multistep_100_2_None_SD100.0,[#] DSSIM : 0.060021 +- 0.029176
+
+dpmsolver++_multistep_10_2_None_SD100.0,[#] DSSIM : 0.086872 +- 0.031928
+
+dpmsolver++_multistep_20_2_None_SD100.0,[#] DSSIM : 0.065742 +- 0.028972
+
+dpmsolver++_multistep_25_2_None_SD100.0,[#] DSSIM : 0.062600 +- 0.028878
+
+dpmsolver++_multistep_50_2_None_SD100.0,[#] DSSIM : 0.059826 +- 0.028924
+
+dpmsolver++_multistep_75_2_None_SD100.0,[#] DSSIM : 0.059886 +- 0.029106
+
+dpmsolver_multistep_100_2_None_SD100.0,[#] DSSIM : 0.059745 +- 0.029100
+
+dpmsolver_multistep_10_2_None_SD100.0,[#] DSSIM : 0.079750 +- 0.032653
+
+dpmsolver_multistep_20_2_None_SD100.0,[#] DSSIM : 0.064610 +- 0.028698
+
+dpmsolver_multistep_25_2_None_SD100.0,[#] DSSIM : 0.061981 +- 0.028652
+
+dpmsolver_multistep_50_2_None_SD100.0,[#] DSSIM : 0.059399 +- 0.028782
+
+dpmsolver_multistep_75_2_None_SD100.0,[#] DSSIM : 0.059543 +- 0.029003
+
+unipc_multistep_100_2_None_SD100.0,[#] DSSIM : 0.060966 +- 0.029352
+
+unipc_multistep_10_2_None_SD100.0,[#] DSSIM : 0.145702 +- 0.034713
+
+unipc_multistep_20_2_None_SD100.0,[#] DSSIM : 0.070267 +- 0.028945
+
+unipc_multistep_25_2_None_SD100.0,[#] DSSIM : 0.066108 +- 0.028992
+
+unipc_multistep_50_2_None_SD100.0,[#] DSSIM : 0.062172 +- 0.029220
+
+unipc_multistep_75_2_None_SD100.0,[#] DSSIM : 0.061262 +- 0.029328
+
