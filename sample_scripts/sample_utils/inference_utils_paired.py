@@ -408,8 +408,8 @@ def build_condition_image(cond, misc, force_render=False):
         all_shadow_mask = []
         all_shadow_kk = []
         all_render_ld = []
-        load_deca_time = time.time() - start_t
-        render_time = []
+        pure_render_deca_time = []
+        pure_render_shadow_time = []
         
         for i in range(len(sub_step)-1):
             print(f"[#] Sub step rendering : {sub_step[i]} to {sub_step[i+1]}")
@@ -418,6 +418,7 @@ def build_condition_image(cond, misc, force_render=False):
             sub_cond = cond.copy()
             sub_cond['light'] = sub_cond['light'][start:end, :]
             # Deca rendered : B x 3 x H x W
+            start_sub_render_deca_t = time.time()
             deca_rendered, orig_visdict = params_utils.render_deca(deca_params=sub_cond, 
                                                                 idx=src_idx, n=end-start, 
                                                                 avg_dict=avg_dict, 
@@ -426,12 +427,17 @@ def build_condition_image(cond, misc, force_render=False):
                                                                 mask=mask,
                                                                 deca_obj=deca_obj,
                                                                 repeat=True)
+            sub_render_deca_t = time.time() - start_sub_render_deca_t
             print("[#] Rendering with the shadow mask from face + scalp of render face...")
             if i == 0:
+                load_deca_for_shadow_time = time.time()
                 flame_face_scalp = params_utils.load_flame_mask(['face', 'scalp', 'left_eyeball', 'right_eyeball'])
                 deca_obj_face_scalp = params_utils.init_deca(mask=flame_face_scalp, rasterize_type=args.rasterize_type) # Init DECA with mask only once
+                load_deca_for_shadow_time = time.time() - load_deca_for_shadow_time
             if args.rotate_sh_axis == 1:
                 print("[#] Fixing the axis 1...")
+            
+            start_sub_render_shadow_t = time.time()
             shadow_mask, shadow_kk, render_ld = params_utils.render_shadow_mask_with_smooth(
                                             sh_light=sub_cond['light'], 
                                             cam=sub_cond['cam'][src_idx],
@@ -444,10 +450,13 @@ def build_condition_image(cond, misc, force_render=False):
                                             org_h=img_size, org_w=img_size,
                                             rt_dict={'pt_round':args.pt_round, 'pt_radius':args.pt_radius, 'rt_regionG_scale':args.rt_regionG_scale, 'scale_depth':args.scale_depth}
                                         )
+            sub_render_shadow_t = time.time() - start_sub_render_shadow_t
             if i == len(sub_step)-2:
                 del deca_obj_face_scalp
             all_render.append(deca_rendered)
             render_time.append(time.time() - start_t)
+            pure_render_deca_time.append(sub_render_deca_t)
+            pure_render_shadow_time.append(sub_render_shadow_t)
             
             all_shadow_mask.append(shadow_mask[:, None, ...])
             all_shadow_kk.append(shadow_kk[:, None, ...])
@@ -463,6 +472,10 @@ def build_condition_image(cond, misc, force_render=False):
 
         render_time = np.mean(render_time) + load_deca_time
         cond['render_time'] = render_time
+        cond['pure_render_deca_time'] = pure_render_deca_time
+        cond['pure_render_shadow_time'] = pure_render_shadow_time
+        cond['load_deca_time'] = load_deca_time
+        cond['load_deca_for_shadow_time'] = load_deca_for_shadow_time
         print("Rendering time : ", time.time() - start_t)
         
         if args.fixed_render:

@@ -264,7 +264,13 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         
     print(f"[#] Total relight time = {time.time() - start_relight_time}")
     relit_out = th.from_numpy(np.concatenate(relit_out, axis=0))
-    out_timing = {'relit_time':np.mean(relit_time), 'each_relit_time': relit_time, 'render_time':cond['render_time'] if 'render_time' in cond else 0}
+    out_timing = {'relit_time':np.mean(relit_time), 'each_relit_time': relit_time, 
+                  'render_time':cond['render_time'] if 'render_time' in cond else 0,
+                  'pure_render_deca_time':cond['pure_render_deca_time'] if 'pure_render_deca_time' in cond else 0,
+                  'pure_render_shadow_time':cond['pure_render_shadow_time'] if 'pure_render_shadow_time' in cond else 0,
+                  'load_deca_time':cond['load_deca_time'] if 'load_deca_time' in cond else 0,
+                  'load_deca_for_shadow_time':cond['load_deca_for_shadow_time'] if 'load_deca_for_shadow_time' in cond else 0,
+                }
     
     if ('render_face' in args.itp) or args.force_render:
         return relit_out, cond['cond_img'], out_timing, {'render_ld':cond['render_ld']}
@@ -405,7 +411,7 @@ if __name__ == '__main__':
     print(f"[#] Run from index of {start} to {end}...")
         
     counter_sj = 0
-    runtime_dict = {'relit_time':[], 'sub_relit_time':[], 'render_time':[]}
+    runtime_dict = {'relit_time':[], 'sub_relit_time':[], 'render_time':[], 'sub_pure_render_deca_time':[], 'sub_pure_render_shadow_time':[], 'sub_load_deca_for_shadow_time':[], 'sub_load_deca_time':[]}
     for i in range(start, end):
         img_idx = all_img_idx[i]
         img_name = all_img_name[i]
@@ -457,6 +463,10 @@ if __name__ == '__main__':
         runtime_dict['relit_time'].append(time_dict['relit_time'])
         runtime_dict['sub_relit_time'].append(time_dict['each_relit_time'])
         runtime_dict['render_time'].append(time_dict['render_time'])
+        runtime_dict['sub_pure_render_deca_time'].append(time_dict['pure_render_deca_time'])
+        runtime_dict['sub_pure_render_shadow_time'].append(time_dict['pure_render_shadow_time'])
+        runtime_dict['sub_load_deca_for_shadow_time'].append(time_dict['load_deca_for_shadow_time'])
+        runtime_dict['sub_load_deca_time'].append(time_dict['load_deca_time'])
         
         #NOTE: Save result
         out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
@@ -577,6 +587,10 @@ if __name__ == '__main__':
         runtime_dict['std_relit_time'] = np.std(runtime_dict['relit_time'])
         runtime_dict['all_relit_time'] = np.stack(runtime_dict['sub_relit_time']).tolist()
         runtime_dict['all_render_time'] = runtime_dict['render_time'] if 'render_time' in runtime_dict else None
+        runtime_dict['all_pure_render_deca_time'] = np.stack(runtime_dict['pure_render_deca_time']).tolist() if 'pure_render_deca_time' in runtime_dict else None
+        runtime_dict['all_pure_render_shadow_time'] = np.stack(runtime_dict['pure_render_shadow_time']).tolist() if 'pure_render_shadow_time' in runtime_dict else None
+        runtime_dict['all_load_deca_time'] = np.stack(runtime_dict['load_deca_time']).tolist() if 'load_deca_time' in runtime_dict else None
+        runtime_dict['all_load_deca_for_shadow_time'] = np.stack(runtime_dict['load_deca_for_shadow_time']).tolist() if 'load_deca_for_shadow_time' in runtime_dict else None
         runtime_dict['set'] = args.set
         runtime_dict['n_sj'] = counter_sj
         json.dump(runtime_dict, fj)
