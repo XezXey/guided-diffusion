@@ -99,7 +99,7 @@ def dict_slice_se(in_d, keys, s, e):
     :return dict_tensor: the deepcopy version of input dict_tensor
     '''
     for key in keys:
-        if key in ['image_name', 'raw_image_path']:
+        if key in ['image_name', 'raw_image_path', 'pure_render_deca_time', 'pure_render_shadow_time', 'load_deca_time', 'load_deca_for_shadow_time']:
             continue
         else:
             if th.is_tensor(in_d[key]):

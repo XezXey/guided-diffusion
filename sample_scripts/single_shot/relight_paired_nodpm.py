@@ -70,6 +70,7 @@ parser.add_argument('--inverse_with_strongest_c', action='store_true', default=F
 parser.add_argument('--inverse_with_shadow_diff', action='store_true', default=False)
 parser.add_argument('--relight_with_shadow_diff', action='store_true', default=False, help='This for testing on MP while we have ')
 parser.add_argument('--relight_with_dst_c', action='store_true', default=False, help='Use the target shadow value for relighting')
+parser.add_argument('--relight_with_rand_max_c', action='store_true', default=False, help='Use the random shadow value for relighting')
 parser.add_argument('--combined_mask', action='store_true', default=False)
 parser.add_argument('--use_ray_mask', action='store_true', default=False)
 parser.add_argument('--render_same_mask', action='store_true', default=False)
@@ -587,8 +588,8 @@ if __name__ == '__main__':
         runtime_dict['std_relit_time'] = np.std(runtime_dict['relit_time'])
         runtime_dict['all_relit_time'] = np.stack(runtime_dict['sub_relit_time']).tolist()
         runtime_dict['all_render_time'] = runtime_dict['render_time'] if 'render_time' in runtime_dict else None
-        runtime_dict['all_pure_render_deca_time'] = np.stack(runtime_dict['pure_render_deca_time']).tolist() if 'pure_render_deca_time' in runtime_dict else None
-        runtime_dict['all_pure_render_shadow_time'] = np.stack(runtime_dict['pure_render_shadow_time']).tolist() if 'pure_render_shadow_time' in runtime_dict else None
+        runtime_dict['all_pure_render_deca_time'] = np.stack(runtime_dict['sub_pure_render_deca_time']).tolist() if 'sub_pure_render_deca_time' in runtime_dict else None
+        runtime_dict['all_pure_render_shadow_time'] = np.stack(runtime_dict['sub_pure_render_shadow_time']).tolist() if 'sub_pure_render_shadow_time' in runtime_dict else None
         runtime_dict['all_load_deca_time'] = np.stack(runtime_dict['load_deca_time']).tolist() if 'load_deca_time' in runtime_dict else None
         runtime_dict['all_load_deca_for_shadow_time'] = np.stack(runtime_dict['load_deca_for_shadow_time']).tolist() if 'load_deca_for_shadow_time' in runtime_dict else None
         runtime_dict['set'] = args.set
