@@ -693,7 +693,7 @@ def render_deca(deca_params, idx, n, render_mode='shape',
         
     from decalib.datasets import datasets 
     testdata = datasets.TestData([deca_params['raw_image_path'][0]], iscrop=True, face_detector='fan', sample_step=10)
-    print(len(testdata), len(deca_params['raw_image_path']))
+    # print(len(testdata), len(deca_params['raw_image_path']))
     if repeat:
         codedict = {'shape':deca_params['shape'][[idx]].repeat(n, 1).to(device).float(),
                     'pose':deca_params['pose'][[idx]].repeat(n, 1).to(device).float(),

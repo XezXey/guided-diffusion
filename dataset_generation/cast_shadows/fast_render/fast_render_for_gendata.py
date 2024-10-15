@@ -11,6 +11,7 @@ parser.add_argument('--sample_json', required=True)
 parser.add_argument('--rasterize_type', default='standard')
 parser.add_argument('--n_frames', type=int, required=True)
 parser.add_argument('--out_path', required=True)
+parser.add_argument('--idx', nargs='+', type=int)
 args = parser.parse_args()
 
 def render(img_name):
@@ -67,8 +68,16 @@ if __name__ == '__main__':
 
     with open(args.sample_json) as f:
         pairs = json.load(f)['pair']
+        pairs = [{'src': p['src'], 'dst': p['dst']} for _, p in pairs.items()]
 
-    for k, v in tqdm.tqdm(pairs.items()):
+    if args.idx is not None:
+        s = args.idx[0]
+        e = args.idx[1] if args.idx[1] <= len(pairs) else len(pairs)
+    else:
+        s = 0
+        e = len(pairs)
+
+    for v in tqdm.tqdm(pairs[s:e]):
         img_name = v['src']
         deca_rendered, orig_visdict = render(img_name)
 
