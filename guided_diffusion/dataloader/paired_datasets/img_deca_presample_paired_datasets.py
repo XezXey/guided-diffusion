@@ -456,9 +456,6 @@ class DECADataset(Dataset):
             sj_dict_swap.update(out[1])    
         
         return sj_to_index_dict, sj_dict_swap
-            
-            
-        
     
     def __getitem__(self, src_idx):
         # Select the sj at idx
@@ -486,7 +483,7 @@ class DECADataset(Dataset):
         src_arr, src_dict = self.get_data_sjdict(src_name)  # Use src_name to query the data: '<id>_input.png' e.g., '0_input.png', '1_input.png'
         dst_arr, dst_dict = self.get_data_sjdict(dst_name, relit=True)  # Same as above but with relit=True
         
-        # Check different image name "But" same sj
+        # Check different image name "But" same sj => correct sj-paired
         assert src_dict['image_name'] != dst_dict['image_name']
         assert src_dict['image_name'].split('_')[0] == dst_dict['image_name'].split('_')[0]
         return {'arr':src_arr, 'dict':src_dict}, {'arr':dst_arr, 'dict':dst_dict}
