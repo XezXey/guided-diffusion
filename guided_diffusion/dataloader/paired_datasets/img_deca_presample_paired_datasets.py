@@ -467,7 +467,7 @@ class DECADataset(Dataset):
         # print(src_name, query_src_name)
         # print(self.relit_sj_to_index_dict[query_src_name])
         dst_idx = self.relit_sj_to_index_dict[query_src_name][:self.cfg.dataset.pair_per_sj]
-        if self.cfg.dataset.pair_per_sj > 1:
+        if self.cfg.dataset.pair_per_sj > 1 and len(dst_idx) > 1:
             dst_idx = np.random.choice(dst_idx, 1)[0]   # Sample the relit image from the same source subject
         else:
             dst_idx = dst_idx[0]
