@@ -36,17 +36,27 @@ train:
   weight_decay: 0.0
   sampling_interval: 25000
   save_interval: 25000
+  train_with_extra_dataset: True
+
 
 dataset:
+  training_data: "Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows/"
+  deca_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows/params_recreate/"
+  data_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows/images/"
+  face_segment_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows/face_segment/"
+  deca_rendered_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows/rendered_images/"
+  shadow_diff_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows/shadow_diff_SS_with_c_simplified_npy/"
+  pair_per_sj: 20
+
+extra_dataset:
   training_data: "Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows_extra_rotate/"
   deca_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows_extra_rotate/params_recreate/"
   data_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows_extra_rotate/images/"
   face_segment_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows_extra_rotate/face_segment/"
   deca_rendered_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows_extra_rotate/rendered_images/"
   shadow_diff_dir: "/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_cast_shadows_extra_rotate/shadow_diff_SS_with_c_simplified_npy/"
-  pair_per_sj: 20
 
 
 train_misc:
   exp_name: "TPAMI_main_results"
-  cfg_name: "difareli++_finetune_rotate_256"
+  cfg_name: "difareli++_train_extra_rotate_256"

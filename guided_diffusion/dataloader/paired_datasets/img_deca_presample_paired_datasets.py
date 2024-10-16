@@ -168,53 +168,41 @@ def load_data_img_deca(
             if 'deca' in in_image_type:
                 deca_render_path = f"{cfg.dataset.deca_rendered_dir}/{in_image_type}/{set_}/"
                 # Separate 'raw' (input image) and 'relit' (output image)
-                if (os.path.exists(f"{deca_render_path}/render_input_results.pkl")) and (os.path.exists(f"{deca_render_path}/render_relit_results.pkl")):
-                    print("[#] Loading the pre-saved render results file lists")
-                    # Preload the image path for faster loading
-                    with open(f"{deca_render_path}/render_input_results.pkl", 'rb') as f:
-                        input_render_image = pickle.load(f)
-                    with open(f"{deca_render_path}/render_relit_results.pkl", 'rb') as f:
-                        relit_render_image = pickle.load(f)
-                else: 
-                    input_render_image, relit_render_image = _list_image_files_recursively_separate(deca_render_path)
-                
+                input_render_image, relit_render_image = _list_image_files_recursively_separate(deca_render_path)
+                if cfg.train.train_with_extra_dataset:
+                    extra_input_render_image, extra_relit_render_image = _list_image_files_recursively_separate(f"{cfg.extra_dataset.deca_rendered_dir}/{in_image_type}/{set_}/")
+                    input_render_image.extend(extra_input_render_image)
+                    relit_render_image.extend(extra_relit_render_image)
                 in_image_dict[in_image_type] = input_render_image
                 relit_image_dict[in_image_type] = relit_render_image
-                print(f"[#] Total input images of render: {len(input_render_image)}")
-                print(f"[#] Total relit images of render: {len(relit_render_image)}")
+                print(f"[#] Total input images of render: {len(input_render_image)} (+{len(extra_input_render_image)} from {cfg.extra_dataset.training_data})")
+                print(f"[#] Total relit images of render: {len(relit_render_image)} (+{len(extra_relit_render_image)} from {cfg.extra_dataset.training_data})")
             elif 'faceseg' in in_image_type:
                 in_image_dict[in_image_type] = _list_image_files_recursively(f"{cfg.dataset.face_segment_dir}/{set_}/anno/")
             elif 'shadow_diff_with_weight_simplified' in in_image_type:
                 shadow_path = f"{cfg.dataset.shadow_diff_dir}/"
                 # Separate 'raw' (input image) and 'relit' (output image)
-                if os.path.exists(f"{shadow_path}/{set_}/shadow_input_results.pkl"):
-                    print("[#] Loading the pre-saved cast shadows results file lists")
-                    # Preload the image path for faster loading
-                    with open(f"{data_dir}/{set_}/cs_input_results.pkl", 'rb') as f:
-                        input_cs_image = pickle.load(f)
-                    with open(f"{data_dir}/{set_}/cs_relit_results.pkl", 'rb') as f:
-                        relit_cs_image = pickle.load(f)
-                else: 
-                    input_cs_image, relit_cs_image = _list_image_files_recursively_separate(f"{shadow_path}/{set_}")
+                input_cs_image, relit_cs_image = _list_image_files_recursively_separate(f"{shadow_path}/{set_}")
+                if cfg.train.train_with_extra_dataset:
+                    extra_input_cs_image, extra_relit_cs_image = _list_image_files_recursively_separate(f"{cfg.extra_dataset.shadow_diff_dir}/{set_}")
+                    input_cs_image.extend(extra_input_cs_image)
+                    relit_cs_image.extend(extra_relit_cs_image)
                 in_image_dict[in_image_type] = input_cs_image
                 relit_image_dict[in_image_type] = relit_cs_image
-                print(f"[#] Total input images of shadows: {len(input_cs_image)}")
-                print(f"[#] Total relit images of shadows: {len(relit_cs_image)}")
+                print(f"[#] Total input images of shadows: {len(input_cs_image)} (+{len(extra_input_cs_image)} from {cfg.extra_dataset.training_data})")
+                print(f"[#] Total relit images of shadows: {len(relit_cs_image)} (+{len(extra_relit_cs_image)} from {cfg.extra_dataset.training_data})")
             elif 'raw' in in_image_type: 
                 # Separate 'raw' (input image) and 'relit' (output image)
-                if os.path.exists(f"{data_dir}/{set_}/raw_input_results.pkl"):
-                    print("[#] Loading the pre-saved raw results file lists")
-                    # Preload the image path for faster loading
-                    with open(f"{data_dir}/{set_}/raw_input_results.pkl", 'rb') as f:
-                        input_image = pickle.load(f)
-                    with open(f"{data_dir}/{set_}/raw_relit_results.pkl", 'rb') as f:
-                        relit_image = pickle.load(f)
-                else: 
-                    input_image, relit_image = _list_image_files_recursively_separate(f"{data_dir}/{set_}")
+                input_image, relit_image = _list_image_files_recursively_separate(f"{data_dir}/{set_}")
+                if cfg.train.train_with_extra_dataset:
+                    extra_input_image, extra_relit_image = _list_image_files_recursively_separate(f"{cfg.extra_dataset.data_dir}/{set_}")
+                    input_image.extend(extra_input_image)
+                    relit_image.extend(extra_relit_image)
                 in_image_dict[in_image_type] = input_image
                 relit_image_dict[in_image_type] = relit_image
-                print(f"[#] Total input images of raw: {len(input_image)}")
-                print(f"[#] Total relit images of raw: {len(relit_image)}")
+
+                print(f"[#] Total input images of raw: {len(input_image)} (+{len(extra_input_image)} from {cfg.extra_dataset.training_data})")
+                print(f"[#] Total relit images of raw: {len(relit_image)} (+{len(extra_relit_image)} from {cfg.extra_dataset.training_data})")
                 
             elif in_image_type in ['face_structure']: continue
             else:
@@ -224,6 +212,10 @@ def load_data_img_deca(
     
     tstart = time.time()
     deca_params, avg_dict = load_deca_params_parallel(deca_dir + set_, cfg)
+    if cfg.train.train_with_extra_dataset:
+        deca_params_extra, avg_dict_extra = load_deca_params_parallel(f"{cfg.extra_dataset.deca_dir}/{set_}", cfg)
+        deca_params.update(deca_params_extra)
+        avg_dict.update(avg_dict_extra)
     print(f"[#] Time for loading the deca_params: {time.time() - tstart:.2f}s")
 
     # Shuffling the data (to make the training/sampling can query the multiple sj in one batch)

@@ -258,6 +258,16 @@ cfg.dataset.shadow_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_da
 cfg.dataset.shadow_diff_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_diff/"
 cfg.dataset.pair_per_sj = 1
 
+cfg.extra_dataset = CN()
+cfg.extra_dataset.training_data = 'ffhq_256_with_anno'
+cfg.extra_dataset.root_path = '/data/mint/DPM_Dataset/'
+cfg.extra_dataset.deca_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
+cfg.extra_dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
+cfg.extra_dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
+cfg.extra_dataset.deca_rendered_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
+cfg.extra_dataset.shadow_diff_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_diff/"
+cfg.extra_dataset.pair_per_sj = 1
+
 # ---------------------------------------------------------------------------- #
 # Options for training
 # ---------------------------------------------------------------------------- #
@@ -284,6 +294,7 @@ cfg.train.accumulate_grad_batches = None
 cfg.train.deterministic = True
 cfg.train.find_unused_parameters = False
 cfg.train.use_prep_data = False
+cfg.train.train_with_extra_dataset = False
 
 cfg.train_misc = CN()
 cfg.train_misc.exp_name = ""
