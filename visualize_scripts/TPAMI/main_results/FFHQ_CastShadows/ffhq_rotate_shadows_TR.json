@@ -1,0 +1,46 @@
+{
+    "ours_difareli++_oneshot_rotate" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli++ one shot - rotate",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_256_DiFaReli++_rotate" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ - rotate", 
+        "misc" : "ours",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_inv_with_sd_ds256_pt1_rot2_TR/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_oneshot_dstC" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli++ oneshot - dstC",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_dstC/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_256_DiFaReli++_dstC" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ - dstC",
+        "misc" : "ours",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_inv_with_sd_ds256_pt1_dstC_TR/ema_085000/valid/render_face/reverse_sampling/"
+    }
+}
