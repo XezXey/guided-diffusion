@@ -128,7 +128,8 @@ def create_app():
                 shadow_area_pth = '/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_with_weight_simplified/vis/'
                 out += f"[#{k}] {src}=>{dst} : <img src=/files/{data_path}/{src.replace('jpg', 'png')}>, {dst} : <img src=/files/{data_path}/{dst.replace('jpg', 'png')}>" + ", Shadow area = " + f"<img height=\"128\" src=/files/{shadow_area_pth}/{args.set_}/{src.replace('jpg', 'png')}>" + "<br>" + "<br>"
             else:
-                out += f"[#{k}] {src}=>{dst} : <img src=/files/{data_path}/{src}>, {dst} : <img src=/files/{data_path}/{dst}>" + "<br>" + "<br>"
+                shadow_area_pth = '/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_with_weight_simplified/vis/'
+                out += f"[#{k}] {src}=>{dst} : <img src=/files/{data_path}/{src}>, {dst} : <img src=/files/{data_path}/{dst}>" + ", Shadow area = " + f"<img height=\"128\" src=/files/{shadow_area_pth}/{args.set_}/{src.replace('jpg', 'png')}>" + "<br>" + "<br>"
             # Model 
             for m_idx, metadat in candidates.items():
                 # Model's metadata
@@ -146,7 +147,6 @@ def create_app():
             
                 out += "<tr>"
                 alias_str = alias.split('_')
-                # alias example: dpmsolver++_3_singlestep_15_dynamic_thresholding
                 out += f"<td> {alias} <br> {ckpt} </td> "
                 
                 if args.res == 128:
