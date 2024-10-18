@@ -18,8 +18,8 @@
         "itp_method":"Lerp",
         "diff_step":"1000",
         "time_respace":"",
-        "n_frame":"60",
-        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_inv_with_sd_ds256_pt1_rot2_TR/ema_300000/valid/render_face/reverse_sampling/"
+        "n_frame":"20",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_inv_with_sd_ds256_pt1_rot2_TR/ema_085000/valid/render_face/reverse_sampling/"
     },
     "ours_difareli++_oneshot_dstC" : {
         "step" :"ema_300000",
