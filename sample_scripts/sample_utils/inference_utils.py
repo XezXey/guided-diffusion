@@ -256,6 +256,7 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                 print("[#] Relight with the strongest c_val, set the weight to 0.0...")
                 weight_src = (c_val_src * 0.0).to(device)
                 weight_dst = (c_val_dst * 0.0).to(device)
+                weight_src_inversion = (c_val_src).to(device)
         fix_frame = False
 
     for _, cond_img_name in enumerate(condition_img):
@@ -315,7 +316,7 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                     #NOTE: Do not keep the shadow shading from perturbed light
                     # First frame
                     sd_shadow = sd_img[0:1] > 0.
-                    shadow_area = sd_shadow * (1-weight_src)     # Shadow area assigned weight
+                    shadow_area = sd_shadow * (1-weight_src_inversion)     # Shadow area assigned weight
                     shadow_ff = shadow_area
                     # Rest of the frames
                     if args.relight_with_dst_c:

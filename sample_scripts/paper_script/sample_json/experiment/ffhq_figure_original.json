@@ -95,6 +95,35 @@
         "pair24": {   
             "src": "63201.jpg",
             "dst": "68152.jpg"
+        },
+        "pair25": {
+            "src": "62385.jpg",
+            "dst": "67619.jpg"
+        },
+        "pair26": {
+            "src": "62385.jpg",
+            "dst": "64159.jpg"
+        },
+        "pair27": {
+            "src": "69257.jpg",
+            "dst": "62159.jpg"
+        },
+        "pair28": {
+            "src": "67615.jpg",
+            "dst": "67211.jpg"
+        },
+        "pair29": {
+            "src": "68665.jpg",
+            "dst": "64685.jpg"
+        },
+        "pair30": {
+            "src": "68545.jpg",
+            "dst": "62810.jpg"
+        },
+        "pair31": {
+            "src": "68545.jpg",
+            "dst": "62054.jpg"
         }
+
     }
 }

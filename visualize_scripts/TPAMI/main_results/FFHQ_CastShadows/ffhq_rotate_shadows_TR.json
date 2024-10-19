@@ -1,4 +1,15 @@
 {
+    "ours_difareli++_oneshot_rotate_tomax" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli++ one shot - rotate",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_tomax/ema_300000/valid/render_face/reverse_sampling/"
+    },
     "ours_difareli++_oneshot_rotate" : {
         "step" :"ema_300000",
         "alias" : "DiFaReli++ one shot - rotate",
