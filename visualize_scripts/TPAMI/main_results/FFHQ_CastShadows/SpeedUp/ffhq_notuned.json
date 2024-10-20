@@ -1,0 +1,46 @@
+{
+    "ours_difareli++_oneshot - dstC" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli++ one shot - dstC",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/speedup/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_dstC/ema_300000/valid/render_face/reverse_sampling"
+    },
+    "ours_difareli++_oneshot - srcC" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli++ one shot - srcC",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/speedup/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_srcC/ema_300000/valid/render_face/reverse_sampling"
+    },
+    "ours_difareli++_oneshot_finetune - dstC" : {
+        "step" :"ema_340000",
+        "alias" : "DiFaReli++ one shot (finetune) - dstC",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/speedup/log=difareli++_finetune_rotate_256_cfg=difareli++_finetune_rotate_256.yaml_dstC/ema_340000/valid/render_face/reverse_sampling"
+    },
+    "ours_difareli++_oneshot_finetune - srcC" : {
+        "step" :"ema_340000",
+        "alias" : "DiFaReli++ one shot (finetune) - srcC",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/speedup/log=difareli++_finetune_rotate_256_cfg=difareli++_finetune_rotate_256.yaml_srcC/ema_340000/valid/render_face/reverse_sampling"
+    }
+}
