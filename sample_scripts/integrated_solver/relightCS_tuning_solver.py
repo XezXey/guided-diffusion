@@ -21,6 +21,7 @@ parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--sdiff_dir', nargs='+', required=True, help='Shadow difference directory')
 parser.add_argument('--scale_depth', nargs='+', type=int, default=[100, 256])
 parser.add_argument('--save_vid', action='store_true', default=False)
+parser.add_argument('--rasterize_type', type=str, default='standard')
 
 # Solver
 parser.add_argument('--solver_alg', nargs='+', type=str, default=['dpmsolver++'])
@@ -86,7 +87,7 @@ for dataset_idx, dataset in enumerate(args.dataset):
                                     --solver_alg {solver_alg} --solver_steps {solver_steps} --solver_method {solver_method} --solver_order {solver_order} --solver_correcting_x0_fn {solver_correcting_x0_fn} \
                                     --postfix {solver_alg}_{solver_order}_{solver_method}_{solver_steps}_{solver_correcting_x0_fn}_SD{scale_depth}_{postfix} --eval_dir {args.eval_dir} \
                                     --postproc_shadow_mask_smooth --up_rate_for_AA 1 --shadow_diff_dir {args.sdiff_dir[dataset_idx]} --inverse_with_shadow_diff \
-                                    --relight_with_dst_c --pt_round 1 --scale_depth {scale_depth}\
+                                    --relight_with_dst_c --pt_round 1 --scale_depth {scale_depth} --rasterize_type {args.rasterize_type}\
                                     """
                                 )
                                 if args.force_render: cmd += ' --force_render'
