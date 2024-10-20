@@ -20,6 +20,7 @@ parser.add_argument('--force_render', action='store_true', default=False)
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--sdiff_dir', nargs='+', required=True, help='Shadow difference directory')
 parser.add_argument('--scale_depth', nargs='+', type=int, default=[100, 256])
+parser.add_argument('--save_vid', action='store_true', default=False)
 
 # Solver
 parser.add_argument('--solver_alg', nargs='+', type=str, default=['dpmsolver++'])
@@ -89,6 +90,7 @@ for dataset_idx, dataset in enumerate(args.dataset):
                                     """
                                 )
                                 if args.force_render: cmd += ' --force_render'
+                                if args.save_vid: cmd += ' --save_vid'
                                 print(cmd)
                                 os.system(cmd)
                                 print("#"*100)
