@@ -52,6 +52,6 @@
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"5",
-        "img_dir" : ""
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/DiFaReli/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml/ema_085000/valid/render_face/reverse_sampling/"
     }
 }
