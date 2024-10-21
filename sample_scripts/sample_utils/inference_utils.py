@@ -326,6 +326,9 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                         rand_c = th.tensor(np.random.uniform(0.7, 1.0, size=weight_src.shape)).type_as(weight_src)
                         print(f"[#] Relight with random c_val [0.7 to 1] => {rand_c}")
                         shadow_rf = ((sd_img[1:] > 0.) * ((weight_dst * 0.) + rand_c))
+                    elif args.relight_with_given_c is not None:
+                        print(f"[#] Relight with the given c_val = {args.relight_with_given_c}")
+                        shadow_rf = ((sd_img[1:] > 0.) * ((weight_dst * 0.) + args.relight_with_given_c))
                     else:
                         print(f"[#] Relight with the src c_val = {weight_src.flatten()}")
                         shadow_rf = (sd_img[1:] * (1-weight_src))    # Shadow area assigned weight

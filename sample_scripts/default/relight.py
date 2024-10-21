@@ -64,6 +64,7 @@ parser.add_argument('--inverse_with_shadow_diff', action='store_true', default=F
 parser.add_argument('--relight_with_shadow_diff', action='store_true', default=False, help='This for testing on MP while we have ')
 parser.add_argument('--relight_with_dst_c', action='store_true', default=False, help='Use the target shadow value for relighting')
 parser.add_argument('--relight_with_rand_max_c', action='store_true', default=False, help='Use the random shadow value for relighting')
+parser.add_argument('--relight_with_given_c', type=float, default=None, help='Use the random shadow value for relighting')
 parser.add_argument('--combined_mask', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dir', type=str, default=None)
 parser.add_argument('--use_ray_mask', action='store_true', default=False)
