@@ -182,7 +182,8 @@ def create_app():
                 # out += f"<td>{show_img}{show_vid}"
                 out += f"<td>"
                 # if len(frames) > 0 and show_img == "True":
-                if len(frames) > 0:
+                print(len(frames))
+                if len(frames) > 1:
                     tmp_ds = [0] + list(range(1, len(frames)-1, int(len(frames)/ds))) + [len(frames)-1]
                     frames = sort_by_frame(frames)
                     if show_itmd == "False":

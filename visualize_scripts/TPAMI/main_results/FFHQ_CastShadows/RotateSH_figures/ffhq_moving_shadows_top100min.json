@@ -10,9 +10,9 @@
         "n_frame":"60",
         "img_dir" : "/data2/mint/sampling/TPAMI/main_result/ffhq/moving_shadows/top_/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml/ema_300000/valid/render_face/reverse_sampling/"
     },
-    "ours_256_DiFaReli++_min_shadows" : {
+    "ours_256_DiFaReli++_oneshot" : {
         "step":"ema_300000", 
-        "alias":"DiFaReli++ (Axis 2)",
+        "alias":"DiFaReli++ oneshot (Axis 2)",
         "misc" : "ours",
         "itp":"render_face",
         "itp_method":"Lerp",
@@ -30,6 +30,6 @@
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"60",
-        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml__pt1_srcC_rotsh_axis2/ema_085000/valid/render_face/reverse_sampling/"
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/moving_shadows/top_100_min_shadows/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml__pt1_srcC_rotsh_axis2/ema_085000/valid/render_face/reverse_sampling/"
     }
 }
