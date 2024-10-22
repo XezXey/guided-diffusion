@@ -158,13 +158,13 @@ def create_app():
                 # Show results
                 # if 'baseline' in alias:
                 if 'Single pass' in alias:
-                    frames = glob.glob(f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame_tmp}/res_*.png")
+                    frames = glob.glob(f"{path}/{itp_method}_diff={diff_step}_respace={time_respace}/n_frames={n_frame_tmp}/res_f*.png")
                     # out += f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png"
                 else:
                     if show_shadm == "True":
                         frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/shadm_*.png")
                     else:
-                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/res_*.png")
+                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/res_frame*.png")
                     # out += f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_*.png"
                 # out += str(show_itmd)
                         # <video width="320" height="240" controls autoplay muted>
