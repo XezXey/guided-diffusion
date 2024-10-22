@@ -3,7 +3,7 @@ import glob, os
 import numpy as np
 import json
 import sys
-sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/sample_utils/')
+sys.path.insert(0, '/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/sample_utils/')
 import mani_utils, file_utils
 import argparse
     
