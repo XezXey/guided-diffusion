@@ -108,7 +108,6 @@ if __name__ == '__main__':
         faceseg_dir = f'{args.proc_dataset_path}/face_segment_with_pupil/{args.set_}/anno/anno_{src_sj_name}.png'
         faceseg = np.array(Image.open(faceseg_dir))
         foreground = face_segment('faceseg_foreground', faceseg)
+        if os.path.exists(f'{p}/n_step={args.n_step}') == False:
+            raise FileNotFoundError(f'{p}/n_step={args.n_step} is not found!')
         Image.fromarray(foreground.astype(np.uint8)*255).save(f'{p}/n_step={args.n_step}/{src_id}_mask.png')
-        
-        
-

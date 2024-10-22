@@ -21,6 +21,7 @@ parser.add_argument('--dataset_name', type=str, required=True)
 parser.add_argument('--out_path', type=str, required=True)
 parser.add_argument('--set_', type=str, default='valid')
 parser.add_argument('--n_step', type=int, default=2)
+parser.add_argument('--axis', type=int, default=2)
 args = parser.parse_args()
 
 if args.dataset_name in ['mp_test', 'mp_test2', 'mp_valid', 'mp_valid2']:
@@ -38,7 +39,7 @@ if args.dataset_name in ['mp_test', 'mp_test2', 'mp_valid', 'mp_valid2']:
     img_path = f'/data/mint/DPM_Dataset/MultiPIE/{sub_f}/mp_aligned/{args.set_}/'
     sh_path = f'/data/mint/DPM_Dataset/MultiPIE/{sub_f}/params/{args.set_}/ffhq-{args.set_}-light-anno.txt'
 
-elif args.dataset_name in ['ffhq']:
+elif args.dataset_name in ['ffhq', 'ffhq_target', 'ffhq_rotate', 'ffhq_shadows', 'ffhq_diffuse']:
     img_path = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/{args.set_}/'
     sh_path = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/params/{args.set_}/ffhq-{args.set_}-light-anno.txt'
 else:
@@ -201,20 +202,76 @@ def readImage(fn):
     img = Image.open(fn)
     return transforms.ToTensor()(img)
 
-def interpolateSH(inp_sh, tgt_sh, n_step, out_path, img_size=256):
-    # print(inp_sh.shape, tgt_sh.shape)
-    intp = np.linspace(0, 1, n_step)
-    out = inp_sh * (1 - intp[:, None]) + tgt_sh * intp[:, None]
-    # print(out.shape)
-    for i in tqdm.tqdm(range(n_step), desc=f'Interpolating SH for {n_step} frames...', leave=False):
-        sh = out[i]
-        ball, map, map_centered, map_clean, combined = drawSH(sh, img_size)
+def rotate_sh(inp_sh, n_step, axis, out_path, img_size=256):
+
+    import pyshtools as pysh
+    def toCoeff(c):
+      t = pysh.SHCoeffs.from_zeros(2)
+      t.set_coeffs(c[0], 0, 0)
+      t.set_coeffs(c[1], 1, 1)
+      t.set_coeffs(c[2], 1, -1)
+      t.set_coeffs(c[3], 1, 0)
+      t.set_coeffs(c[4], 2, -2)
+      t.set_coeffs(c[5], 2, 1)
+      t.set_coeffs(c[6], 2, -1)
+      t.set_coeffs(c[7], 2, 2)
+      t.set_coeffs(c[8], 2, 0)
+      return t
+
+    def toRGBCoeff(c):
+      return [toCoeff(c[::3]), toCoeff(c[1::3]), toCoeff(c[2::3])]
+
+    def toDeca(c):
+      a = c.coeffs
+      lst = [a[0, 0, 0],
+             a[0, 1, 1],
+             a[1, 1, 1],
+             a[0, 1, 0],
+             a[1, 2, 2],
+             a[0, 2, 1],
+             a[1, 2, 1],
+             a[0, 2, 2],
+             a[0, 2, 0]]
+      return np.array(lst)
+
+    def toRGBDeca(cc):
+      return list(itertools.chain(*zip(toDeca(cc[0]), toDeca(cc[1]), toDeca(cc[2]))))
+
+    def axisAngleToEuler(x, y, z, degree):
+      xyz = np.array([x, y, z])
+      xyz = xyz / np.linalg.norm(xyz)
+
+      rot = R.from_mrp(xyz * np.tan(degree * np.pi / 180 / 4))
+      return rot.as_euler('zyz', degrees=True)
+
+    def rotateSH(sh_np, x, y, z, degree):
+      cc = toRGBCoeff(sh_np)
+      euler = axisAngleToEuler(x, y, z, degree)
+      cc[0] = cc[0].rotate(*euler)
+      cc[1] = cc[1].rotate(*euler)
+      cc[2] = cc[2].rotate(*euler)
+      return toRGBDeca(cc)
+    
+    inp_sh = inp_sh.flatten()   # [1, 27] -> [27,]
+    # out_sh = []
+    n = n_step
+    frame_counter = 0
+    for i in tqdm.tqdm(np.linspace(0, 360, n), desc=f'Rotating SH for {n_step} frames...', leave=False):
+        moved = rotateSH(inp_sh, axis==0, axis==1, axis==2, i)
+        sh_moved = np.array(moved)
+        # out_sh.append(sh_moved)
+        ball, map, map_centered, map_clean, combined = drawSH(sh_moved, img_size)
         for j in zip([ball, map, map_centered, map_clean, combined], ['ball', 'map', 'map_centered', 'map_clean', 'combined']):
-            save_image(j[0], f"{out_path}/{j[1]}/m_{i:03d}.png")
+            save_image(j[0], f"{out_path}/{j[1]}/m_{frame_counter:03d}.png")
+
+        frame_counter += 1
             
     for j in zip([ball, map, map_centered, map_clean, combined], ['ball', 'map', 'map_centered', 'map_clean', 'combined']):
         os.system(f"ffmpeg -loglevel warning -y -i {out_path}/{j[1]}/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 {out_path}/{j[1]}.mp4")
-    
+
+    # out_sh = np.stack(out_sh, 0)
+    # return out_sh
+
     
 def read_params(path):
     params = pd.read_csv(path, header=None, sep=" ", index_col=False, lineterminator='\n')
@@ -249,16 +306,15 @@ if __name__ == '__main__':
         
         # print(pair_id, pair)
         inp_sh_np = sh[src_name]['light']
-        tgt_sh_np = sh[dst_name]['light']
         
         for j in ['ball', 'map', 'map_centered', 'map_clean', 'combined']:
             os.makedirs(f"{sub_out}/{j}", exist_ok=True)
         
-        interpolateSH(inp_sh_np, tgt_sh_np, args.n_step, img_size=256, out_path=sub_out)
+        rotate_sh(inp_sh_np, args.n_step, axis=args.axis, img_size=256, out_path=sub_out)
         
         os.system(f'cp {img_path}/{src_name} {sub_out}/src={src_name}')
         os.system(f'cp {img_path}/{dst_name} {sub_out}/dst={dst_name}')
         
-        misc = {'src':src_name, 'dst':dst_name, 'src_sh':inp_sh_np.tolist(), 'dst_sh':tgt_sh_np.tolist(), 'n_step':args.n_step, 'img_size':256}
+        misc = {'src':src_name, 'dst':dst_name, 'src_sh':inp_sh_np.tolist(), 'n_step':args.n_step, 'img_size':256}
         with open(f'{sub_out}/misc.json', 'w') as f:
             json.dump(misc, f, indent=4)
