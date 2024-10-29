@@ -48,9 +48,15 @@ def create_app():
     @app.route("/model_compare/")
     def model_compare():
         # Fixed the training step and varying the diffusion step
+
+        # border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
         out = """<style>
                 th, tr, td{
-                    border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
+                    border:1px solid black;margin-left:auto;margin-right:auto;
+                }
+                .file-name {
+                    font-size: 16px;
+                    color: gray;
                 }
                 </style>"""
         
@@ -88,6 +94,8 @@ def create_app():
         show_itmd = request.args.get('show_itmd', "True")
         show_recon = request.args.get('show_recon', "True")
         show_relit = request.args.get('show_relit', "True")
+        show_render = request.args.get('show_render', "False")
+        show_all_frames = request.args.get('show_all_frames', "False")
         sampling = request.args.get('sampling', 'reverse')
         n_frame = request.args.get('n_frame', None)
         s = request.args.get('s', 0)
@@ -123,6 +131,7 @@ def create_app():
             out += "<tr> <th> #N diffusion step </th> <th> Input </th> <th> Image </th> <th> Input </th> </tr>"
             src = v['src']
             dst = v['dst']
+            show_frames = v['frames'] if 'frames' in v else None
             
             if args.res == 128:
                 shadow_area_pth = '/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/vis/'
@@ -158,6 +167,8 @@ def create_app():
                 # Show results
                 if show_shadm == "True":
                     frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/shadm_*.png")
+                elif show_render == "True":
+                    frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/ren_frame*.png")
                 elif show_img == "True":
                     frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/res_frame*.png")
                 else:
@@ -174,11 +185,18 @@ def create_app():
                 else: 
                     out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
                 out += f"<td>"
+                frame_id = []
                 if len(frames) > 1:
                     if ds > 0:
                         tmp_ds = [0] + list(range(1, len(frames)-1, int(len(frames)/ds))) + [len(frames)-1]
                     else:
                         tmp_ds = list(range(len(frames)))
+
+                    if show_frames is not None:
+                        tmp_ds = [i for i in range(len(frames)) if i in show_frames]
+                    if show_all_frames == "True":
+                        tmp_ds = list(range(len(frames)))
+
                     frames = sort_by_frame(frames)
                     if show_itmd == "False":
                         frames = [frames[0], frames[-1]]
@@ -191,8 +209,29 @@ def create_app():
                             
                         if 'baseline' in alias:
                             out += "<img width=\"128\" height=\"128\" src=/files/" + f + ">"
+                            frame_id.append(f.split('/')[-1])
                         else:
                             out += "<img src=/files/" + f + ">"
+                            frame_id.append(f.split('/')[-1])
+
+                            # out += f"""
+                            # <div class="image-container">
+                            #     <img src=\"/files/{f}\" >
+                            #     <p class="file-name">File Name: {f.split('/')[-1]}</p>
+                            # </div>
+                            # """
+                    
+                    # Write all frame id within oneline right below the images, each text away by space of 128px (since images are 256px)
+                    out += "<br>"
+
+                    for f in frame_id:
+                        # out += f'<span style="display: inline; padding-right: 120px; padding-left: 128px;">{f}</span>'
+                        # out += f'<span style="display: inline-block; width:256px; padding-right: 1px; padding-left: 0px;">{f}</span>'
+                        out += f'<span style="display: inline-block; width:256px;">{f}</span>'
+
+                        # out += f"{f} "
+
+                    out += "<br>"
                 else:
                     out += "<p style=\"color:red\">Images not found!</p>"
                 out += "</td>"

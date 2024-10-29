@@ -90,11 +90,18 @@ def create_app():
                 
                 tp = f"{diffuse_path}/train_sub/train_{sub[0]}_to_{sub[1]}/shadow/reverse_sampling/src={img_name}.jpg/dst={sub[0]}.jpg/Lerp_1000/n_frames=3/res_frame2.png"
                 out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
+            elif set_ == 'valid':
+                tp = f"{strengthen_path}/valid/shadow/reverse_sampling/src={img_name}.jpg/dst=60000.jpg/Lerp_1000/n_frames=5/res_frame4.png"
+                out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
+                
+                tp = f"{diffuse_path}/valid/shadow/reverse_sampling/src={img_name}.jpg/dst=60000.jpg/Lerp_1000/n_frames=3/res_frame2.png"
+                out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
+
 
             out += "<br>"
             
             # Generated dataset
-            for dst_p in glob.glob(f"/data/mint/dataset_generation/cast_shadows/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_inv_with_sd_ds256_pt1_dstC/ema_085000/train/render_face/reverse_sampling/src={img_name}.jpg/dst=*"):
+            for dst_p in glob.glob(f"/data/mint/dataset_generation/cast_shadows/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_inv_with_sd_ds256_pt1_dstC/ema_085000/{set_}/render_face/reverse_sampling/src={img_name}.jpg/dst=*"):
                 src_c = c_sorted[c_sorted['image_name'] == f'{img_name}.jpg'].values[0][1]
                 src_c = (src_c - min_c) / (max_c - min_c)
                 dst_c = c_sorted[c_sorted['image_name'] == dst_p.split('/')[-1].split('=')[-1]].values[0][1]
@@ -112,6 +119,9 @@ def create_app():
                 out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
             out += "<br>"
                 
+            # Shading Reference
+            tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/deca_masked_face_images_wclip/{set_}/{img_name}.png'
+            out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
             # Shadow masks from ray-tracing
             tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_masks/{set_}/{img_name}.png'
             out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
@@ -121,6 +131,7 @@ def create_app():
             tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/ray_masks/overlays/{set_}/{img_name}.png'
             out += f"<img src=/files/{tp} width=\"768\" height=\"256\">"
             out += "<br>"
+
             
             # Shadow masks with smooth
             tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/vis/{set_}/{img_name}.png'
@@ -132,7 +143,14 @@ def create_app():
             out += f"<img src=/files/{tp} width=\"768\" height=\"256\">"
             out += "<br>"
 
-            # Generated dataset
+            # Segmentation masks
+            parts = ['hair', 'faceskin', 'eyes', 'pupils', 'glasses', 'ears', 'nose', 'inmouth', 'u_lip', 'l_lip', 'neck', 'cloth', 'hat', 'bg']
+            for part in parts:
+                tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/face_segment_with_pupil/{set_}/vis/{img_name}/{part}.png'
+                out += f"<img src=/files/{tp} width=\"128\" height=\"128\">"
+            out += "<br>"
+
+
             
             out += "<br><br>"
                 

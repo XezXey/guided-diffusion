@@ -9,6 +9,7 @@ import argparse
     
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset_path', required=True)
+parser.add_argument('--dataset_name', default='ffhq_rotate')
 parser.add_argument('--sampling_dir', default='/data/mint/sampling')
 parser.add_argument('--exp_dir', default='')
 parser.add_argument('--sample_pair_json', required=True)
@@ -17,12 +18,13 @@ parser.add_argument('--set_', default='valid')
 parser.add_argument('--res', default=256)
 parser.add_argument('--port', required=True)
 parser.add_argument('--host', default='0.0.0.0')
+parser.add_argument('--n_frames', default=60)
 args = parser.parse_args()
 
 def sort_by_frame(path_list):
     frame_anno = []
     for p in path_list:
-        frame_idx = os.path.splitext(p.split('/')[-1].split('_')[-1])[0][5:]   # 0-4 is "frame", so we used [5:] here
+        frame_idx = os.path.splitext(p.split('/')[-1].split('_')[-1])[0]  # file format is m_000.png, ...
         frame_anno.append(int(frame_idx))
     sorted_idx = np.argsort(frame_anno)
     sorted_path_list = []
@@ -48,9 +50,15 @@ def create_app():
     @app.route("/model_compare/")
     def model_compare():
         # Fixed the training step and varying the diffusion step
+
+        # border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
         out = """<style>
                 th, tr, td{
-                    border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
+                    border:1px solid black;margin-left:auto;margin-right:auto;
+                }
+                .file-name {
+                    font-size: 16px;
+                    color: gray;
                 }
                 </style>"""
         
@@ -83,12 +91,11 @@ def create_app():
         out += "</script>"
         
         show_vid = request.args.get('show_vid', "True")
-        show_img = request.args.get('show_img', "True")
-        show_shadm = request.args.get('show_shadm', "False")
-        show_itmd = request.args.get('show_itmd', "True")
-        show_recon = request.args.get('show_recon', "True")
-        show_relit = request.args.get('show_relit', "True")
-        sampling = request.args.get('sampling', 'reverse')
+        show_map_centered = request.args.get('show_map_centered', "False")
+        show_map_clean = request.args.get('show_map_clean', "False")
+        show_map_ball = request.args.get('show_ball', "False")
+        show_map_ball_transp = request.args.get('show_ball_transp', "False")
+        show_all_frames = request.args.get('show_all_frames', "False")
         n_frame = request.args.get('n_frame', None)
         s = request.args.get('s', 0)
         e = request.args.get('e', 100)
@@ -121,8 +128,10 @@ def create_app():
             if count > 100: break
             out += "<table>"
             out += "<tr> <th> #N diffusion step </th> <th> Input </th> <th> Image </th> <th> Input </th> </tr>"
+            pair_id = k
             src = v['src']
             dst = v['dst']
+            show_frames = v['frames'] if 'frames' in v else None
             
             if args.res == 128:
                 shadow_area_pth = '/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/vis/'
@@ -131,83 +140,67 @@ def create_app():
                 shadow_area_pth = '/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/vis/'
                 out += f"[#{k}] {src}=>{dst} : <img src=/files/{data_path}/{src}>, {dst} : <img src=/files/{data_path}/{dst}>" + ", Shadow area = " + f"<img height=\"256\" src=/files/{shadow_area_pth}/{args.set_}/{src.replace('jpg', 'png')}>" + "<br>" + "<br>"
             # Model 
-            for m_idx, metadat in candidates.items():
-                # Model's metadata
-                ckpt = metadat['step']
-                alias = metadat['alias']
-                itp = metadat['itp']
-                itp_method = metadat['itp_method']
-                diff_step = metadat['diff_step']
-                time_respace = metadat['time_respace']
-                img_dir = metadat['img_dir']
+            light_path = f'/data/mint/DPM_Dataset/Dataset_For_Baseline/{args.dataset_name}/{args.set_}/{pair_id}_src={src}_dst={dst}/n_step={n_frame}/'
+            light_path_transp = f'/data/mint/DPM_Dataset/Dataset_For_Baseline/for_vis/{args.dataset_name}_vis_ball/{pair_id}_src={src}_dst={dst}/n_step={n_frame}/'
 
-                n_frame_tmp = metadat['n_frame'] if n_frame is None else n_frame
-                
-                path = f"{img_dir}/src={src}/dst={dst}/"
+            out += "<tr>"
             
-                out += "<tr>"
-                alias_str = alias.split('_')
-                out += f"<td> {alias} <br> {ckpt} </td> "
-                
-                if args.res == 128:
-                    out += f"<td> <img src=/files/{data_path}/{src.replace('jpg', 'png')}> </td>"
-                else:
-                    out += f"<td> <img src=/files/{data_path}/{src}> </td>"
-                
-                ###################################################
-                # Show results
-                if show_shadm == "True":
-                    frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/shadm_*.png")
-                elif show_img == "True":
-                    frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/res_frame*.png")
-                else:
-                    frames = []
+            out += f"<td> <img src=/files/{data_path}/{src}> </td>"
+            
+            ###################################################
+            # Show results
+            if show_map_centered == "True":
+                frames = glob.glob(f"{light_path}/map_centered/m_*.png")
+            elif show_map_clean == "True":
+                frames = glob.glob(f"{light_path}/map_clean/m_*.png")
+            elif show_map_ball_transp == "True":
+                frames = glob.glob(f"{light_path_transp}/ball/m_*.png")
+            elif show_map_ball == "True":
+                frames = glob.glob(f"{light_path}/ball/m_*.png")
+            else:
+                frames = []
 
-                if os.path.exists(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/out_rt.mp4") and show_vid == "True":
-                    out += f"""
-                        <td>  
-                        <video controls autoplay muted loop>
-                            <source src=/files/{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/out_rt.mp4 type="video/mp4">
-                        </video>
-                        </td>
-                    """
-                else: 
-                    out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
-                out += f"<td>"
-                if len(frames) > 1:
-                    if ds > 0:
-                        tmp_ds = [0] + list(range(1, len(frames)-1, int(len(frames)/ds))) + [len(frames)-1]
-                    else:
-                        tmp_ds = list(range(len(frames)))
-                    frames = sort_by_frame(frames)
-                    if show_itmd == "False":
-                        frames = [frames[0], frames[-1]]
-                    if show_recon == "False":
-                        frames = frames[1:]
-                    if show_relit == "False":
-                        frames = frames[:-1]
-                    for idx, f in enumerate(frames):
-                        if idx not in tmp_ds: continue
-                            
-                        if 'baseline' in alias:
-                            out += "<img width=\"128\" height=\"128\" src=/files/" + f + ">"
-                        else:
-                            out += "<img src=/files/" + f + ">"
+            vid_file = 'map_centered.mp4' if show_map_centered == "True" else 'map_clean.mp4'
+            if os.path.exists(f"{light_path}/{vid_file}") and show_vid == "True":
+                out += f"""
+                    <td>  
+                    <video controls autoplay muted loop>
+                        <source src=/files/{light_path}/{vid_file} type="video/mp4">
+                    </video>
+                    </td>
+                """
+            else: 
+                out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
+            out += f"<td>"
+            frame_id = []
+            if len(frames) > 1:
+                if ds > 0:
+                    tmp_ds = [0] + list(range(1, len(frames)-1, int(len(frames)/ds))) + [len(frames)-1]
                 else:
-                    out += "<p style=\"color:red\">Images not found!</p>"
-                out += "</td>"
-                ###################################################
+                    tmp_ds = list(range(len(frames)))
+
+                if show_frames is not None:
+                    tmp_ds = [i for i in range(len(frames)) if i in show_frames]
+                if show_all_frames == "True":
+                    tmp_ds = list(range(len(frames)))
+
+                frames = sort_by_frame(frames)
+                for idx, f in enumerate(frames):
+                    if idx not in tmp_ds: continue
+                    out += "<img src=/files/" + f + ">"
+                    frame_id.append(f.split('/')[-1])
                 
-                if args.res == 128:
-                    out += f"<td> <img src=/files/{data_path}/{src.replace('jpg', 'png')}> </td>"
-                    tmp = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/shadm_*.png")
-                    if len(tmp) > 0:
-                        tmp = sort_by_frame(tmp)
-                        out += f"<td> <img src=/files/{data_path}/{tmp[0].replace('jpg', 'png')}> </td>"
-                else:
-                    out += f"<td> <img src=/files/{data_path}/{src}> </td>"
-                
-                out += "</tr>"
+                # Write all frame id within oneline right below the images, each text away by space of 128px (since images are 256px)
+                out += "<br>"
+                for f in frame_id:
+                    out += f'<span style="display: inline-block; width:256px;">{f}</span>'
+                out += "<br>"
+            else:
+                out += "<p style=\"color:red\">Images not found!</p>"
+            out += "</td>"
+            ###################################################
+            
+            out += "</tr>"
                 
             out += "</table>"
             out += "<br> <hr>"
