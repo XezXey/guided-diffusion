@@ -118,7 +118,6 @@ def create_app():
         for ts in to_show:
             k, v = ts
             count += 1
-            if count > 100: break
             out += "<table>"
             out += "<tr> <th> #N diffusion step </th> <th> Input </th> <th> Image </th> <th> Input </th> </tr>"
             src = v['src']
