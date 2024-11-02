@@ -156,3 +156,6 @@ experiment_scripts/TPAMI/sh_to_envs/video_out_mint
 experiment_scripts/TPAMI/envs_to_bg_sh/envmap/
 experiment_scripts/TPAMI/envs_to_bg_sh/sh2envmap/
 experiment_scripts/TPAMI/envs_to_bg_sh/shcoeffs/
+experiment_scripts/TPAMI/Baseline_sj/HoloRelighting/img_train/
+experiment_scripts/TPAMI/Baseline_sj/HoloRelighting/paper_sj
+experiment_scripts/search_image/Holo_sj/

@@ -1,14 +1,36 @@
 {
-    "hou_rotate" : {
+    "hou_21" : {
         "step" :"ema_300000",
         "alias" : "Hou et al. (CVPR 2022)",
-        "misc" : "one-shot",
+        "misc" : "sota",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
         "time_respace":"",
-        "n_frame":"60",
-        "img_dir" : "/data/mint/TPAMI_evaluations/GeoConFR/rotateSH/"
+        "n_frame":"2",
+        "img_dir" : "/data/mint/sampling/TPAMI/sota/Hou21/"
+    },
+    "hou_22" : {
+        "step" :"ema_300000",
+        "alias" : "Hou et al. (CVPR 2022)",
+        "misc" : "sota",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"2",
+        "img_dir" : "/data/mint/sampling/TPAMI/sota/Hou22/"
+    },
+    "TR" : {
+        "step" :"ema_300000",
+        "alias" : "Hou et al. (CVPR 2022)",
+        "misc" : "sota",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"2",
+        "img_dir" : "/data/mint/sampling/TPAMI/sota/TR/"
     },
     "iclight_rotate_256x256" : {
         "step" :"ema_300000",
