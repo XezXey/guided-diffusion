@@ -503,11 +503,26 @@ def build_condition_image(cond, misc):
             # Shadow_mask : B x H x W
             if args.render_same_mask:
                 print("[#] Rendering with the shadow mask from same render face...")
-                shadow_mask, shadow_kk = params_utils.render_shadow_mask_with_smooth(
+                # shadow_mask, shadow_kk = params_utils.render_shadow_mask_with_smooth(
+                #                                 sh_light=sub_cond['light'], 
+                #                                 cam=sub_cond['cam'][src_idx],
+                #                                 verts=orig_visdict['trans_verts_orig'], 
+                #                                 deca=deca_obj)
+                if i == 0:
+                    flame_face_scalp = params_utils.load_flame_mask(['face', 'scalp', 'left_eyeball', 'right_eyeball'])
+                    deca_obj_face_scalp = params_utils.init_deca(mask=flame_face_scalp, rasterize_type=args.rasterize_type) # Init DECA with mask only once
+                shadow_mask, shadow_kk, render_ld = params_utils.render_shadow_mask_with_smooth(
                                                 sh_light=sub_cond['light'], 
                                                 cam=sub_cond['cam'][src_idx],
                                                 verts=orig_visdict['trans_verts_orig'], 
-                                                deca=deca_obj)
+                                                use_sh_to_ld_region=args.use_sh_to_ld_region,
+                                                deca={'face_scalp':deca_obj_face_scalp}, 
+                                                axis_1=args.rotate_sh_axis==1,
+                                                device='cpu',   # Prevent OOM
+                                                up_rate=args.up_rate_for_AA,
+                                                org_h=img_size, org_w=img_size,
+                                                rt_dict={'pt_round':args.pt_round, 'pt_radius':args.pt_radius, 'rt_regionG_scale':args.rt_regionG_scale, 'scale_depth':args.scale_depth}
+                                            )
             else:
                 print("[#] Rendering with the shadow mask from face + scalp of render face...")
                 if i == 0:
