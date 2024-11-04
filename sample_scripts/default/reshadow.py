@@ -56,14 +56,37 @@ parser.add_argument('--fps', action='store_true', default=False)
 # Experiment
 parser.add_argument('--fixed_render', action='store_true', default=False)
 parser.add_argument('--fixed_shadow', action='store_true', default=False)
-# Mockup so all args are the same with relight.py
+parser.add_argument('--use_sh_to_ld_region', action='store_true', default=False)
+parser.add_argument('--rt_regionG_scale', type=float, default=0.03)
+## Post-processing of shadow mask's mode
 parser.add_argument('--postproc_shadow_mask', action='store_true', default=False)
+parser.add_argument('--postproc_shadow_mask_smooth', action='store_true', default=False)
+## Relighting-Inversion mode
 parser.add_argument('--inverse_with_shadow_diff', action='store_true', default=False)
+parser.add_argument('--relight_with_shadow_diff', action='store_true', default=False, help='This for testing on MP while we have ')
+parser.add_argument('--relight_with_dst_c', action='store_true', default=False, help='Use the target shadow value for relighting')
+parser.add_argument('--relight_with_rand_max_c', action='store_true', default=False, help='Use the random shadow value for relighting')
+parser.add_argument('--relight_with_given_c', type=float, default=None, help='Use the random shadow value for relighting')
 parser.add_argument('--combined_mask', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dir', type=str, default=None)
 parser.add_argument('--use_ray_mask', action='store_true', default=False)
 parser.add_argument('--render_same_mask', action='store_true', default=False)
-parser.add_argument('--anti_aliasing', action='store_true', default=False)
+
+# Post-processing of the shadow mask smoothness/jagged/stair-cases
+parser.add_argument('--smooth_FL_erode', action='store_true', default=False)
+parser.add_argument('--smooth_SD_to_SM', action='store_true', default=False)
+parser.add_argument('--up_rate_for_AA', type=int, default=1)
+parser.add_argument('--pt_radius', type=float, default=0.2)
+parser.add_argument('--pt_round', type=int, default=30)
+parser.add_argument('--scale_depth', type=float, default=100.0)
+parser.add_argument('--postproc_shadow_mask_smooth_keep_shadow_shading', action='store_true', default=False)
+# Experiment - Shadow weight
+parser.add_argument('--shadow_diff_inc_c', action='store_true', default=False)
+parser.add_argument('--shadow_diff_dec_c', action='store_true', default=False)
+parser.add_argument('--shadow_diff_fidx_frac', type=float, default=0.0)    # set to 0.0 for using first frame
+parser.add_argument('--same_shadow_as_sd', action='store_true', default=False)
+parser.add_argument('--relight_with_strongest_c', action='store_true', default=False)
+parser.add_argument('--inverse_with_strongest_c', action='store_true', default=False)
 
 args = parser.parse_args()
 
