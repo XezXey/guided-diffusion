@@ -119,6 +119,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
             'img_size':cfg.img_model.image_size,
             'deca_obj':deca_obj,
             'batch_size':args.batch_size,
+            'render_batch_size':args.render_batch_size,
             'cfg':cfg,
             }  
     cond['misc'] = misc
