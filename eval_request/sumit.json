@@ -1,0 +1,8 @@
+{
+    "pair":{
+        "pair1":{
+            "src":"input.png",
+            "dst":"output.png"
+        }
+    }
+}

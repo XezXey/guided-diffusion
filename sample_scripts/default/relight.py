@@ -345,6 +345,15 @@ if __name__ == '__main__':
         img_ext = '.png'
         cfg.dataset.training_data = 'ITW'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/itw_images_aligned/'
+    elif args.dataset == 'eval_request':
+        cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
+        img_dataset_path = f"/data/mint/DPM_Dataset/eval_request/Sumit/images_aligned/"
+        deca_dataset_path = f"/data/mint/DPM_Dataset/eval_request/Sumit/params/"
+        img_ext = '.png'
+        cfg.dataset.training_data = 'eval_request/Sumit'
+        cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/images_aligned/'
+        cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
+        
     elif args.dataset == 'ffhq':
         cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
         img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
