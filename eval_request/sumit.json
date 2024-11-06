@@ -3,6 +3,10 @@
         "pair1":{
             "src":"input.png",
             "dst":"output.png"
+        },        
+        "pair2":{
+            "src":"output.png",
+            "dst":"output.png"
         }
     }
 }

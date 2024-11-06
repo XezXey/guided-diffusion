@@ -3,6 +3,9 @@ import numpy as np
 import glob
 import tqdm
 from collections import defaultdict
+import pyshtools as pysh
+import itertools
+import torch as pt
 
 def read_params(path):
     params = pd.read_csv(path, header=None, sep=" ", index_col=False, lineterminator='\n')
@@ -73,3 +76,96 @@ def preprocess_light(deca_params, k, cfg):
             params = params.flatten()
             deca_params[img_name] = params
         return deca_params
+
+def applySHlight(normal_images, sh_coeff):
+  N = normal_images
+  sh = pt.stack(
+    [
+      N[0] * 0.0 + 1.0,
+      N[0],
+      N[1],
+      N[2],
+      N[0] * N[1],
+      N[0] * N[2],
+      N[1] * N[2],
+      N[0] ** 2 - N[1] ** 2,
+      3 * (N[2] ** 2) - 1,
+    ],
+    0,
+  )  # [9, h, w]
+  pi = np.pi
+  constant_factor = pt.tensor(
+    [
+      1 / np.sqrt(4 * pi),
+      ((2 * pi) / 3) * (np.sqrt(3 / (4 * pi))),
+      ((2 * pi) / 3) * (np.sqrt(3 / (4 * pi))),
+      ((2 * pi) / 3) * (np.sqrt(3 / (4 * pi))),
+      (pi / 4) * (3) * (np.sqrt(5 / (12 * pi))),
+      (pi / 4) * (3) * (np.sqrt(5 / (12 * pi))),
+      (pi / 4) * (3) * (np.sqrt(5 / (12 * pi))),
+      (pi / 4) * (3 / 2) * (np.sqrt(5 / (12 * pi))),
+      (pi / 4) * (1 / 2) * (np.sqrt(5 / (4 * pi))),
+    ]
+  ).float()
+  sh = sh * constant_factor[:, None, None]
+
+  shading = pt.sum(
+    sh_coeff[:, :, None, None] * sh[:, None, :, :], 0
+  )  # [9, 3, h, w]
+
+  return shading
+
+def applySHlightXYZ(xyz, sh):
+  out = applySHlight(xyz, sh)
+  # out /= pt.max(out)
+  # out *= 0.7
+  return pt.clip(out, 0, 1)
+
+def genSurfaceNormals(n):
+  x = pt.linspace(-1, 1, n)
+  y = pt.linspace(1, -1, n)
+  y, x = pt.meshgrid(y, x)
+
+  z = (1 - x ** 2 - y ** 2)
+  z[z < 0] = 0
+  z = pt.sqrt(z)
+  return pt.stack([x, y, z], 0)
+
+def drawSphere(sh, img_size=256):
+  n = img_size
+  xyz = genSurfaceNormals(n)
+  out = applySHlightXYZ(xyz, sh)
+  out[:, xyz[2] == 0] = 0
+  return out
+        
+def toCoeff(c):
+  t = pysh.SHCoeffs.from_zeros(2)
+  t.set_coeffs(c[0], 0, 0)
+  t.set_coeffs(c[1], 1, 1)
+  t.set_coeffs(c[2], 1, -1)
+  t.set_coeffs(c[3], 1, 0)
+  t.set_coeffs(c[4], 2, -2)
+  t.set_coeffs(c[5], 2, 1)
+  t.set_coeffs(c[6], 2, -1)
+  t.set_coeffs(c[7], 2, 2)
+  t.set_coeffs(c[8], 2, 0)
+  return t
+
+def toRGBCoeff(c):
+  return [toCoeff(c[::3]), toCoeff(c[1::3]), toCoeff(c[2::3])]
+
+def toDeca(c):
+  a = c.coeffs
+  lst = [a[0, 0, 0],
+         a[0, 1, 1],
+         a[1, 1, 1],
+         a[0, 1, 0],
+         a[1, 2, 2],
+         a[0, 2, 1],
+         a[1, 2, 1],
+         a[0, 2, 2],
+         a[0, 2, 0]]
+  return np.array(lst)
+
+def toRGBDeca(cc):
+  return list(itertools.chain(*zip(toDeca(cc[0]), toDeca(cc[1]), toDeca(cc[2]))))
