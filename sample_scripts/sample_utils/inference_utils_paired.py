@@ -382,6 +382,10 @@ def build_condition_image(cond, misc, force_render=False):
             elif args.rotate_sh:
                 print("[#] Rotate SH mode of src light...")
                 interp_cond = mani_utils.rotate_sh(cond, src_idx=src_idx, n_step=n_step, axis=args.rotate_sh_axis)
+            elif args.rotate_sh_dst:
+                print("[#] Rotate SH mode of dst light...")
+                interp_cond = mani_utils.rotate_sh(cond, src_idx=dst_idx, n_step=n_step, axis=args.rotate_sh_axis)
+                interp_cond['light'][0:1] = cond['light'][src_idx]
             else:
                 print("[#] Interpolating SH mode from src->dst light...")
                 interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)

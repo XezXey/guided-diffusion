@@ -339,7 +339,7 @@ def rotate_sh(cond, src_idx, n_step, axis):
         sh_moved = np.array(moved)
         out_sh.append(sh_moved)
 
-    out_sh = np.stack(out_sh, 0)
+    out_sh = np.stack(out_sh, 0)    # [n_step, 27]
     return {'light':out_sh}
     
 
