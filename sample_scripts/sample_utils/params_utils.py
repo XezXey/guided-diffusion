@@ -516,10 +516,32 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, rt_dict, use_sh_t
         ray = ld.view(3).to(device)
         ray = ray / th.norm(ray)
 
-        if axis_1:
-            ray[2] *= -1    # This for jst temporarly fix the axis 1 which the shading is bright in the middle, but the light direction is back of the head
+        # Ray-0th (left-right)
+        # Ray-1st (top-bottom)
+        # Ray-2nd (front-back)
         if axis_0:
-            ray[0] *= -1
+            # ray[0] *= -1
+            # ray[1] *= -1
+            ray[2] *= -1
+            # Swap ray[0] and ray[2]
+            # Apply signed of ray[0] to ray[2] and vice versa
+            # ray_2_sign = th.sign(ray[2])
+            # ray_0_sign = th.sign(ray[0])
+            # ray[2] = th.abs(ray[2]) * ray_0_sign
+            # ray[0] = th.abs(ray[0]) * ray_2_sign
+            # ray[2], ray[0] = ray[0], ray[2]
+            pass
+        if axis_1:
+            # if i == 0 or i == sh_light.shape[0] - 1:
+            #     pass
+            # else:
+            # ray[2] *= -1
+            # ray_2_sign = th.sign(ray[2])
+            # ray_0_sign = th.sign(ray[0])
+            # ray[0] = th.abs(ray[0]) * ray_2_sign
+            # ray[1] = th.abs(ray[1]) * ray_2_sign
+            ray[2] *= -1    # This for jst temporarly fix the axis 1 which the shading is bright in the middle, but the light direction is back of the head
+            pass
         ray[2] *= 0.5
 
         orth = th.cross(ray, th.tensor([0, 0, 1.0], dtype=th.double).to(device))
