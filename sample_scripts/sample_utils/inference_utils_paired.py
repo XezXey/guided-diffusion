@@ -438,8 +438,10 @@ def build_condition_image(cond, misc, force_render=False):
                 flame_face_scalp = params_utils.load_flame_mask(['face', 'scalp', 'left_eyeball', 'right_eyeball'])
                 deca_obj_face_scalp = params_utils.init_deca(mask=flame_face_scalp, rasterize_type=args.rasterize_type) # Init DECA with mask only once
                 load_deca_for_shadow_time = time.time() - load_deca_for_shadow_time
-            if args.rotate_sh_axis == 1:
-                print("[#] Fixing the axis 1...")
+            if args.rotate_sh_axis == 0:
+                print("[#] Fixing the axis 0 by negate ray[0]...")
+            elif args.rotate_sh_axis == 1:
+                print("[#] Fixing the axis 1 by negate ray[1]...")
             
             start_sub_render_shadow_t = time.time()
             shadow_mask, shadow_kk, render_ld = params_utils.render_shadow_mask_with_smooth(
@@ -448,6 +450,7 @@ def build_condition_image(cond, misc, force_render=False):
                                             verts=orig_visdict['trans_verts_orig'], 
                                             use_sh_to_ld_region=args.use_sh_to_ld_region,
                                             deca={'face_scalp':deca_obj_face_scalp}, 
+                                            axis_0=args.rotate_sh_axis==0,
                                             axis_1=args.rotate_sh_axis==1,
                                             device='cpu',   # Prevent OOM
                                             up_rate=args.up_rate_for_AA,

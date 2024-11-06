@@ -442,7 +442,7 @@ def render_shadow_mask(sh_light, cam, verts, deca, axis_1=False):
         
     return th.clip(shadow_mask, 0, 255.0)/255.0
 
-def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, rt_dict, use_sh_to_ld_region=True, axis_1=False, up_rate=1, device='cuda', org_h=128, org_w=128):
+def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, rt_dict, use_sh_to_ld_region=True, axis_0=False, axis_1=False, up_rate=1, device='cuda', org_h=128, org_w=128):
     print("[#] Rendering shadow mask with smooth (pertubation version)...")
     sys.path.insert(0, '/home/mint/guided-diffusion/sample_scripts/cond_utils/DECA/')
     sys.path.append('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/cond_utils/DECA/')
@@ -517,7 +517,9 @@ def render_shadow_mask_with_smooth(sh_light, cam, verts, deca, rt_dict, use_sh_t
         ray = ray / th.norm(ray)
 
         if axis_1:
-            ray[1] *= -1    # This for jst temporarly fix the axis 1 which the shading is bright in the middle, but the light direction is back of the head
+            ray[2] *= -1    # This for jst temporarly fix the axis 1 which the shading is bright in the middle, but the light direction is back of the head
+        if axis_0:
+            ray[0] *= -1
         ray[2] *= 0.5
 
         orth = th.cross(ray, th.tensor([0, 0, 1.0], dtype=th.double).to(device))
