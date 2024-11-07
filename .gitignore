@@ -171,6 +171,8 @@ experiment_scripts/TPAMI/hdri_process/pure_code/shcoeffs
 experiment_scripts/TPAMI/hdri_process/*.exr
 experiment_scripts/TPAMI/hdri_process/pure_code/kiara_2_sunrise_16k.exr0001.exr
 experiment_scripts/TPAMI/hdri_process/goegap_road_4k.hdr
+experiment_scripts/TPAMI/supplement_video/*.mp4
+experiment_scripts/TPAMI/supplement_video/*.png
 eval_request/Sumit/difareli_test/kiara_2_sunrise_2k.exr
 eval_request/Sumit/difareli_test/goegap_road_4k.hdr
 sample_scripts/default/cuda_12.1.1_530.30.02_linux.run
