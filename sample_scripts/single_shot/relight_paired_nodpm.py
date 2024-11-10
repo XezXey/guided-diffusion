@@ -549,6 +549,10 @@ if __name__ == '__main__':
                         torchvision.io.write_video(video_array=vid_render, filename=f"{save_res_dir}/{s}_ren.mp4", fps=args.fps)
                         vid_render_rt = th.cat((vid_render, th.flip(vid_render, dims=[0])))
                         torchvision.io.write_video(video_array=vid_render_rt, filename=f"{save_res_dir}/{s}_ren_rt.mp4", fps=args.fps)
+                        torchvision.io.write_video(video_array=vid_render_rt, filename=f"{save_res_dir}/{s}_ren_rt.mp4", fps=args.fps)
+                        # Ecxlude the first frame (Also last in the reverse case)
+                        torchvision.io.write_video(video_array=vid_render[1:], filename=f"{save_res_dir}/{s}_ren_no1.mp4", fps=args.fps)
+                        torchvision.io.write_video(video_array=vid_render_rt[1:-1], filename=f"{save_res_dir}/{s}_ren_rt_no1.mp4", fps=args.fps)
                         sj_paired_vid_render[s] = vid_render
 
             if is_shadow and ('shadow_diff_with_weight_simplified' in cfg.img_cond_model.in_image or 'shadow_diff_with_weight_simplified_inverse' in cfg.img_cond_model.in_image):
@@ -562,6 +566,9 @@ if __name__ == '__main__':
                         torchvision.io.write_video(video_array=vid_shadm, filename=f"{save_res_dir}/{s}_shadm.mp4", fps=args.fps)
                         vid_shadm_rt = th.cat((vid_shadm, th.flip(vid_shadm, dims=[0])))
                         torchvision.io.write_video(video_array=vid_shadm_rt, filename=f"{save_res_dir}/{s}_shadm_rt.mp4", fps=args.fps)
+                        # Ecxlude the first frame (Also last in the reverse case)
+                        torchvision.io.write_video(video_array=vid_shadm[1:], filename=f"{save_res_dir}/{s}_shadm_no1.mp4", fps=args.fps)
+                        torchvision.io.write_video(video_array=vid_shadm_rt[1:-1], filename=f"{save_res_dir}/{s}_shadm_rt_no1.mp4", fps=args.fps)
                         sj_paired_vid_shadm[s] = vid_shadm
 
             
@@ -576,6 +583,9 @@ if __name__ == '__main__':
             torchvision.io.write_video(video_array=all_out, filename=f"{save_res_dir}/out.mp4", fps=args.fps)
             all_out_rt = th.cat((all_out, th.flip(all_out, dims=[0])))
             torchvision.io.write_video(video_array=all_out_rt, filename=f"{save_res_dir}/out_rt.mp4", fps=args.fps)
+            # Ecxlude the first frame (Also last in the reverse case)
+            torchvision.io.write_video(video_array=all_out[1:], filename=f"{save_res_dir}/out_no1.mp4", fps=args.fps)
+            torchvision.io.write_video(video_array=all_out_rt[1:-1], filename=f"{save_res_dir}/out_rt_no1.mp4", fps=args.fps)
                 
 
         with open(f'{save_res_dir}/res_desc.json', 'w') as fj:
