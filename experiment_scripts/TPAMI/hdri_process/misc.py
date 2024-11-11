@@ -142,13 +142,13 @@ def exr_to_ldr (im, intensity=1.0) :
 
 import numpy as np
 from scipy.special import sph_harm
-def render_sh(coeffs, res=512):
+def render_sh(coeffs, sh_order=2, res=512):
     """Render an environment map from SH coefficients."""
     y, x = np.indices((res, 2 * res))
     theta = np.pi * y / res  # Theta from 0 to pi
     phi = 2 * np.pi * x / (2 * res)  # Phi from 0 to 2*pi
 
-    sh_order = 2  # SH order for 9 coefficients
+    # sh_order = 2  # SH order for 9 coefficients
     sh_basis = np.array([
         sph_harm(m, l, phi, theta).real for l in range(sh_order + 1) for m in range(-l, l + 1)
     ])  # Shape: (9, res, res)

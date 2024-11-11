@@ -31,7 +31,11 @@ args = parser.parse_args()
 
 # rotate environment map 1 degree around azimuth and save the result to video
 def rotate_env(e, axis, n_frames, max_l=2):
+    rot_recon_cpbg = []
+    rot_recon_render = []
+    rot_e = []
     rot_sh = []
+    rot_image = []
     for i in tqdm.tqdm(np.linspace(0, 360, n_frames), desc=f'Rotating around {axis}...', leave=False):
         rot_deg = i*np.pi/180
         dcm = rotation_matrix(azimuth=rot_deg if axis == 'azimuth' else 0,
@@ -53,65 +57,13 @@ def rotate_env(e, axis, n_frames, max_l=2):
             recon_cpbg = np.zeros_like(e_image)
             recon_render = np.zeros_like(e_image)
 
-        # Save data
-        hdrio.imsave(f'{out_dir}/{rot}/hdr/{rot}_{i:04d}.exr', e_rot.data)
-        Image.fromarray((e_image*255).astype(np.uint8)).save(f'{out_dir}/{rot}/image/{rot}_{i:03d}.png')
-        if args.recon and args.save_recon_vis:
-            Image.fromarray((recon_cpbg*255).astype(np.uint8)).save(f'{out_dir}/{rot}/recon_cpbg/{rot}_{i:03d}.png')
-            Image.fromarray((recon_render*255).astype(np.uint8)).save(f'{out_dir}/{rot}/recon_render/{rot}_{i:03d}.png')
-
+        rot_e.append(e_rot)
         rot_sh.append(shcoeff)
-    return rot_sh
-
-def proc(e, rot_deg, i, axis, is_raw_hdr, max_l=2):
-    dcm = rotation_matrix(azimuth=rot_deg if axis == 'azimuth' else 0,
-                        elevation=rot_deg if axis == 'elevation' else 0,
-                        roll=rot_deg if axis == 'roll' else 0)
-    e_rot = e.copy().rotate(dcm)
-    e_image = e_rot.data    # np.array of shape [H, W, 3], min: 0, max: 1
-    if args.compute_sh:
-        coeff = misc.get_shcoeff(e_image, Lmax=max_l)   # [3 or 4 (with alpha), 2, (max_l+1), (max_l+1)] e.g., [3, 2, 3, 3] if max_l=2
-        shcoeff = misc.flatten_sh_coeff(coeff, max_sh_level=max_l)  # 3 x (max_l+1)^2
-    else:
-        shcoeff = np.zeros((3, (max_l+1)**2))   # This is just a placeholder for faster processing
-    if args.recon:
-        # if args.use_compute_background:
-        recon_cpbg = misc.compute_background(sh=shcoeff, hfov=90, lmax=max_l) # hfov is not used since, entire_env_map is True
-        # elif args.use_render_sh:
-        recon_render = misc.render_sh(shcoeff, sh_order=max_l, res=512)
-    else:
-        recon_cpbg = np.zeros_like(e_image)
-        recon_render = np.zeros_like(e_image)
-
-    # Save data
-    hdrio.imsave(f'{out_dir}/{axis}/hdr/{axis}_{i:04d}.exr', e_rot.data)
-    if is_raw_hdr:
-        e_image = misc.exr_to_ldr(e_image)
-        Image.fromarray((e_image*255).astype(np.uint8)).save(f'{out_dir}/{axis}/image/{axis}_{i:03d}.png')
-    else:
-        Image.fromarray((e_image*255).astype(np.uint8)).save(f'{out_dir}/{axis}/image/{axis}_{i:03d}.png')
-    if args.recon and args.save_recon_vis:
-        Image.fromarray((recon_cpbg*255).astype(np.uint8)).save(f'{out_dir}/{axis}/recon_cpbg/{axis}_{i:03d}.png')
-        Image.fromarray((recon_render*255).astype(np.uint8)).save(f'{out_dir}/{axis}/recon_render/{axis}_{i:03d}.png')
-
-    # return shcoeff
-    return {i: shcoeff}
-
-def rotate_env_parallel(e, axis, n_frames, is_raw_hdr, max_l=2):
-
-    rot_sh = []
-    rot_deg = np.linspace(0, 360, n_frames) * np.pi / 180
-    import multiprocessing as mp
-    with mp.Pool(8) as pool:
-        results = pool.starmap(proc, [(e, rot_deg[i], i, axis, is_raw_hdr, max_l) for i in range(n_frames)])
-    # Save video with fps=24, using ffmpeg lossless codec, crf=17
-    os.system(f'ffmpeg -y -r 24 -i {out_dir}/{rot}/image/{rot}_%03d.png -c:v libx264 -crf 17 -pix_fmt yuv420p {out_dir}/{rot}/image/{rot}.mp4')
-    if args.recon and args.save_recon_vis:
-        os.system(f'ffmpeg -y -r 24 -i {out_dir}/{rot}/recon_cpbg/{rot}_%03d.png -c:v libx264 -crf 17 -pix_fmt yuv420p {out_dir}/{rot}/recon_cpbg/{rot}.mp4')
-        os.system(f'ffmpeg -y -r 24 -i {out_dir}/{rot}/recon_render/{rot}_%03d.png -c:v libx264 -crf 17 -pix_fmt yuv420p {out_dir}/{rot}/recon_render/{rot}.mp4')
-    for i in range(n_frames):
-        rot_sh.append(results[i][i])
-    return rot_sh
+        rot_image.append(e_image)
+        rot_recon_cpbg.append(np.array(recon_cpbg))
+        rot_recon_render.append(np.array(recon_render))
+        
+    return rot_sh, rot_e, {'cpbg':rot_recon_cpbg, 'render':rot_recon_render, 'image':rot_image}
 
 if __name__ == '__main__':
     print(f'[#] Processing: {args.input_hdr}...')
@@ -128,33 +80,39 @@ if __name__ == '__main__':
         print("[#] Tone mapping HDR image...")
         image_tm_clip, alpha, image_tm = misc.TonemapHDR()(image)
         image = image_tm_clip
-        is_raw_hdr = False
     elif args.exr_to_ldr:
         print("[#] Convert HDR image to LDR...")
         image = np.array(misc.exr_to_ldr(image))
-        is_raw_hdr = False
     else:
         print("[#] Use raw HDR image...")
-        is_raw_hdr = True
     print(f'[#] Image: {image.shape}, dtype: {image.dtype}, min: {image.min()}, max: {image.max()}')
     e = EnvironmentMap(image, 'latlong')
     for rot in tqdm.tqdm(args.axis):
         assert rot in ['azimuth', 'elevation', 'roll']
-        # Create directories
-        os.makedirs(f'{out_dir}/{rot}/hdr', exist_ok=True)
-        os.makedirs(f'{out_dir}/{rot}/image', exist_ok=True)
-        os.makedirs(f'{out_dir}/{rot}/sh', exist_ok=True)
-        if args.recon and args.save_recon_vis:
-            os.makedirs(f'{out_dir}/{rot}/recon_cpbg', exist_ok=True)
-            os.makedirs(f'{out_dir}/{rot}/recon_render', exist_ok=True)
         
-        # rot_sh = rotate_env(e, rot, args.n_frames, max_l=args.max_l)
-        rot_sh = rotate_env_parallel(e, rot, args.n_frames, is_raw_hdr=is_raw_hdr, max_l=args.max_l)
+        rot_sh, rot_e, rot_recon = rotate_env(e, rot, args.n_frames, max_l=args.max_l)
         rot_sh = np.stack(rot_sh, axis=0)   # [n_frames, 3, (max_l+1)^2]
         rot_sh = rot_sh.transpose(0, 2, 1)
-
+        for sp in ['hdr', 'sh', 'recon', 'image']:
+            if sp == 'recon':
+                for k, v in rot_recon.items():
+                    os.makedirs(f'{out_dir}/{rot}/{sp}_{k}', exist_ok=True)
+            else:
+                os.makedirs(f'{out_dir}/{rot}/{sp}', exist_ok=True)
         for i in range(args.n_frames):
+            hdrio.imsave(f'{out_dir}/{rot}/hdr/{rot}_{i}.exr', rot_e[i].data)
             if args.compute_sh:
                 np.save(f'{out_dir}/{rot}/sh/{rot}_{i}.npy', rot_sh[i])
                 np.save(f'{out_dir}/{rot}/sh/{rot}_all.npy', rot_sh)
+        if args.save_recon_vis and args.recon:
+            for k, v in rot_recon.items():
+                for i in range(args.n_frames):
+                    Image.fromarray((v[i]*255).astype(np.uint8)).save(f'{out_dir}/{rot}/recon_{k}/{rot}_{i}.png')
+                tvio.write_video(f'{out_dir}/{rot}/recon_{k}/{rot}.mp4', th.tensor((np.stack(v, 0)*255).astype(np.uint8)), 30)
         
+        # Write the image
+        v = rot_recon['image']
+        for i in range(args.n_frames):
+            Image.fromarray((v[i]*255).astype(np.uint8)).save(f'{out_dir}/{rot}/recon_{k}/{rot}_{i}.png')
+        tvio.write_video(f'{out_dir}/{rot}/recon_{k}/{rot}.mp4', th.tensor((np.stack(v, 0)*255).astype(np.uint8)), 30)
+                
