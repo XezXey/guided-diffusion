@@ -38,7 +38,7 @@ if args.dataset_name in ['mp_test', 'mp_test2', 'mp_valid', 'mp_valid2']:
     img_path = f'/data/mint/DPM_Dataset/MultiPIE/{sub_f}/mp_aligned/{args.set_}/'
     sh_path = f'/data/mint/DPM_Dataset/MultiPIE/{sub_f}/params/{args.set_}/ffhq-{args.set_}-light-anno.txt'
 
-elif args.dataset_name in ['ffhq', 'ffhq_target', 'ffhq_target2', 'ffhq_rotate', 'ffhq_shadows', 'ffhq_diffuse']:
+elif args.dataset_name in ['ffhq', 'ffhq_target', 'ffhq_target2', 'ffhq_target_figure', 'ffhq_rotate', 'ffhq_shadows', 'ffhq_diffuse']:
     img_path = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/{args.set_}/'
     sh_path = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/params/{args.set_}/ffhq-{args.set_}-light-anno.txt'
 else:
