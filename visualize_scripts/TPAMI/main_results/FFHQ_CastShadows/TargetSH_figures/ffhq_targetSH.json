@@ -35,7 +35,7 @@
     "IC-Light" : {
         "step" :"ema_300000",
         "alias" : "IC-Light",
-        "misc" : "sota",
+        "misc" : "atos",
         "itp":"render_face",
         "itp_method":"Lerp",
         "diff_step":"1000",
