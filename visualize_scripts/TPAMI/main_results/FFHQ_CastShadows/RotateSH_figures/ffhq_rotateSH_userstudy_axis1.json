@@ -1,0 +1,68 @@
+{
+    "hou21_rotate_axis=1" : {
+        "step" :"ema_300000",
+        "alias" : "Hou et al. (CVPR 2021)",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/TPAMI_evaluations/ShadowM/user_study/rotateSH/axis=1"
+    },
+    "hou22_rotate_axis=1" : {
+        "step" :"ema_300000",
+        "alias" : "Hou et al. (CVPR 2022)",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/TPAMI_evaluations/GeoConFR/user_study/rotateSH/axis=1"
+    },
+    "iclight_rotate_512x512_map_centered_axis1" : {
+        "step" :"ema_300000",
+        "alias" : "IC-Light (512x512) - map centered",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/TPAMI_evaluations/iclight/ffhq/user_study/ffhq_user_study/axis=1/map_centered/proc512x512/"
+    },
+    "iclight_rotate_512x512_mapclean_axis1" : {
+        "step" :"ema_300000",
+        "alias" : "IC-Light (512x512) - map clean",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/TPAMI_evaluations/iclight/ffhq/user_study/ffhq_user_study/axis=1/map_clean/proc512x512/"
+    },
+    "ours_difareli++_oneshot_rotate_rot1" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli++ one shot - rotate",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot1_srcC/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_oneshot_rotate_rot1_tomax" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli++ one shot - rotate",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot1_tomax/ema_300000/valid/render_face/reverse_sampling/"
+    }
+}
