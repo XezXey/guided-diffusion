@@ -1,0 +1,13 @@
+{
+    "ours_difareli++_oneshot_dstC" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli++ oneshot - dstC",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"20",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/holo/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_dstC/ema_300000/valid/render_face/reverse_sampling/"
+    }
+}
