@@ -1,75 +1,75 @@
 {
     "pair": {
         "pair1": {
-            "src": "11133.jpg",
+            "src": "11133.png",
             "dst": "f4_main_ref_1.png"
         },
         "pair2": {
-            "src": "11734.jpg",
+            "src": "11734.png",
             "dst": "f4_main_ref_2.png"
         },
         "pair3": {
-            "src": "27165.jpg",
+            "src": "27165.png",
             "dst": "f4_main_ref_3.png"
         },
         "pair4": {
-            "src": "46881.jpg",
+            "src": "46881.png",
             "dst": "f6_main_ref_1.png"
         },
         "pair5": {
-            "src": "46178.jpg",
+            "src": "46178.png",
             "dst": "f6_main_ref_2.png"
         },
         "pair6": {
-            "src": "51645.jpg",
+            "src": "51645.png",
             "dst": "f6_main_ref_3.png"
         },
         "pair7": {
-            "src": "27165.jpg",
+            "src": "27165.png",
             "dst": "f6_sup_ref_1.png"
         },
         "pair8": {
-            "src": "11737.jpg",
+            "src": "11737.png",
             "dst": "f6_sup_ref_2.png"
         },
         "pair9": {
-            "src": "19220.jpg",
+            "src": "19220.png",
             "dst": "f6_sup_ref_3.png"
         },
         "pair10": {
-            "src": "27001.jpg",
+            "src": "27001.png",
             "dst": "f6_sup_ref_4.png"
         },
         "pair11": {
-            "src": "27146.jpg",
+            "src": "27146.png",
             "dst": "f6_sup_ref_5.png"
         },
         "pair12": {
-            "src": "11653.jpg",
+            "src": "11653.png",
             "dst": "f6_sup_ref_6.png"
         },
         "pair13": {
-            "src": "11325.jpg",
+            "src": "11325.png",
             "dst": "f6_sup_ref_7.png"
         },
         "pair14": {
-            "src": "6061.jpg",
+            "src": "6061.png",
             "dst": "f7_sup_ref_1.png"
         },
         "pair15": {
-            "src": "46299.jpg",
+            "src": "46299.png",
             "dst": "f7_sup_ref_2.png"
         },
         "pair16": {
-            "src": "67183.jpg",
+            "src": "67183.png",
             "dst": "f7_sup_ref_3.png"
         },
         "pair17": {
-            "src": "51727.jpg",
+            "src": "51727.png",
             "dst": "f7_sup_ref_4.png"
         },
         "pair18": {
-            "src": "6093.jpg",
+            "src": "6093.png",
             "dst": "f7_sup_ref_5.png"
         }
     }
