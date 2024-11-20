@@ -41,7 +41,7 @@
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"2",
-        "img_dir" : "/data/mint/sampling/TPAMI/sota/iclight/ffhq/ffhq_target_figure/map_centered/proc512x512/"
+        "img_dir" : "/data/mint/TPAMI_evaluations/iclight/ffhq/user_study/ffhq_user_study_targetSH/map_clean/proc512x512/"
     },
     "ours_difareli++_oneshot_dstC" : {
         "step" :"ema_300000",
