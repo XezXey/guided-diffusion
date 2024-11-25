@@ -177,4 +177,4 @@ eval_request/Sumit/difareli_test/kiara_2_sunrise_2k.exr
 eval_request/Sumit/difareli_test/goegap_road_4k.hdr
 sample_scripts/default/cuda_12.1.1_530.30.02_linux.run
 experiment_scripts/TPAMI/hdri_process/miniconda_v11
-visualize_scripts/TPAMI/main_results/FFHQ_CastShadows/RotateSH_figures/sample_json_with_frameid/rotateSH_figure
+visualize_scripts/TPAMI/main_results/FFHQ_CastShadows/RotateSH_figures/sample_json_with_frameid/rotateSH_figure/*
