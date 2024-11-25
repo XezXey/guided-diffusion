@@ -23,20 +23,12 @@ parser.add_argument('--host', default='0.0.0.0')
 
 args = parser.parse_args()
 
-# # Run only once
-# run = True
-# if run:
-#     if args.rank_shadow_c:
-#         c = pd.read_csv(f'/data/mint/DPM_Dataset/ffhq_256_with_anno/params/{args.set_}/ffhq-{args.set_}-shadow-anno.txt', sep=' ', header=None, names=['image_name', 'c_val'])
-#         c_sorted = c.sort_values(by=['c_val'], ascending=False)
-#     if args.rank_shadow_iou:
-#         c = pd.read_csv('./iou.csv', sep=',', header=None, skiprows=1, names=['image_name', 'IOU'])
-#         c_sorted = c.sort_values(by=['IOU'], ascending=False)
-#     run = False
-
-#     max_c = c['c_val'].max()
-#     min_c = c['c_val'].min()
-#     print(f"Max: {max_c} Min: {min_c}")
+run = True
+if run:
+    print("[#] Loading c values...")
+    c = pd.read_csv(f'/data/mint/DPM_Dataset/ffhq_256_with_anno/params/{args.set_}/ffhq-{args.set_}-shadow-anno.txt', sep=' ', header=None, names=['image_name', 'c_val'])
+    c_sorted = c.sort_values(by=['c_val'], ascending=False)
+    run = False
 
 def sort_by_frame(path_list):
     frame_anno = []
@@ -107,7 +99,7 @@ def create_app():
         show_itmd = request.args.get('show_itmd', "True")
         show_recon = request.args.get('show_recon', "True")
         show_relit = request.args.get('show_relit', "True")
-        # sort = request.args.get('sort', 'asc')
+        sort_c = request.args.get('sort_c', "False")
         n_frame = request.args.get('n_frame', None)
         s = request.args.get('s', 0)
         e = request.args.get('e', 100)
@@ -122,6 +114,14 @@ def create_app():
             sample_pairs = json.load(f)['pair']
         except:
             raise ValueError(f"Sample json file not found: {sample_json}")
+
+        if sort_c == "True":
+            # Sort the sample_json by c_sorted
+            # sample_pairs is {'pair{idx}': {'src': 'src.jpg', 'dst': 'dst.jpg'}}
+            # c_sorted is pandas dataframe with columns ['image_name', 'c_val']
+            for k, v in sample_pairs.items():
+                sample_pairs[k]['c_val'] = c_sorted[c_sorted['image_name'] == v['src']]['c_val'].values[0]
+            sample_pairs = dict(sorted(sample_pairs.items(), key=lambda x: x[1]['c_val'], reverse=True))
         
         out += f"<h2> Sample json file: {sample_json} {n_frame} </h2>"
         out += "Transpose : <button onclick='transposeAllTables()'>Transpose</button>"

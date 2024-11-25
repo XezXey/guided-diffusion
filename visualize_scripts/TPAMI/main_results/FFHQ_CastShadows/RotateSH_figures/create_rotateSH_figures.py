@@ -188,7 +188,7 @@ def create_app():
                 out += f"<td>"
                 frame_id = []
                 if len(frames) > 1:
-                    if ds > 0:
+                    if ds > 0 and ds < len(frames):
                         tmp_ds = [0] + list(range(1, len(frames)-1, int(len(frames)/ds))) + [len(frames)-1]
                     else:
                         tmp_ds = list(range(len(frames)))

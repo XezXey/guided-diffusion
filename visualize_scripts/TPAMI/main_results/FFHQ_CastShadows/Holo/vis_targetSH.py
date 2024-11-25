@@ -23,21 +23,6 @@ parser.add_argument('--host', default='0.0.0.0')
 
 args = parser.parse_args()
 
-# # Run only once
-# run = True
-# if run:
-#     if args.rank_shadow_c:
-#         c = pd.read_csv(f'/data/mint/DPM_Dataset/ffhq_256_with_anno/params/{args.set_}/ffhq-{args.set_}-shadow-anno.txt', sep=' ', header=None, names=['image_name', 'c_val'])
-#         c_sorted = c.sort_values(by=['c_val'], ascending=False)
-#     if args.rank_shadow_iou:
-#         c = pd.read_csv('./iou.csv', sep=',', header=None, skiprows=1, names=['image_name', 'IOU'])
-#         c_sorted = c.sort_values(by=['IOU'], ascending=False)
-#     run = False
-
-#     max_c = c['c_val'].max()
-#     min_c = c['c_val'].min()
-#     print(f"Max: {max_c} Min: {min_c}")
-
 def sort_by_frame(path_list):
     frame_anno = []
     for p in path_list:
@@ -107,7 +92,6 @@ def create_app():
         show_itmd = request.args.get('show_itmd', "True")
         show_recon = request.args.get('show_recon', "True")
         show_relit = request.args.get('show_relit', "True")
-        # sort = request.args.get('sort', 'asc')
         n_frame = request.args.get('n_frame', None)
         s = request.args.get('s', 0)
         e = request.args.get('e', 100)
