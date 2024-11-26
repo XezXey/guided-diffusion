@@ -64,5 +64,60 @@
         "time_respace":"",
         "n_frame":"60",
         "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot1_tomax/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_oneshot_rotate_rot1_tomax_0.5sh" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli++ one shot - rotate",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_maxC_rot1_0.5sh/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_oneshot_rotate_rot1_tomax_0.6sh" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli++ one shot - rotate",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_maxC_rot1_0.6sh/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_oneshot_rotate_rot1_tomax_0.7sh" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli++ one shot - rotate",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_maxC_rot1_0.7sh/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_oneshot_rotate_rot1_tomax_0.8sh" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli++ one shot - rotate",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_maxC_rot1_0.8sh/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli_rotate_rot1" : {
+        "step" :"ema_085000",
+        "alias" : "DiFaReli - rotate1",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_rot1_TR/ema_085000/valid/render_face/reverse_sampling/"
     }
 }
