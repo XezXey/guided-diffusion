@@ -470,6 +470,10 @@ def build_condition_image(cond, misc):
             #NOTE: Render w/ same light
             repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
             cond.update(repeated_cond)
+
+        if args.scale_sh:
+            print(f"[#] Scaling the SH with {args.scale_sh} on [1:n_step] (target light)...")
+            cond['light'][1:] = cond['light'][1:] * args.scale_sh
         
         start_t = time.time()
         if np.any(['deca_masked' in n for n in condition_img]) or np.any(['shadow_mask' in n for n in condition_img]) or np.any(['shadow_diff' in n for n in condition_img]):
