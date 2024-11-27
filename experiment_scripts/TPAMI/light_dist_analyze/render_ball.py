@@ -1,0 +1,1 @@
+misc.drawSphere(sh=th.tensor(sub_cond['light'][l]).view(9, 3))
