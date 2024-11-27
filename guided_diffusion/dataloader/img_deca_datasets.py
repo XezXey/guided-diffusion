@@ -413,11 +413,18 @@ class DECADataset(Dataset):
         # Consturct the 'cond_params' for non-spatial conditioning
         if self.cfg.img_model.conditioning: 
             try:
+                # print(query_img_name)
+                # for k in self.precomp_params_key:
+                    # print(k, self.deca_params[query_img_name][k].shape)
                 out_dict["cond_params"] = np.concatenate([self.deca_params[query_img_name][k] for k in self.precomp_params_key])
-            except: pass
+                # print(out_dict["cond_params"].shape)
+            except Exception as e: 
+                print("Error : ", e)
+            # print(out_dict["cond_params"].shape)
             
         for k in self.deca_params[query_img_name].keys():
             out_dict[k] = self.deca_params[query_img_name][k]
+        # print(out_dict.keys())
         out_dict['image_name'] = query_img_name
         out_dict['raw_image'] = np.transpose(np.array(raw_pil_image), [2, 0, 1])
         out_dict['raw_image_path'] = self.local_images[query_img_name]

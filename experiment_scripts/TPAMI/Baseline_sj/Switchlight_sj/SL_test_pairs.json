@@ -1,0 +1,81 @@
+{
+    "pair": {
+        "pair1": {
+            "src": "879.jpg",
+            "dst": "fig6_main_ref_1.png",
+            "inp": "fig6_main_inp_1.png",
+            "gt": "fig6_main_out_1.png",
+            "in_ffhq": true
+        },
+        "pair2": {
+            "src": "28.jpg",
+            "dst": "fig6_main_ref_2.png",
+            "inp": "fig6_main_inp_2.png",
+            "gt": "fig6_main_out_2.png",
+            "in_ffhq": true
+        },
+        "pair3": {
+            "src": "963.jpg",
+            "dst": "fig6_main_ref_3.png",
+            "inp": "fig6_main_inp_3.png",
+            "gt": "fig6_main_out_3.png",
+            "in_ffhq": true
+        },
+        "pair4": {
+            "src": "55.jpg",
+            "dst": "fig7_main_ref_1.png",
+            "inp": "fig7_main_inp_1.png",
+            "gt": "fig7_main_out_1.png",
+            "in_ffhq": true
+        },
+        "pair5": {
+            "src": "150.jpg",
+            "dst": "fig7_main_ref_2.png",
+            "inp": "fig7_main_inp_2.png",
+            "gt": "fig7_main_out_2.png",
+            "in_ffhq": true
+        },
+        "pair6": {
+            "src": "158.jpg",
+            "dst": "fig7_main_ref_3.png",
+            "inp": "fig7_main_inp_3.png",
+            "gt": "fig7_main_out_3.png",
+            "in_ffhq": true
+        },
+        "pair7": {
+            "src": "43.jpg",
+            "dst": "fig7_main_ref_4.png",
+            "inp": "fig7_main_inp_4.png",
+            "gt": "fig7_main_out_4.png",
+            "in_ffhq": true
+        },
+        "pair8": {
+            "src": "15.jpg",
+            "dst": "fig7_main_ref_5.png",
+            "inp": "fig7_main_inp_5.png",
+            "gt": "fig7_main_out_5.png",
+            "in_ffhq": true
+        },
+        "pair9": {
+            "src": "1.jpg",
+            "dst": "fig7_main_ref_6.png",
+            "inp": "fig7_main_inp_6.png",
+            "gt": "fig7_main_out_6.png",
+            "in_ffhq": true
+        },
+        "pair10": {
+            "src": "0.png",
+            "dst": "fig10_main_ref_1.png",
+            "inp": "fig10_main_inp_1.png",
+            "gt": "fig10_main_out_1.png",
+            "in_ffhq": false
+        },
+        "pair11": {
+            "src": "56.jpg",
+            "dst": "fig10_main_ref_2.png",
+            "inp": "fig10_main_inp_2.png",
+            "gt": "fig10_main_out_2.png",
+            "in_ffhq": true
+        }
+    }
+}
