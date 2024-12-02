@@ -41,7 +41,7 @@
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"2",
-        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/targetSH/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_inv_with_sd_maxC_250t/ema_085000/valid/render_face/reverse_sampling/"
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/targetSH/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_maxC_250t/ema_085000/valid/render_face/reverse_sampling/"
     },
     "ours_256_DiFaReli" : {
         "step":"ema_085000", 
