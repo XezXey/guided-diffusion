@@ -377,6 +377,14 @@ if __name__ == '__main__':
         cfg.dataset.training_data = 'SwitchLight_limitation'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/images_aligned/'
         cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
+    elif args.dataset == 'hard_cs':
+        cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
+        img_dataset_path = f"/data/mint/DPM_Dataset/Hard_CS/images_aligned/"
+        deca_dataset_path = f"/data/mint/DPM_Dataset/Hard_CS/params/"
+        img_ext = '.png'
+        cfg.dataset.training_data = 'Hard_CS'
+        cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/images_aligned/'
+        cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
     elif args.dataset == 'ffhq':
         cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
         img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
