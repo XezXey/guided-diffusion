@@ -31,5 +31,38 @@
         "time_respace":"",
         "n_frame":"30",
         "img_dir" : "/data/mint/sampling/TPAMI/main_result/Hard_CS/60065L/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_0.7C_50t/ema_085000/valid/render_face/reverse_sampling"
+    },
+    "ours_difareli++_dstSH_0.7C_250t" : {
+        "step" :"ema_085000",
+        "alias" : "DiFaReli++ oneshot - dstSH_0.7C_250t",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"30",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/Hard_CS/60065L/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_0.7C_250t/ema_085000/valid/render_face/reverse_sampling"
+    },
+    "ours_difareli++_dstSH_0.8C_250t" : {
+        "step" :"ema_085000",
+        "alias" : "DiFaReli++ oneshot - dstSH_0.8C_250t",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"30",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/Hard_CS/60065L/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_0.8C_250t/ema_085000/valid/render_face/reverse_sampling"
+    },
+    "ours_difareli++_ss_0C" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli++ oneshot - single",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"30",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/Hard_CS/60065L/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_0C/ema_300000/valid/render_face/reverse_sampling"
     }
 }
