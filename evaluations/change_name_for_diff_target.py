@@ -1,5 +1,5 @@
 import numpy as np
-import glob, os
+import glob, os, tqdm
 import json
 import argparse
 parser = argparse.ArgumentParser()
@@ -17,7 +17,7 @@ else:
 with open(path, 'r') as f:
     data = json.load(f)['pair']
  
-for p in glob.glob(args.pred_path + '/*'):   
+for p in tqdm.tqdm(glob.glob(args.pred_path + '/*')):   
     if os.path.isdir(p + '/out') and args.dup_out_eval:
         print("[#] Duplicating out to out_eval...")    
         os.system(f'cp -r {p}/out {p}/out_eval')
@@ -43,9 +43,3 @@ for p in glob.glob(args.pred_path + '/*'):
                 new_fn = f'input={src}#ref={ref}#pred={gt}.png'
                 new_fn_fp = f"{p}/out_transf_eval/{new_fn}"
                 os.system(f"cp {fn_fp} {new_fn_fp}")
-                
-                
-                
-            
-            
-            

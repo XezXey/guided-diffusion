@@ -1,0 +1,92 @@
+{
+    "pair": {
+        "pair1": {
+            "src": "cs1.png",
+            "dst": "cs1.png"
+        },
+        "pair2": {
+            "src": "cs2.png",
+            "dst": "cs2.png"
+        },
+        "pair3": {
+            "src": "cs3.png",
+            "dst": "cs3.png"
+        },
+        "pair4": {
+            "src": "cs4.png",
+            "dst": "cs4.png"
+        },
+        "pair5": {
+            "src": "cs5.png",
+            "dst": "cs5.png"
+        },
+        "pair6": {
+            "src": "cs9.png",
+            "dst": "cs9.png"
+        },
+        "pair7": {
+            "src": "cs10.png",
+            "dst": "cs10.png"
+        },
+        "pair8": {
+            "src": "cs11.png",
+            "dst": "cs11.png"
+        },
+        "pair9": {
+            "src": "cs12.png",
+            "dst": "cs12.png"
+        },
+        "pair10": {
+            "src": "cs14.png",
+            "dst": "cs14.png"
+        },
+        "pair11": {
+            "src": "cs15.png",
+            "dst": "cs15.png"
+        },
+        "pair12": {
+            "src": "cs16.png",
+            "dst": "cs16.png"
+        },
+        "pair13": {
+            "src": "cs17.png",
+            "dst": "cs17.png"
+        },
+        "pair14": {
+            "src": "cs19.png",
+            "dst": "cs19.png"
+        },
+        "pair15": {
+            "src": "cs20.png",
+            "dst": "cs20.png"
+        },
+        "pair16": {
+            "src": "cs21.png",
+            "dst": "cs21.png"
+        },
+        "pair17": {
+            "src": "cs22.png",
+            "dst": "cs22.png"
+        },
+        "pair18": {
+            "src": "cs23.png",
+            "dst": "cs23.png"
+        },
+        "pair19": {
+            "src": "first-in7.png",
+            "dst": "first-in7.png"
+        },
+        "pair20": {
+            "src": "first-in8.png",
+            "dst": "first-in8.png"
+        },
+        "pair21": {
+            "src": "second-in28.png",
+            "dst": "second-in28.png"
+        },
+        "pair22": {
+            "src": "second-in31.png",
+            "dst": "second-in31.png"
+        }
+    }
+}
