@@ -1,15 +1,4 @@
 {
-    "ours_difareli++_0C_50t" : {
-        "step" :"ema_085000",
-        "alias" : "DiFaReli++ oneshot - dstSH_0C_50t",
-        "misc" : "one-shot",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"30",
-        "img_dir" : "/data/mint/sampling/TPAMI/main_result/Hard_CS/60065L/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_dstSH_0C_50t/ema_085000/valid/render_face/reverse_sampling"
-    },
     "ours_difareli++_0.7C_250t" : {
         "step" :"ema_085000",
         "alias" : "DiFaReli++ oneshot - 0.7C_250t",
