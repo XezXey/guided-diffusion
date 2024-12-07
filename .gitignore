@@ -876,3 +876,8 @@ visualize_scripts/TPAMI/main_results/FFHQ_CastShadows/TargetSH_figures/gen_figur
 visualize_scripts/TPAMI/main_results/FFHQ_CastShadows/TargetSH_figures/gen_figure/figures/pair2995_cond.png
 visualize_scripts/TPAMI/main_results/FFHQ_CastShadows/TargetSH_figures/gen_figure/figures/pair2995_res.png
 visualize_scripts/TPAMI/main_results/FFHQ_CastShadows/TargetSH_figures/gen_figure/figures/pair2995_src.png
+
+/home/mint/Dev/DiFaReli/difareli-faster/experiment_scripts/TPAMI/supplement_video/rotate_comparison/vids/*
+experiment_scripts/TPAMI/supplement_video/rotate_comparison/vids/*
+experiment_scripts/TPAMI/supplement_video/more_rotateSH/grids/*
+experiment_scripts/TPAMI/supplement_video/more_rotateSH/vids/*

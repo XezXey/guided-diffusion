@@ -30,7 +30,7 @@
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"60",
-        "img_dir" : "/data/mint/TPAMI_evaluations/iclight/ffhq/user_study/ffhq_user_study/axis=2/map_centered/proc512x512/"
+        "img_dir" : "/data/mint/TPAMI_evaluations/Relighting_SOTA/iclight/ffhq/user_study/ffhq_user_study/axis=2/map_centered/proc512x512/"
     },
     "iclight_rotate_512x512_mapclean_axis2" : {
         "step" :"ema_300000",
@@ -41,7 +41,7 @@
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"60",
-        "img_dir" : "/data/mint/TPAMI_evaluations/iclight/ffhq/user_study/ffhq_user_study/axis=2/map_clean/proc512x512/"
+        "img_dir" : "/data/mint/TPAMI_evaluations/Relighting_SOTA/iclight/ffhq/user_study/ffhq_user_study/axis=2/map_clean/proc512x512/"
     },
     "ours_difareli++_oneshot_rotate" : {
         "step" :"ema_300000",
