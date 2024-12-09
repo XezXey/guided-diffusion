@@ -30,7 +30,7 @@
         "diff_step":"1000",
         "time_respace":"",
         "n_frame":"60",
-        "img_dir" : "/data/mint/TPAMI_evaluations/iclight/ffhq/ffhq_selected_rotateSH/ffhq_selected_rotateSH/axis=2/map_centered/proc512x512/"
+        "img_dir" : "/data/mint/TPAMI_evaluations/Relighting_SOTA/iclight/ffhq/ffhq_selected_rotateSH/ffhq_selected_rotateSH/axis=2/map_centered/proc512x512/"
     },
     "ours_difareli++_oneshot_rotate_0c" : {
         "step" :"ema_300000",
