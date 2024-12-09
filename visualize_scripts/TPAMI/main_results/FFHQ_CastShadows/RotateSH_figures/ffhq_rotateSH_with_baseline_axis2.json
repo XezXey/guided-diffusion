@@ -1,5 +1,5 @@
 {
-    "hou21_rotate" : {
+    "hou21_rotate_axis=2" : {
         "step" :"ema_300000",
         "alias" : "Hou et al. (CVPR 2021)",
         "misc" : "one-shot",
@@ -10,7 +10,7 @@
         "n_frame":"60",
         "img_dir" : "/data/mint/TPAMI_evaluations/ShadowM/rotateSH_figure/axis=2/"
     },
-    "hou22_rotate" : {
+    "hou22_rotate_axis=2" : {
         "step" :"ema_300000",
         "alias" : "Hou et al. (CVPR 2022)",
         "misc" : "one-shot",
@@ -21,7 +21,7 @@
         "n_frame":"60",
         "img_dir" : "/data/mint/TPAMI_evaluations/GeoConFR/rotateSH_figure/axis=2/"
     },
-    "iclight_rotate_512x512" : {
+    "iclight_rotate_512x512_map_centered_axis2" : {
         "step" :"ema_300000",
         "alias" : "IC-Light (512x512) - map centered",
         "misc" : "one-shot",
@@ -54,7 +54,7 @@
         "n_frame":"60",
         "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2/ema_300000/valid/render_face/reverse_sampling/"
     },
-    "ours_difareli++_oneshot_rotate_tomax" : {
+    "ours_difareli++_oneshot_rotate_rot2_tomax" : {
         "step" :"ema_300000",
         "alias" : "DiFaReli++ one shot - rotate maxC",
         "misc" : "one-shot",
@@ -65,7 +65,7 @@
         "n_frame":"60",
         "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_tomax/ema_300000/valid/render_face/reverse_sampling/"
     },
-    "ours_256_DiFaReli++_rotate" : {
+    "ours_256_difareli++_rotate" : {
         "step":"ema_085000", 
         "alias":"DiFaReli++ - rotate", 
         "misc" : "ours",
@@ -76,7 +76,7 @@
         "n_frame":"60",
         "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_inv_with_sd_ds256_pt1_rot2_TR/ema_085000/valid/render_face/reverse_sampling/"
     },
-    "ours_256_DiFaReli++_rotate_tomax" : {
+    "ours_256_difareli++_rotate_rot2_tomax" : {
         "step":"ema_085000", 
         "alias":"DiFaReli++ - rotate maxC", 
         "misc" : "ours",
@@ -87,7 +87,7 @@
         "n_frame":"60",
         "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_inv_with_sd_ds256_pt1_rot2_TR_tomax/ema_085000/valid/render_face/reverse_sampling/"
     },
-    "ours_256_DiFaReli" : {
+    "ours_256_difareli_rotate_rot2" : {
         "step":"ema_085000", 
         "alias":"DiFaReli",
         "misc" : "ours",

@@ -881,3 +881,4 @@ visualize_scripts/TPAMI/main_results/FFHQ_CastShadows/TargetSH_figures/gen_figur
 experiment_scripts/TPAMI/supplement_video/rotate_comparison/vids/*
 experiment_scripts/TPAMI/supplement_video/more_rotateSH/grids/*
 experiment_scripts/TPAMI/supplement_video/more_rotateSH/vids/*
+experiment_scripts/TPAMI/supplement_video/rotate_comparison/vids_selected_rotate_SH/*
