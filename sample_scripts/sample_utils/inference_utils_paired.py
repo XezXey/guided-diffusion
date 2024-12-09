@@ -502,7 +502,15 @@ def build_condition_image(cond, misc, force_render=False):
         cond['load_deca_for_shadow_time'] = load_deca_for_shadow_time
         print("Rendering time : ", time.time() - start_t)
         
-        if args.fixed_render:
+        if args.fixed_render and (args.shadow_diff_inc_c or args.shadow_diff_dec_c):
+            print("[#] Fixed the Deca renderer for Reshadowing...")
+            print(all_render[0].shape) # List of  [B x 3 x H x W, ...]
+            ff = all_render[0][0:1]
+            fidx = int(args.shadow_diff_fidx_frac * n_step)
+            rf = all_render[0][fidx:fidx+1].repeat_interleave(repeats=n_step-1, dim=0)
+            deca_rendered = th.cat((ff, rf), dim=0)
+            print(deca_rendered.shape)
+        elif args.fixed_render:
             print("[#] Fixed the Deca renderer")
             print(all_render[0].shape) # List of  [B x 3 x H x W, ...]
             deca_rendered = all_render[0][0:1].repeat_interleave(repeats=n_step, dim=0)
@@ -567,16 +575,42 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
 
     if args.shadow_diff_inc_c:
         print(f"[#] Increasing the shadow_diff with weight...")
-        print(f"[#] Default C is {c_val_src.item()}")
-        weight_src = th.linspace(start=c_val_src.item(), end=1.0, steps=n_step).to(device)
-        weight_src = weight_src[..., None, None, None]
+        if args.reshadow_with_given_c is not None:
+            print(f"[#] From the given C = {args.reshadow_with_given_c} to 1.0 for {n_step-1} steps...")
+            given_c = args.reshadow_with_given_c
+            weight_src = th.linspace(start=given_c, end=1.0, steps=n_step-1).to(device)
+            weight_src = weight_src[..., None, None, None]
+            weight_dst = th.linspace(start=given_c, end=1.0, steps=n_step-1).to(device)
+            weight_dst = weight_dst[..., None, None, None]
+        else:
+            print(f"[#] From the default C = {c_val_src.item()}")
+            weight_src = th.linspace(start=c_val_src.item(), end=1.0, steps=n_step-1).to(device)
+            weight_src = weight_src[..., None, None, None]
+            weight_dst = th.linspace(start=c_val_dst.item(), end=1.0, steps=n_step-1).to(device)
+            weight_dst = weight_dst[..., None, None, None]
         fix_frame = True 
     elif args.shadow_diff_dec_c:
         print("[#] Decreasing the shadow_diff with weight...")
-        print(f"[#] Default C is {c_val_src.item()}")
-        weight_src = th.linspace(start=c_val_src.item(), end=0.0, steps=n_step).to(device)
-        weight_src = weight_src[..., None, None, None]
+        if args.reshadow_with_given_c is not None:
+            print(f"[#] From the given C = {args.reshadow_with_given_c} to 0.0 for {n_step-1} steps...")
+            given_c = args.reshadow_with_given_c
+            weight_src = th.linspace(start=given_c, end=0.0, steps=n_step-1).to(device)
+            weight_src = weight_src[..., None, None, None]
+            weight_dst = th.linspace(start=given_c, end=0.0, steps=n_step-1).to(device)
+            weight_dst = weight_dst[..., None, None, None]
+        else:
+            print(f"[#] Default C is {c_val_src.item()}")
+            weight_src = th.linspace(start=c_val_src.item(), end=0.0, steps=n_step-1).to(device)
+            weight_src = weight_src[..., None, None, None]
+            weight_dst = th.linspace(start=c_val_dst.item(), end=0.0, steps=n_step-1).to(device)
+            weight_dst = weight_dst[..., None, None, None]
         fix_frame = True 
+    elif args.postproc_shadow_mask_smooth_diffuse_to_shadow:
+        print("[#] Diffuse to shadow...")
+        fix_frame = True
+        weight_src = c_val_src[..., None, None, None].to(device)
+        weight_dst = c_val_dst[..., None, None, None].to(device)
+        weight_ph = th.ones_like(c_val_src[..., None, None, None]).to(device)  # Placeholder
     else:
         print("[#] No re-weighting for shadow_diff...")
         print(f"[#] Processing with weight = {c_val_src} and relight...")
@@ -674,6 +708,9 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                     elif args.relight_with_given_c is not None:
                         print(f"[#] Relight with the given c_val = {args.relight_with_given_c}")
                         shadow_rf = ((sd_img[1:] > 0.) * ((weight_dst * 0.) + args.relight_with_given_c))
+                    elif args.reshadow_with_given_c is not None:
+                        print(f"[#] Reshadow with the given c_val = {args.reshadow_with_given_c}")
+                        shadow_rf = ((sd_img[1:] > 0.) * ((weight_src)))
                     else:
                         print(f"[#] Relight with the src c_val = {weight_src.flatten()}")
                         shadow_rf = (sd_img[1:] * (1-weight_src))    # Shadow area assigned weight
@@ -684,8 +721,36 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                     print("[#] Unique of out_sd: ", th.unique(out_sd))
                     print("[#] Unique of shadow_ff: ", th.unique(shadow_ff))
                     print("[#] Unique of shadow_rf: ", th.unique(shadow_rf))
+                elif args.postproc_shadow_mask_smooth_diffuse_to_shadow and fix_frame:
+                    #NOTE: Same as the postproc_shadow_mask_smooth but change the weight from 0.0 -> 1.0
+                    #NOTE: Working with the fixed frame and relight with given c_val
+                    # First frame
+                    shadow_ff = sd_img[0:1]
+                    # Rest of the frames
+                    # Weight use is 0.0 -> given c_val -> 1.0 with the equal step
+                    given_c = args.relight_with_given_c
+                    n_step_diffuse = sd_img[1:].shape[0] // 2
+                    n_step_shadow = sd_img[1:].shape[0] - n_step_diffuse
+                    diffuse_to_given_c = th.linspace(start=0.0, end=given_c, steps=n_step_diffuse).to(device)
+                    given_c_to_shadow = th.linspace(start=given_c, end=1.0, steps=n_step_shadow).to(device)
+                    weight_use = th.cat((diffuse_to_given_c, given_c_to_shadow), dim=0)
+                    weight_use = weight_use[..., None, None, None]
+                    # print(weight_use, weight_use.shape)
+                    # weight_use = weight_ph * weight_use[..., None, None, None]
+                    print(weight_ph.shape, weight_use.shape)
+                    shadow_rf = ((sd_img[1:] > 0.) * (weight_use))
+                    
+                    # Final frames
+                    shadow = th.cat((shadow_ff, shadow_rf), dim=0)
+                    out_sd = shadow
+                    cond[cond_img_name] = out_sd
+                    print("[#] Unique of out_sd: ", th.unique(out_sd))
+                    print("[#] Unique of shadow_ff: ", th.unique(shadow_ff))
+                    print("[#] Unique of shadow_rf: ", th.unique(shadow_rf))
                 else:
+                    print("[#] Please specify either postproc_shadow method...")
                     raise NotImplementedError
+                
     # Update the src_and_dst_shadow_diff_with_weight_simplified into src_shadow_diff_with_weight_simplified and dst_shadow_diff_with_weight_simplified
     if 'src_and_dst_shadow_diff_with_weight_simplified' in condition_img:
         if args.force_zero_src_shadow:
