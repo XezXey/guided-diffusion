@@ -624,6 +624,10 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                 print("[#] Relight with the strongest c_val, set the weight to 0.0...")
                 weight_src = (c_val_src * 0.0).to(device)
                 weight_dst = (c_val_dst * 0.0).to(device)
+        else:
+            print("[#] For supporting DiFaReli_SS (without cast shadows)...")
+            weight_src = c_val_src[..., None, None, None].to(device)
+            weight_dst = c_val_dst[..., None, None, None].to(device)
         fix_frame = False
 
     for _, cond_img_name in enumerate(condition_img):

@@ -45,7 +45,7 @@ elif 'ffhq' in args.dataset_name:
     sh_path = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/params/{args.set_}/ffhq-{args.set_}-light-anno.txt'
 elif 'hard_cs' in args.dataset_name:
     img_path = f'/data/mint/DPM_Dataset/Hard_CS/images_aligned/{args.set_}/'
-    sh_path = f'/data/mint/DPM_Dataset/Hard_CS/images_aligned/params/{args.set_}/ffhq-{args.set_}-light-anno.txt'
+    sh_path = f'/data/mint/DPM_Dataset/Hard_CS/params/{args.set_}/ffhq-{args.set_}-light-anno.txt'
 else:
     raise ValueError(f'Unknown dataset name of {args.dataset_name}...')
     
