@@ -43,6 +43,9 @@ if args.dataset_name in ['mp_test', 'mp_test2', 'mp_valid', 'mp_valid2']:
 elif 'ffhq' in args.dataset_name:
     img_path = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/{args.set_}/'
     sh_path = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/params/{args.set_}/ffhq-{args.set_}-light-anno.txt'
+elif 'hard_cs' in args.dataset_name:
+    img_path = f'/data/mint/DPM_Dataset/Hard_CS/images_aligned/{args.set_}/'
+    sh_path = f'/data/mint/DPM_Dataset/Hard_CS/images_aligned/params/{args.set_}/ffhq-{args.set_}-light-anno.txt'
 else:
     raise ValueError(f'Unknown dataset name of {args.dataset_name}...')
     
