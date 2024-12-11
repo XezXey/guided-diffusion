@@ -467,8 +467,8 @@ def build_condition_image(cond, misc, force_render=False):
                                             verts=orig_visdict['trans_verts_orig'], 
                                             use_sh_to_ld_region=args.use_sh_to_ld_region,
                                             deca={'face_scalp':deca_obj_face_scalp}, 
-                                            axis_0=args.rotate_sh_axis==0 and args.rotate_sh,
-                                            axis_1=args.rotate_sh_axis==1 and args.rotate_sh,
+                                            axis_0=args.rotate_sh_axis==0 and (args.rotate_sh or args.rotate_sh_dst),
+                                            axis_1=args.rotate_sh_axis==1 and (args.rotate_sh or args.rotate_sh_dst),
                                             device='cpu',   # Prevent OOM
                                             up_rate=args.up_rate_for_AA,
                                             org_h=img_size, org_w=img_size,
