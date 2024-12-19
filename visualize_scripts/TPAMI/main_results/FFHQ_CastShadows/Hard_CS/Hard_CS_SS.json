@@ -86,6 +86,17 @@
         "time_respace":"",
         "n_frame":"60",
         "img_dir" : "/data/mint/sampling/TPAMI/main_result/Hard_CS/60065L/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_rot2_1000t/ema_085000/valid/render_face/reverse_sampling"
+    },
+    "ours_difareli_ss_dstSH" : {
+        "step" :"ema_200000",
+        "alias" : "DiFaReli++ oneshot - single",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/Hard_CS/60065L/log=paired+difareli+nobg+nodpm+trainset_256.yaml_cfg=paired+difareli+nobg+nodpm+trainset_256.yaml_rot2/ema_200000/valid/render_face/reverse_sampling"
     }
 
 }

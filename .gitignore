@@ -886,3 +886,4 @@ experiment_scripts/TPAMI/supplement_video/more_rotate/vids_0.6C/*
 experiment_scripts/TPAMI/supplement_video/more_rotate/vids_0.5C/*
 experiment_scripts/TPAMI/supplement_video/more_rotate/vids/*
 experiment_scripts/TPAMI/supplement_video/more_rotate/vids_rot1/*
+visualize_scripts/TPAMI/main_results/FFHQ_CastShadows/RotateSH_figures/degrade_cmp/vids_srcC/*
