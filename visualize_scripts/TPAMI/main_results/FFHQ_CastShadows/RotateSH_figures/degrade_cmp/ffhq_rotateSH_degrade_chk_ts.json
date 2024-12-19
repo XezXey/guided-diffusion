@@ -42,5 +42,5 @@
         "time_respace":"",
         "n_frame":"10",
         "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/degrade_chk/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_srcC_1000t/ema_085000/valid/render_face/reverse_sampling/"
-    },
+    }
 }
