@@ -42,4 +42,4 @@ dataset:
 
 train_misc:
   exp_name: "Res256_V100"
-  cfg_name: "DiFaReli_FsBg_256"
+  cfg_name: "DiFaReli_FsBg_256_V100"
