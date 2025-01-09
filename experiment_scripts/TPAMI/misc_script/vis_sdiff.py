@@ -118,30 +118,35 @@ def create_app():
                 tp = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/{set_}/{dst_p.split('/')[-1].split('=')[-1]}"
                 out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
             out += "<br>"
+            
+            # DiFaReli
+            tp = f"/data/mint/DPM_Dataset/Generated_Dataset_TargetLight/Generated_Dataset_hardlink/images/train/{img_name}_{dst_p.split('/')[-1].split('=')[-1].split('.')[0]}_relit.png"
+            out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
                 
             # Shading Reference
             tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/rendered_images/deca_masked_face_images_wclip/{set_}/{img_name}.png'
             out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
+            out += "<br>"
             # Shadow masks from ray-tracing
-            tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_masks/{set_}/{img_name}.png'
-            out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
-            tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/ray_masks/images/{set_}/{img_name}.png'
-            out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
-            out += "<br>"
-            tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/ray_masks/overlays/{set_}/{img_name}.png'
-            out += f"<img src=/files/{tp} width=\"768\" height=\"256\">"
-            out += "<br>"
+            # tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_masks/{set_}/{img_name}.png'
+            # out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
+            # tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/ray_masks/images/{set_}/{img_name}.png'
+            # out += f"<img src=/files/{tp} width=\"256\" height=\"256\">"
+            # out += "<br>"
+            # tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/ray_masks/overlays/{set_}/{img_name}.png'
+            # out += f"<img src=/files/{tp} width=\"768\" height=\"256\">"
+            # out += "<br>"
 
             
             # Shadow masks with smooth
-            tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/vis/{set_}/{img_name}.png'
-            out += f"<img src=/files/{tp} width=\"768\" height=\"256\">"
-            out += "<br>"
+            # tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/vis/{set_}/{img_name}.png'
+            # out += f"<img src=/files/{tp} width=\"768\" height=\"256\">"
+            # out += "<br>"
             
             # Shadow masks without smooth
-            tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_with_weight_simplified/vis/{set_}/{img_name}.png'
-            out += f"<img src=/files/{tp} width=\"768\" height=\"256\">"
-            out += "<br>"
+            # tp = f'/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_with_weight_simplified/vis/{set_}/{img_name}.png'
+            # out += f"<img src=/files/{tp} width=\"768\" height=\"256\">"
+            # out += "<br>"
 
             # Segmentation masks
             parts = ['hair', 'faceskin', 'eyes', 'pupils', 'glasses', 'ears', 'nose', 'inmouth', 'u_lip', 'l_lip', 'neck', 'cloth', 'hat', 'bg']
