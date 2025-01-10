@@ -6,6 +6,8 @@ import sys
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--path', required=True)
+parser.add_argument('--port', required=True)
+parser.add_argument('--idx_file', default=None)
 args = parser.parse_args()
 
 def create_app():
@@ -19,8 +21,8 @@ def create_app():
     @app.route('/')
     def root():
         # Query string
-        s = request.args.get('s')
-        e = request.args.get('e')
+        s = request.args.get('s', 0)
+        e = request.args.get('e', 100)
         out = """
         <style>
             tr { display: block; float: left; }
@@ -34,8 +36,22 @@ def create_app():
         # #     # out += f"<tr> {f} </tr>"
         # #     out += f"<p style=\"display: inline; margin:64px;\">{f}</p>"
         # out += "</tr>"
+        
+        if args.idx_file:
+            # Read .txt file containing the list of indices to show
+            idx = []
+            with open(args.idx_file, 'r') as f:
+                for line in f:
+                    idx.append(line.strip())
+            # Get path from glob.glob(f'./{args.path}/*.mp4') since full fn is pair{id}_src={src}_dst={dst}.mp4
+            idx_to_show = []
+            for id in idx:
+                idx_to_show += glob.glob(f'./{args.path}/*{id}*.mp4')
+            print(idx_to_show)
             
-        for vid in glob.glob(f'./{args.path}/*.mp4')[int(s):int(e)]:
+        else:
+            idx_to_show = glob.glob(f'./{args.path}/*.mp4')
+        for vid in idx_to_show[int(s):int(e)]:
             out += "<tr>"
             # out += f"<td> <img src=\"/files/{vid}/path.png\" width=256px </td>"
             # for vid in vids:
@@ -43,10 +59,17 @@ def create_app():
             src = vid.split('/')[-1].split('_')[1]
             src = src.replace('src=', '')
             p_src = f'./Out/inp/{src}'
+            out += vid.split('/')[-1].split('_')[0]
             out += f"<img src=\"/files/{p_src}\" width=256px> </img>"
             out += f"""
                 <video width=\"256\" height=\"256\" autoplay muted controls loop> 
                     <source src=\"/files/{vid}\" type=\"video/mp4\">
+                    Your browser does not support the video tag.
+                    </video>
+            """ 
+            out += f"""
+                <video width=\"256\" height=\"256\" autoplay muted controls loop> 
+                    <source src=\"/files/{vid.replace('srcC', 'maxC')}\" type=\"video/mp4\">
                     Your browser does not support the video tag.
                     </video>
             """ 
@@ -58,4 +81,5 @@ def create_app():
         
 if __name__ == "__main__":
     app = create_app()
-    app.run(host='0.0.0.0', port='1911', debug=True, threaded=False)
+    app.run(host='0.0.0.0', port=args.port, debug=True, threaded=False)
+    
