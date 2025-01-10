@@ -280,6 +280,10 @@ def spiral_sh(cond, src_idx, n_step):
     return {'light':out_sh}
 
 
+def manual_sh():
+    print("IN FN manual sh")
+    exit()
+
 def rotate_sh(cond, src_idx, n_step, axis):
 
     import pyshtools as pysh

@@ -389,16 +389,16 @@ def build_condition_image(cond, misc, force_render=False):
             elif args.sh_file is not None:
                 print("[#] Load SH mode from file: ", args.sh_file)
                 sh_from_file = np.load(args.sh_file, allow_pickle=True) # B x 9 x 3
-                interp_cond = {'light':sh_from_file.reshape(-1, 27)}
+                interp_cond = {'light':sh_from_file.reshape(-1, 27)}    # B x 27
                 if args.rotate_sh_file:
                     print("[#] Rotate SH (from file)...")
                     interp_cond = mani_utils.rotate_sh(interp_cond, src_idx=0, n_step=n_step, axis=args.rotate_sh_axis)
                 # Apply rotate_sh_axis
                 interp_cond['light'][0:1] = cond['light'][src_idx]  # Always keep the first frame as src light
-            # elif args.rotate_sh_file is not None:
-            #     print("[#] Load SH mode from file: ", args.rotate_sh_file)
-            #     sh_from_file = np.load(args.rotate_sh_file, allow_pickle=True)
-            #     interp_cond['light'][0:1] = cond['light'][src_idx]  # Always keep the first frame as src light
+            elif args.manual_sh is not None:
+                print("[#] Manually create SH...")
+                sh = mani_utils.manual_sh()
+                interp_cond['light'][0:1] = cond['light'][src_idx]  # Always keep the first frame as src light
             else:
                 print("[#] Interpolating SH mode from src->dst light...")
                 interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
