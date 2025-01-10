@@ -397,7 +397,8 @@ def build_condition_image(cond, misc, force_render=False):
                 interp_cond['light'][0:1] = cond['light'][src_idx]  # Always keep the first frame as src light
             elif args.manual_sh is not None:
                 print("[#] Manually create SH...")
-                sh = mani_utils.manual_sh()
+                sh = mani_utils.manual_sh(n_step)
+                interp_cond = {'light':sh}
                 interp_cond['light'][0:1] = cond['light'][src_idx]  # Always keep the first frame as src light
             else:
                 print("[#] Interpolating SH mode from src->dst light...")

@@ -280,9 +280,9 @@ def spiral_sh(cond, src_idx, n_step):
     return {'light':out_sh}
 
 
-def manual_sh():
-    print("IN FN manual sh")
-    exit()
+def manual_sh(n_step):
+    # Output is np.array of [N_step, 27]
+    return np.random.rand(10, 27)
 
 def rotate_sh(cond, src_idx, n_step, axis):
 
