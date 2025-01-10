@@ -46,7 +46,7 @@ def create_app():
             # Get path from glob.glob(f'./{args.path}/*.mp4') since full fn is pair{id}_src={src}_dst={dst}.mp4
             idx_to_show = []
             for id in idx:
-                idx_to_show += glob.glob(f'./{args.path}/*{id}*.mp4')
+                idx_to_show += glob.glob(f'./{args.path}/pair{id}_*.mp4')
             print(idx_to_show)
             
         else:
