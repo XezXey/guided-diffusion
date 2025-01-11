@@ -53,9 +53,7 @@ def create_app():
             with open("/home/mint/Dev/DiFaReli/difareli-faster/experiment_scripts/TPAMI/sample_json/DiFaReli++/top50perc_shadow_for_rotate.json", 'r') as f:
                 data = json.load(f)['pair']
             for k, v in data.items():
-                print(k, v)
                 idx_to_show.append(f'./{args.path}/{k}_src={v["src"]}_dst={v["dst"]}.mp4')
-            print(idx_to_show)
         else:
             idx_to_show = glob.glob(f'./{args.path}/*.mp4')
             
