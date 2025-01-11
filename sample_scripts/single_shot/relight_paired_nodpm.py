@@ -21,7 +21,6 @@ parser.add_argument('--slerp', action='store_true', default=False)
 parser.add_argument('--add_remove_shadow', action='store_true', default=False)
 parser.add_argument('--add_shadow_to', type=float, default=None)
 parser.add_argument('--remove_shadow_to', type=float, default=None)
-# parser.add_argument('--vary_shadow_nobound', action='store_true', default=None)
 # Samples selection
 parser.add_argument('--idx', nargs='+', default=[])
 parser.add_argument('--sample_pair_json', type=str, default=None)
