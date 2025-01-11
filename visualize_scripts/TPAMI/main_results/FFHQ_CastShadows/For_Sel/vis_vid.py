@@ -8,6 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--path', required=True)
 parser.add_argument('--port', required=True)
 parser.add_argument('--idx_file', default=None)
+parser.add_argument('--sort_by_c', default=False, action='store_true')
 args = parser.parse_args()
 
 def create_app():
@@ -47,14 +48,19 @@ def create_app():
             idx_to_show = []
             for id in idx:
                 idx_to_show += glob.glob(f'./{args.path}/pair{id}_*.mp4')
+        elif args.sort_by_c:
+            idx_to_show = []
+            with open("/home/mint/Dev/DiFaReli/difareli-faster/experiment_scripts/TPAMI/sample_json/DiFaReli++/top50perc_shadow_for_rotate.json", 'r') as f:
+                data = json.load(f)['pair']
+            for k, v in data.items():
+                print(k, v)
+                idx_to_show.append(f'./{args.path}/{k}_src={v["src"]}_dst={v["dst"]}.mp4')
             print(idx_to_show)
-            
         else:
             idx_to_show = glob.glob(f'./{args.path}/*.mp4')
+            
         for vid in idx_to_show[int(s):int(e)]:
             out += "<tr>"
-            # out += f"<td> <img src=\"/files/{vid}/path.png\" width=256px </td>"
-            # for vid in vids:
             out += "<td>"
             src = vid.split('/')[-1].split('_')[1]
             src = src.replace('src=', '')
