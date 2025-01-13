@@ -24,6 +24,11 @@ def create_app():
         # Query string
         s = request.args.get('s', 0)
         e = request.args.get('e', 9999)
+
+        
+        # get a list of comma separated id from the url
+        idx_str = request.args.get('idx', None)
+
         out = """
         <style>
             tr { display: block; float: left; }
@@ -31,7 +36,11 @@ def create_app():
         </style>
         """
         out += "<table>"
-        if args.idx_file:
+        if idx_str:
+            idx_to_show = []
+            for id in idx_str.split(","):
+                idx_to_show += glob.glob(f'./{args.path}/pair{id}_*.mp4')
+        elif args.idx_file:
             # Read .txt file containing the list of indices to show
             idx = []
             with open(args.idx_file, 'r') as f:
