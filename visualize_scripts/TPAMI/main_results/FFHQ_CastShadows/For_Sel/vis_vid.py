@@ -23,7 +23,7 @@ def create_app():
     def root():
         # Query string
         s = request.args.get('s', 0)
-        e = request.args.get('e', 100)
+        e = request.args.get('e', 9999)
         out = """
         <style>
             tr { display: block; float: left; }
@@ -31,13 +31,6 @@ def create_app():
         </style>
         """
         out += "<table>"
-        
-        # out += "<tr>"
-        # # for f in folders:
-        # #     # out += f"<tr> {f} </tr>"
-        # #     out += f"<p style=\"display: inline; margin:64px;\">{f}</p>"
-        # out += "</tr>"
-        
         if args.idx_file:
             # Read .txt file containing the list of indices to show
             idx = []
