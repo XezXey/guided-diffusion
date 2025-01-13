@@ -33,6 +33,7 @@ parser.add_argument('--rotate_sh', action='store_true', default=False)
 parser.add_argument('--rotate_sh_dst', action='store_true', default=False)
 parser.add_argument('--rotate_sh_axis', type=int, default=0)
 parser.add_argument('--spiral_sh', action='store_true', default=False)
+parser.add_argument('--spiral_sh_axis', type=int, default=0)
 parser.add_argument('--scale_sh', type=float, default=1.0)
 parser.add_argument('--sh_file', type=str, default=None)
 parser.add_argument('--rotate_sh_file', action='store_true', default=False)
@@ -67,6 +68,13 @@ parser.add_argument('--rt_regionG_scale', type=float, default=0.03)
 # Experiment - Shadow weight
 parser.add_argument('--shadow_diff_inc_c', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dec_c', action='store_true', default=False)
+parser.add_argument('--shadow_diff_blurmap', action='store_true', default=False)
+parser.add_argument('--blurmap_reshadow_const_c', type=float, default=None)
+parser.add_argument('--blurmap_reshadow_dec_c_with_given_c', type=float, default=None)
+parser.add_argument('--blurmap_reshadow_inc_c_with_given_c', type=float, default=None)
+
+parser.add_argument('--blurmap_source', action='store_true', default=False)
+parser.add_argument('--blurmap_each', action='store_true', default=False)
 parser.add_argument('--shadow_diff_fidx_frac', type=float, default=0.0)    # set to 0.0 for using first frame
 parser.add_argument('--same_shadow_as_sd', action='store_true', default=False)
 parser.add_argument('--relight_with_strongest_c', action='store_true', default=False)
@@ -171,9 +179,12 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     
     cond, shadow_weight = inference_utils_paired.shadow_diff_with_weight_postproc(cond=cond, misc=misc_tmp)
     cond, misc = inference_utils_paired.shadow_diff_final_postproc(cond=cond, misc=misc)
+    if args.shadow_diff_blurmap:
+        cond, misc = inference_utils_paired.blur_map(cond=cond, misc=misc)
     n_step = misc['n_step']
     # Return the ['cond_img'] and ['dpm_cond_img']
     cond.update(inference_utils_paired.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True))
+    # torchvision.io.write_video('blurred_sm_GOGO.mp4', np.repeat(cond['dst_shadow_diff_with_weight_simplified'].permute(0, 2, 3, 1).cpu().numpy(), 3, 3) * 255, fps=20)
     
     cond['cfg'] = cfg
     cond['use_cond_xt_fn'] = False

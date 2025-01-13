@@ -189,7 +189,7 @@ def interchange_cond(cond, interchange, base_idx, n):
             cond[p] = np.repeat(cond[p][[base_idx]], repeats=n, axis=0)
     return cond
 
-def spiral_sh(cond, src_idx, n_step):
+def spiral_sh(cond, src_idx, n_step, axis):
 
     import pyshtools as pysh
     def toCoeff(c):
@@ -258,22 +258,44 @@ def spiral_sh(cond, src_idx, n_step):
     inp_sh = cond['light'][[src_idx]].flatten()   # [1, 27] -> [27,]
     rounds = 5
     n = n_step
+    num_frames = n
     out_sh = []
-    centered = rotateSH(inp_sh,    0, 1, 0, np.arcsin(float(v[0])) * 180 / np.pi)
-    centered = rotateSH(centered, 1, 0, 0, np.arcsin(float(v[1])) * 180 / np.pi)
-    for i in range(n):
-        # print(i)
-        t = i / n # Fraction of rotation
-        tt = t * rounds * 2 * np.pi
-        rad = t * 0.9
+    num_spirals  = 4
 
-        x = np.sin(tt) * rad
-        y = np.cos(tt) * rad
+    # Angles for rotation around Z
+    z_angles = np.linspace(0, 360 * num_spirals, num_frames)
+    # Tilt angles around X (or whichever axis you consider “up”)
+    x_tilts  = np.linspace(45, 0, num_frames)
+
+    for i in range(num_frames):
+        angle_z = z_angles[i]
+        angle_x = x_tilts[i]
         
-        moved = rotateSH(centered, 0, 1, 0, -np.arcsin(x) * 180 / np.pi)  # Rotate over y axis by -np.arcsin(x) * 180 / np.pi
-        moved = rotateSH(moved   , 1, 0, 0, -np.arcsin(y) * 180 / np.pi)  # Rotate over x axis by -np.arcsin(y) * 180 / np.pi
-        sh_moved = np.array(moved)
-        out_sh.append(sh_moved)
+        # 1) Rotate original SH around z-axis
+        sh_after_z = rotateSH(inp_sh, 0, 0, 1, angle_z)
+        
+        # 2) Then tilt around x-axis by angle_x
+        sh_spiral  = rotateSH(sh_after_z, 0, 1, 0, angle_x)
+        
+        out_sh.append(sh_spiral)
+    
+    # centered = rotateSH(inp_sh,    0, 1, 0, np.arcsin(float(v[0])) * 180 / np.pi)
+    # centered = rotateSH(centered, 1, 0, 0, np.arcsin(float(v[1])) * 180 / np.pi)
+    # for i in range(n):
+    #     # print(i)
+    #     t = i / n # Fraction of rotation
+    #     tt = t * rounds * 2 * np.pi
+    #     rad = t * 0.9
+    #     # x = np.sin(tt) * rad
+    #     # y = np.cos(tt) * rad
+    #     # moved = rotateSH(inp_sh, axis==0, axis==1, axis==2, -np.arcsin())
+    #     # moved = rotateSH(centered, 0, 1, 0, -np.arcsin(x) * 180 / np.pi)  # Rotate over y axis by -np.arcsin(x) * 180 / np.pi
+    #     # moved = rotateSH(moved   , 1, 0, 0, -np.arcsin(y) * 180 / np.pi)  # Rotate over x axis by -np.arcsin(y) * 180 / np.pi
+    #     moved = rotateSH(inp_sh, 0, 0, 1, -tt * 180 / np.pi)  # Rotate over z-axis by -tt degrees
+    #     moved_z = rotateSH(moved, 1, 0, 0, -np.arcsin(rad) * 180 / np.pi)  # Example for minor z-adjustments (if needed)
+
+    #     sh_moved = np.array(moved_z)
+    #     out_sh.append(sh_moved)
 
     out_sh = np.stack(out_sh, 0)
 

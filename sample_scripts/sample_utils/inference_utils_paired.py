@@ -288,6 +288,35 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
     # out_cond['cond_params'] = th.cat(cond_params, dim=1).float()
     return out_cond
 
+def blur_map(cond, misc):
+    blurred_sm = []
+    args = misc['args']
+    if args.blurmap_source:
+        x_blurred = cond['dst_shadow_diff_with_weight_simplified'][0:1].clone().cpu().numpy()
+        x_blurred = np.transpose(x_blurred, (0, 2, 3, 1))
+        x_blurred = np.repeat(x_blurred, 3, -1)[0]
+        for i in np.linspace(0.1, 3, cond['dst_shadow_diff_with_weight_simplified'].shape[0]):
+            x_blurred = cv2.GaussianBlur(x_blurred, (3, 3), i)
+            blurred_sm.append(x_blurred)
+    
+    elif args.blurmap_each:
+        x_blurred = cond['dst_shadow_diff_with_weight_simplified'].clone().cpu().numpy()
+        x_blurred = np.transpose(x_blurred, (0, 2, 3, 1))   # B x H x W x C
+        x_blurred = np.repeat(x_blurred, 3, -1)
+        blur_params = list(np.linspace(0.1, 3, cond['dst_shadow_diff_with_weight_simplified'].shape[0]))
+        for i in range(x_blurred.shape[0]):
+            x_blurred_i = x_blurred[i]
+            for j in blur_params[:i]:
+                # Blur till i-th frame
+                x_blurred_i = cv2.GaussianBlur(x_blurred_i, (3, 3), j)
+            blurred_sm.append(x_blurred_i)
+            
+    blurred_sm = np.stack(blurred_sm, axis=0)
+    blurred_sm = np.transpose(blurred_sm, (0, 3, 1, 2))
+    blurred_sm = blurred_sm[:, 0:1, ...]
+    blurred_sm = th.tensor(blurred_sm).to(cond['dst_shadow_diff_with_weight_simplified'].device)
+    cond['dst_shadow_diff_with_weight_simplified'] = blurred_sm
+    return cond, misc
 
 def build_condition_image(cond, misc, force_render=False):
     src_idx = misc['src_idx']
@@ -378,7 +407,7 @@ def build_condition_image(cond, misc, force_render=False):
             #NOTE: Render w/ interpolated light (Mainly use this)
             if args.spiral_sh:
                 print("[#] Spiral SH mode of src light...")
-                interp_cond = mani_utils.spiral_sh(cond, src_idx=src_idx, n_step=n_step)
+                interp_cond = mani_utils.spiral_sh(cond, src_idx=src_idx, n_step=n_step, axis=args.spiral_sh_axis)
             elif args.rotate_sh:
                 print("[#] Rotate SH mode of src light...")
                 interp_cond = mani_utils.rotate_sh(cond, src_idx=src_idx, n_step=n_step, axis=args.rotate_sh_axis)
@@ -503,7 +532,7 @@ def build_condition_image(cond, misc, force_render=False):
         cond['load_deca_for_shadow_time'] = load_deca_for_shadow_time
         print("Rendering time : ", time.time() - start_t)
         
-        if args.fixed_render and (args.shadow_diff_inc_c or args.shadow_diff_dec_c):
+        if args.fixed_render and (args.shadow_diff_inc_c or args.shadow_diff_dec_c or args.shadow_diff_blurmap):
             print("[#] Fixed the Deca renderer for Reshadowing...")
             print(all_render[0].shape) # List of  [B x 3 x H x W, ...]
             ff = all_render[0][0:1]
@@ -606,6 +635,21 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
             weight_dst = th.linspace(start=c_val_dst.item(), end=0.0, steps=n_step-1).to(device)
             weight_dst = weight_dst[..., None, None, None]
         fix_frame = True 
+    elif args.shadow_diff_blurmap:
+        print("[#] Blurring the shadow_diff with weight...")
+        weight_src = c_val_src[..., None, None, None].to(device)
+        weight_dst = c_val_dst[..., None, None, None].to(device)
+        if args.blurmap_reshadow_const_c is not None:
+            weight_src = (weight_src * 0.0) + args.reshadow_with_given_c
+        elif args.blurmap_reshadow_dec_c_with_given_c is not None:
+            given_c = args.blurmap_reshadow_dec_c_with_given_c
+            weight_src = th.linspace(start=given_c, end=0.0, steps=n_step-1).to(device)
+            weight_src = 1 - weight_src[..., None, None, None]
+        elif args.blurmap_reshadow_inc_c_with_given_c is not None:
+            given_c = args.blurmap_reshadow_inc_c_with_given_c
+            weight_src = th.linspace(start=given_c, end=1.0, steps=n_step-1).to(device)
+            weight_src = 1 - weight_src[..., None, None, None]
+        fix_frame = True
     elif args.postproc_shadow_mask_smooth_diffuse_to_shadow:
         print("[#] Diffuse to shadow...")
         fix_frame = True
