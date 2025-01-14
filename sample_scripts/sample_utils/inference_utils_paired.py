@@ -291,25 +291,34 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
 def blur_map(cond, misc):
     blurred_sm = []
     args = misc['args']
+    start_sd = 0.1
+    end_sd = 7
+    blur_params = list(np.linspace(start_sd, end_sd, cond['dst_shadow_diff_with_weight_simplified'].shape[0]))
     if args.blurmap_source:
-        x_blurred = cond['dst_shadow_diff_with_weight_simplified'][0:1].clone().cpu().numpy()
-        x_blurred = np.transpose(x_blurred, (0, 2, 3, 1))
-        x_blurred = np.repeat(x_blurred, 3, -1)[0]
-        for i in np.linspace(0.1, 3, cond['dst_shadow_diff_with_weight_simplified'].shape[0]):
-            x_blurred = cv2.GaussianBlur(x_blurred, (3, 3), i)
+        x = cond['dst_shadow_diff_with_weight_simplified'][0:1].clone().cpu().numpy()
+        x = np.transpose(x, (0, 2, 3, 1))
+        x = np.repeat(x, 3, -1)[0]
+        for sigma in blur_params:
+            sigma_temp = np.round(sigma)
+            kz = sigma_temp*3*2 if (sigma_temp*3*2) % 2 == 1 else (sigma_temp*3*2)+1
+            kz = int(kz)
+            x_blurred = cv2.GaussianBlur(x.copy(), (kz, kz), sigma)
             blurred_sm.append(x_blurred)
     
     elif args.blurmap_each:
-        x_blurred = cond['dst_shadow_diff_with_weight_simplified'].clone().cpu().numpy()
-        x_blurred = np.transpose(x_blurred, (0, 2, 3, 1))   # B x H x W x C
-        x_blurred = np.repeat(x_blurred, 3, -1)
-        blur_params = list(np.linspace(0.1, 3, cond['dst_shadow_diff_with_weight_simplified'].shape[0]))
-        for i in range(x_blurred.shape[0]):
-            x_blurred_i = x_blurred[i]
-            for j in blur_params[:i]:
-                # Blur till i-th frame
-                x_blurred_i = cv2.GaussianBlur(x_blurred_i, (3, 3), j)
+        x = cond['dst_shadow_diff_with_weight_simplified'].clone().cpu().numpy()
+        x = np.transpose(x, (0, 2, 3, 1))   # B x H x W x C
+        x = np.repeat(x, 3, -1)
+        for i in range(x.shape[0]):
+            x_i = x[i]
+            sigma_i = blur_params[i]
+            sigma_temp = np.round(sigma_i)
+            kz = sigma_temp*3*2 if (sigma_temp*3*2) % 2 == 1 else (sigma_temp*3*2)+1
+            kz = int(kz)
+            x_blurred_i = cv2.GaussianBlur(x_i.copy(), (kz, kz), sigma_i)
             blurred_sm.append(x_blurred_i)
+    else:
+        raise NotImplementedError("[#] Only blurmap_source and blurmap_each is available...")
             
     blurred_sm = np.stack(blurred_sm, axis=0)
     blurred_sm = np.transpose(blurred_sm, (0, 3, 1, 2))
@@ -640,7 +649,8 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
         weight_src = c_val_src[..., None, None, None].to(device)
         weight_dst = c_val_dst[..., None, None, None].to(device)
         if args.blurmap_reshadow_const_c is not None:
-            weight_src = (weight_src * 0.0) + args.reshadow_with_given_c
+            weight_src = (weight_src * 0.0) + args.blurmap_reshadow_const_c
+            weight_src = 1 - weight_src
         elif args.blurmap_reshadow_dec_c_with_given_c is not None:
             given_c = args.blurmap_reshadow_dec_c_with_given_c
             weight_src = th.linspace(start=given_c, end=0.0, steps=n_step-1).to(device)
