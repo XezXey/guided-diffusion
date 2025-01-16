@@ -893,3 +893,4 @@ visualize_scripts/TPAMI/main_results/FFHQ_CastShadows/For_Sel/tmp
 visualize_scripts/TPAMI/main_results/Teaser/out
 experiment_scripts/TPAMI/Teaser/frames
 experiment_scripts/TPAMI/Teaser/video_out
+experiment_scripts/TPAMI/Teaser/frames_orig

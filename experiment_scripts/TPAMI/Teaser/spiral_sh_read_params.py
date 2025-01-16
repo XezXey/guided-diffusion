@@ -257,29 +257,47 @@ def spiralLight_readPath(sh_np, cx, cy):
   drawSH(sh_np, f"original.png")
   
   centered = sh_np
-  # init_direction = sh_to_ld(np.array(centered)[None, ...]).reshape(-1)
-  # init_direction = init_direction / np.linalg.norm(init_direction)
-  # at = np.arctan2(init_direction[1], init_direction[0])
-  # at2 = np.arcsin(init_direction[2])
+  init_direction = sh_to_ld(np.array(centered)[None, ...]).reshape(-1)
+  init_direction = init_direction / np.linalg.norm(init_direction)
+  print("Init Direction : ", init_direction)
+  # assert False
+  at = np.arctan2(init_direction[1], init_direction[0])
+  at2 = np.arcsin(init_direction[2])
 
   # centered = rotateSH(centered, 0, 0, 1, at * 180 / np.pi)
   # centered = rotateSH(centered, 0, 1, 0, -at2 * 180 / np.pi)
-  drawSH(centered, f"centered.png")
+  # drawSH(centered, f"centered.png")
   
   light_path = np.load("./light_params.npy", allow_pickle=True)
   n = len(light_path)
-  print(n)
+  a0 = 0
+  r0 = light_path[0]["radius"]
   for i in tqdm.tqdm(range(n)):
-    t = light_path[i]["t"]
-    rad = light_path[i]["radius"]
-    tt = light_path[i]["angle"]
+    t = light_path[i]["t"]  # 0~1
+    tt = light_path[i]["rel_angle"] + a0
     
-    moved = rotateSH(centered.copy(), 0, 1, 0, 90 * rad)
+    rr = np.sin((1 - t) * np.pi * 2)
+    if rr < 0:
+      sp_r = 20
+    else: 
+      sp_r = 5
+    
+    # Rotate original to align with x (Preventing the spiral from unawarely orbiting)
+    moved = rotateSH(centered.copy(), 0, 0, 1, at * 180 / np.pi)
+    # Rotate spiral (Decrease radius)
+    moved = rotateSH(moved, 0, 1, 0, sp_r * rr)
+    # Rotate back to original
+    moved = rotateSH(moved, 0, 0, 1, -at * 180 / np.pi)
+    # Rotate spiral (Orbit around z)
     moved = rotateSH(moved, 0, 0, 1, tt * 180 / np.pi)
+    
     ld = sh_to_ld(np.array(moved)[None, ...]).reshape(-1)
     drawSH(moved, f"./video_out/m_{i:03d}.png", ld=ld)
+    a0 += light_path[i]["rel_angle"]
+    r0 += light_path[i]["rel_radius"]
     
-  os.system(f"ffmpeg -y -i video_out/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_spiral_read.mp4")
+  os.system(f"ffmpeg -y -framerate 30 -i video_out/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_spiral_read.mp4")
+  os.system(f"ffmpeg -y -i output.mp4 -i video_spiral_read.mp4  -filter_complex \"[0:v][1:v]hstack=inputs=2\" cmp.mp4")
   exit()
 
   for i in tqdm.tqdm(range(n)):

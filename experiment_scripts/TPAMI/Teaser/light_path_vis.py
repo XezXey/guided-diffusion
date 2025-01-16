@@ -75,12 +75,22 @@ def create_spiral_sequence(frames, radius_0, radius_1, rounds, stop_frames=[]):
     repeat1 = 50
     lst = []
     
+    init_ld = [-0.64351377, 0.44854998, -0.6202362]
+    at2 = np.arctan2(init_ld[1], init_ld[0])
+    a0 = -at2
+    r0 = radius_0 + (radius_1 - radius_0) * abs(2 * 0 - 1)  # Spiral inward then outward
     for i in tqdm.tqdm(range(frames)):
         t = i / frames
+        angle = (2 * np.pi * t * rounds) + (-at2)  # Start from 0 to 2 * pi * rounds
+        rel_angle = angle - a0
+        a0 = angle
+        
         radius = radius_0 + (radius_1 - radius_0) * abs(2 * t - 1)  # Spiral inward then outward
-        angle = 2 * np.pi * t * rounds 
-        light_x = radius * np.cos(angle)
-        light_y = radius * np.sin(angle)
+        rel_radius = radius - r0
+        r0 = radius
+        
+        light_x = radius * np.cos(angle)    # Oscillate between -1 and 1 on the x-axis
+        light_y = radius * np.sin(angle)    # Oscillate between -1 and 1 on the y-axis
         light_z = np.sqrt(max(0, 1 - light_x**2 - light_y**2))  # Ensure on the sphere
         light_dir = (light_x, light_y, light_z)
 
@@ -97,6 +107,10 @@ def create_spiral_sequence(frames, radius_0, radius_1, rounds, stop_frames=[]):
         d["diffuse_exp"] = 2
 
         if i in stop_frames:
+            # Add a frame before stopping, otherwise params skipped 1 frame
+            d["rel_angle"] = rel_angle
+            d["rel_radius"] = rel_radius
+            lst.append(dict(d))
             for j in range(repeat1):
                 tt = j / repeat1
                 ttc = (1 - np.cos(tt * 2 * np.pi)) / 2
@@ -104,12 +118,14 @@ def create_spiral_sequence(frames, radius_0, radius_1, rounds, stop_frames=[]):
                 d["ttc"] = ttc
                 d["light_conic"] = 10 + 12 * ttc
                 d["ambient_color"] = 0.1 + 0.4 * ttc
+                d["rel_angle"] = 0 
+                d["rel_radius"] = 0
                 lst.append(dict(d))
-
         else:
-            lst.append(d)
+            d["rel_angle"] = rel_angle
+            d["rel_radius"] = rel_radius
+            lst.append(dict(d))
 
-    print(lst)
     np.save("light_params.npy", lst)
     gen(lst)
 
