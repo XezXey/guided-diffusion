@@ -189,63 +189,6 @@ def sh_to_ld(sh):
     ld = np.mean(sh[0:1, 1:4, :], axis=2)
     return ld
 
-def spiralLight(sh_np, cx, cy):
-  xyz  = genSurfaceNormals(256)
-  save_image(xyz, 'normals.png')
-  save_image(xyz[0:1, ...], 'normals_x.png')
-  save_image(xyz[1:2, ...], 'normals_y.png')
-  save_image(xyz[2:3, ...], 'normals_z.png')
-  v = xyz[:, cy, cx]
-  print("V : ", v)
-  drawSH(sh_np, f"original.png")
-  centered = sh_np
-  # centered = rotateSH(sh_np,    0, 0, 1, np.arcsin(float(v[0])) * 180 / np.pi)
-  # centered = rotateSH(centered, 1, 0, 0, np.arcsin(float(v[1])) * 180 / np.pi)
-  drawSH(centered, f"centered.png")
-  
-  r_end = 1.0
-  r_start = 0
-  rounds = 6
-  n = 120
-  # n = 10
-
-
-  init_direction = sh_to_ld(np.array(centered)[None, ...]).reshape(-1)
-  init_direction = init_direction / np.linalg.norm(init_direction)
-  at = np.arctan2(init_direction[1], init_direction[0])
-  at2 = np.arcsin(init_direction[2])
-
-  centered = rotateSH(centered, 0, 0, 1, at * 180 / np.pi)
-  centered = rotateSH(centered, 0, 1, 0, -at2 * 180 / np.pi)
-  for i in tqdm.tqdm(range(n)):
-    # Original
-    # t = i / n 
-    # tt = 2 * np.pi * t * rounds
-    # rad = t * 0.9
-    
-    # x = np.cos(tt) * rad
-    # y = np.sin(tt) * rad
-    # moved = rotateSH(centered, 0, 0, 1, -np.arcsin(y) * 180 / np.pi)
-    # moved = rotateSH(moved   , 1, 0, 0, -np.arcsin(x) * 180 / np.pi)
-    
-    # Edit
-    t = i / n 
-    tt = 2 * np.pi * t * rounds
-    rad = t * 0.9
-    
-    moved = rotateSH(centered.copy(), 0, 1, 0, 90 * rad)
-    moved = rotateSH(moved, 0, 0, 1, tt * 180 / np.pi)
-    ld = sh_to_ld(np.array(moved)[None, ...]).reshape(-1)
-    # print(moved)
-    # print(ld)
-    # assert False
-
-
-    drawSH(moved, f"./video_out/m_{i:03d}.png", ld=ld)
-
-  os.system(f"ffmpeg -y -i video_out/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_spiral4.mp4")
-  exit()
-
 def spiralLight_readPath(sh_np, cx, cy):
   xyz  = genSurfaceNormals(256)
   save_image(xyz, 'normals.png')
@@ -256,13 +199,30 @@ def spiralLight_readPath(sh_np, cx, cy):
   print("V : ", v)
   drawSH(sh_np, f"original.png")
   
-  centered = sh_np  # [27, ]
-  init_direction = sh_to_ld(np.array(centered)[None, ...]).reshape(-1)
-  init_direction = init_direction / np.linalg.norm(init_direction)
-  print("Init Direction : ", init_direction)
+  
+  sh_text_ref = "3.7764273 3.7647202 3.7740586 -0.45223573 -0.48492554 -0.48608136 0.3177414 0.34008643 0.33421847 -0.44365892 -0.47285086 -0.45525044 -0.27055222 -0.26994315 -0.2692122 -0.033267528 -0.047869906 -0.050032064 0.16282524 0.17702723 0.172417 0.14684218 0.14223212 0.14653295 0.2784819 0.27089873 0.27471355"
+  ld_ref = sh_to_ld(np.array([float(x) for x in sh_text_ref.split(" ")])[None, ...]).reshape(-1)
+  ld_ref = ld_ref / np.linalg.norm(ld_ref)
+  print("Ref Direction : ", ld_ref)
+  
+  inp_sh = sh_np  # [27, ]
+  ld = sh_to_ld(np.array(inp_sh)[None, ...]).reshape(-1)
+  ld = ld / np.linalg.norm(ld)
+  print("Init Direction : ", ld)
+  
+  # Compute rotation angle in the xy-plane
+  theta_ref = np.arctan2(ld_ref[1], ld_ref[0])  # Ref azimuth
+  theta_ld = np.arctan2(ld[1], ld[0])  # Input azimuth
+
+  # Compute the rotation angle needed
+  rotation_angle = np.degrees(theta_ref - theta_ld)
+  print("Rotation Angle : ", rotation_angle)
+  # Adjust the input SH to align with the reference azimuth
+  inp_sh = rotateSH(inp_sh, 0, 0, 1, -rotation_angle)
+  
   # assert False
-  at = np.arctan2(init_direction[1], init_direction[0])
-  at2 = np.arcsin(init_direction[2])
+  at = np.arctan2(ld[1], ld[0])
+  at2 = np.arcsin(ld[2])
 
   # centered = rotateSH(centered, 0, 0, 1, at * 180 / np.pi)
   # centered = rotateSH(centered, 0, 1, 0, -at2 * 180 / np.pi)
@@ -278,12 +238,12 @@ def spiralLight_readPath(sh_np, cx, cy):
     
     rr = np.sin((1 - t) * np.pi * 2)
     if rr < 0:
-      sp_r = 40
+      sp_r = -40
     else: 
       sp_r = 10
     
     # Rotate original to align with x (Preventing the spiral from unawarely orbiting)
-    moved = rotateSH(centered.copy(), 0, 0, 1, at * 180 / np.pi)
+    moved = rotateSH(inp_sh.copy(), 0, 0, 1, at * 180 / np.pi)
     # Rotate spiral (Decrease radius)
     moved = rotateSH(moved, 0, 1, 0, sp_r * rr)
     # Rotate back to original
@@ -295,44 +255,23 @@ def spiralLight_readPath(sh_np, cx, cy):
     drawSH(moved, f"./video_out/m_{i:03d}.png", ld=ld)
     a0 += light_path[i]["rel_angle"]
     
-  os.system(f"ffmpeg -y -framerate 24 -i video_out/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_spiral_read.mp4")
+  os.system(f"ffmpeg -y -framerate 30 -i video_out/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_spiral_read.mp4")
   os.system(f"ffmpeg -y -i output.mp4 -i video_spiral_read.mp4  -filter_complex \"[0:v][1:v]hstack=inputs=2\" cmp.mp4")
   exit()
 
-  for i in tqdm.tqdm(range(n)):
-    # Original
-    # t = i / n 
-    # tt = 2 * np.pi * t * rounds
-    # rad = t * 0.9
-    
-    # x = np.cos(tt) * rad
-    # y = np.sin(tt) * rad
-    # moved = rotateSH(centered, 0, 0, 1, -np.arcsin(y) * 180 / np.pi)
-    # moved = rotateSH(moved   , 1, 0, 0, -np.arcsin(x) * 180 / np.pi)
-    
-    # Edit
-    t = i / n 
-    tt = 2 * np.pi * t * rounds
-    rad = t * 0.9
-    
-    moved = rotateSH(centered.copy(), 0, 1, 0, 90 * rad)
-    moved = rotateSH(moved, 0, 0, 1, tt * 180 / np.pi)
-    ld = sh_to_ld(np.array(moved)[None, ...]).reshape(-1)
-    # print(moved)
-    # print(ld)
-    # assert False
-
-
-    drawSH(moved, f"./video_out/m_{i:03d}.png", ld=ld)
-
-  os.system(f"ffmpeg -y -i video_out/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_spiral4.mp4")
-  exit()
-
 # 65797.jpg
-sh_text = "3.7764273 3.7647202 3.7740586 -0.45223573 -0.48492554 -0.48608136 0.3177414 0.34008643 0.33421847 -0.44365892 -0.47285086 -0.45525044 -0.27055222 -0.26994315 -0.2692122 -0.033267528 -0.047869906 -0.050032064 0.16282524 0.17702723 0.172417 0.14684218 0.14223212 0.14653295 0.2784819 0.27089873 0.27471355"
+# sh_text = "3.7764273 3.7647202 3.7740586 -0.45223573 -0.48492554 -0.48608136 0.3177414 0.34008643 0.33421847 -0.44365892 -0.47285086 -0.45525044 -0.27055222 -0.26994315 -0.2692122 -0.033267528 -0.047869906 -0.050032064 0.16282524 0.17702723 0.172417 0.14684218 0.14223212 0.14653295 0.2784819 0.27089873 0.27471355"
+# 69809.jpg
+sh_text = "3.7345207 3.7213473 3.7314432 0.7694048 0.7836141 0.7984594 0.22823927 0.23264684 0.2287304 -0.4806327 -0.5140073 -0.48469663 0.038980436 0.039153174 0.039689075 -0.31383342 -0.30161086 -0.2934053 0.24958973 0.25237265 0.24871074 0.48290193 0.4683239 0.4711157 0.7713614 0.76298386 0.7751074"
+# 62011.jpg 
+# sh_text = "3.8343465 3.8336594 3.8284006 0.1729947 0.17721233 0.17012812 0.13337857 0.1411026 0.14271605 -0.45823875 -0.47945493 -0.49274385 -0.14240256 -0.13979109 -0.13815635 0.60094035 0.6050799 0.60517627 0.12989694 0.13691846 0.13731007 -0.14883745 -0.13712367 -0.14319716 0.57338154 0.5598248 0.5587959"
+# 61992.jpg 
+# sh_text = "3.5095832 3.5131266 3.5243688 0.6004163 0.62568486 0.6229789 0.10465601 0.10563105 0.101914756 -0.46082363 -0.46018302 -0.42792398 0.03933739 0.039667428 0.039996076 -0.091053 -0.07264688 -0.07542678 0.22469139 0.22775024 0.22464316 0.40681338 0.40605047 0.40891302 0.6666809 0.6633684 0.6743531"
 
 sh_np = np.array([float(x) for x in sh_text.split(" ")])
 
+if os.path.exists("video_out/"):
+  os.system("rm -r ./video_out")
 os.makedirs("video_out/", exist_ok=True)
 spiralLight_readPath(sh_np, 0, 128)
 # spiralLight(sh_np, 161, 212)

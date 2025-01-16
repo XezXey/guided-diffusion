@@ -637,6 +637,14 @@ def shadow_diff_teaser_postproc(cond, misc, device='cuda'):
     stop_frames[0] -= 1
     
     x_dst = cond['dst_shadow_diff_with_weight_simplified']
+    if args.relight_with_given_c:
+        start_c = args.relight_with_given_c
+    else:
+        start_c = 1.0
+        
+    print(f"[#] Relighting with C = {start_c}")
+    x_dst = x_dst * start_c
+    
     x_dst_new = x_dst.clone()
     
     i = 0
@@ -648,8 +656,8 @@ def shadow_diff_teaser_postproc(cond, misc, device='cuda'):
             proc_frames = blur_map(proc_frames)
             proc_frames = th.cat((proc_frames, th.flip(proc_frames, [0])), dim=0)
             
-            diffuse = np.linspace(1, 0, half)
-            strengthen = np.linspace(0, 1, half)
+            diffuse = np.linspace(start_c, 0, half)
+            strengthen = np.linspace(0, start_c, half)
             rs = np.concatenate((diffuse, strengthen))
             assert rs.shape[0] == proc_frames.shape[0]
             rs = rs[..., None, None, None]

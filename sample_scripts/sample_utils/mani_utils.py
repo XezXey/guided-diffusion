@@ -255,13 +255,27 @@ def spiral_sh(cond, src_idx, n_step, light_traj_path):
         ld = np.mean(sh[0:1, 1:4, :], axis=2)
         return ld
     
-    out_sh = []
     light_traj = np.load(light_traj_path, allow_pickle=True).item()['traj']
     n_frames = len(light_traj)
     a0 = 0
     inp_sh = cond['light'][[src_idx]].flatten()   # [1, 27] -> [27,]
+    out_sh = [inp_sh]
     ld = sh_to_ld(np.array(inp_sh)[None, ...]).reshape(-1)
     ld = ld / np.linalg.norm(ld)
+    
+    # Align with reference light direction
+    sh_text_ref = "3.7764273 3.7647202 3.7740586 -0.45223573 -0.48492554 -0.48608136 0.3177414 0.34008643 0.33421847 -0.44365892 -0.47285086 -0.45525044 -0.27055222 -0.26994315 -0.2692122 -0.033267528 -0.047869906 -0.050032064 0.16282524 0.17702723 0.172417 0.14684218 0.14223212 0.14653295 0.2784819 0.27089873 0.27471355"
+    ld_ref = sh_to_ld(np.array([float(x) for x in sh_text_ref.split(" ")])[None, ...]).reshape(-1)
+    ld_ref = ld_ref / np.linalg.norm(ld_ref)
+    # Compute rotation angle in the xy-plane
+    theta_ref = np.arctan2(ld_ref[1], ld_ref[0])  # Ref azimuth
+    theta_ld = np.arctan2(ld[1], ld[0])  # Input azimuth
+
+    # Compute the rotation angle needed
+    rotation_angle = np.degrees(theta_ref - theta_ld)
+    print("[#] Aligning with reference light direction: ", rotation_angle)
+    inp_sh = rotateSH(inp_sh, 0, 0, 1, -rotation_angle)
+    
     at = np.arctan2(ld[1], ld[0])
     
     for i in tqdm.tqdm(range(n_frames), desc=f"[#] Spiral SH using {light_traj_path}...", leave=False):
@@ -270,12 +284,12 @@ def spiral_sh(cond, src_idx, n_step, light_traj_path):
         
         rr = np.sin((1 - t) * np.pi * 2)
         if rr < 0:
-            sp_r = 20
+            sp_r = 40
         else: 
             sp_r = 5
         
         # Rotate original to align with x (Preventing the spiral from unawarely orbiting)
-        moved = rotateSH(inp_sh.clone(), 0, 0, 1, at * 180 / np.pi)
+        moved = rotateSH(inp_sh.copy(), 0, 0, 1, at * 180 / np.pi)
         # Rotate spiral (Decrease radius)
         moved = rotateSH(moved, 0, 1, 0, sp_r * rr)
         # Rotate back to original

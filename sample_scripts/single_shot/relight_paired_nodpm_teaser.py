@@ -293,9 +293,9 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
                 }
     
     if ('render_face' in args.itp) or args.force_render:
-        return relit_out, cond['cond_img'], out_timing, {'render_ld':cond['render_ld']}
+        return relit_out, cond['cond_img'], out_timing, {'render_ld':cond['render_ld']}, misc_rvk['n_step']
     else:
-        return relit_out, None, out_timing, None
+        return relit_out, None, out_timing, None, misc_rvk['n_step']
 
 if __name__ == '__main__':
     seed_all(args.seed)
@@ -361,7 +361,11 @@ if __name__ == '__main__':
         deca_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
         img_ext = '.jpg'
         cfg.dataset.training_data = 'ffhq_256_with_anno'
-        cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
+        if os.path.exists(f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256_no_aliasing/'):
+            print("[#] Using no aliasing dataset...")
+            cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256_no_aliasing/'
+        else:
+            cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
         cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
     elif args.dataset == 'ffhq_data2':
         cfg.dataset.root_path = f'/data2/mint/DPM_Dataset/'
@@ -500,12 +504,16 @@ if __name__ == '__main__':
         
         model_kwargs['use_render_itp'] = True
         
-        out_relit, out_cond, time_dict, misc_dict = relight(dat = dat,
+        out_relit, out_cond, time_dict, misc_dict, rvk_n_step = relight(dat = dat,
                                     model_kwargs=model_kwargs,
                                     src_idx=src_idx, dst_idx=dst_idx,
                                     itp_func=itp_fn,
                                     n_step = n_step
                                 )
+        
+        if rvk_n_step != n_step:
+            print("[#] Change saving folder to n_step = ", rvk_n_step)
+            n_step = rvk_n_step
         
         runtime_dict['relit_time'].append(time_dict['relit_time'])
         runtime_dict['sub_relit_time'].append(time_dict['each_relit_time'])
