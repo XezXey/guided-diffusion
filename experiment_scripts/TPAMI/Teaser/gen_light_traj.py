@@ -68,11 +68,11 @@ def gen(lst, resolution=256, frame_dir="frames"):
     for i, d in enumerate(lst):
         frame = render_diffuser_sphere(resolution, d)
         frame.save(f"{frame_dir}/{i:06d}.png")
-    os.system(f"ffmpeg -y -framerate 30 -i {frame_dir}/%06d.png -c:v libx264 -pix_fmt yuv420p -crf 20 output.mp4")
+    os.system(f"ffmpeg -y -framerate 24 -i {frame_dir}/%06d.png -c:v libx264 -pix_fmt yuv420p -crf 20 output.mp4")
 
 
 def create_spiral_sequence(frames, radius_0, radius_1, rounds, stop_frames=[]):
-    repeat1 = 50
+    repeat1 = 30
     lst = []
     
     init_ld = [-0.64351377, 0.44854998, -0.6202362]
@@ -126,7 +126,11 @@ def create_spiral_sequence(frames, radius_0, radius_1, rounds, stop_frames=[]):
             d["rel_radius"] = rel_radius
             lst.append(dict(d))
 
-    np.save("light_params.npy", lst)
+    np.save("light_traj.npy", {
+        'traj':lst, 
+        'params':{'n':n, 'radius_0':radius_0, 'radius_1':radius_1, 'rounds':rounds, 'stop_frames':stop_frames, 'repeat1':repeat1},
+        }
+    )
     gen(lst)
 
 

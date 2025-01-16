@@ -5,7 +5,7 @@ import blobfile as bf
 import PIL
 import vis_utils, img_utils, file_utils
 from scipy.spatial.transform import Rotation as R
-import itertools
+import itertools, tqdm
 
 def lerp(r, src, dst):
     return ((1-r) * src) + (r * dst)
@@ -189,7 +189,7 @@ def interchange_cond(cond, interchange, base_idx, n):
             cond[p] = np.repeat(cond[p][[base_idx]], repeats=n, axis=0)
     return cond
 
-def spiral_sh(cond, src_idx, n_step, axis):
+def spiral_sh(cond, src_idx, n_step, light_traj_path):
 
     import pyshtools as pysh
     def toCoeff(c):
@@ -248,59 +248,49 @@ def spiral_sh(cond, src_idx, n_step, axis):
         z[z < 0] = 0
         z = th.sqrt(z)
         return th.stack([x, y, z], 0)
-
-    img_size = 128
-    xyz = genSurfaceNormals(img_size)
-    cx = img_size // 2
-    cy = img_size // 2
-    v = xyz[:, cy, cx]
-
-    inp_sh = cond['light'][[src_idx]].flatten()   # [1, 27] -> [27,]
-    rounds = 5
-    n = n_step
-    num_frames = n
-    out_sh = []
-    num_spirals  = 4
-
-    # Angles for rotation around Z
-    z_angles = np.linspace(0, 360 * num_spirals, num_frames)
-    # Tilt angles around X (or whichever axis you consider “up”)
-    x_tilts  = np.linspace(45, 0, num_frames)
-
-    for i in range(num_frames):
-        angle_z = z_angles[i]
-        angle_x = x_tilts[i]
-        
-        # 1) Rotate original SH around z-axis
-        sh_after_z = rotateSH(inp_sh, 0, 0, 1, angle_z)
-        
-        # 2) Then tilt around x-axis by angle_x
-        sh_spiral  = rotateSH(sh_after_z, 0, 1, 0, angle_x)
-        
-        out_sh.append(sh_spiral)
     
-    # centered = rotateSH(inp_sh,    0, 1, 0, np.arcsin(float(v[0])) * 180 / np.pi)
-    # centered = rotateSH(centered, 1, 0, 0, np.arcsin(float(v[1])) * 180 / np.pi)
-    # for i in range(n):
-    #     # print(i)
-    #     t = i / n # Fraction of rotation
-    #     tt = t * rounds * 2 * np.pi
-    #     rad = t * 0.9
-    #     # x = np.sin(tt) * rad
-    #     # y = np.cos(tt) * rad
-    #     # moved = rotateSH(inp_sh, axis==0, axis==1, axis==2, -np.arcsin())
-    #     # moved = rotateSH(centered, 0, 1, 0, -np.arcsin(x) * 180 / np.pi)  # Rotate over y axis by -np.arcsin(x) * 180 / np.pi
-    #     # moved = rotateSH(moved   , 1, 0, 0, -np.arcsin(y) * 180 / np.pi)  # Rotate over x axis by -np.arcsin(y) * 180 / np.pi
-    #     moved = rotateSH(inp_sh, 0, 0, 1, -tt * 180 / np.pi)  # Rotate over z-axis by -tt degrees
-    #     moved_z = rotateSH(moved, 1, 0, 0, -np.arcsin(rad) * 180 / np.pi)  # Example for minor z-adjustments (if needed)
+    def sh_to_ld(sh):
+        #NOTE: Roughly Convert the SH to light direction
+        sh = sh.reshape(-1, 9, 3)
+        ld = np.mean(sh[0:1, 1:4, :], axis=2)
+        return ld
+    
+    out_sh = []
+    light_traj = np.load(light_traj_path, allow_pickle=True).item()['traj']
+    n_frames = len(light_traj)
+    a0 = 0
+    inp_sh = cond['light'][[src_idx]].flatten()   # [1, 27] -> [27,]
+    ld = sh_to_ld(np.array(inp_sh)[None, ...]).reshape(-1)
+    ld = ld / np.linalg.norm(ld)
+    at = np.arctan2(ld[1], ld[0])
+    
+    for i in tqdm.tqdm(range(n_frames), desc=f"[#] Spiral SH using {light_traj_path}...", leave=False):
+        t = light_traj[i]["t"]  # 0~1
+        tt = light_traj[i]["rel_angle"] + a0
+        
+        rr = np.sin((1 - t) * np.pi * 2)
+        if rr < 0:
+            sp_r = 20
+        else: 
+            sp_r = 5
+        
+        # Rotate original to align with x (Preventing the spiral from unawarely orbiting)
+        moved = rotateSH(inp_sh.clone(), 0, 0, 1, at * 180 / np.pi)
+        # Rotate spiral (Decrease radius)
+        moved = rotateSH(moved, 0, 1, 0, sp_r * rr)
+        # Rotate back to original
+        moved = rotateSH(moved, 0, 0, 1, -at * 180 / np.pi)
+        # Rotate spiral (Orbit around z)
+        moved = rotateSH(moved, 0, 0, 1, tt * 180 / np.pi)
+        
+        out_sh.append(np.array(moved))
+        
+        # Update rotation angle
+        a0 += light_traj[i]["rel_angle"]
+        
 
-    #     sh_moved = np.array(moved_z)
-    #     out_sh.append(sh_moved)
-
-    out_sh = np.stack(out_sh, 0)
-
-    return {'light':out_sh}
-
+    out_sh = np.stack(out_sh, 0)    # [n_step, 27]
+    return {'light':out_sh}, n_frames
 
 def manual_sh(n_step):
     # Output is np.array of [N_step, 27]

@@ -177,10 +177,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     for i, j in enumerate(misc['cfg']['img_cond_model']['sj_paired']):
         misc_tmp['condition_img'][i] = f"{j}_{misc_tmp['condition_img'][i]}"
     
-    cond, shadow_weight = inference_utils_paired.shadow_diff_with_weight_postproc(cond=cond, misc=misc_tmp)
-    cond, misc = inference_utils_paired.shadow_diff_final_postproc(cond=cond, misc=misc)
-    if args.shadow_diff_blurmap:
-        cond, misc = inference_utils_paired.blur_map(cond=cond, misc=misc)
+    cond, misc = inference_utils_paired.shadow_diff_teaser_postproc(cond=cond, misc=misc)
     n_step = misc['n_step']
     # Return the ['cond_img'] and ['dpm_cond_img']
     cond.update(inference_utils_paired.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True))

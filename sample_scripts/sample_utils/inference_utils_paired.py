@@ -416,7 +416,11 @@ def build_condition_image(cond, misc, force_render=False):
             #NOTE: Render w/ interpolated light (Mainly use this)
             if args.spiral_sh:
                 print("[#] Spiral SH mode of src light...")
-                interp_cond = mani_utils.spiral_sh(cond, src_idx=src_idx, n_step=n_step, axis=args.spiral_sh_axis)
+                old_n_step = n_step
+                interp_cond, new_n_step = mani_utils.spiral_sh(cond, src_idx=src_idx, n_step=n_step, light_traj_path=args.light_traj_path)
+                n_step = new_n_step
+                misc['n_step'] = n_step # Revoking n_step
+                print(f"[#] Revoking the n_step: {old_n_step} -> {n_step}")
             elif args.rotate_sh:
                 print("[#] Rotate SH mode of src light...")
                 interp_cond = mani_utils.rotate_sh(cond, src_idx=src_idx, n_step=n_step, axis=args.rotate_sh_axis)
@@ -461,6 +465,7 @@ def build_condition_image(cond, misc, force_render=False):
         
         #NOTE: Render DECA in minibatch
         # sub_step = mani_utils.ext_sub_step(n_step, batch_size)
+        print("[#] Total steps : ", n_step)
         sub_step = mani_utils.ext_sub_step(n_step, render_batch_size)
         load_deca_time = time.time() - start_t
         all_render = []
@@ -587,8 +592,82 @@ def build_condition_image(cond, misc, force_render=False):
     if force_render:
         cond, clip_ren = prep_render(cond, 'deca_masked_face_images_woclip')
     
-    return cond, clip_ren
+    return cond, clip_ren, misc
 
+def shadow_diff_teaser_postproc(cond, misc, device='cuda'):
+    # For teaser post-processing of shadow_diff
+    # Contains processing shadow_diff chunks
+    # 1. Rotate light
+    # 2. Diffuse Then back to Shadow (At 1st angle)
+    # 3. Rotate light
+    # 4. Diffuse Then back to Shadow (At 2nd angle)
+    # 5. Rotate light to original
+    
+    def blur_map(s_map):
+        blurred_sm = []
+        start_sd = 0.1
+        end_sd = 7
+        blur_params = list(np.linspace(start_sd, end_sd, s_map.shape[0]))
+        x = s_map.clone().cpu().numpy()
+        x = np.transpose(x, (0, 2, 3, 1))   # B x H x W x C
+        x = np.repeat(x, 3, -1)
+        for i in range(x.shape[0]):
+            x_i = x[i]
+            sigma_i = blur_params[i]
+            sigma_temp = np.round(sigma_i)
+            kz = sigma_temp*3*2 if (sigma_temp*3*2) % 2 == 1 else (sigma_temp*3*2)+1
+            kz = int(kz)
+            x_blurred_i = cv2.GaussianBlur(x_i.copy(), (kz, kz), sigma_i)
+            blurred_sm.append(x_blurred_i)
+            
+        blurred_sm = np.stack(blurred_sm, axis=0)
+        blurred_sm = np.transpose(blurred_sm, (0, 3, 1, 2))
+        blurred_sm = blurred_sm[:, 0:1, ...]
+        blurred_sm = th.tensor(blurred_sm).to(cond['dst_shadow_diff_with_weight_simplified'].device)
+        return blurred_sm
+    
+    args = misc['args']
+    light_traj_path = args.light_traj_path
+    light_traj = np.load(light_traj_path, allow_pickle=True).item()['traj']
+    gen_params = np.load(light_traj_path, allow_pickle=True).item()['params']
+    n = gen_params['n']
+    stop_frames = gen_params['stop_frames']
+    repeat = gen_params['repeat1']
+    half = repeat // 2
+    stop_frames[0] -= 1
+    
+    x_dst = cond['dst_shadow_diff_with_weight_simplified']
+    x_dst_new = x_dst.clone()
+    
+    i = 0
+    fid = 0
+    while i < n:
+        if i in stop_frames:
+            # print(f"Stop frame at {i}, processing diffuse frames [{i} to {i+repeat})")
+            proc_frames = x_dst_new[fid:fid+half]
+            proc_frames = blur_map(proc_frames)
+            proc_frames = th.cat((proc_frames, th.flip(proc_frames, [0])), dim=0)
+            
+            diffuse = np.linspace(1, 0, half)
+            strengthen = np.linspace(0, 1, half)
+            rs = np.concatenate((diffuse, strengthen))
+            assert rs.shape[0] == proc_frames.shape[0]
+            rs = rs[..., None, None, None]
+            proc_frames = proc_frames * th.tensor(rs).to(proc_frames.device)
+            x_dst_new[fid:fid+repeat] = proc_frames
+            fid += repeat  # Skip ahead after processing the 30 frames
+            i += 1
+        else:
+            fid += 1
+            i += 1  # Normal increment when not in stop frames
+
+    # plot_image(x_dst, [1], range='0to1', fn='./xdst.png')
+    # plot_image(x_dst_new, [1], range='0to1', fn='./xdst_new.png')
+    cond['dst_shadow_diff_with_weight_simplified'] = x_dst_new
+    return cond, misc
+
+
+    
 
 def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
     # This function is used to post-process the shadow_diff mask when we inject shadow weight into shadow_diff
