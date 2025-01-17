@@ -99,6 +99,7 @@ parser.add_argument('--gpu_id', type=str, default="0")
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--save_vid', action='store_true', default=False)
 parser.add_argument('--fps', action='store_true', default=False)
+parser.add_argument('--use_no_aliasing', action='store_true', default=False)
 
 
 args = parser.parse_args()
@@ -360,11 +361,16 @@ if __name__ == '__main__':
         cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
     elif args.dataset == 'ffhq':
         cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
-        img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
         deca_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
         img_ext = '.jpg'
         cfg.dataset.training_data = 'ffhq_256_with_anno'
-        cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
+        if os.path.exists(f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256_no_aliasing/') and args.use_no_aliasing:
+            print("[#] Using no aliasing dataset...")
+            cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256_no_aliasing/'
+            img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256_no_aliasing/"
+        else:
+            cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
+            img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
         cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
     elif args.dataset == 'ffhq_data2':
         cfg.dataset.root_path = f'/data2/mint/DPM_Dataset/'

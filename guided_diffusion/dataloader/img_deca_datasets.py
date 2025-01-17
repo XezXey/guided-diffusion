@@ -149,8 +149,9 @@ def load_data_img_deca(
     print("1. Face segment dir : ", cfg.dataset.face_segment_dir)
     print("2. Deca rendered dir : ", cfg.dataset.deca_rendered_dir)
     print("3. Shadow diff dir : ", cfg.dataset.shadow_diff_dir)
+    print("4. Image dir : ", cfg.dataset.data_dir)
+    print("5. Image dir : ", data_dir)
     print("="*50)
-
 
 
     input_image = cfg.img_model.in_image
