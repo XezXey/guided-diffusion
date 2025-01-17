@@ -1,9 +1,11 @@
 import blobfile as bf
 
-def _list_image_files_recursively(data_dir):
+def _list_image_files_recursively(data_dir, force_jpg_key=False):
     results = []
     for entry in sorted(bf.listdir(data_dir)):
         full_path = bf.join(data_dir, entry)
+        if force_jpg_key:
+            full_path = full_path.replace(".png", ".jpg")
         ext = entry.split(".")[-1]
         if "." in entry and ext.lower() in ["jpg", "jpeg", "png", "gif"]:
             results.append(full_path)

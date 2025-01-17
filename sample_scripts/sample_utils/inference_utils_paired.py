@@ -424,6 +424,10 @@ def build_condition_image(cond, misc, force_render=False):
             elif args.rotate_sh:
                 print("[#] Rotate SH mode of src light...")
                 interp_cond = mani_utils.rotate_sh(cond, src_idx=src_idx, n_step=n_step, axis=args.rotate_sh_axis)
+            elif args.force_diffuse_sh:
+                print("[#] Diffuse SH mode of src light...")
+                interp_cond = mani_utils.diffuse_sh(cond, src_idx=src_idx, n_step=n_step, axis=args.rotate_sh_axis)
+                interp_cond['light'][0:1] = cond['light'][src_idx]  # Always keep the first frame as src light
             elif args.rotate_sh_dst:
                 print("[#] Rotate SH mode of dst light...")
                 interp_cond = mani_utils.rotate_sh(cond, src_idx=dst_idx, n_step=n_step, axis=args.rotate_sh_axis)
@@ -857,6 +861,10 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
                     elif args.reshadow_with_given_c is not None:
                         print(f"[#] Reshadow with the given c_val = {args.reshadow_with_given_c}")
                         shadow_rf = ((sd_img[1:] > 0.) * ((weight_src)))
+                    elif args.reshadow_gradually_inc_c:
+                        print(f"[#] Gradually increase c from 0.0 to 1.0")
+                        gradual_c = th.linspace(start=0.0, end=1.0, steps=sd_img[1:].shape[0]).to(device)
+                        shadow_rf = ((sd_img[1:] > 0.) * (gradual_c[..., None, None, None]))
                     else:
                         print(f"[#] Relight with the src c_val = {weight_src.flatten()}")
                         shadow_rf = (sd_img[1:] * (1-weight_src))    # Shadow area assigned weight

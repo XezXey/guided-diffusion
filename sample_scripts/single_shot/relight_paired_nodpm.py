@@ -42,6 +42,7 @@ parser.add_argument('--add_sh', type=float, default=None)
 parser.add_argument('--sh_grid_size', type=int, default=None)
 parser.add_argument('--sh_span', type=float, default=None)
 parser.add_argument('--diffuse_sh', type=float, default=None)
+parser.add_argument('--force_diffuse_sh', action='store_true', default=False)
 parser.add_argument('--diffuse_perc', type=float, default=None)
 parser.add_argument('--rasterize_type', type=str, default='standard')
 parser.add_argument('--force_render', action='store_true', default=False)
@@ -87,6 +88,7 @@ parser.add_argument('--relight_with_dst_c', action='store_true', default=False, 
 parser.add_argument('--relight_with_rand_max_c', action='store_true', default=False, help='Use the random shadow value for relighting')
 parser.add_argument('--relight_with_given_c', type=float, default=None, help='Use the random shadow value for relighting')
 parser.add_argument('--reshadow_with_given_c', type=float, default=None, help='Use the given shadow value for reshadowing')
+parser.add_argument('--reshadow_gradually_inc_c', action='store_true', default=False)
 parser.add_argument('--combined_mask', action='store_true', default=False)
 parser.add_argument('--use_ray_mask', action='store_true', default=False)
 parser.add_argument('--render_same_mask', action='store_true', default=False)
@@ -318,6 +320,7 @@ if __name__ == '__main__':
     cfg.diffusion.diffusion_steps = args.diffusion_steps
     model_dict, diffusion = ckpt_loader.load_model(ckpt_selector=args.ckpt_selector, step=args.step)
     model_dict = inference_utils_paired.eval_mode(model_dict)
+    force_jpg_key = False
 
     # Load dataset
     if args.dataset == 'itw':
@@ -372,6 +375,20 @@ if __name__ == '__main__':
             cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
             img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
         cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
+    elif args.dataset == 'ffhq_png':
+        cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
+        deca_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
+        img_ext = '.png'
+        cfg.dataset.training_data = 'ffhq_256_with_anno'
+        if os.path.exists(f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256_no_aliasing_png/'):
+            print("[#] Using no aliasing dataset...")
+            cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256_no_aliasing_png/'
+            img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256_no_aliasing_png/"
+        else:
+            cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
+            img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
+        cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
+        force_jpg_key = True
     elif args.dataset == 'ffhq_data2':
         cfg.dataset.root_path = f'/data2/mint/DPM_Dataset/'
         img_dataset_path = f"/data2/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
@@ -441,14 +458,14 @@ if __name__ == '__main__':
         in_image_UNet=cfg.img_model.in_image,
         params_selector=cfg.param_model.params_selector,
         rmv_params=cfg.param_model.rmv_params,
+        force_jpg_key=force_jpg_key,
         set_=args.set,
         cfg=cfg,
         img_ext=img_ext,
         mode='sampling'
     )
-    
     data_size = dataset.__len__()
-    img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}")
+    img_path = file_utils._list_image_files_recursively(f"{img_dataset_path}/{args.set}", force_jpg_key=force_jpg_key)
     all_img_idx, all_img_name, n_subject = mani_utils.get_samples_list(args.sample_pair_json, 
                                                                             args.sample_pair_mode, 
                                                                             args.src_dst, img_path, 

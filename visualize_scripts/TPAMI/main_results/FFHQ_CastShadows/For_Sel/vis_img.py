@@ -31,11 +31,13 @@ def create_app():
             th, td { display: block; }
         </style>
         """
+        out += f"<h3>{args.path}</h3>"
         out += "<table>"
             
         for img in sorted(glob.glob(f'{args.path}/*res.png')):
             out += "<tr>"
             out += "<td>"
+            out += img.split('/')[-1].split('_')[0]
             out += f"<img src=\"/files/{img}\" width=256px> </img>"
             out += "<td>"
             out += "</tr>"

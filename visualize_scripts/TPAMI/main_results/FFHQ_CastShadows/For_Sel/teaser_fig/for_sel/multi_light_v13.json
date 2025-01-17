@@ -10,6 +10,17 @@
         "n_frame":"5",
         "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/teaser_multi_light/log=backup_paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_dstC/ema_300000/valid/render_face/reverse_sampling/"
     },
+    "ours_difareli++_oneshot_srcC_fix" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli - one shot (dstC)",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/teaser_multi_light/log=backup_paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_dstC_fiximg/ema_300000/valid/render_face/reverse_sampling/"
+    },
     "ours_difareli++_oneshot_maxC" : {
         "step" :"ema_300000",
         "alias" : "DiFaReli - one shot (maxC)",
@@ -20,5 +31,27 @@
         "time_respace":"",
         "n_frame":"5",
         "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/teaser_multi_light/log=backup_paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_maxC/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_oneshot_maxC_fix" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli - one shot (maxC)",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/teaser_multi_light/log=backup_paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_maxC_fiximg/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_oneshot_0.3C_fix" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli - one shot (0.3C)",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"5",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/teaser_multi_light/log=backup_paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_0.3C_fiximg/ema_300000/valid/render_face/reverse_sampling/"
     }
 }

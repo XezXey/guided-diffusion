@@ -286,7 +286,7 @@ def spiral_sh(cond, src_idx, n_step, light_traj_path):
         if rr < 0:
             sp_r = 40
         else: 
-            sp_r = 5
+            sp_r = 10
         
         # Rotate original to align with x (Preventing the spiral from unawarely orbiting)
         moved = rotateSH(inp_sh.copy(), 0, 0, 1, at * 180 / np.pi)
@@ -306,9 +306,21 @@ def spiral_sh(cond, src_idx, n_step, light_traj_path):
     out_sh = np.stack(out_sh, 0)    # [n_step, 27]
     return {'light':out_sh}, n_frames
 
-def manual_sh(n_step):
-    # Output is np.array of [N_step, 27]
-    return np.random.rand(10, 27)
+def diffuse_sh(cond, src_idx, n_step, axis):
+    inp_sh = cond['light'][[src_idx]].flatten()   # [1, 27] -> [27,]
+    n = n_step
+    out_sh = []
+    n = n_step
+    for i in range(n):
+        diffused = inp_sh.clone()
+        # Make uniformly SH (diffuse) by set all the SH to 0 except the first one
+        diffused = diffused.reshape(9, 3)
+        diffused[1:, :] = 0
+        out_sh.append(diffused.flatten())
+
+    out_sh = np.stack(out_sh, 0)    # [n_step, 27]
+    return {'light':out_sh}
+    
 
 def rotate_sh(cond, src_idx, n_step, axis):
 

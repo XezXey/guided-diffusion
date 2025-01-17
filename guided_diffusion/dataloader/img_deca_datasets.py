@@ -109,6 +109,7 @@ def load_data_img_deca(
     params_selector,
     rmv_params,
     cfg,
+    force_jpg_key,
     set_='train',
     deterministic=False,
     resize_mode="resize",
@@ -200,8 +201,9 @@ def load_data_img_deca(
 
     # For raw image
     in_image['raw'] = _list_image_files_recursively(f"{data_dir}/{set_}")
-    in_image['raw'] = image_path_list_to_dict(in_image['raw'])
-    # print(in_image['raw'])
+    in_image['raw'] = image_path_list_to_dict(in_image['raw'], force_jpg_key=force_jpg_key)
+    for k in in_image.keys():
+        print(k, list(in_image[k].items())[0:3])
 
     img_dataset = DECADataset(
         resolution=image_size,
@@ -239,15 +241,20 @@ def load_data_img_deca(
     while True:
         return loader, img_dataset, avg_dict
 
-def image_path_list_to_dict(path_list):
+def image_path_list_to_dict(path_list, force_jpg_key=False):
     img_paths_dict = {}
+    print("[#] Image path list to dict: ", path_list[0:5])
+    print(f"Force jpg key : {force_jpg_key}")
     for path in path_list:
         img_name = path.split('/')[-1]
-        # if '_' in img_name:
-            # img_name = img_name.split('_')[-1]
         if 'anno_' in img_name:
             img_name = img_name.split('anno_')[-1]
-        img_paths_dict[img_name] = path
+        if force_jpg_key:
+            assert '.png' in img_name
+            img_name = img_name.replace('.png', '.jpg')
+            img_paths_dict[img_name] = path
+        else:
+            img_paths_dict[img_name] = path
     return img_paths_dict
 
 
@@ -304,6 +311,10 @@ class DECADataset(Dataset):
 
         # Raw Images in dataset
         query_img_name = list(self.local_images.keys())[idx]
+        print(query_img_name)
+        # if self.force_jpg_key:
+        #     assert '.png' in query_img_name
+        #     query_img_name = query_img_name.replace('.png', '.jpg')
         raw_pil_image = self.load_image(self.local_images[query_img_name])
         raw_img = self.augmentation(pil_image=raw_pil_image)
 
