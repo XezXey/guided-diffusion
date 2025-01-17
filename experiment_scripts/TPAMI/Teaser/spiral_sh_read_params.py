@@ -229,7 +229,7 @@ def spiralLight_readPath(sh_np, cx, cy):
   # drawSH(centered, f"centered.png")
   
   # light_path = np.load("./light_params.npy", allow_pickle=True)
-  light_path = np.load("./light_traj.npy", allow_pickle=True).item()['traj']
+  light_path = np.load("./light_traj_n300.npy", allow_pickle=True).item()['traj']
   n = len(light_path)
   a0 = 0
   for i in tqdm.tqdm(range(n)):
@@ -238,7 +238,7 @@ def spiralLight_readPath(sh_np, cx, cy):
     
     rr = np.sin((1 - t) * np.pi * 2)
     if rr < 0:
-      sp_r = -40
+      sp_r = -70
     else: 
       sp_r = 10
     
