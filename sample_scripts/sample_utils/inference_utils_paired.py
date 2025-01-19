@@ -405,7 +405,6 @@ def build_condition_image(cond, misc, force_render=False):
         cond[f'dst_{cond_img_name}'] = th.tensor(shadow_diff_tmp[1:]).cuda()
         return cond
     
-    
     # Handling the render face
     if np.any(['deca' in i for i in condition_img]) or np.any(['shadow_mask' in i for i in condition_img]) or np.any(['shadow_diff' in i for i in condition_img]):
         # Render the face
@@ -421,12 +420,19 @@ def build_condition_image(cond, misc, force_render=False):
                 n_step = new_n_step
                 misc['n_step'] = n_step # Revoking n_step
                 print(f"[#] Revoking the n_step: {old_n_step} -> {n_step}")
+            elif args.fancy_rotate_sh:
+                print("[#] Fancy Rotate SH mode of src light...")
+                old_n_step = n_step
+                interp_cond, new_n_step = mani_utils.fancy_rotate_sh(cond, src_idx=src_idx)
+                n_step = new_n_step
+                misc['n_step'] = n_step # Revoking n_step
+                print(f"[#] Revoking the n_step: {old_n_step} -> {n_step}")
             elif args.rotate_sh:
                 print("[#] Rotate SH mode of src light...")
                 interp_cond = mani_utils.rotate_sh(cond, src_idx=src_idx, n_step=n_step, axis=args.rotate_sh_axis)
             elif args.force_diffuse_sh:
                 print("[#] Diffuse SH mode of src light...")
-                interp_cond = mani_utils.diffuse_sh(cond, src_idx=src_idx, n_step=n_step, axis=args.rotate_sh_axis)
+                interp_cond = mani_utils.diffuse_sh(cond, src_idx=src_idx, n_step=n_step, interpolate=args.itp_diffuse_sh)
                 interp_cond['light'][0:1] = cond['light'][src_idx]  # Always keep the first frame as src light
             elif args.rotate_sh_dst:
                 print("[#] Rotate SH mode of dst light...")
@@ -441,11 +447,9 @@ def build_condition_image(cond, misc, force_render=False):
                     interp_cond = mani_utils.rotate_sh(interp_cond, src_idx=0, n_step=n_step, axis=args.rotate_sh_axis)
                 # Apply rotate_sh_axis
                 interp_cond['light'][0:1] = cond['light'][src_idx]  # Always keep the first frame as src light
-            elif args.manual_sh:
-                print("[#] Manually create SH...")
-                sh = mani_utils.manual_sh(n_step)
-                interp_cond = {'light':sh}
-                interp_cond['light'][0:1] = cond['light'][src_idx]  # Always keep the first frame as src light
+            elif args.same_sh:
+                print("[#] Same SH mode of src light...")
+                interp_cond = {'light':cond['light'][src_idx].repeat(n_step, 1)}
             else:
                 print("[#] Interpolating SH mode from src->dst light...")
                 interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
@@ -598,6 +602,94 @@ def build_condition_image(cond, misc, force_render=False):
     
     return cond, clip_ren, misc
 
+def shadow_diff_website_reshadow_postproc(cond, misc, device='cuda'):
+    # For reshadow results on website
+    
+    def blur_map(s_map):
+        blurred_sm = []
+        start_sd = 0.1
+        end_sd = 7
+        blur_params = list(np.linspace(start_sd, end_sd, s_map.shape[0]))
+        x = s_map.clone().cpu().numpy()
+        x = np.transpose(x, (0, 2, 3, 1))   # B x H x W x C
+        x = np.repeat(x, 3, -1)
+        for i in range(x.shape[0]):
+            x_i = x[i]
+            sigma_i = blur_params[i]
+            sigma_temp = np.round(sigma_i)
+            kz = sigma_temp*3*2 if (sigma_temp*3*2) % 2 == 1 else (sigma_temp*3*2)+1
+            kz = int(kz)
+            x_blurred_i = cv2.GaussianBlur(x_i.copy(), (kz, kz), sigma_i)
+            blurred_sm.append(x_blurred_i)
+            
+        blurred_sm = np.stack(blurred_sm, axis=0)
+        blurred_sm = np.transpose(blurred_sm, (0, 3, 1, 2))
+        blurred_sm = blurred_sm[:, 0:1, ...]
+        blurred_sm = th.tensor(blurred_sm).to(cond['dst_shadow_diff_with_weight_simplified'].device)
+        return blurred_sm
+    
+    inp_map = cond['src_shadow_diff_with_weight_simplified'].clone()
+    inp_map = (inp_map > 0.) * 1.0
+    assert inp_map.shape[0] == 1
+    
+    # Only diffuse
+    # n = misc['n_step'] - 1
+    # max_c = 8.481700287326827 # 7.383497233314015
+    # min_c = -4.989461058405101 # -4.985533880236826
+    # c_val_src = (cond['shadow'][0] - min_c) / (max_c - min_c)  # Scale to 0-1
+    # print(f"[#] C value {c_val_src} from {cond['shadow'][0].flatten()}")
+    # diffuse = np.linspace(c_val_src, 0, n).flatten()
+    # seq = th.tensor(diffuse[..., None, None, None]).to(inp_map.device)
+    # inp_map = th.repeat_interleave(inp_map, repeats=seq.shape[0], dim=0)
+    # inp_map = blur_map(inp_map)
+    # print("[#] Sequence: ", seq.shape)
+    # print("[#] Map: ", inp_map.shape)
+    # print("[#] Map values: ", th.unique(inp_map))
+    
+    # for i in range(inp_map.shape[0]):
+    #     blur_map_i = inp_map[i:i+1]
+    #     seq_i = seq[i:i+1]
+    #     blur_map_i = blur_map_i * seq_i
+    #     inp_map[i:i+1] = blur_map_i
+    
+    # Both ways
+    n = misc['n_step'] - 1
+    stregthen_render = cond['src_deca_masked_face_images_woclip'][0:1]  # 1 frame
+    
+    # Sub-sampling the diffuse_render by 2 by keep [1st, ..., last] and makesure it's half
+    tmp = cond['dst_deca_masked_face_images_woclip']
+    diffuse_render = tmp[::2]
+    if tmp.shape[0] % 2 == 0:
+        diffuse_render = th.cat((diffuse_render, tmp[-1:]), dim=0)
+    
+    # Repeat the strengthen_render to match the length of (n - diffuse_render)
+    n_diffuse = diffuse_render.shape[0]
+    n_strengthen = n - n_diffuse
+    stregthen_render = th.repeat_interleave(stregthen_render, repeats=n_strengthen, dim=0)
+    assert stregthen_render.shape[0] == n - diffuse_render.shape[0]
+    cond['dst_deca_masked_face_images_woclip'] = th.cat((stregthen_render, diffuse_render), dim=0)
+    print("[#] Strengthen Render: ", stregthen_render.shape)
+    print("[#] Diffuse Render: ", diffuse_render.shape)
+    print("[#] Render: ", cond['dst_deca_masked_face_images_woclip'].shape)
+    
+    
+    max_c = 8.481700287326827 # 7.383497233314015
+    min_c = -4.989461058405101 # -4.985533880236826
+    c_val_src = (cond['shadow'][0] - min_c) / (max_c - min_c)  # Scale to 0-1
+    print(f"[#] C value {c_val_src} from {cond['shadow'][0].flatten()}")
+    c_mani = np.linspace(1, 0, n).flatten()
+    seq = th.tensor(c_mani[..., None, None, None]).to(inp_map.device)
+    inp_map = th.repeat_interleave(inp_map, repeats=seq.shape[0], dim=0)
+    inp_map = (inp_map > 0.) * seq  # Create 1 to 0 sequence
+    inp_map = blur_map(inp_map)
+    print("[#] Sequence: ", seq.shape)
+    print("[#] Map: ", inp_map.shape)
+    print("[#] Map values: ", th.unique(inp_map))
+        
+    print(inp_map.shape)
+    cond['dst_shadow_diff_with_weight_simplified'] = inp_map
+    return cond, misc
+
 def shadow_diff_teaser_postproc(cond, misc, device='cuda'):
     # For teaser post-processing of shadow_diff
     # Contains processing shadow_diff chunks
@@ -678,7 +770,64 @@ def shadow_diff_teaser_postproc(cond, misc, device='cuda'):
     cond['dst_shadow_diff_with_weight_simplified'] = x_dst_new
     return cond, misc
 
-
+def shadow_diff_gradC_postproc(cond, misc, device='cuda'):
+    # For teaser post-processing of shadow_diff
+    # Contains processing shadow_diff chunks
+    # 1. Rotate light (While keep diffusing)
+    # 2. Get reverse of #1.
+    # 3. Rotate light to specific angle
+    # 4. Do 1 and 2 again
+    
+    def blur_map(s_map):
+        blurred_sm = []
+        start_sd = 0.1
+        end_sd = 7
+        blur_params = list(np.linspace(start_sd, end_sd, s_map.shape[0]))
+        x = s_map.clone().cpu().numpy()
+        x = np.transpose(x, (0, 2, 3, 1))   # B x H x W x C
+        x = np.repeat(x, 3, -1)
+        for i in range(x.shape[0]):
+            x_i = x[i]
+            sigma_i = blur_params[i]
+            sigma_temp = np.round(sigma_i)
+            kz = sigma_temp*3*2 if (sigma_temp*3*2) % 2 == 1 else (sigma_temp*3*2)+1
+            kz = int(kz)
+            x_blurred_i = cv2.GaussianBlur(x_i.copy(), (kz, kz), sigma_i)
+            blurred_sm.append(x_blurred_i)
+            
+        blurred_sm = np.stack(blurred_sm, axis=0)
+        blurred_sm = np.transpose(blurred_sm, (0, 3, 1, 2))
+        blurred_sm = blurred_sm[:, 0:1, ...]
+        blurred_sm = th.tensor(blurred_sm).to(cond['dst_shadow_diff_with_weight_simplified'].device)
+        return blurred_sm
+    
+    args = misc['args']
+    
+    x_dst = cond['dst_shadow_diff_with_weight_simplified']  # B x 1 x H x W
+    if args.relight_with_given_c:
+        start_c = args.relight_with_given_c
+    else:
+        start_c = 1.0
+        
+    # Testing
+    # n_rotate = 10
+    # n_to_a2 = 5
+    
+    n_rotate = 60
+    n_to_a2 = 30
+    
+    x_dst = (x_dst > 0.) * start_c
+    diffuse_seq = np.linspace(start_c, 0, n_rotate)
+    constant_seq = np.ones(n_to_a2) * start_c
+    seq = np.concatenate((diffuse_seq, np.flip(diffuse_seq, 0), 
+                          constant_seq, 
+                          diffuse_seq, np.flip(diffuse_seq, 0), 
+                          constant_seq))
+    seq = seq[..., None, None, None]
+    print("[#] Mani c-sequence: ", seq.shape)
+    x_dst = x_dst * th.tensor(seq).to(x_dst.device)
+    cond['dst_shadow_diff_with_weight_simplified'] = x_dst
+    return cond, misc
     
 
 def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):

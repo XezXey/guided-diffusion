@@ -37,11 +37,12 @@ parser.add_argument('--light_traj_path', type=str, default=None)
 parser.add_argument('--scale_sh', type=float, default=1.0)
 parser.add_argument('--sh_file', type=str, default=None)
 parser.add_argument('--rotate_sh_file', action='store_true', default=False)
-parser.add_argument('--manual_sh', action='store_true', default=False)
+parser.add_argument('--same_sh', action='store_true', default=False)
 parser.add_argument('--add_sh', type=float, default=None)
 parser.add_argument('--sh_grid_size', type=int, default=None)
 parser.add_argument('--sh_span', type=float, default=None)
 parser.add_argument('--diffuse_sh', type=float, default=None)
+parser.add_argument('--itp_diffuse_sh', action='store_true', default=False)
 parser.add_argument('--force_diffuse_sh', action='store_true', default=False)
 parser.add_argument('--diffuse_perc', type=float, default=None)
 parser.add_argument('--rasterize_type', type=str, default='standard')
@@ -178,7 +179,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     for i, j in enumerate(misc['cfg']['img_cond_model']['sj_paired']):
         misc_tmp['condition_img'][i] = f"{j}_{misc_tmp['condition_img'][i]}"
     
-    cond, misc = inference_utils_paired.shadow_diff_teaser_postproc(cond=cond, misc=misc)
+    cond, misc = inference_utils_paired.shadow_diff_website_reshadow_postproc(cond=cond, misc=misc)
     n_step = misc['n_step']
     # Return the ['cond_img'] and ['dpm_cond_img']
     cond.update(inference_utils_paired.prepare_cond_sampling(cond=cond, cfg=cfg, use_render_itp=True))

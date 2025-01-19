@@ -1,0 +1,13 @@
+{
+    "ours_difareli++_reshadow_diffuse" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli - full",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"120",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/Website/reshadow/log=backup_paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_full/ema_300000/valid/render_face/reverse_sampling/"
+    }
+}

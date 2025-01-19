@@ -306,19 +306,30 @@ def spiral_sh(cond, src_idx, n_step, light_traj_path):
     out_sh = np.stack(out_sh, 0)    # [n_step, 27]
     return {'light':out_sh}, n_frames
 
-def diffuse_sh(cond, src_idx, n_step, axis):
+def diffuse_sh(cond, src_idx, n_step, interpolate=False):
     inp_sh = cond['light'][[src_idx]].flatten()   # [1, 27] -> [27,]
     n = n_step
-    out_sh = []
     n = n_step
-    for i in range(n):
-        diffused = inp_sh.clone()
-        # Make uniformly SH (diffuse) by set all the SH to 0 except the first one
-        diffused = diffused.reshape(9, 3)
-        diffused[1:, :] = 0
-        out_sh.append(diffused.flatten())
-
-    out_sh = np.stack(out_sh, 0)    # [n_step, 27]
+    diffuse_sh = inp_sh.clone()
+    diffuse_sh = diffuse_sh.reshape(9, 3)
+    diffuse_sh[1:, :] = 0
+    diffuse_sh = diffuse_sh.flatten()
+    if interpolate:
+        print("[#] Interpolating from inp to diffuse SH...")
+        r_interp = np.linspace(0, 1, num=n_step)
+        src = inp_sh
+        dst = diffuse_sh
+        interp = []
+        for r in r_interp:
+            tmp = lerp(r=r, src=src, dst=dst)
+            interp.append(tmp)
+            
+        out_sh = np.stack(interp, 0)    # [n_step, 27]
+    else:
+        print("[#] Using diffuse SH...")
+        interp = [diffuse_sh] * n
+        out_sh = np.stack(interp, 0)    # [n_step, 27]
+    
     return {'light':out_sh}
     
 
@@ -383,6 +394,141 @@ def rotate_sh(cond, src_idx, n_step, axis):
 
     out_sh = np.stack(out_sh, 0)    # [n_step, 27]
     return {'light':out_sh}
+ 
+def fancy_rotate_sh(cond, src_idx):
+
+    import pyshtools as pysh
+    def toCoeff(c):
+      t = pysh.SHCoeffs.from_zeros(2)
+      t.set_coeffs(c[0], 0, 0)
+      t.set_coeffs(c[1], 1, 1)
+      t.set_coeffs(c[2], 1, -1)
+      t.set_coeffs(c[3], 1, 0)
+      t.set_coeffs(c[4], 2, -2)
+      t.set_coeffs(c[5], 2, 1)
+      t.set_coeffs(c[6], 2, -1)
+      t.set_coeffs(c[7], 2, 2)
+      t.set_coeffs(c[8], 2, 0)
+      return t
+
+    def toRGBCoeff(c):
+      return [toCoeff(c[::3]), toCoeff(c[1::3]), toCoeff(c[2::3])]
+
+    def toDeca(c):
+      a = c.coeffs
+      lst = [a[0, 0, 0],
+             a[0, 1, 1],
+             a[1, 1, 1],
+             a[0, 1, 0],
+             a[1, 2, 2],
+             a[0, 2, 1],
+             a[1, 2, 1],
+             a[0, 2, 2],
+             a[0, 2, 0]]
+      return np.array(lst)
+
+    def toRGBDeca(cc):
+      return list(itertools.chain(*zip(toDeca(cc[0]), toDeca(cc[1]), toDeca(cc[2]))))
+
+    def axisAngleToEuler(x, y, z, degree):
+      xyz = np.array([x, y, z])
+      xyz = xyz / np.linalg.norm(xyz)
+
+      rot = R.from_mrp(xyz * np.tan(degree * np.pi / 180 / 4))
+      return rot.as_euler('zyz', degrees=True)
+
+    def rotateSH(sh_np, x, y, z, degree):
+      cc = toRGBCoeff(sh_np)
+      euler = axisAngleToEuler(x, y, z, degree)
+      cc[0] = cc[0].rotate(*euler)
+      cc[1] = cc[1].rotate(*euler)
+      cc[2] = cc[2].rotate(*euler)
+      return toRGBDeca(cc)
+  
+    def sh_to_ld(sh):
+        #NOTE: Roughly Convert the SH to light direction
+        sh = sh.reshape(-1, 9, 3)
+        ld = np.mean(sh[0:1, 1:4, :], axis=2)
+        return ld
+    
+    inp_sh = cond['light'][[src_idx]].flatten()   # [1, 27] -> [27,]
+    ld = sh_to_ld(np.array(inp_sh)[None, ...]).reshape(-1)
+    ld = ld / np.linalg.norm(ld)
+    
+    print("[#] Fancy rotating SH (Gradually Decrease C)...")
+    # Align with reference light direction
+    sh_text_ref = "3.7764273 3.7647202 3.7740586 -0.45223573 -0.48492554 -0.48608136 0.3177414 0.34008643 0.33421847 -0.44365892 -0.47285086 -0.45525044 -0.27055222 -0.26994315 -0.2692122 -0.033267528 -0.047869906 -0.050032064 0.16282524 0.17702723 0.172417 0.14684218 0.14223212 0.14653295 0.2784819 0.27089873 0.27471355"
+    ld_org_ref = sh_to_ld(np.array([float(x) for x in sh_text_ref.split(" ")])[None, ...]).reshape(-1)
+    ld_org_ref = ld_org_ref / np.linalg.norm(ld_org_ref)
+    # Compute rotation angle in the xy-plane
+    theta_ref = np.arctan2(ld_org_ref[1], ld_org_ref[0])  # Ref azimuth
+    theta_ld = np.arctan2(ld[1], ld[0])  # Input azimuth
+    # Compute the rotation angle needed
+    rotation_angle = np.degrees(theta_ref - theta_ld)
+    print("[#] Aligning with reference light direction: ", rotation_angle)
+    inp_sh_alg_a1 = rotateSH(inp_sh.clone(), 0, 0, 1, -rotation_angle)
+    # Start rotating from the aligned light direction
+    n_rotate = 60
+    n_to_a2 = 30
+    
+    # Testing
+    # n_rotate = 10
+    # n_to_a2 = 5
+    
+    def roundtrip_sh(inp, n_rotate=60, inv=False):
+        # Roundtrip over Z
+        rot_sh = []
+        deg_rot = np.linspace(0, 360, n_rotate)
+        if inv:
+            deg_rot = deg_rot[::-1]
+        for j in deg_rot:
+            moved = rotateSH(inp, 0, 0, 1, j)
+            sh_moved = np.array(moved)
+            rot_sh.append(sh_moved)
+        rot_sh_rev = rot_sh[::-1]
+        rot_sh = rot_sh + rot_sh_rev
+        return rot_sh
+        
+    # 1st rotate over Z
+    print("[#] 1st rotate over Z")
+    first_rot_sh = roundtrip_sh(inp_sh_alg_a1.copy(), n_rotate=n_rotate)
+    
+    # 2nd rotate to 2nd reference axis
+    # Align with reference light direction (60065.jpg)
+    sh_a2_text_ref = "3.4063814 3.4182117 3.4240203 0.2447223 0.2731144 0.27873707 0.36326286 0.37438118 0.37373984 -0.53145957 -0.511477 -0.49685538 -0.02802198 -0.02605348 -0.025497597 0.15530688 0.17207308 0.17424926 0.5655835 0.57417613 0.5728966 0.25129333 0.25584137 0.25848323 0.7325827 0.7334002 0.73769367"
+    ld_a2_ref = sh_to_ld(np.array([float(x) for x in sh_a2_text_ref.split(" ")])[None, ...]).reshape(-1)
+    ld_a2_ref = ld_a2_ref / np.linalg.norm(ld_a2_ref)
+    # Compute rotation angle in the xy-plane
+    theta_ref = np.arctan2(ld_a2_ref[1], ld_a2_ref[0])  # Ref azimuth
+    theta_ld = np.arctan2(ld[1], ld[0])  # Input azimuth
+    # Compute the rotation angle needed
+    r_to_a2 = np.degrees(theta_ref - theta_ld)
+    if r_to_a2 < 0:
+        r_to_a2 *= -1
+    print("[#] Aligning with A2 light direction: ", r_to_a2)
+    
+    alg_a2_sh = []
+    for j in np.linspace(0, r_to_a2, n_to_a2):
+        moved = rotateSH(inp_sh_alg_a1.copy(), 0, 0, 1, j)
+        sh_moved = np.array(moved)
+        alg_a2_sh.append(sh_moved)
+    
+    # 3rd rotate over Z
+    print("[#] 2nd rotate over Z")
+    second_rot_sh = roundtrip_sh(th.tensor(alg_a2_sh[-1]), n_rotate=n_rotate, inv=True)
+    
+    # 4th rotate back to original
+    # Align back to reference light direction
+    print("[#] Aligning back to reference light direction")
+    rot_to_a1_sh = []
+    for j in np.linspace(0, r_to_a2, n_to_a2):
+        moved = rotateSH(th.tensor(alg_a2_sh[-1]), 0, 0, 1, -j)
+        sh_moved = np.array(moved)
+        rot_to_a1_sh.append(sh_moved)
+    
+    all_seq = [cond['light'][[src_idx]].flatten()] + first_rot_sh + alg_a2_sh + second_rot_sh + rot_to_a1_sh
+    all_sh = np.stack(all_seq, 0)    # [n_step, 27]
+    return {'light':all_sh}, all_sh.shape[0]
     
 
 def interp_cond(src_cond, dst_cond, n_step, interp_fn):
