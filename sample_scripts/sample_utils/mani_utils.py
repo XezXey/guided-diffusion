@@ -256,6 +256,7 @@ def spiral_sh(cond, src_idx, n_step, light_traj_path):
         return ld
     
     light_traj = np.load(light_traj_path, allow_pickle=True).item()['traj']
+    light_params = np.load(light_traj_path, allow_pickle=True).item()['params']
     n_frames = len(light_traj)
     a0 = 0
     inp_sh = cond['light'][[src_idx]].flatten()   # [1, 27] -> [27,]
@@ -278,20 +279,23 @@ def spiral_sh(cond, src_idx, n_step, light_traj_path):
     
     at = np.arctan2(ld[1], ld[0])
     
+    rchanged = np.degrees((np.arccos(light_params['radius_0']) - np.arccos(light_params['radius_1']))) / (light_params['n']//2)
+    print("[#] Degree changed per frame : ", rchanged)
+    angle = 0
     for i in tqdm.tqdm(range(n_frames), desc=f"[#] Spiral SH using {light_traj_path}...", leave=False):
         t = light_traj[i]["t"]  # 0~1
         tt = light_traj[i]["rel_angle"] + a0
         
-        rr = np.sin((1 - t) * np.pi * 2)
-        if rr < 0:
-            sp_r = 40
+        rr = light_traj[i]["rel_radius"]  # Relative change in radius
+        if np.isclose(rr, 0):
+            angle = angle # No change
         else: 
-            sp_r = 10
+            angle += rchanged * np.sign(-rr)  # Change in radius
         
         # Rotate original to align with x (Preventing the spiral from unawarely orbiting)
         moved = rotateSH(inp_sh.copy(), 0, 0, 1, at * 180 / np.pi)
         # Rotate spiral (Decrease radius)
-        moved = rotateSH(moved, 0, 1, 0, sp_r * rr)
+        moved = rotateSH(moved, 0, 1, 0, -angle)
         # Rotate back to original
         moved = rotateSH(moved, 0, 0, 1, -at * 180 / np.pi)
         # Rotate spiral (Orbit around z)
@@ -471,8 +475,8 @@ def fancy_rotate_sh(cond, src_idx):
     ld_a1 = sh_to_ld(np.array(inp_sh_alg_a1)[None, ...]).reshape(-1)
     ld_a1 = ld_a1 / np.linalg.norm(ld_a1)
     # Start rotating from the aligned light direction
-    n_rotate = 60
-    n_to_a2 = 30
+    n_rotate = 80
+    n_to_a2 = 40
     
     # Testing
     # n_rotate = 10
@@ -502,7 +506,6 @@ def fancy_rotate_sh(cond, src_idx):
     ld_a2_ref = sh_to_ld(np.array([float(x) for x in sh_a2_text_ref.split(" ")])[None, ...]).reshape(-1)
     ld_a2_ref = ld_a2_ref / np.linalg.norm(ld_a2_ref)
     print("[#] LD Ref-2: ", ld_a2_ref)
-    exit()
     # Compute rotation angle in the xy-plane
     theta_ref = np.arctan2(ld_a2_ref[1], ld_a2_ref[0])  # Ref azimuth
     theta_ld = np.arctan2(ld_a1[1], ld_a1[0])  # Input azimuth

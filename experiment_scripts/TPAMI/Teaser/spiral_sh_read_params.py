@@ -10,6 +10,10 @@ import os
 from scipy.spatial.transform import Rotation as R
 
 import pyshtools as pysh
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--light_path', required=True)
+args = parser.parse_args()
 
 def applySHlight(normal_images, sh_coeff):
   N = normal_images
@@ -229,23 +233,40 @@ def spiralLight_readPath(sh_np, cx, cy):
   # drawSH(centered, f"centered.png")
   
   # light_path = np.load("./light_params.npy", allow_pickle=True)
-  light_path = np.load("./light_traj_n300.npy", allow_pickle=True).item()['traj']
-  n = len(light_path)
+  light_traj = np.load(args.light_path, allow_pickle=True).item()['traj']
+  light_params = np.load(args.light_path, allow_pickle=True).item()['params']
+  n = len(light_traj)
   a0 = 0
+  # rchanged = 0.148
+  rchanged = np.degrees((np.arccos(light_params['radius_0']) - np.arccos(light_params['radius_1']))) / (light_params['n']//2)
+  # print(light_params)
+  # print(np.degrees((np.arccos(light_params['radius_0']) - np.arccos(light_params['radius_1']))))
+  # print(np.degrees((np.arccos(light_params['radius_1']) - np.arccos(light_params['radius_0']))))
+  print("[#] Degree changed per frame : ", rchanged)
+  angle = 0
   for i in tqdm.tqdm(range(n)):
-    t = light_path[i]["t"]  # 0~1
-    tt = light_path[i]["rel_angle"] + a0
-    
-    rr = np.sin((1 - t) * np.pi * 2)
-    if rr < 0:
-      sp_r = -70
+    t = light_traj[i]["t"]  # 0~1
+    tt = light_traj[i]["rel_angle"] + a0
+    rr = light_traj[i]["rel_radius"]  # Relative change in radius
+
+    if np.isclose(rr, 0):
+      angle = angle # No change
     else: 
-      sp_r = 10
+      angle += rchanged * np.sign(-rr)  # Change in radius
+
+
+    # rr = light_traj[i]["rel_radius"] + rstart
+    
+    # if rr < -0.001:
+    #   sp_r = -((np.arccos(rr)) * 180 / np.pi)
+    # else: 
+    #   sp_r = ((np.arccos(rr)) * 180 / np.pi)
+    # rstart += rr
     
     # Rotate original to align with x (Preventing the spiral from unawarely orbiting)
     moved = rotateSH(inp_sh.copy(), 0, 0, 1, at * 180 / np.pi)
     # Rotate spiral (Decrease radius)
-    moved = rotateSH(moved, 0, 1, 0, sp_r * rr)
+    moved = rotateSH(moved, 0, 1, 0, -angle)#* rr)
     # Rotate back to original
     moved = rotateSH(moved, 0, 0, 1, -at * 180 / np.pi)
     # Rotate spiral (Orbit around z)
@@ -253,16 +274,16 @@ def spiralLight_readPath(sh_np, cx, cy):
     
     ld = sh_to_ld(np.array(moved)[None, ...]).reshape(-1)
     drawSH(moved, f"./video_out/m_{i:03d}.png", ld=ld)
-    a0 += light_path[i]["rel_angle"]
+    a0 += light_traj[i]["rel_angle"]
     
   os.system(f"ffmpeg -y -framerate 30 -i video_out/m_%03d.png -c:v libx264 -pix_fmt yuv420p -crf 18 video_spiral_read.mp4")
   os.system(f"ffmpeg -y -i output.mp4 -i video_spiral_read.mp4  -filter_complex \"[0:v][1:v]hstack=inputs=2\" cmp.mp4")
   exit()
 
 # 65797.jpg
-# sh_text = "3.7764273 3.7647202 3.7740586 -0.45223573 -0.48492554 -0.48608136 0.3177414 0.34008643 0.33421847 -0.44365892 -0.47285086 -0.45525044 -0.27055222 -0.26994315 -0.2692122 -0.033267528 -0.047869906 -0.050032064 0.16282524 0.17702723 0.172417 0.14684218 0.14223212 0.14653295 0.2784819 0.27089873 0.27471355"
+sh_text = "3.7764273 3.7647202 3.7740586 -0.45223573 -0.48492554 -0.48608136 0.3177414 0.34008643 0.33421847 -0.44365892 -0.47285086 -0.45525044 -0.27055222 -0.26994315 -0.2692122 -0.033267528 -0.047869906 -0.050032064 0.16282524 0.17702723 0.172417 0.14684218 0.14223212 0.14653295 0.2784819 0.27089873 0.27471355"
 # 69809.jpg
-sh_text = "3.7345207 3.7213473 3.7314432 0.7694048 0.7836141 0.7984594 0.22823927 0.23264684 0.2287304 -0.4806327 -0.5140073 -0.48469663 0.038980436 0.039153174 0.039689075 -0.31383342 -0.30161086 -0.2934053 0.24958973 0.25237265 0.24871074 0.48290193 0.4683239 0.4711157 0.7713614 0.76298386 0.7751074"
+# sh_text = "3.7345207 3.7213473 3.7314432 0.7694048 0.7836141 0.7984594 0.22823927 0.23264684 0.2287304 -0.4806327 -0.5140073 -0.48469663 0.038980436 0.039153174 0.039689075 -0.31383342 -0.30161086 -0.2934053 0.24958973 0.25237265 0.24871074 0.48290193 0.4683239 0.4711157 0.7713614 0.76298386 0.7751074"
 # 62011.jpg 
 # sh_text = "3.8343465 3.8336594 3.8284006 0.1729947 0.17721233 0.17012812 0.13337857 0.1411026 0.14271605 -0.45823875 -0.47945493 -0.49274385 -0.14240256 -0.13979109 -0.13815635 0.60094035 0.6050799 0.60517627 0.12989694 0.13691846 0.13731007 -0.14883745 -0.13712367 -0.14319716 0.57338154 0.5598248 0.5587959"
 # 61992.jpg 

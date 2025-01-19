@@ -3,6 +3,8 @@ import math, tqdm
 import os
 from PIL import Image, ImageSequence
 
+
+
 def render_diffuser_sphere(resolution, d):
     """
     Render a sphere with the Phong reflection model and optional red circle.
@@ -62,23 +64,33 @@ def render_diffuser_sphere(resolution, d):
 
     return image
 
+
+def proc(i, d, resolution, frame_dir):
+    frame = render_diffuser_sphere(resolution, d)
+    frame.save(f"{frame_dir}/{i:06d}.png")
+    
 def gen(lst, resolution=256, frame_dir="frames"):
+     
     os.system(f"rm -rf {frame_dir}")
     os.makedirs(frame_dir, exist_ok=True)
-    for i, d in enumerate(lst):
-        frame = render_diffuser_sphere(resolution, d)
-        frame.save(f"{frame_dir}/{i:06d}.png")
+    
+    import multiprocessing
+    from functools import partial
+    num_workers = multiprocessing.cpu_count()  # Use all available cores
+    with multiprocessing.Pool(num_workers) as pool:
+        pool.starmap(proc, [(i, d, resolution, frame_dir) for i, d in enumerate(lst)])
+    
     os.system(f"ffmpeg -y -framerate 30 -i {frame_dir}/%06d.png -c:v libx264 -pix_fmt yuv420p -crf 20 output.mp4")
 
 
 def create_spiral_sequence(frames, radius_0, radius_1, rounds, stop_frames=[]):
-    repeat1 = 30
+    repeat1 = args.n_repeat1
     lst = []
     
     init_ld = [-0.64351377, 0.44854998, -0.6202362]
     at2 = np.arctan2(init_ld[1], init_ld[0])
     a0 = -at2
-    r0 = radius_0 + (radius_1 - radius_0) * abs(2 * 0 - 1)  # Spiral inward then outward
+    r_start = radius_1 # Spiral inward then outward
     for i in tqdm.tqdm(range(frames)):
         t = i / frames
         angle = (2 * np.pi * t * rounds) + (-at2)  # Start from 0 to 2 * pi * rounds
@@ -86,8 +98,8 @@ def create_spiral_sequence(frames, radius_0, radius_1, rounds, stop_frames=[]):
         a0 = angle
         
         radius = radius_0 + (radius_1 - radius_0) * abs(2 * t - 1)  # Spiral inward then outward
-        rel_radius = radius - r0
-        r0 = radius
+        rel_radius = radius - r_start
+        r_start = radius
         
         light_x = radius * np.cos(angle)    # Oscillate between -1 and 1 on the x-axis
         light_y = radius * np.sin(angle)    # Oscillate between -1 and 1 on the y-axis
@@ -126,18 +138,29 @@ def create_spiral_sequence(frames, radius_0, radius_1, rounds, stop_frames=[]):
             d["rel_radius"] = rel_radius
             lst.append(dict(d))
 
-    np.save(f"light_traj_n{n}.npy", {
+    stf = '-'.join(map(str, stop_frames))
+    np.save(f"light_traj_n{n}_{args.pf}_{args.rounds}_{args.r1}_{args.r0}_stf{stf}.npy", {
         'traj':lst, 
         'params':{'n':n, 'radius_0':radius_0, 'radius_1':radius_1, 'rounds':rounds, 'stop_frames':stop_frames, 'repeat1':repeat1},
         }
     )
     gen(lst)
 
-
-n = 300
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--n", type=int, default=300)
+parser.add_argument("--n_repeat1", type=int, default=40)
+parser.add_argument("--pf", type=str, default="spiral")
+parser.add_argument("--r0", type=float, default=0.4, help="inner radius")
+parser.add_argument("--r1", type=float, default=0.8, help="outer radius")
+parser.add_argument("--rounds", type=int, default=6)
+parser.add_argument("--stf", type=int, nargs='+', default=[])
+args = parser.parse_args()
+n = args.n
 # create_spiral_sequence(n, 0.4, 0.8, 6, [n * 15 // 48, n * (48 - 11) // 48])
 # create_spiral_sequence(n, 0.4, 0.8, 6, [n * 31 // 48, n * (75 - 11) // 48])
-create_spiral_sequence(n, 0.4, 0.8, 6, [n * 18 // 48, n * (43 - 11) // 48])
+# create_spiral_sequence(n, args.r0, args.r1, args.rounds, [n * 18 // 48, n * (42 - 11) // 48])
+create_spiral_sequence(n, args.r0, args.r1, args.rounds, args.stf)
 # create_spiral_sequence(n, 0.4, 0.8, 6, [45, 80])
 
 # create_spiral_sequence(1, 0.3, 0.8, [0])

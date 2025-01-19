@@ -102,8 +102,8 @@ def create_spiral_sequence(frames):
     
 def create_spiral_sequence2(frames):
     lst = []
-    n_rotate = 15   # Round trip rotate from a1
-    n_to_a2 = 10    # Rotate from a1 to a2
+    n_rotate = 80   # Round trip rotate from a1
+    n_to_a2 = 40    # Rotate from a1 to a2
     
     ld1 = [-0.64351377, 0.44854998, -0.6202362]
     ld2 = [0.38682017,  0.53969352, -0.7477306]
@@ -132,9 +132,9 @@ def create_spiral_sequence2(frames):
     #     lst.append(dict(d))
     
     # for i in tqdm.tqdm(range(n_to_a2)):
-    def rotate(angles):
+    def rotate(angles, diffuse=False):
         lst = []
-        for angle in angles:
+        for i, angle in enumerate(angles):
             light_x = radius * np.cos(angle)    # Oscillate between -1 and 1 on the x-axis
             light_y = radius * np.sin(angle)    # Oscillate between -1 and 1 on the y-axis
             light_z = np.sqrt(max(0, 1 - light_x**2 - light_y**2))  # Ensure on the sphere
@@ -143,10 +143,16 @@ def create_spiral_sequence2(frames):
             d = {}
             d["angle"] = angle
             d["light_dir"] = light_dir
-            d["light_conic"] = 10
             d["light_trans"] = 1
             d["diffuse_intensity"] = 1
-            d["ambient_color"] = 0.1
+            if diffuse:
+                t = i / len(angles)
+                ttc = (np.sin(t * np.pi / 2))
+                d["light_conic"] = 10 + 12 * ttc
+                d["ambient_color"] = 0.1 + 0.4 * ttc
+            else:
+                d["light_conic"] = 10
+                d["ambient_color"] = 0.1
             d["diffuse_exp"] = 2
             lst.append(dict(d))
         return lst
@@ -154,7 +160,7 @@ def create_spiral_sequence2(frames):
     # First rotate roundtrip
     angle = np.linspace(0, 2 * np.pi, n_rotate)
     angle = angle + (-at2)  # Start at at2
-    lst1 = rotate(angle)
+    lst1 = rotate(angle, diffuse=True)
     lst_z1 = lst1 + lst1[::-1]
     
     # Move to a2
@@ -165,7 +171,7 @@ def create_spiral_sequence2(frames):
     # Second rotate roundtrip
     angle = np.linspace(0, 2 * np.pi, n_rotate)
     angle = -angle + (-at2) + (-angle_a1_a2)  # Start at at2
-    lst2 = rotate(angle)
+    lst2 = rotate(angle, diffuse=True)
     lst2 = lst2 + lst2[::-1]
     
     # Move back to a1 from a2
