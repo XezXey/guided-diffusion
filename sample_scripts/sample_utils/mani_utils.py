@@ -460,6 +460,7 @@ def fancy_rotate_sh(cond, src_idx):
     sh_text_ref = "3.7764273 3.7647202 3.7740586 -0.45223573 -0.48492554 -0.48608136 0.3177414 0.34008643 0.33421847 -0.44365892 -0.47285086 -0.45525044 -0.27055222 -0.26994315 -0.2692122 -0.033267528 -0.047869906 -0.050032064 0.16282524 0.17702723 0.172417 0.14684218 0.14223212 0.14653295 0.2784819 0.27089873 0.27471355"
     ld_org_ref = sh_to_ld(np.array([float(x) for x in sh_text_ref.split(" ")])[None, ...]).reshape(-1)
     ld_org_ref = ld_org_ref / np.linalg.norm(ld_org_ref)
+    print("[#] LD Ref-1: ", ld_org_ref)
     # Compute rotation angle in the xy-plane
     theta_ref = np.arctan2(ld_org_ref[1], ld_org_ref[0])  # Ref azimuth
     theta_ld = np.arctan2(ld[1], ld[0])  # Input azimuth
@@ -467,6 +468,8 @@ def fancy_rotate_sh(cond, src_idx):
     rotation_angle = np.degrees(theta_ref - theta_ld)
     print("[#] Aligning with reference light direction: ", rotation_angle)
     inp_sh_alg_a1 = rotateSH(inp_sh.clone(), 0, 0, 1, -rotation_angle)
+    ld_a1 = sh_to_ld(np.array(inp_sh_alg_a1)[None, ...]).reshape(-1)
+    ld_a1 = ld_a1 / np.linalg.norm(ld_a1)
     # Start rotating from the aligned light direction
     n_rotate = 60
     n_to_a2 = 30
@@ -498,9 +501,11 @@ def fancy_rotate_sh(cond, src_idx):
     sh_a2_text_ref = "3.4063814 3.4182117 3.4240203 0.2447223 0.2731144 0.27873707 0.36326286 0.37438118 0.37373984 -0.53145957 -0.511477 -0.49685538 -0.02802198 -0.02605348 -0.025497597 0.15530688 0.17207308 0.17424926 0.5655835 0.57417613 0.5728966 0.25129333 0.25584137 0.25848323 0.7325827 0.7334002 0.73769367"
     ld_a2_ref = sh_to_ld(np.array([float(x) for x in sh_a2_text_ref.split(" ")])[None, ...]).reshape(-1)
     ld_a2_ref = ld_a2_ref / np.linalg.norm(ld_a2_ref)
+    print("[#] LD Ref-2: ", ld_a2_ref)
+    exit()
     # Compute rotation angle in the xy-plane
     theta_ref = np.arctan2(ld_a2_ref[1], ld_a2_ref[0])  # Ref azimuth
-    theta_ld = np.arctan2(ld[1], ld[0])  # Input azimuth
+    theta_ld = np.arctan2(ld_a1[1], ld_a1[0])  # Input azimuth
     # Compute the rotation angle needed
     r_to_a2 = np.degrees(theta_ref - theta_ld)
     if r_to_a2 < 0:

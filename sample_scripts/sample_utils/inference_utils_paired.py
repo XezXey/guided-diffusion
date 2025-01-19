@@ -817,7 +817,11 @@ def shadow_diff_gradC_postproc(cond, misc, device='cuda'):
     n_to_a2 = 30
     
     x_dst = (x_dst > 0.) * start_c
-    diffuse_seq = np.linspace(start_c, 0, n_rotate)
+    # diffuse_seq = np.linspace(start_c, 0.7, int(n_rotate*0.5))
+    # diffuse_seq_2 = np.linspace(0.7, 0.0, int(n_rotate*0.5))
+    # diffuse_seq = np.concatenate((diffuse_seq, diffuse_seq_2))
+    
+    diffuse_seq = np.linspace(start_c, 0.0, n_rotate)
     constant_seq = np.ones(n_to_a2) * start_c
     seq = np.concatenate((diffuse_seq, np.flip(diffuse_seq, 0), 
                           constant_seq, 

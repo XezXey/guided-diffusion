@@ -71,33 +71,24 @@ def gen(lst, resolution=256, frame_dir="frames"):
     os.system(f"ffmpeg -y -framerate 30 -i {frame_dir}/%06d.png -c:v libx264 -pix_fmt yuv420p -crf 20 output.mp4")
 
 
-def create_spiral_sequence(frames, radius_0, radius_1, rounds, stop_frames=[]):
+def create_spiral_sequence(frames):
     repeat1 = 30
     lst = []
     
-    init_ld = [-0.64351377, 0.44854998, -0.6202362]
-    at2 = np.arctan2(init_ld[1], init_ld[0])
-    a0 = -at2
-    r0 = radius_0 + (radius_1 - radius_0) * abs(2 * 0 - 1)  # Spiral inward then outward
+    ld1 = [-0.64351377, 0.44854998, -0.6202362]
+    ld2 = [0.38682017,  0.53969352, -0.7477306 ]
+    at2 = np.arctan2(ld2[1], ld1[0])
+    radius = 0.8
+    
     for i in tqdm.tqdm(range(frames)):
         t = i / frames
-        angle = (2 * np.pi * t * rounds) + (-at2)  # Start from 0 to 2 * pi * rounds
-        rel_angle = angle - a0
-        a0 = angle
-        
-        radius = radius_0 + (radius_1 - radius_0) * abs(2 * t - 1)  # Spiral inward then outward
-        rel_radius = radius - r0
-        r0 = radius
-        
+        angle = (2 * np.pi * t) + (-at2)  # Start from 0 to 2 * pi * rounds
         light_x = radius * np.cos(angle)    # Oscillate between -1 and 1 on the x-axis
         light_y = radius * np.sin(angle)    # Oscillate between -1 and 1 on the y-axis
         light_z = np.sqrt(max(0, 1 - light_x**2 - light_y**2))  # Ensure on the sphere
         light_dir = (light_x, light_y, light_z)
 
         d = {}
-
-        d["t"] = t
-        d["radius"] = radius
         d["angle"] = angle
         d["light_dir"] = light_dir
         d["light_conic"] = 10
@@ -105,39 +96,91 @@ def create_spiral_sequence(frames, radius_0, radius_1, rounds, stop_frames=[]):
         d["diffuse_intensity"] = 1
         d["ambient_color"] = 0.1
         d["diffuse_exp"] = 2
-
-        if i in stop_frames:
-            # Add a frame before stopping, otherwise params skipped 1 frame
-            d["rel_angle"] = rel_angle
-            d["rel_radius"] = rel_radius
-            lst.append(dict(d))
-            for j in range(repeat1):
-                tt = j / repeat1
-                ttc = (1 - np.cos(tt * 2 * np.pi)) / 2
-                d["tt"] = tt
-                d["ttc"] = ttc
-                d["light_conic"] = 10 + 12 * ttc
-                d["ambient_color"] = 0.1 + 0.4 * ttc
-                d["rel_angle"] = 0 
-                d["rel_radius"] = 0
-                lst.append(dict(d))
-        else:
-            d["rel_angle"] = rel_angle
-            d["rel_radius"] = rel_radius
-            lst.append(dict(d))
-
-    np.save(f"light_traj_fancy_n{n}.npy", {
-        'traj':lst, 
-        'params':{'n':n, 'radius_0':radius_0, 'radius_1':radius_1, 'rounds':rounds, 'stop_frames':stop_frames, 'repeat1':repeat1},
-        }
-    )
+        lst.append(dict(d))
+        
     gen(lst, frame_dir='frames_fancy2')
+    
+def create_spiral_sequence2(frames):
+    lst = []
+    n_rotate = 15   # Round trip rotate from a1
+    n_to_a2 = 10    # Rotate from a1 to a2
+    
+    ld1 = [-0.64351377, 0.44854998, -0.6202362]
+    ld2 = [0.38682017,  0.53969352, -0.7477306]
+    at2 = np.arctan2(ld2[1], ld1[0])    # Make a start angle at a1
+    at2_a2 = np.arctan2(ld2[1], ld2[0]) # Make a end angle at a2
+    # Angle to go from a1 to a2
+    angle_a1_a2 = at2_a2 - at2
+    radius = 0.8
+    
+    # for i in tqdm.tqdm(range(n_rotate)):
+    #     t = i / frames
+    #     angle = (2 * np.pi * t) + (-at2)  # Start from 0 to 2 * pi * rounds
+    #     light_x = radius * np.cos(angle)    # Oscillate between -1 and 1 on the x-axis
+    #     light_y = radius * np.sin(angle)    # Oscillate between -1 and 1 on the y-axis
+    #     light_z = np.sqrt(max(0, 1 - light_x**2 - light_y**2))  # Ensure on the sphere
+    #     light_dir = (light_x, light_y, light_z)
+
+    #     d = {}
+    #     d["angle"] = angle
+    #     d["light_dir"] = light_dir
+    #     d["light_conic"] = 10
+    #     d["light_trans"] = 1
+    #     d["diffuse_intensity"] = 1
+    #     d["ambient_color"] = 0.1
+    #     d["diffuse_exp"] = 2
+    #     lst.append(dict(d))
+    
+    # for i in tqdm.tqdm(range(n_to_a2)):
+    def rotate(angles):
+        lst = []
+        for angle in angles:
+            light_x = radius * np.cos(angle)    # Oscillate between -1 and 1 on the x-axis
+            light_y = radius * np.sin(angle)    # Oscillate between -1 and 1 on the y-axis
+            light_z = np.sqrt(max(0, 1 - light_x**2 - light_y**2))  # Ensure on the sphere
+            light_dir = (light_x, light_y, light_z)
+
+            d = {}
+            d["angle"] = angle
+            d["light_dir"] = light_dir
+            d["light_conic"] = 10
+            d["light_trans"] = 1
+            d["diffuse_intensity"] = 1
+            d["ambient_color"] = 0.1
+            d["diffuse_exp"] = 2
+            lst.append(dict(d))
+        return lst
+        
+    # First rotate roundtrip
+    angle = np.linspace(0, 2 * np.pi, n_rotate)
+    angle = angle + (-at2)  # Start at at2
+    lst1 = rotate(angle)
+    lst_z1 = lst1 + lst1[::-1]
+    
+    # Move to a2
+    angle = np.linspace(0, angle_a1_a2, n_to_a2)
+    angle = -at2 + (-angle)
+    lst_to_a2 = rotate(angle)
+    
+    # Second rotate roundtrip
+    angle = np.linspace(0, 2 * np.pi, n_rotate)
+    angle = -angle + (-at2) + (-angle_a1_a2)  # Start at at2
+    lst2 = rotate(angle)
+    lst2 = lst2 + lst2[::-1]
+    
+    # Move back to a1 from a2
+    angle = np.linspace(0, angle_a1_a2, n_to_a2)
+    angle = (-at2) + (-angle_a1_a2) + (angle)
+    lst_back_to_a1 = rotate(angle)
+    
+    all = lst_z1 + lst_to_a2 + lst2 + lst_back_to_a1
+    gen(all, frame_dir='frames_fancy2')
 
 
-n = 300
+n = 20
 # create_spiral_sequence(n, 0.4, 0.8, 6, [n * 15 // 48, n * (48 - 11) // 48])
 # create_spiral_sequence(n, 0.4, 0.8, 6, [n * 31 // 48, n * (75 - 11) // 48])
-create_spiral_sequence(n, 0.4, 0.8, 6, [n * 18 // 48, n * (43 - 11) // 48])
+create_spiral_sequence2(n)
 # create_spiral_sequence(n, 0.4, 0.8, 6, [45, 80])
 
 # create_spiral_sequence(1, 0.3, 0.8, [0])
