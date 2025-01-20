@@ -62,13 +62,30 @@ def render_diffuser_sphere(resolution, d):
 
     return image
 
+def proc(i, d, resolution, frame_dir):
+    frame = render_diffuser_sphere(resolution, d)
+    frame.save(f"{frame_dir}/{i:06d}.png")
+    
 def gen(lst, resolution=256, frame_dir="frames"):
+     
     os.system(f"rm -rf {frame_dir}")
     os.makedirs(frame_dir, exist_ok=True)
-    for i, d in enumerate(lst):
-        frame = render_diffuser_sphere(resolution, d)
-        frame.save(f"{frame_dir}/{i:06d}.png")
-    os.system(f"ffmpeg -y -framerate 30 -i {frame_dir}/%06d.png -c:v libx264 -pix_fmt yuv420p -crf 20 output.mp4")
+    
+    import multiprocessing
+    from functools import partial
+    num_workers = multiprocessing.cpu_count()  # Use all available cores
+    with multiprocessing.Pool(num_workers) as pool:
+        pool.starmap(proc, [(i, d, resolution, frame_dir) for i, d in enumerate(lst)])
+    
+    os.system(f"ffmpeg -y -framerate 30 -i {frame_dir}/%06d.png -c:v libx264 -pix_fmt yuv420p -crf 20 output_fancy2.mp4")
+
+# def gen(lst, resolution=256, frame_dir="frames"):
+#     os.system(f"rm -rf {frame_dir}")
+#     os.makedirs(frame_dir, exist_ok=True)
+#     for i, d in enumerate(lst):
+#         frame = render_diffuser_sphere(resolution, d)
+#         frame.save(f"{frame_dir}/{i:06d}.png")
+#     os.system(f"ffmpeg -y -framerate 30 -i {frame_dir}/%06d.png -c:v libx264 -pix_fmt yuv420p -crf 20 output.mp4")
 
 
 def create_spiral_sequence(frames):
@@ -148,10 +165,11 @@ def create_spiral_sequence2(frames):
             if diffuse:
                 t = i / len(angles)
                 ttc = (np.sin(t * np.pi / 2))
-                d["light_conic"] = 10 + 12 * ttc
+                # d["light_conic"] = 10 + 12 * ttc
+                d["light_conic"] = 8 + 12 * ttc
                 d["ambient_color"] = 0.1 + 0.4 * ttc
             else:
-                d["light_conic"] = 10
+                d["light_conic"] = 8
                 d["ambient_color"] = 0.1
             d["diffuse_exp"] = 2
             lst.append(dict(d))

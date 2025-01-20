@@ -1,15 +1,4 @@
 {
-    "ours_difareli++_reshadow_fancy" : {
-        "step" :"ema_300000",
-        "alias" : "DiFaReli - fancy",
-        "misc" : "one-shot",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"51",
-        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/Website/fancy_rotate_gradC/log=backup_paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_fancy/ema_300000/valid/render_face/reverse_sampling/"
-    },
     "ours_difareli++_reshadow_fancyy" : {
         "step" :"ema_300000",
         "alias" : "DiFaReli - full",
@@ -18,7 +7,7 @@
         "itp_method":"Lerp",
         "diff_step":"1000",
         "time_respace":"",
-        "n_frame":"301",
+        "n_frame":"401",
         "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/Website/fancy_rotate_gradC/log=backup_paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_fancy/ema_300000/valid/render_face/reverse_sampling/"
     }
 }
