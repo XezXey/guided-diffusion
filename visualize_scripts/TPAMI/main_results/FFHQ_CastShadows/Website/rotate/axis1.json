@@ -1,0 +1,57 @@
+{
+    "ours_difareli++_reshadow_maxC_0.8sh" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli - full",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/Website/Rotate/axis=1//log=backup_paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_maxC_0.8sh/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_reshadow_maxC_0.6sh" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli - full",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/Website/Rotate/axis=1/log=backup_paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_maxC_0.6sh/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_reshadow_maxC_0.7sh" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli - full",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/Website/Rotate/axis=1/log=backup_paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_maxC_0.6sh/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_reshadow_maxC_0.4sh" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli - full",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/Website/Rotate/axis=1/log=backup_paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_maxC_0.4sh/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_reshadow_0.8C_1sh" : {
+        "step" :"ema_300000",
+        "alias" : "DiFaReli - full",
+        "misc" : "one-shot",
+        "itp":"render_face",
+        "itp_method":"Lerp",
+        "diff_step":"1000",
+        "time_respace":"",
+        "n_frame":"60",
+        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/Website/Rotate/axis=1/log=backup_paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_0.8C_1sh/ema_300000/valid/render_face/reverse_sampling/"
+    }
+}
