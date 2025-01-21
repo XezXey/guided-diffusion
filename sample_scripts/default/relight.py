@@ -33,6 +33,8 @@ parser.add_argument('--rotate_normals', action='store_true', default=False)
 parser.add_argument('--rotate_sh', action='store_true', default=False)
 parser.add_argument('--rotate_sh_dst', action='store_true', default=False)
 parser.add_argument('--rotate_sh_axis', type=int, default=0)
+parser.add_argument('--fancy_rotate_sh', action='store_true', default=False)
+parser.add_argument('--light_traj_path', type=str, default=None)
 parser.add_argument('--spiral_sh', action='store_true', default=False)
 parser.add_argument('--scale_sh', type=float, default=1.0)
 parser.add_argument('--add_sh', type=float, default=None)
@@ -338,6 +340,7 @@ if __name__ == '__main__':
     model_dict = inference_utils.eval_mode(model_dict)
         
 
+    force_jpg_key = False
     # Load dataset
     if args.dataset == 'itw':
         cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
@@ -393,6 +396,20 @@ if __name__ == '__main__':
         img_ext = '.jpg'
         cfg.dataset.training_data = 'ffhq_256_with_anno'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
+    elif args.dataset == 'ffhq_png':
+        cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
+        deca_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
+        img_ext = '.png'
+        cfg.dataset.training_data = 'ffhq_256_with_anno'
+        if os.path.exists(f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256_no_aliasing_png/'):
+            print("[#] Using no aliasing dataset...")
+            cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256_no_aliasing_png/'
+            img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256_no_aliasing_png/"
+        else:
+            cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/ffhq_256/'
+            img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
+        cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
+        force_jpg_key = True
     elif args.dataset == 'ffhq_data2':
         cfg.dataset.root_path = f'/data2/mint/DPM_Dataset/'
         img_dataset_path = f"/data2/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
@@ -462,6 +479,7 @@ if __name__ == '__main__':
         in_image_UNet=cfg.img_model.in_image,
         params_selector=cfg.param_model.params_selector,
         rmv_params=cfg.param_model.rmv_params,
+        force_jpg_key=force_jpg_key,
         set_=args.set,
         cfg=cfg,
         img_ext=img_ext,
@@ -495,6 +513,7 @@ if __name__ == '__main__':
         
     counter_sj = 0
     runtime_dict = {'rev_time':[], 'relit_time':[]}
+    print(all_img_idx)
     for i in range(start, end):
         img_idx = all_img_idx[i]
         img_name = all_img_name[i]
