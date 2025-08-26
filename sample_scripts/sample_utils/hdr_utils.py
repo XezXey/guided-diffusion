@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import tqdm
 import scipy.ndimage
 import skimage
 import torch as th
@@ -116,7 +117,8 @@ def postproc(frames):
     frames = np.concatenate((hdr_image, hdr_image_rot, 
                         np.concatenate((normal_map_org, normal_map, shading, shading_grey), axis=2)), axis=1)
     
-    return frames, hdr_image, hdr_image_rot, normal_map_org, normal_map, shading, shading_grey
+    return frames
+    # return frames, hdr_image, hdr_image_rot, normal_map_org, normal_map, shading, shading_grey
 
 def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step, Lmax=2, rotate_axis='azimuth'):
     """
@@ -146,7 +148,7 @@ def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step
     alpha = alpha_images[0].cpu().numpy()
 
     face = {'normal_map':normal, 'albedo':albedo, 'alpha_map':alpha}
-    
+    print(normal.shape, albedo.shape, alpha.shape)
     
     hdr_image = skimage.io.imread(hdr_file)
     hdr_image = skimage.img_as_float(hdr_image)
@@ -157,9 +159,15 @@ def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step
         # The list() wrapper collects all the results.
         shift_values = np.linspace(0, 360, n_step).astype(int)
         frames = pool.starmap(generate_frame, [(hdr_image, i, rotate_axis, face, Lmax) for i in shift_values])
-    frames, _, _, _, _, _ = postproc(frames)
-    frames = (np.stack(frames).clip(0, 1) * 255).astype(int)
-    torchvision.io.write_video(f"out_{hdr_file}_{rotate_axis}_Lmax{Lmax}.mp4", frames, fps=24)
+    frames = []
+    for i in tqdm.tqdm(np.linspace(0, 360, n_step).astype(int)):
+        frames.append(generate_frame(hdr_image, i, rotate_axis, face, Lmax))
+    # frames, _, _, _, _, _ = postproc(frames)
+    print("[#] Done after multiprocess.")
+    frames = (postproc(frames).clip(0, 1) * 255).astype(np.uint8)
+    print(frames.shape)
+    # frames = (np.stack(frames).clip(0, 1) * 255).astype(int)
+    torchvision.io.write_video(filename=f"./out_{os.path.basename(hdr_file).split('.')[0]}_{rotate_axis}_Lmax{Lmax}.mp4", video_array=th.tensor(frames), fps=24)
 
     
 

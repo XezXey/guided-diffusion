@@ -4035,7 +4035,7 @@
                 "--itp",
                 "render_face_hdr",
                 "--itp_step",
-                "60",
+                "5",
                 "--batch_size",
                 "1",
                 "--gpu_id",

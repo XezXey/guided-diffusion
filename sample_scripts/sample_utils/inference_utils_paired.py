@@ -507,11 +507,13 @@ def build_condition_image_hdr(cond, misc, force_render=False):
                                                             )
         sub_render_deca_t = time.time() - start_sub_render_deca_t
         
-        deca_rendered, sh_coeffs = hdr_utils.render_with_hdr(hdr_file=args.hdr, 
+        print("[#] Render shading reference with HDR.")
+        hdr_utils.render_with_hdr(hdr_file=args.hdr, 
                                                              normal_images=orig_visdict['normal_images'], 
                                                              alpha_images=orig_visdict['alpha_images'],
                                                              albedo_images=orig_visdict['albedo_images'],
                                                              n_step=n_step)
+        print("[#] Done.")
         
         for i in range(len(sub_step)-1):
             print(f"[#] Sub step rendering : {sub_step[i]} to {sub_step[i+1]}")
