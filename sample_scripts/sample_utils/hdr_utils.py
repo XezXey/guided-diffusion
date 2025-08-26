@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import tqdm
 import scipy.ndimage
+import time
 import skimage
 import torch as th
 from envmap import EnvironmentMap, rotation_matrix
@@ -119,6 +120,21 @@ def postproc(frames):
     
     return frames
     # return frames, hdr_image, hdr_image_rot, normal_map_org, normal_map, shading, shading_grey
+    
+_HDR = None
+def _init_shared(hdr_image):
+    global _HDR
+    _HDR = hdr_image
+
+def _worker(i, rotate_axis, face, Lmax):
+    return generate_frame(_HDR, i, rotate_axis, face, Lmax)
+
+def run_parallel(hdr_image, n_step, rotate_axis, face, Lmax):
+    import multiprocessing as mp
+    shift_values = np.linspace(0, 360, n_step).astype(int)
+    ctx = mp.get_context("spawn")
+    with ctx.Pool(mp.cpu_count(), initializer=_init_shared, initargs=(hdr_image,)) as pool:
+        return pool.starmap(_worker, [(i, rotate_axis, face, Lmax) for i in shift_values], chunksize=4)
 
 def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step, Lmax=2, rotate_axis='azimuth'):
     """
@@ -152,17 +168,24 @@ def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step
     
     hdr_image = skimage.io.imread(hdr_file)
     hdr_image = skimage.img_as_float(hdr_image)
-    import multiprocessing as mp
-    with mp.Pool(processes=mp.cpu_count()) as pool:
-        # 'pool.imap' applies the 'generate_frame' function to each item in 'shift_values'.
-        # It's used here instead of 'pool.map' because it works better with tqdm's progress bar.
-        # The list() wrapper collects all the results.
-        shift_values = np.linspace(0, 360, n_step).astype(int)
-        frames = pool.starmap(generate_frame, [(hdr_image, i, rotate_axis, face, Lmax) for i in shift_values])
-    frames = []
-    for i in tqdm.tqdm(np.linspace(0, 360, n_step).astype(int)):
-        frames.append(generate_frame(hdr_image, i, rotate_axis, face, Lmax))
-    # frames, _, _, _, _, _ = postproc(frames)
+    
+    
+    
+    # import multiprocessing as mp
+    # with mp.Pool(processes=mp.cpu_count()) as pool:
+    #     # 'pool.imap' applies the 'generate_frame' function to each item in 'shift_values'.
+    #     # It's used here instead of 'pool.map' because it works better with tqdm's progress bar.
+    #     # The list() wrapper collects all the results.
+    #     shift_values = np.linspace(0, 360, n_step).astype(int)
+    #     frames = pool.starmap(generate_frame, [(hdr_image, i, rotate_axis, face, Lmax) for i in shift_values])
+    start_t = time.time()
+    frames = run_parallel(hdr_image, n_step, rotate_axis, face, Lmax)
+    end_t = time.time()
+    print("[#] HDR Rendered (n_step={}) in {:.2f} seconds.".format(n_step, end_t - start_t))
+    # frames = []
+    # for i in tqdm.tqdm(np.linspace(0, 360, n_step).astype(int)):
+    #     frames.append(generate_frame(hdr_image, i, rotate_axis, face, Lmax))
+    
     print("[#] Done after multiprocess.")
     frames = (postproc(frames).clip(0, 1) * 255).astype(np.uint8)
     print(frames.shape)
