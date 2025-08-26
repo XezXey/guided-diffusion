@@ -163,7 +163,7 @@ class DECA(nn.Module):
             codedict['pose'] = posecode
             codedict['euler_jaw_pose'] = euler_jaw_pose  
         return codedict
-
+    
     # @torch.no_grad()
     def decode(self, codedict, rendering=True, iddict=None, vis_lmk=True, return_vis=True, use_detail=True,
                 render_orig=False, original_image=None, tform=None, use_template=False, mean_cam=None, rotate_normals=False, mask=None):
@@ -251,7 +251,8 @@ class DECA(nn.Module):
             if rotate_normals:
                 shape_images, _, grid, alpha_images, albedo_images = self.render.render_shape(verts, trans_verts, h=h, w=w, return_grid=True, lights=codedict['light'], R_normals=codedict['R_normals'], mask=mask)
             else:
-                shape_images, _, grid, alpha_images, albedo_images = self.render.render_shape(verts, trans_verts, h=h, w=w, return_grid=True, lights=codedict['light'], mask=mask)
+                #NOTE: Rendering happen here
+                shape_images, normal_images, grid, alpha_images, albedo_images = self.render.render_shape(verts, trans_verts, h=h, w=w, return_grid=True, lights=codedict['light'], mask=mask)
             if use_detail:
                 detail_normal_images = F.grid_sample(uv_detail_normals, grid, align_corners=False)*alpha_images
                 shape_detail_images = self.render.render_shape(verts, trans_verts, detail_normal_images=detail_normal_images, h=h, w=w, lights=codedict['light'], mask=mask)
@@ -280,8 +281,10 @@ class DECA(nn.Module):
                 'landmarks3d': landmarks3d,
                 'shape_images': shape_images,
                 'shape_detail_images': shape_detail_images if use_detail else shape_images,
+                'normal_images_optdict': opdict['normal_images'],
+                'normal_images': normal_images,
                 'albedo_images': albedo_images,
-                'normal_images': opdict['normal_images'],
+                'alpha_images': alpha_images,
             }
             if self.cfg.model.use_tex:
                 visdict['rendered_images'] = ops['images']

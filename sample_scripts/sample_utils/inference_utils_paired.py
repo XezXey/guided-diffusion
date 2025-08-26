@@ -2,7 +2,7 @@ import pytorch_lightning as pl
 import torch as th
 import numpy as np
 import blobfile as bf
-import mani_utils, params_utils
+import mani_utils, params_utils, sh_utils, tonemapper, hdr_utils
 import cv2, PIL
 import time
 
@@ -219,7 +219,6 @@ def prepare_cond_sampling_paired(cond, cfg, use_render_itp=False, device='cuda')
         
     return cond
 
-
 def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
     """
     Prepare a condition for encoder network (e.g., adding noise, share noise with DPM)
@@ -326,6 +325,303 @@ def blur_map(cond, misc):
     blurred_sm = th.tensor(blurred_sm).to(cond['dst_shadow_diff_with_weight_simplified'].device)
     cond['dst_shadow_diff_with_weight_simplified'] = blurred_sm
     return cond, misc
+
+def build_condition_image_hdr(cond, misc, force_render=False):
+    src_idx = misc['src_idx']
+    dst_idx = misc['dst_idx']
+    n_step = misc['n_step']
+    batch_size = misc['batch_size']
+    render_batch_size = misc['render_batch_size']
+    avg_dict = misc['avg_dict']
+    dataset = misc['dataset']
+    args = misc['args']
+    condition_img = misc['condition_img']
+    img_size = misc['img_size']
+    itp_func = misc['itp_func']
+    deca_obj = misc['deca_obj']
+    clip_ren = None
+    
+    def prep_render(cond, cond_img_name):
+        #Note: Preprocessing to separate the shading ref or shadow mask into src-dst
+        rendered_tmp = []
+        for j in range(n_step):
+            if 'woclip' in cond_img_name:
+                #NOTE: Input is the npy array -> Used cv2.resize() to handle
+                r_tmp = deca_rendered[j].cpu().numpy().transpose((1, 2, 0))
+                r_tmp = cv2.resize(r_tmp, (img_size, img_size), cv2.INTER_AREA)
+                r_tmp = np.transpose(r_tmp, (2, 0, 1))
+                clip_ren = False
+            else:
+                r_tmp = deca_rendered[j].mul(255).add_(0.5).clamp_(0, 255)
+                r_tmp = np.transpose(r_tmp.cpu().numpy(), (1, 2, 0))
+                r_tmp = r_tmp.astype(np.uint8)
+                r_tmp = dataset.augmentation(PIL.Image.fromarray(r_tmp))
+                r_tmp = dataset.prep_cond_img(r_tmp, cond_img_name, i)
+                r_tmp = np.transpose(r_tmp, (2, 0, 1))
+                r_tmp = (r_tmp / 127.5) - 1
+                clip_ren = True
+            rendered_tmp.append(r_tmp)
+        rendered_tmp = np.stack(rendered_tmp, axis=0)
+        cond[cond_img_name] = th.tensor(rendered_tmp).cuda()
+        cond[f'src_{cond_img_name}'] = th.tensor(rendered_tmp[[0]]).cuda()
+        cond[f'dst_{cond_img_name}'] = th.tensor(rendered_tmp[1:]).cuda()
+        return cond, clip_ren
+    
+    def prep_shadow(cond, cond_img_name):
+        shadow_diff_tmp = []
+        for j in range(n_step):
+            sd_tmp = shadow_mask[j]
+            sdkk_tmp = shadow_kk[j]
+            if args.postproc_shadow_mask_smooth_keep_shadow_shading:
+                #NOTE: Keep the shadow shading from perturbed light
+                m_glasses_and_eyes = cond[f'{cond_img_name}_meg_mask'][src_idx].cpu().numpy()
+                # Masking out the bg area
+                m_face_parsing = cond[f'{cond_img_name}_mface_mask'][src_idx].cpu().numpy()
+                m_face = m_face_parsing
+
+                sd_tmp_proc = ((1 - sd_tmp)) * (m_face * (1-m_glasses_and_eyes)) * ((1 - sdkk_tmp) > 0)
+                sd_tmp = sd_tmp_proc
+
+            elif args.postproc_shadow_mask_smooth:
+                #NOTE: Do not keep the shading of shadows from perturbed light
+                m_glasses_and_eyes = cond[f'{cond_img_name}_meg_mask'][src_idx].cpu().numpy()
+                # Masking out the bg area
+                m_face_parsing = cond[f'{cond_img_name}_mface_mask'][src_idx].cpu().numpy()
+                m_face = m_face_parsing
+                
+                sd_tmp_proc = (((1 - sd_tmp) > 0) * 1.0) * (m_face * (1-m_glasses_and_eyes)) * ((1 - sdkk_tmp) > 0.0)
+                sd_tmp = sd_tmp_proc
+
+            shadow_diff_tmp.append(sd_tmp)
+            
+        shadow_diff_tmp = np.stack(shadow_diff_tmp, axis=0)
+        cond[cond_img_name] = th.tensor(shadow_diff_tmp).cuda()
+        
+        # if args.inverse_with_shadow_diff:
+        print("[#] Setting frame-0th with shadow_diff (Replacing frame-0th)...")
+        shadow_diff_tmp[0] = cond['shadow_diff_img'][src_idx]
+        cond[f'src_{cond_img_name}'] = th.tensor(shadow_diff_tmp[[0]]).cuda()
+        cond[f'dst_{cond_img_name}'] = th.tensor(shadow_diff_tmp[1:]).cuda()
+        return cond
+    
+    # Handling the render face: Output is ['light'] with [T, 27]
+    if np.any(['deca' in i for i in condition_img]) or np.any(['shadow_mask' in i for i in condition_img]) or np.any(['shadow_diff' in i for i in condition_img]):
+        # Render the face
+        if 'render_face' in args.interpolate:
+            #NOTE: Render w/ interpolated light (Mainly use this)
+            if args.spiral_sh:
+                print("[#] Spiral SH mode of src light...")
+                old_n_step = n_step
+                interp_cond, new_n_step = mani_utils.spiral_sh(cond, src_idx=src_idx, n_step=n_step, light_traj_path=args.light_traj_path)
+                n_step = new_n_step
+                misc['n_step'] = n_step # Revoking n_step
+                print(f"[#] Revoking the n_step: {old_n_step} -> {n_step}")
+            elif args.fancy_rotate_sh:
+                print("[#] Fancy Rotate SH mode of src light...")
+                old_n_step = n_step
+                interp_cond, new_n_step = mani_utils.fancy_rotate_sh(cond, src_idx=src_idx)
+                n_step = new_n_step
+                misc['n_step'] = n_step # Revoking n_step
+                print(f"[#] Revoking the n_step: {old_n_step} -> {n_step}")
+            elif args.rotate_sh:
+                print("[#] Rotate SH mode of src light...")
+                interp_cond = mani_utils.rotate_sh(cond, src_idx=src_idx, n_step=n_step, axis=args.rotate_sh_axis)
+            elif args.force_diffuse_sh:
+                print("[#] Diffuse SH mode of src light...")
+                interp_cond = mani_utils.diffuse_sh(cond, src_idx=src_idx, n_step=n_step, interpolate=args.itp_diffuse_sh)
+                interp_cond['light'][0:1] = cond['light'][src_idx]  # Always keep the first frame as src light
+            elif args.rotate_sh_dst:
+                print("[#] Rotate SH mode of dst light...")
+                interp_cond = mani_utils.rotate_sh(cond, src_idx=dst_idx, n_step=n_step, axis=args.rotate_sh_axis)
+                interp_cond['light'][0:1] = cond['light'][src_idx]  # Always keep the first frame as src light
+            elif args.sh_file is not None:
+                print("[#] Load SH mode from file: ", args.sh_file)
+                sh_from_file = np.load(args.sh_file, allow_pickle=True) # B x 9 x 3
+                interp_cond = {'light':sh_from_file.reshape(-1, 27)}    # B x 27
+                if args.rotate_sh_file:
+                    print("[#] Rotate SH (from file)...")
+                    interp_cond = mani_utils.rotate_sh(interp_cond, src_idx=0, n_step=n_step, axis=args.rotate_sh_axis)
+                # Apply rotate_sh_axis
+                interp_cond['light'][0:1] = cond['light'][src_idx]  # Always keep the first frame as src light
+            elif args.same_sh:
+                print("[#] Same SH mode of src light...")
+                interp_cond = {'light':cond['light'][src_idx].repeat(n_step, 1)}
+            else:
+                print("[#] Interpolating SH mode from src->dst light...")
+                interp_cond = mani_utils.iter_interp_cond(cond, interp_set=['light'], src_idx=src_idx, dst_idx=dst_idx, n_step=n_step, interp_fn=itp_func)
+            cond.update(interp_cond)
+        
+        elif 'render_face_hdr' in args.interpolate:
+            #NOTE: Render w/ HDR light
+            hdr_file = args.hdr
+            
+        else:
+            #NOTE: Render w/ same light
+            repeated_cond = mani_utils.repeat_cond_params(cond, base_idx=src_idx, n=n_step, key=['light'])
+            cond.update(repeated_cond)
+        
+        
+        if args.scale_sh:
+            print(f"[#] Scaling the SH with {args.scale_sh} on [1:n_step] (target light)...")
+            cond['light'][1:] = cond['light'][1:] * args.scale_sh
+            
+    # Handling the render face
+    if np.any(['deca' in i for i in condition_img]) or force_render:
+        start_t = time.time()
+        if np.any(['deca_masked' in n for n in condition_img]) or force_render:
+            mask = params_utils.load_flame_mask()
+        else: mask=None
+        
+        #NOTE: Render DECA in minibatch
+        # sub_step = mani_utils.ext_sub_step(n_step, batch_size)
+        print("[#] Total steps : ", n_step)
+        sub_step = mani_utils.ext_sub_step(n_step, render_batch_size)
+        load_deca_time = time.time() - start_t
+        all_render = []
+        render_time = []
+        all_shadow_mask = []
+        all_shadow_kk = []
+        all_render_ld = []
+        pure_render_deca_time = []
+        pure_render_shadow_time = []
+        
+        
+        """
+        #NOTE: Render DECA to get
+        # 1. deca_rendered under self light on [0:1, ...] # 2 x 3 x H x W
+        # 2. normal_images  # 2 x 3 x H x W
+        # 3. alpha_images   # 2 x 1 x H x W
+        # 4. albedo_images  # 2 x 3 x H x W
+        B = 2 because we render with n=2, all images are from src_idx
+        """
+
+        start_sub_render_deca_t = time.time()
+        deca_rendered, orig_visdict = params_utils.render_deca(deca_params=cond, 
+                                                            idx=src_idx, n=2, 
+                                                            avg_dict=avg_dict, 
+                                                            render_mode=args.render_mode, 
+                                                            rotate_normals=args.rotate_normals, 
+                                                            mask=mask,
+                                                            deca_obj=deca_obj,
+                                                            repeat=True, 
+                                                            )
+        sub_render_deca_t = time.time() - start_sub_render_deca_t
+        
+        deca_rendered, sh_coeffs = hdr_utils.render_with_hdr(hdr_file=args.hdr, 
+                                                             normal_images=orig_visdict['normal_images'], 
+                                                             alpha_images=orig_visdict['alpha_images'],
+                                                             albedo_images=orig_visdict['albedo_images'],
+                                                             n_step=n_step)
+        
+        for i in range(len(sub_step)-1):
+            print(f"[#] Sub step rendering : {sub_step[i]} to {sub_step[i+1]}")
+            start = sub_step[i]
+            end = sub_step[i+1]
+            sub_cond = cond.copy()
+            sub_cond['light'] = sub_cond['light'][start:end, :]
+            # Deca rendered : B x 3 x H x W
+            print("[#] Rendering with the shadow mask from face + scalp of render face...")
+            if i == 0:
+                load_deca_for_shadow_time = time.time()
+                flame_face_scalp = params_utils.load_flame_mask(['face', 'scalp', 'left_eyeball', 'right_eyeball'])
+                deca_obj_face_scalp = params_utils.init_deca(mask=flame_face_scalp, rasterize_type=args.rasterize_type) # Init DECA with mask only once
+                load_deca_for_shadow_time = time.time() - load_deca_for_shadow_time
+            if args.rotate_sh_axis == 0 and (args.rotate_sh or args.rotate_sh_dst):
+                print("[#] Fixing the axis 0 by negate ray[0]...")
+            elif args.rotate_sh_axis == 1 and (args.rotate_sh or args.rotate_sh_dst):
+                print("[#] Fixing the axis 1 by negate ray[1]...")
+            
+            # Render for each lighting
+            start_sub_render_shadow_t = time.time()
+            shadow_mask, shadow_kk, render_ld = params_utils.render_shadow_mask_with_smooth(
+                                            sh_light=sub_cond['light'], # B
+                                            cam=sub_cond['cam'][src_idx],   # [B=2, 3]
+                                            verts=orig_visdict['trans_verts_orig'], # [B=2, 5023, 3]; 
+                                            use_sh_to_ld_region=args.use_sh_to_ld_region,
+                                            deca={'face_scalp':deca_obj_face_scalp}, 
+                                            axis_0=args.rotate_sh_axis==0 and (args.rotate_sh or args.rotate_sh_dst),
+                                            axis_1=args.rotate_sh_axis==1 and (args.rotate_sh or args.rotate_sh_dst),
+                                            device='cpu',   # Prevent OOM
+                                            up_rate=args.up_rate_for_AA,
+                                            org_h=img_size, org_w=img_size,
+                                            rt_dict={'pt_round':args.pt_round, 'pt_radius':args.pt_radius, 'rt_regionG_scale':args.rt_regionG_scale, 'scale_depth':args.scale_depth}
+                                        )
+            sub_render_shadow_t = time.time() - start_sub_render_shadow_t
+            if i == len(sub_step)-2:
+                del deca_obj_face_scalp
+            all_render.append(deca_rendered)
+            render_time.append(time.time() - start_t)
+            pure_render_deca_time.append(sub_render_deca_t)
+            pure_render_shadow_time.append(sub_render_shadow_t)
+            
+            all_shadow_mask.append(shadow_mask[:, None, ...])
+            all_shadow_kk.append(shadow_kk[:, None, ...])
+            all_render_ld.append(render_ld)
+            
+        
+        if args.use_sh_to_ld_region:
+            all_render_ld = th.cat(all_render_ld, dim=0)
+            cond['render_ld'] = all_render_ld
+        else:
+            all_render_ld = None
+            cond['render_ld'] = None
+
+        render_time = np.mean(render_time) + load_deca_time
+        cond['render_time'] = render_time
+        cond['pure_render_deca_time'] = pure_render_deca_time
+        cond['pure_render_shadow_time'] = pure_render_shadow_time
+        cond['load_deca_time'] = load_deca_time
+        cond['load_deca_for_shadow_time'] = load_deca_for_shadow_time
+        print("Rendering time : ", time.time() - start_t)
+        
+        if args.fixed_render and (args.shadow_diff_inc_c or args.shadow_diff_dec_c or args.shadow_diff_blurmap):
+            print("[#] Fixed the Deca renderer for Reshadowing...")
+            print(all_render[0].shape) # List of  [B x 3 x H x W, ...]
+            ff = all_render[0][0:1]
+            fidx = int(args.shadow_diff_fidx_frac * n_step)
+            rf = all_render[0][fidx:fidx+1].repeat_interleave(repeats=n_step-1, dim=0)
+            deca_rendered = th.cat((ff, rf), dim=0)
+            print(deca_rendered.shape)
+        elif args.fixed_render:
+            print("[#] Fixed the Deca renderer")
+            print(all_render[0].shape) # List of  [B x 3 x H x W, ...]
+            deca_rendered = all_render[0][0:1].repeat_interleave(repeats=n_step, dim=0)
+            print(deca_rendered.shape)
+        else:
+            deca_rendered = th.cat(all_render, dim=0)
+            
+        if args.fixed_shadow:
+            print("[#] Fixed the Shadow mask")
+            print(all_shadow_mask[0].shape) # List of  [B x 1 x H x W, ...]
+            shadow_mask = all_shadow_mask[0][0:1].repeat_interleave(repeats=n_step, dim=0)
+            print(shadow_mask.shape)
+        else:
+            shadow_mask = th.cat(all_shadow_mask, dim=0)
+            shadow_kk = th.cat(all_shadow_kk, dim=0)
+        
+        
+        
+        
+    print("Conditoning with image : ", condition_img)
+    for i, cond_img_name in enumerate(condition_img):
+        if ('faceseg' in cond_img_name) or ('face_structure' in cond_img_name):
+            bg_tmp = [cond[f"{cond_img_name}_img"][src_idx]] * n_step
+            if th.is_tensor(cond[f"{cond_img_name}_img"][src_idx]):
+                bg_tmp = th.stack(bg_tmp, dim=0)
+            else:
+                bg_tmp = np.stack(bg_tmp, axis=0)
+            cond[f"src_{cond_img_name}"] = th.tensor(bg_tmp)
+            
+        elif ('deca' in cond_img_name):
+            cond, clip_ren = prep_render(cond, cond_img_name)
+        elif ('shadow_diff' in cond_img_name):
+            cond = prep_shadow(cond, cond_img_name)
+    
+    if force_render:
+        cond, clip_ren = prep_render(cond, 'deca_masked_face_images_woclip')
+    
+    return cond, clip_ren, misc
+
 
 def build_condition_image(cond, misc, force_render=False):
     src_idx = misc['src_idx']
@@ -833,7 +1129,6 @@ def shadow_diff_gradC_postproc(cond, misc, device='cuda'):
     cond['dst_shadow_diff_with_weight_simplified'] = x_dst
     return cond, misc
     
-
 def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
     # This function is used to post-process the shadow_diff mask when we inject shadow weight into shadow_diff
     condition_img = misc['condition_img']
@@ -1070,7 +1365,6 @@ def shadow_diff_with_weight_postproc(cond, misc, device='cuda'):
         print("[#] Shape of src_shadow_diff_with_weight_simplified: ", cond['src_shadow_diff_with_weight_simplified'].shape)
         print("[#] Shape of dst_shadow_diff_with_weight_simplified: ", cond['dst_shadow_diff_with_weight_simplified'].shape)
     return cond, {'src':weight_src, 'dst':weight_dst}
-
 
 def shadow_diff_final_postproc(cond, misc):
     # This function for post-processing the shadow_diff mask 
