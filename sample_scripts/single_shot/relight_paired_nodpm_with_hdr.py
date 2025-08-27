@@ -306,7 +306,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
                 }
 
     if ('render_face' in args.itp) or ('render_face_hdr' in args.itp) or args.force_render:
-        return relit_out, cond['cond_img'], out_timing, {'render_ld':cond['render_ld']}
+        return relit_out, cond['cond_img'], out_timing, {'render_ld':cond['render_ld'], 'hdr_frames':misc_rvk.get('hdr_frames', None), 'Lmax':misc_rvk.get('Lmax', None)}
     else:
         return relit_out, None, out_timing, None
 
@@ -549,11 +549,15 @@ if __name__ == '__main__':
         runtime_dict['sub_load_deca_time'].append(time_dict['load_deca_time'])
         
         #NOTE: Save result
-        out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
+        hdr_filename = os.path.basename(args.hdr).split('.')[0]
+        out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/{hdr_filename}/"
         os.makedirs(out_dir_relit, exist_ok=True)
         save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
         os.makedirs(save_res_dir, exist_ok=True)
 
+        if misc_dict.get('hdr_frames') is not None:
+            Lmax = misc_dict['Lmax']
+            torchvision.io.write_video(filename=f"/{save_res_dir}/out_{hdr_filename}_{args.rotate_sh_axis}_Lmax{Lmax}.mp4", video_array=th.tensor(misc_dict['hdr_frames']), fps=24)
 
         if misc_dict['render_ld'] is not None and args.use_sh_to_ld_region:
             misc_dict['render_ld'] = misc_dict['render_ld'].permute(0, 3, 1, 2)

@@ -46,46 +46,43 @@ postfix = args.postfix
 if postfix != '':
     postfix = '_' + postfix
     
-use_shading = ['', '--use_shading_grey'] if args.use_shading_grey else ['']
-
 for ckpt in args.ckpt_step:
     for dataset in args.dataset:
         for sample_pair_json in args.sample_pair_json:
             for hdr in args.hdr_dir:
                 for scale_depth in args.scale_depth:
                     for rotate_sh_axis in args.rotate_sh_axis:
-                        for shading in use_shading:
-                            for c in args.c_list:
-                                print("#"*100)
-                                print(f'[#] Running checkpoint {ckpt}...')
-                                print(f'[#] Dataset: {dataset}')
-                                print(f'[#] Sample pair json: {sample_pair_json}')
-                                print(f'[#] HDR file: {hdr}')
-                                print(f'[#] Scale depth: {scale_depth}')
-                                print(f"[#] Use shading: {'sColor' if shading == '' else 'sGrey'}")
-                                print(f"[#] Rotate sh: {rotate_sh_axis}")
-                                print(f"[#] Relight with given C: {c}")
-                                print("#"*100)
-                                cmd = (
-                                    f"""
-                                    python relight_paired_nodpm_with_hdr.py --ckpt_selector {args.ckpt_type} --dataset {dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
-                                    --cfg_name {args.cfg_name} --log_dir {args.model_dir} \
-                                    --seed 47 \
-                                    --sample_pair_json {sample_pair_json} --sample_pair_mode pair \
-                                    --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
-                                    --shadow_diff_dir /data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/ \
-                                    --scale_depth {scale_depth} --pt_round 1 --postproc_shadow_mask_smooth --save_vid --render_batch_size 60 \
-                                    --rotate_sh --rotate_sh_axis {rotate_sh_axis} --inverse_with_shadow_diff --rasterize_type {args.rasterize_type}\
-                                    --hdr {hdr} \
-                                    """
-                                    )
-                                if args.force_render: cmd += ' --force_render'
-                                if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
-                                if postfix != '': cmd += f" --postfix SD{scale_depth}_{postfix}_{'sColor' if shading == '' else 'sGrey'}_rAxis{rotate_sh_axis}"
-                                else: cmd += f" --postfix SD{scale_depth}_{c}C_{'sColor' if shading == '' else 'sGrey'}_rAxis{rotate_sh_axis}"
-                                if shading != '': cmd += f' --use_shading_grey'
-                                if c == '1.0': cmd += f' --relight_with_strongest_c'
-                                else: cmd += f' --relight_with_given_c {c}'
-                                print(cmd)
-                                os.system(cmd)
-                                print("#"*100)
+                        for c in args.c_list:
+                            print("#"*100)
+                            print(f'[#] Running checkpoint {ckpt}...')
+                            print(f'[#] Dataset: {dataset}')
+                            print(f'[#] Sample pair json: {sample_pair_json}')
+                            print(f'[#] HDR file: {hdr}')
+                            print(f'[#] Scale depth: {scale_depth}')
+                            print(f"[#] Use shading: {'sColor' if not args.use_shading_grey else 'sGrey'}")
+                            print(f"[#] Rotate sh: {rotate_sh_axis}")
+                            print(f"[#] Relight with given C: {c}")
+                            print("#"*100)
+                            cmd = (
+                                f"""
+                                python relight_paired_nodpm_with_hdr.py --ckpt_selector {args.ckpt_type} --dataset {dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
+                                --cfg_name {args.cfg_name} --log_dir {args.model_dir} \
+                                --seed 47 \
+                                --sample_pair_json {sample_pair_json} --sample_pair_mode pair \
+                                --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
+                                --shadow_diff_dir /data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/ \
+                                --scale_depth {scale_depth} --pt_round 1 --postproc_shadow_mask_smooth --save_vid --render_batch_size 60 \
+                                --rotate_sh --rotate_sh_axis {rotate_sh_axis} --inverse_with_shadow_diff --rasterize_type {args.rasterize_type}\
+                                --hdr {hdr} \
+                                """
+                                )
+                            if args.force_render: cmd += ' --force_render'
+                            if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
+                            if postfix != '': cmd += f" --postfix SD{scale_depth}_{postfix}_{'sColor' if args.use_shading_grey == '' else 'sGrey'}_rAxis{rotate_sh_axis}"
+                            else: cmd += f" --postfix SD{scale_depth}_{c}C_{'sColor' if not args.use_shading_grey else 'sGrey'}_rAxis{rotate_sh_axis}"
+                            if args.use_shading_grey: cmd += f' --use_shading_grey'
+                            if c == '1.0': cmd += f' --relight_with_strongest_c'
+                            else: cmd += f' --relight_with_given_c {c}'
+                            print(cmd)
+                            os.system(cmd)
+                            print("#"*100)

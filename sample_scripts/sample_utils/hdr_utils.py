@@ -142,7 +142,7 @@ def run_parallel(hdr_image, n_step, rotate_axis, face, Lmax):
     shift_values = np.linspace(0, 360, n_step).astype(int)
     ctx = mp.get_context("spawn")
     with ctx.Pool(mp.cpu_count(), initializer=_init_shared, initargs=(hdr_image,)) as pool:
-        return pool.starmap(_worker, [(i, rotate_axis, face, Lmax) for i in shift_values], chunksize=1)
+        return pool.starmap(_worker, [(i, rotate_axis, face, Lmax) for i in shift_values], chunksize=4)
 
 def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step, Lmax=2, rotate_axis='azimuth'):
     """
@@ -187,9 +187,8 @@ def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step
     out_pp = postproc(out)
     frames, hdr_image, hdr_image_rot, normal_map_org, normal_map, shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff = out_pp
     frames = (frames.clip(0, 1) * 255).astype(np.uint8)
-    torchvision.io.write_video(filename=f"./out_{os.path.basename(hdr_file).split('.')[0]}_{rotate_axis}_Lmax{Lmax}.mp4", video_array=th.tensor(frames), fps=24)
 
-    return shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff
+    return frames, shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff
 
     
 

@@ -508,8 +508,8 @@ def build_condition_image_hdr(cond, misc, force_render=False):
         
         rotate_axis = 'azimuth' if args.rotate_sh_axis == 2 else ('roll' if args.rotate_sh_axis == 1 else 'elevation')
         print(f"[#] Render shading reference with HDR on {rotate_axis} axis.")
-        
-        shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff = hdr_utils.render_with_hdr(hdr_file=args.hdr, 
+        Lmax = 2
+        hdr_frames, shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff = hdr_utils.render_with_hdr(hdr_file=args.hdr, 
                                                                                              normal_images=orig_visdict['normal_images'], 
                                                                                              alpha_images=orig_visdict['alpha_images'],
                                                                                              albedo_images=orig_visdict['albedo_images'],
@@ -639,7 +639,9 @@ def build_condition_image_hdr(cond, misc, force_render=False):
     
     if force_render:
         cond, clip_ren = prep_render(cond, 'deca_masked_face_images_woclip')
-    
+
+    misc['hdr_frames'] = hdr_frames
+    misc['Lmax'] = 2
     return cond, clip_ren, misc
 
 
