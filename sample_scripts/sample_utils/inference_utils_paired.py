@@ -485,7 +485,6 @@ def build_condition_image_hdr(cond, misc, force_render=False):
         pure_render_deca_time = []
         pure_render_shadow_time = []
         
-        
         """
         #NOTE: Render DECA to get
         # 1. deca_rendered under self light on [0:1, ...] # 2 x 3 x H x W
@@ -507,13 +506,31 @@ def build_condition_image_hdr(cond, misc, force_render=False):
                                                             )
         sub_render_deca_t = time.time() - start_sub_render_deca_t
         
-        print("[#] Render shading reference with HDR.")
-        hdr_utils.render_with_hdr(hdr_file=args.hdr, 
-                                                             normal_images=orig_visdict['normal_images'], 
-                                                             alpha_images=orig_visdict['alpha_images'],
-                                                             albedo_images=orig_visdict['albedo_images'],
-                                                             n_step=n_step)
+        rotate_axis = 'azimuth' if args.rotate_sh_axis == 2 else ('roll' if args.rotate_sh_axis == 1 else 'elevation')
+        print(f"[#] Render shading reference with HDR on {rotate_axis} axis.")
+        
+        shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff = hdr_utils.render_with_hdr(hdr_file=args.hdr, 
+                                                                                             normal_images=orig_visdict['normal_images'], 
+                                                                                             alpha_images=orig_visdict['alpha_images'],
+                                                                                             albedo_images=orig_visdict['albedo_images'],
+                                                                                             n_step=n_step-1, 
+                                                                                             rotate_axis=rotate_axis)
+        if args.use_shading_grey:
+            print("[#] Using grey-scale shading...")
+            shading_grey = th.tensor(shading_grey).to(deca_rendered.device)
+            shading_grey = shading_grey.permute(0, 3, 1, 2)
+            deca_rendered = th.cat([deca_rendered[0:1], shading_grey], dim=0)
+        else:
+            print("[#] Using color shading...")
+            shading = th.tensor(shading).to(deca_rendered.device)
+            shading = shading.permute(0, 3, 1, 2)
+            deca_rendered = th.cat([deca_rendered[0:1], shading], dim=0)
+        
         print("[#] Done.")
+        sh_light = th.tensor(all_sh.transpose(0, 2, 1)).to(cond['light'].device)
+        sh_light = sh_light.reshape(n_step-1, 27)
+        src_light = cond['light'][0:1].clone()
+        cond['light'] = th.cat([src_light, sh_light], dim=0)
         
         for i in range(len(sub_step)-1):
             print(f"[#] Sub step rendering : {sub_step[i]} to {sub_step[i+1]}")
@@ -535,7 +552,7 @@ def build_condition_image_hdr(cond, misc, force_render=False):
             
             # Render for each lighting
             start_sub_render_shadow_t = time.time()
-            shadow_mask, shadow_kk, render_ld = params_utils.render_shadow_mask_with_smooth(
+            shadow_mask, shadow_kk, render_ld = params_utils.render_shadow_mask_with_smooth_hdr(
                                             sh_light=sub_cond['light'], # B
                                             cam=sub_cond['cam'][src_idx],   # [B=2, 3]
                                             verts=orig_visdict['trans_verts_orig'], # [B=2, 5023, 3]; 
@@ -543,6 +560,7 @@ def build_condition_image_hdr(cond, misc, force_render=False):
                                             deca={'face_scalp':deca_obj_face_scalp}, 
                                             axis_0=args.rotate_sh_axis==0 and (args.rotate_sh or args.rotate_sh_dst),
                                             axis_1=args.rotate_sh_axis==1 and (args.rotate_sh or args.rotate_sh_dst),
+                                            hdr=True,
                                             device='cpu',   # Prevent OOM
                                             up_rate=args.up_rate_for_AA,
                                             org_h=img_size, org_w=img_size,

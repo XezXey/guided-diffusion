@@ -105,6 +105,7 @@ parser.add_argument('--use_no_aliasing', action='store_true', default=False)
 
 # HDR
 parser.add_argument('--hdr', type=str, required=True)
+parser.add_argument('--use_shading_grey', action='store_true', default=False)
 
 
 args = parser.parse_args()
@@ -198,6 +199,9 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
     if 'render_face' in args.itp:
         interp_set = args.itp.copy()
         interp_set.remove('render_face')
+    elif 'render_face_hdr' in args.itp:
+        interp_set = args.itp.copy()
+        interp_set.remove('render_face_hdr')
     elif 'light' in args.itp:
         interp_set = args.itp.copy()
         interp_set.remove('light')
@@ -300,8 +304,8 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
                   'load_deca_time':cond['load_deca_time'] if 'load_deca_time' in cond else 0,
                   'load_deca_for_shadow_time':cond['load_deca_for_shadow_time'] if 'load_deca_for_shadow_time' in cond else 0,
                 }
-    
-    if ('render_face' in args.itp) or args.force_render:
+
+    if ('render_face' in args.itp) or ('render_face_hdr' in args.itp) or args.force_render:
         return relit_out, cond['cond_img'], out_timing, {'render_ld':cond['render_ld']}
     else:
         return relit_out, None, out_timing, None

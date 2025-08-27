@@ -50,8 +50,8 @@ def render(hdr_image, face, Lmax):
         shading = shading * face['albedo']
 
     shading = np.float32(shading)
-    
-    return ((normal_map_org + 1) * 0.5), ((normal_map + 1) * 0.5), shading, mask
+
+    return ((normal_map_org + 1) * 0.5), ((normal_map + 1) * 0.5), shading, mask, coeff, sh, unfolded
 
 def generate_frame(hdr_image, i, axis, face, Lmax):
     # hdr_image_roll = np.roll(hdr_image.copy(), shift=-i, axis=1)
@@ -63,9 +63,9 @@ def generate_frame(hdr_image, i, axis, face, Lmax):
     e = EnvironmentMap(hdr_image, 'latlong')
     e_rot = e.copy().rotate(dcm)
     hdr_image_rot = e_rot.data    # np.array of shape [H, W, 3], min: 0, max: 1
-    normal_map_org, normal_map, shading, mask = render(hdr_image_rot, face, Lmax)
-     
-    return hdr_image, hdr_image_rot, normal_map_org, normal_map, shading, mask
+    normal_map_org, normal_map, shading, mask, coeff_sh, sh, unfolded_sh = render(hdr_image_rot, face, Lmax)
+
+    return hdr_image, hdr_image_rot, normal_map_org, normal_map, shading, mask, coeff_sh, sh, unfolded_sh
 
 def postproc(frames):
     hdr_image = []
@@ -74,21 +74,30 @@ def postproc(frames):
     normal_map = []
     shading = []
     mask = []
+    coeff_sh = []
+    all_sh = []
+    unfold_sh_coeff = []
     for i in range(len(frames)):
-        hdr, hdr_rot, nmo, nm, sh, ma = frames[i]
+        hdr, hdr_rot, nmo, nm, shd, ma, c_sh, sh, u_sh = frames[i]
         hdr_image.append(hdr)
         hdr_image_rot.append(hdr_rot)
         normal_map_org.append(nmo)
         normal_map.append(nm)
-        shading.append(sh)
+        shading.append(shd)
         mask.append(ma)
+        coeff_sh.append(c_sh)
+        all_sh.append(sh)
+        unfold_sh_coeff.append(u_sh)
      
     hdr_image = np.stack(hdr_image)
     hdr_image_rot = np.stack(hdr_image_rot)
     normal_map_org = np.stack(normal_map_org)
     normal_map = np.stack(normal_map)
     shading = np.stack(shading)
-    mask = np.stack(mask)   
+    mask = np.stack(mask)
+    coeff_sh = np.stack(coeff_sh)
+    all_sh = np.stack(all_sh)
+    unfold_sh_coeff = np.stack(unfold_sh_coeff)
     
     normal_map_org *= mask
     normal_map *= mask
@@ -118,8 +127,7 @@ def postproc(frames):
     frames = np.concatenate((hdr_image, hdr_image_rot, 
                         np.concatenate((normal_map_org, normal_map, shading, shading_grey), axis=2)), axis=1)
     
-    return frames
-    # return frames, hdr_image, hdr_image_rot, normal_map_org, normal_map, shading, shading_grey
+    return frames, hdr_image, hdr_image_rot, normal_map_org, normal_map, shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff
     
 _HDR = None
 def _init_shared(hdr_image):
@@ -134,7 +142,7 @@ def run_parallel(hdr_image, n_step, rotate_axis, face, Lmax):
     shift_values = np.linspace(0, 360, n_step).astype(int)
     ctx = mp.get_context("spawn")
     with ctx.Pool(mp.cpu_count(), initializer=_init_shared, initargs=(hdr_image,)) as pool:
-        return pool.starmap(_worker, [(i, rotate_axis, face, Lmax) for i in shift_values], chunksize=4)
+        return pool.starmap(_worker, [(i, rotate_axis, face, Lmax) for i in shift_values], chunksize=1)
 
 def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step, Lmax=2, rotate_axis='azimuth'):
     """
@@ -169,28 +177,19 @@ def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step
     hdr_image = skimage.io.imread(hdr_file)
     hdr_image = skimage.img_as_float(hdr_image)
     
-    
-    
-    # import multiprocessing as mp
-    # with mp.Pool(processes=mp.cpu_count()) as pool:
-    #     # 'pool.imap' applies the 'generate_frame' function to each item in 'shift_values'.
-    #     # It's used here instead of 'pool.map' because it works better with tqdm's progress bar.
-    #     # The list() wrapper collects all the results.
-    #     shift_values = np.linspace(0, 360, n_step).astype(int)
-    #     frames = pool.starmap(generate_frame, [(hdr_image, i, rotate_axis, face, Lmax) for i in shift_values])
     start_t = time.time()
-    frames = run_parallel(hdr_image, n_step, rotate_axis, face, Lmax)
+    out = run_parallel(hdr_image, n_step, rotate_axis, face, Lmax)
+    # out = []
+    # for i in tqdm.tqdm(np.linspace(0, 360, n_step).astype(int)):
+    #     out.append(generate_frame(hdr_image, i, rotate_axis, face, Lmax))
     end_t = time.time()
     print("[#] HDR Rendered (n_step={}) in {:.2f} seconds.".format(n_step, end_t - start_t))
-    # frames = []
-    # for i in tqdm.tqdm(np.linspace(0, 360, n_step).astype(int)):
-    #     frames.append(generate_frame(hdr_image, i, rotate_axis, face, Lmax))
-    
-    print("[#] Done after multiprocess.")
-    frames = (postproc(frames).clip(0, 1) * 255).astype(np.uint8)
-    print(frames.shape)
-    # frames = (np.stack(frames).clip(0, 1) * 255).astype(int)
+    out_pp = postproc(out)
+    frames, hdr_image, hdr_image_rot, normal_map_org, normal_map, shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff = out_pp
+    frames = (frames.clip(0, 1) * 255).astype(np.uint8)
     torchvision.io.write_video(filename=f"./out_{os.path.basename(hdr_file).split('.')[0]}_{rotate_axis}_Lmax{Lmax}.mp4", video_array=th.tensor(frames), fps=24)
+
+    return shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff
 
     
 
