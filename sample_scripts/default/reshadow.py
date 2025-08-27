@@ -336,6 +336,15 @@ if __name__ == '__main__':
         cfg.dataset.training_data = 'Hard_CS'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/images_aligned/'
         cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
+    elif args.dataset == 'myset':
+        cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
+        img_dataset_path = f"/data/mint/DPM_Dataset/myset/images_aligned/"
+        deca_dataset_path = f"/data/mint/DPM_Dataset/myset/params/"
+        img_ext = '.png'
+        cfg.dataset.training_data = 'myset'
+        cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/images_aligned/'
+        cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
+        force_jpg_key = False
     elif args.dataset == 'ffhq':
         cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
         img_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
@@ -381,7 +390,8 @@ if __name__ == '__main__':
         set_=args.set,
         cfg=cfg,
         img_ext=img_ext,
-        mode='sampling'
+        mode='sampling',
+        force_jpg_key=force_jpg_key
     )
     
     data_size = dataset.__len__()

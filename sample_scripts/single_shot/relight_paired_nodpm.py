@@ -54,7 +54,8 @@ parser.add_argument('--diffusion_steps', type=int, default=1000)
 parser.add_argument('--smooth_SD_to_SM', action='store_true', default=False)
 parser.add_argument('--up_rate_for_AA', type=int, default=1)
 parser.add_argument('--pt_radius', type=float, default=0.2)
-parser.add_argument('--pt_round', type=int, default=30)
+# parser.add_argument('--pt_round', type=int, default=30)
+parser.add_argument('--pt_round', type=int, default=1)
 # parser.add_argument('--scale_depth', type=float, default=100.0)
 parser.add_argument('--scale_depth', type=float, default=256.0)
 parser.add_argument('--postproc_shadow_mask_smooth', action='store_true', default=False)
@@ -363,6 +364,15 @@ if __name__ == '__main__':
         cfg.dataset.training_data = 'Hard_CS'
         cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/images_aligned/'
         cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
+    elif args.dataset == 'myset':
+        cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
+        img_dataset_path = f"/data/mint/DPM_Dataset/myset/images_aligned/"
+        deca_dataset_path = f"/data/mint/DPM_Dataset/myset/params/"
+        img_ext = '.png'
+        cfg.dataset.training_data = 'myset'
+        cfg.dataset.data_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/images_aligned/'
+        cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment_with_pupil/"
+        force_jpg_key = False
     elif args.dataset == 'ffhq':
         cfg.dataset.root_path = f'/data/mint/DPM_Dataset/'
         deca_dataset_path = f"/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
