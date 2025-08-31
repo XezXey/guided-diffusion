@@ -362,6 +362,7 @@ class TrainLoop(LightningModule):
         cond['cond_img'] = construct_cond_tensor(pair_cfg=zip(self.cfg.img_cond_model.in_image, 
                                                                 self.cfg.img_cond_model.noise_dpm_cond_img),
                                                     cond=cond)
+        
             
         return cond
     
@@ -373,23 +374,12 @@ class TrainLoop(LightningModule):
         :param model_kwargs: model_kwargs dict
         """
         
-        if self.cfg.img_model.apply_dpm_cond_img:
-            dpm_cond_img = []
-            for k, p in zip(self.cfg.img_model.dpm_cond_img, self.cfg.img_model.noise_dpm_cond_img):
-                tmp_img = cond[f'{k}_img']
-                dpm_cond_img.append(tmp_img)
-            cond['dpm_cond_img'] = th.cat((dpm_cond_img), dim=1)
-        else:
-            cond['dpm_cond_img'] = None
-            
-        if self.cfg.img_cond_model.apply:
-            cond_img = []
-            for k, p in zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.noise_dpm_cond_img):
-                tmp_img = cond[f'{k}_img']
-                cond_img.append(tmp_img)
-            cond['cond_img'] = th.cat((cond_img), dim=1)
-        else:
-            cond['cond_img'] = None
+        cond_img = []
+        for k, p in zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.noise_dpm_cond_img):
+            tmp_img = cond[f'{k}_img']
+            cond_img.append(tmp_img)
+        cond['cond_img'] = th.cat((cond_img), dim=1)
+        cond['dpm_cond_img'] = None
             
         return cond
 

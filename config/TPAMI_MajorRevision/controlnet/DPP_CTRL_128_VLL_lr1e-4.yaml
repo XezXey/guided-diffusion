@@ -44,7 +44,7 @@ train:
   sampling_interval: 100000
   save_interval: 50000
   use_prep_data: False
-  lr: 1e-5
+  lr: 1e-4
 
 dataset:
   deca_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
@@ -55,4 +55,4 @@ dataset:
 
 train_misc:
   exp_name: "ControlNet"
-  cfg_name: "DPP_CTRL_128_VLL"
+  cfg_name: "DPP_CTRL_128_VLL_lr1e-4"
