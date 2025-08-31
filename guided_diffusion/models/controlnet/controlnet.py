@@ -18,15 +18,19 @@ from .openaimodel import UNetModel, TimestepEmbedSequential, ResBlock, Downsampl
 
 class ControlledUnetModel(UNetModel):
     def forward(self, x, timesteps=None, context=None, control=None, only_mid_control=False, **kwargs):
+        context = kwargs['kwargs']['cond_params'].type_as(x)
+        if context is not None:
+            if len(context.shape) == 2:
+                context = context[:, None, :]
         hs = []
-        with torch.no_grad():
-            t_emb = timestep_embedding(timesteps, self.model_channels, repeat_only=False)
-            emb = self.time_embed(t_emb)
-            h = x.type(self.dtype)
-            for module in self.input_blocks:
-                h = module(h, emb, context)
-                hs.append(h)
-            h = self.middle_block(h, emb, context)
+        # with torch.no_grad():
+        t_emb = timestep_embedding(timesteps, self.model_channels, repeat_only=False)
+        emb = self.time_embed(t_emb)
+        h = x.type(self.dtype)
+        for module in self.input_blocks:
+            h = module(h, emb, context)
+            hs.append(h)
+        h = self.middle_block(h, emb, context)
 
         if control is not None:
             h += control.pop()
@@ -39,7 +43,7 @@ class ControlledUnetModel(UNetModel):
             h = module(h, emb, context)
 
         h = h.type(x.dtype)
-        return self.out(h)
+        return {'output':self.out(h)}
 
 class ControlNet(nn.Module):
     def __init__(
@@ -316,6 +320,6 @@ class ControlNetWrapper(nn.Module):
     # def forward(self, x, hint, timesteps=None, context=None, only_mid_control=False, **kwargs):
     def forward(self, x, timesteps, only_mid_control=False, **kwargs):
         control = self.controlnet(x, timesteps, kwargs=kwargs)
-        out = self.unet(x, timesteps, context, control=control, only_mid_control=only_mid_control)
+        out = self.unet(x, timesteps, control=control, only_mid_control=only_mid_control, kwargs=kwargs)
         return out
 
