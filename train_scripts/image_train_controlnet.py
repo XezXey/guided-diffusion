@@ -7,13 +7,13 @@ import pytorch_lightning as pl
 from guided_diffusion import logger
 from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 from config.base_config import parse_args
-from guided_diffusion.dataloader.ldm_datasets import load_data_img_deca
+from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
 from guided_diffusion.resample import create_named_schedule_sampler
 from guided_diffusion.script_util import (
     create_img_and_diffusion,
     seed_all,
 )
-from guided_diffusion.train_util.ldm_train_util import TrainLoop
+from guided_diffusion.train_util.controlnet_train_util import TrainLoop
 
 def main():
     cfg = parse_args()
@@ -25,9 +25,26 @@ def main():
     img_model, diffusion = create_img_and_diffusion(cfg)
     print(img_model)
     # Filtered out the None model
+    for k, v in img_model.items():
+        if v is None:
+            print(f"[#] Model {k} is None")
+        elif type(v) == tuple:
+            assert len(v) == 1
+            img_model[k] = v[0]
+        else:
+            img_model[k] = v
+    
+    
+    if cfg.train.use_prep_data:
+        print("[#] Using preprocessed data, Using lib: img_deca_datasets_preprocessed.py")
+        from guided_diffusion.dataloader.img_deca_datasets_preprocessed import load_data_img_deca
+    else:
+        print("[#] Using raw data, Using lib: img_deca_datasets.py")
+        from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
+        
+            
     img_model = {k: v for k, v in img_model.items() if v is not None}
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
-
     logger.log("[#] Creating data loader...")
     train_loader, _, _ = load_data_img_deca(
         data_dir=cfg.dataset.data_dir,
@@ -40,7 +57,8 @@ def main():
         in_image_UNet=cfg.img_model.in_image,
         params_selector=cfg.param_model.params_selector,
         rmv_params=cfg.param_model.rmv_params,
-        set_='train', # For fast debgugging
+        set_='valid', # For fast debgugging
+        force_jpg_key=False,
         cfg=cfg,
     )
 

@@ -22,8 +22,8 @@ from ..trainer_util import Trainer
 from ..models.nn import update_ema
 from ..resample import LossAwareSampler, UniformSampler
 from ..script_util import seed_all, compare_models, dump_model_params
+from ..dataloader.img_util import make_vis_condimg
 from ..recolor_util import convert2rgb
-from ..distributions import DiagonalGaussianDistribution
 
 import torch.nn as nn
 
@@ -71,7 +71,7 @@ class TrainLoop(LightningModule):
             accumulate_grad_batches=cfg.train.accumulate_grad_batches, 
             logger=self.t_logger,
             log_every_n_steps=self.cfg.train.log_interval,
-            max_epochs=1e6,
+            max_epochs=int(1e6),
             accelerator=cfg.train.accelerator,
             profiler='simple',
             strategy=DDPStrategy(find_unused_parameters=self.cfg.train.find_unused_parameters),
@@ -111,7 +111,6 @@ class TrainLoop(LightningModule):
         self.lr_anneal_steps = self.cfg.train.lr_anneal_steps
         self.name = name
         self.input_bound = self.cfg.img_model.input_bound
-        self.scale_factor = 1.0184533596038818
 
         self.step = 0
         self.resume_step = 0
@@ -168,7 +167,7 @@ class TrainLoop(LightningModule):
         '''
         found_resume_opt = find_resume_checkpoint(self.resume_checkpoint, k="opt", model_name=['opt'])
         if found_resume_opt:
-            opt_path = found_resume_opt['opt_opt']
+            opt_path =found_resume_opt['opt_opt']
             print(f"Loading optimizer state from checkpoint: {opt_path}")
             self.opt.load_state_dict(
                 th.load(opt_path, map_location='cpu'),
@@ -182,8 +181,8 @@ class TrainLoop(LightningModule):
             print(f"Loading EMA from checkpoint: {ckpt_path}...")
             state_dict = th.load(ckpt_path, map_location='cpu')
             ema_params = self.model_trainer_dict[name].state_dict_to_master_params(state_dict)
-            return ema_params
-        else: raise FileNotFoundError(f"[#] Checkpoint not found on {self.resume_checkpoint}")
+
+        return ema_params
 
     def run(self):
         # Driven code
@@ -210,26 +209,6 @@ class TrainLoop(LightningModule):
         self.step += 1
     
     @rank_zero_only
-    @th.no_grad()
-    def on_train_batch_start(self, batch, batch_idx):
-        if self.global_step == 0 and self.current_epoch == 0 and batch_idx == 0 and self.scale_factor is None:
-            print("### USING STD-RESCALING ###")
-            print("[#] Calculate the scaling factor using very first batch of data")
-            z = batch[0]
-            ldm_encoder_name = [k for k in batch[1].keys() if 'ldm' in k][0]
-            assert th.allclose(input=z, other=batch[1][ldm_encoder_name])
-            self.scale_factor = 1. / z.flatten().std()
-            self.register_buffer("scale_factor", th.tensor(self.scale_factor))
-            print(f"[#] Setting self.scale_factor to {self.scale_factor}")
-            print("### USING STD-RESCALING ###")
-            filename = f"scale_factor_{self.scale_factor:.4f}.pt"
-            with bf.BlobFile(bf.join(get_blob_logdir(), filename), "wb") as f:
-                th.save(self.scale_factor.double(), f)
-                
-            del self.scale_factor
-    
-    
-    @rank_zero_only
     def on_train_batch_end(self, outputs, batch, batch_idx):
         '''
         callbacks every training step ends
@@ -254,10 +233,9 @@ class TrainLoop(LightningModule):
     def log_rank_zero(self, batch):
         if self.step % self.log_interval == 0:
             self.log_step()
-        #NOTE: Ignore the sampling since we need the decoder from AutoencoderKL or VQGAN to see the images
-        # if (self.step % self.sampling_interval == 0) or (self.resume_step!=0 and self.step==1):
-        #     self.log_sampling(batch, sampling_model='ema')
-        #     self.log_sampling(batch, sampling_model='model')
+        if (self.step % self.sampling_interval == 0) or (self.resume_step!=0 and self.step==1) :
+            self.log_sampling(batch, sampling_model='ema')
+            self.log_sampling(batch, sampling_model='model')
     
     def zero_grad_trainer(self):
         for name in self.model_trainer_dict.keys():
@@ -277,10 +255,17 @@ class TrainLoop(LightningModule):
             
         if self.cfg.img_cond_model.apply:
             dat = cond['cond_img']
-            img_cond = model_dict[self.cfg.img_cond_model.name](
-                x=dat.float(), 
-                emb=None,
-            )
+            if self.cfg.img_cond_model.arch == 'ControlNet':
+                img_cond = model_dict[self.cfg.img_cond_model.name](
+                    
+                )
+            elif self.cfg.img_cond_model.arch == 'EncoderUNet_SpatialCondition':
+                img_cond = model_dict[self.cfg.img_cond_model.name](
+                    x=dat.float(), 
+                    emb=None,
+                )
+            else:
+                raise NotImplementedError(f"[#] Not available {self.cfg.img_cond_model.arch}.")
             # Override the condition and re-create cond_params
             if self.cfg.img_cond_model.override_cond != "":
                 cond[self.cfg.img_cond_model.override_cond] = img_cond
@@ -292,40 +277,24 @@ class TrainLoop(LightningModule):
             else: raise NotImplementedError
         return cond
 
-    def rescale_latent(self, encoder_posterior):
-        #NOTE: Rescale latent from first stage (e.g. AutoencoderKL, VQGAN, etc.)
-        assert self.scale_factor is not None
-        assert len(self.cfg.img_model.in_image) == 1
-        if 'kl' in self.cfg.img_model.in_image[0]:
-            #NOTE: AutoencoderKL
-            # print("SAMPLE SHAPE:", encoder_posterior.shape)
-            z = DiagonalGaussianDistribution(encoder_posterior).sample()
-            # print("SAMPLE SHAPE:", z.shape)
-        elif 'vq' in self.cfg.img_model.in_image[0]:
-            #NOTE: VQGAN
-            z = encoder_posterior
-        else:
-            raise NotImplementedError(f"encoder_posterior of type '{type(encoder_posterior)}' not yet implemented")
-        return z * self.scale_factor
 
     def forward_backward(self, batch, cond):
         cond = {
             k: v
             for k, v in cond.items()
         }
-        batch = self.rescale_latent(encoder_posterior=batch)
 
         t, weights = self.schedule_sampler.sample(batch.shape[0], self.device)
         noise = th.randn_like(batch)
         
         #NOTE: Prepare condition : Utilize the same schedule from DPM, Add background or any condition.
+        cond['no_preserved_cond'] = True
         cond = self.prepare_cond_train(dat=batch, cond=cond, t=t, noise=noise)
-        
         cond = self.forward_cond_network(cond)
         
         # Losses
         model_compute_losses = functools.partial(
-            self.diffusion.training_losses,
+            self.diffusion.training_losses_controlnet,
             self.model_dict[self.cfg.img_model.name],
             batch,
             t,
@@ -389,19 +358,10 @@ class TrainLoop(LightningModule):
 
             return th.cat((cond_img), dim=1)
         
-        if self.cfg.img_model.apply_dpm_cond_img:
-            cond['dpm_cond_img'] = construct_cond_tensor(pair_cfg=zip(self.cfg.img_model.dpm_cond_img, 
-                                                                      self.cfg.img_model.noise_dpm_cond_img),
-                                                         cond=cond)
-        else:
-            cond['dpm_cond_img'] = None
-            
-        if self.cfg.img_cond_model.apply:
-            cond['cond_img'] = construct_cond_tensor(pair_cfg=zip(self.cfg.img_cond_model.in_image, 
-                                                                  self.cfg.img_cond_model.noise_dpm_cond_img),
-                                                     cond=cond)
-        else:
-            cond['cond_img'] = None
+        cond['dpm_cond_img'] = None
+        cond['cond_img'] = construct_cond_tensor(pair_cfg=zip(self.cfg.img_cond_model.in_image, 
+                                                                self.cfg.img_cond_model.noise_dpm_cond_img),
+                                                    cond=cond)
             
         return cond
     
@@ -521,49 +481,42 @@ class TrainLoop(LightningModule):
         noise = th.randn((n, 3, H, W)).type_as(dat)
         assert noise.shape == dat.shape
         cond = self.prepare_cond_sampling(dat=batch, cond=cond)
+        cond['no_preserved_cond'] = True
         cond = tensor_util.dict_slice(in_d=cond, keys=cond.keys(), n=n)
         
 
         # Any Encoder/Conditioned Network need to apply before a main UNet.
         if self.cfg.img_cond_model.apply:
             self.forward_cond_network(cond=cond, model_dict=sampling_model_dict)
-            
+        
+        # print(cond['cond_img'].shape)
+        # for i in range(cond['cond_img'].shape[0]):
+        #     print("IMG UNIQ : ", th.unique(cond['cond_img'][i, 3:4]))
+        #     print("SHADOW: ", cond['shadow'][i])
+        # exit()
         # Source Image
         source_img = convert2rgb(dat, bound=self.input_bound) / 255.
         log_image_fn(key=f'{sampling_model} - conditioned_image', image=make_grid(source_img, nrow=4), step=(step_ + 1) * self.n_gpus)
         
         # Condition Image
         if cond['dpm_cond_img'] is not None:
-            cond_img = []
-            s = 0
-            for c in self.cfg.img_model.each_in_channels:
-                e = s + c
-                if c == 1:  
-                    cond_img.append(th.repeat_interleave(cond['dpm_cond_img'][:, s:e, ...], dim=1, repeats=3))
-                else:
-                    cond_img.append(cond['dpm_cond_img'][:, s:e, ...])
-                s += c
-            cond_img = th.cat((cond_img), dim=0)
-            cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.
-            
+            cond_img = make_vis_condimg(data = cond['dpm_cond_img'], 
+                                        anno = zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.each_in_channels),
+                                        input_bound = self.input_bound,
+                                        cfg = self.cfg
+                                    )
             log_image_fn(key=f'{sampling_model} - conditioned_image (UNet)', image=make_grid(cond_img, nrow=4), step=(step_ + 1) * self.n_gpus)
             # self.t_logger.add_image(tag=f'conditioned_image (UNet)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
             # self.t_logger.log_image(key=f'{sampling_model} - conditioned_image (UNet)', images=[make_grid(cond_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
         if cond['cond_img'] is not None:
-            cond_img = []
-            s = 0
-            for c in self.cfg.img_cond_model.each_in_channels:
-                e = s + c
-                if c == 1:  
-                    cond_img.append(th.repeat_interleave(cond['cond_img'][:, s:e, ...], dim=1, repeats=3))
-                else:
-                    cond_img.append(cond['cond_img'][:, s:e, ...])
-                s += c
-            cond_img = th.cat((cond_img), dim=0)
-            cond_img = convert2rgb(cond_img, bound=self.input_bound) / 255.
-            
-            log_image_fn(key=f'{sampling_model} - conditioned_image (Encoder)', image=make_grid(cond_img, nrow=4), step=(step_ + 1) * self.n_gpus)
+            cond_img = make_vis_condimg(data = cond['cond_img'], 
+                                        anno = zip(self.cfg.img_cond_model.in_image, self.cfg.img_cond_model.each_in_channels),
+                                        input_bound = self.input_bound,
+                                        cfg=self.cfg
+                                    )
+            assert cond_img.shape[1] == 3
+            log_image_fn(key=f'{sampling_model} - conditioned_image (Encoder)', image=make_grid(cond_img, nrow=n), step=(step_ + 1) * self.n_gpus)
             # tb.add_image(tag=f'conditioned_image (Encoder)', img_tensor=make_grid(cond_img, nrow=4), global_step=(step_ + 1) * self.n_gpus)
             # self.t_logger.log_image(key=f'{sampling_model} - conditioned_image (Encoder)', images=[make_grid(cond_img, nrow=4)], step=(step_ + 1) * self.n_gpus)
         
@@ -606,7 +559,6 @@ class TrainLoop(LightningModule):
         ddim_recon_predx0_plot = ((ddim_recon_sample['pred_xstart'] + 1) * 127.5) / 255.
         log_image_fn(key=f'{sampling_model} - ddim_recon_predx0 (x0)', image=make_grid(ddim_recon_predx0_plot, nrow=4), step=(step_ + 1) * self.n_gpus)
         
-
         # Save memory!
         dat = dat.detach()
         cond = tensor_util.dict_detach(in_d=cond, keys=cond.keys())

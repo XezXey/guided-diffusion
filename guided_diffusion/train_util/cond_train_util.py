@@ -39,8 +39,6 @@ class ModelWrapper(nn.Module):
         self.img_model = model_dict['ImgCond']
         if self.cfg.img_cond_model.apply:
             self.img_cond_model = model_dict['ImgEncoder']
-        if self.cfg.img_composer_model.apply:
-            self.img_composer_model = model_dict['ImgComposer']
 
     def forward(self, trainloop, dat, cond):
         trainloop.run_step(dat, cond)
@@ -256,29 +254,6 @@ class TrainLoop(LightningModule):
             self.model_trainer_dict[name].get_norms()
         return True
 
-    def forward_composite_network(self, cond, model_dict=None):
-        if model_dict is None:
-            model_dict = self.model_dict
-            
-        if self.cfg.img_composer_model.apply:
-            # print(cond.keys())
-            assert len(self.cfg.img_composer_model.in_image) == 2
-            x1 = cond[f'{self.cfg.img_composer_model.in_image[0]}_img']
-            # print(x1.shape)
-            x2 = cond[f'{self.cfg.img_composer_model.in_image[1]}_img']
-            # print(x2.shape)
-            out = model_dict[self.cfg.img_composer_model.name](
-                x1 = x1.float(),
-                x2 = x2.float(),
-                emb=None,
-            )
-            # print(out.shape)
-            cond['compose_img'] = out
-            # print(cond.keys())
-            return cond
-        else:
-            return cond
-    
     def forward_cond_network(self, cond, model_dict=None):
         if model_dict is None:
             model_dict = self.model_dict

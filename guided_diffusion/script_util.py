@@ -4,74 +4,30 @@ import argparse
 from . import gaussian_diffusion as gd
 from guided_diffusion.respace import SpacedDiffusion, space_timesteps
 from guided_diffusion.models.unet import EncoderUNetModelNoTime, UNetModelCondition, UNetModel
-from guided_diffusion.models.unet_no_dpm_notime import UNetModelCondition_No_DPM_Notime, UNetModelCondition_NoDPM_NoTime_Upsampling
+from guided_diffusion.models.unet_no_dpm_notime import UNetModelCondition_No_DPM_Notime
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart import UNetModel_SpatialCondition_Hadamart, EncoderUNet_SpatialCondition, EncoderUNet_WithPrep_SpatialCondition
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_both import UNetModel_SpatialCondition_Hadamart_Both, EncoderUNet_SpatialCondition, EncoderUNet_WithPrep_SpatialCondition
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_no_dpm import UNetModel_SpatialCondition_Hadamart_No_DPM
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_no_dpm_notime import UNetModel_SpatialCondition_Hadamart_No_DPM_NoTime
-from guided_diffusion.models.unet_duplicate import UNetModelConditionDuplicate
-from guided_diffusion.models.dense import DenseDDPM, AutoEncoderDPM, DenseDDPMCond
+from guided_diffusion.models.controlnet.controlnet import ControlNet, ControlledUnetModel, ControlNetWrapper
 
 NUM_CLASSES = 1000
 
-# Pipeline
-def create_img_deca_and_diffusion(cfg):
-    img_model = create_model(cfg.img_model)
-    params_model = create_param_model(cfg.param_model)
-    diffusion = create_gaussian_diffusion(cfg.diffusion)
-    return img_model, params_model, diffusion
-
-def create_deca_and_diffusion(cfg):
-    if cfg.param_model.conditioning:
-        param_model = create_param_model(cfg=cfg.param_model, cfg_cond=cfg)
-    else:
-        param_model = create_param_model(cfg=cfg.param_model)
-    diffusion = create_gaussian_diffusion(cfg.diffusion)
-    return param_model, diffusion
-
 def create_img_and_diffusion(cfg):
-    img_model = create_model(cfg.img_model, all_cfg=cfg)
-    if cfg.img_cond_model.apply:
-        img_cond_model = create_model(cfg.img_cond_model, all_cfg=cfg)
-    else: img_cond_model = None
+    if cfg.img_model.arch in ['ControlNet', 'ControlledUnetModel']:
+        controlled_unet = create_model(cfg.img_model, all_cfg=cfg)
+        controlnet = create_model(cfg.img_cond_model, all_cfg=cfg)
+        img_model = ControlNetWrapper(controlnet=controlnet, unet=controlled_unet)
+        img_cond_model = None
+    else:
+        img_model = create_model(cfg.img_model, all_cfg=cfg)
+        if cfg.img_cond_model.apply:
+            img_cond_model = create_model(cfg.img_cond_model, all_cfg=cfg)
+        else: img_cond_model = None
     
-    if cfg.img_composer_model.apply:
-        img_composer_model = create_model(cfg.img_composer_model, all_cfg=cfg)
-    else: 
-        img_composer_model = None
     diffusion = create_gaussian_diffusion(cfg.diffusion)
     
-    return {cfg.img_model.name:img_model, cfg.img_cond_model.name:img_cond_model, cfg.img_composer_model.name:img_composer_model}, diffusion
-
-# Each sub-modules
-def create_param_model(cfg, cfg_cond=None):
-    if cfg.deca_cond:
-        img_model, _ = create_img_and_diffusion(cfg_cond)
-        if cfg.arch == 'magenta':
-            return DenseDDPMCond(
-                in_channels=cfg.in_channels,
-                model_channels=cfg.model_channels,
-                num_layers=cfg.num_layers,
-                use_checkpoint=cfg.use_checkpoint,
-                encoder=img_model)
-        else: raise NotImplementedError
-    else:
-        if cfg.arch == 'magenta':
-            return DenseDDPM(
-                in_channels=cfg.in_channels,
-                model_channels=cfg.model_channels,
-                num_layers=cfg.num_layers,
-                use_checkpoint=cfg.use_checkpoint,
-            )
-        elif cfg.arch == 'autoenc':
-            return AutoEncoderDPM(
-                in_channels=cfg.in_channels,
-                out_channels=cfg.out_channels,
-                model_channels=cfg.model_channels,
-                num_layers=cfg.num_layers,
-                use_checkpoint=cfg.use_checkpoint,
-            )
-        else: raise NotImplementedError
+    return {cfg.img_model.name:img_model, cfg.img_cond_model.name:img_cond_model}, diffusion
 
 def create_model(cfg, all_cfg=None):
     if cfg.channel_mult == "":
@@ -153,30 +109,6 @@ def create_model(cfg, all_cfg=None):
             condition_proj_dim=cfg.condition_proj_dim,
             conditioning=True,
         )
-    elif cfg.arch == 'UNetCond_NoDPM_NoTime_Upsampling':
-        return UNetModelCondition_NoDPM_NoTime_Upsampling(
-            image_size=cfg.image_size,
-            in_channels=cfg.in_channels,
-            model_channels=cfg.num_channels,
-            out_channels=cfg.out_channels,
-            num_res_blocks=cfg.num_res_blocks,
-            attention_resolutions=tuple(attention_ds),
-            dropout=cfg.dropout,
-            channel_mult=channel_mult,
-            use_checkpoint=cfg.use_checkpoint,
-            num_heads=cfg.num_heads,
-            num_head_channels=cfg.num_head_channels,
-            num_heads_upsample=cfg.num_heads_upsample,
-            use_scale_shift_norm=cfg.use_scale_shift_norm,
-            resblock_updown=cfg.resblock_updown,
-            use_new_attention_order=cfg.use_new_attention_order,
-            condition_dim=cfg.condition_dim,
-            condition_proj_dim=cfg.condition_proj_dim,
-            conditioning=True,
-            use_conv=all_cfg.upsampling.use_conv,
-            use_deconv=all_cfg.upsampling.use_deconv,
-            target_size=all_cfg.upsampling.target_size,
-        )
     elif cfg.arch == 'EncoderUNet':
         return EncoderUNetModelNoTime(
             image_size=cfg.image_size,
@@ -197,29 +129,6 @@ def create_model(cfg, all_cfg=None):
             condition_dim=cfg.condition_dim,
             conditioning=True,
             pool=cfg.pool
-        )
-    elif cfg.arch == 'UNetCondDuplicate':
-            return UNetModelConditionDuplicate(
-            image_size=cfg.image_size,
-            in_channels=cfg.in_channels,
-            model_channels=cfg.num_channels,
-            out_channels=cfg.out_channels,
-            num_res_blocks=cfg.num_res_blocks,
-            attention_resolutions=tuple(attention_ds),
-            dropout=cfg.dropout,
-            channel_mult=channel_mult,
-            use_checkpoint=cfg.use_checkpoint,
-            num_heads=cfg.num_heads,
-            num_head_channels=cfg.num_head_channels,
-            num_heads_upsample=cfg.num_heads_upsample,
-            use_scale_shift_norm=cfg.use_scale_shift_norm,
-            resblock_updown=cfg.resblock_updown,
-            use_new_attention_order=cfg.use_new_attention_order,
-            condition_dim=cfg.condition_dim,
-            condition_proj_dim=cfg.condition_proj_dim,
-            conditioning=True,
-            num_SH=all_cfg.relighting.num_SH,
-            last_conv=cfg.last_conv
         )
     elif cfg.arch == 'UNetCond_SpatialCondition_Hadamart':
         return UNetModel_SpatialCondition_Hadamart(
@@ -331,28 +240,35 @@ def create_model(cfg, all_cfg=None):
             conditioning=True,
             pool=cfg.pool
         ),
-    elif cfg.arch == 'EncoderUNet_WithPrep_SpatialCondition':
-        return EncoderUNet_WithPrep_SpatialCondition(
+    elif cfg.arch == 'ControlNet':
+        return ControlNet(
+            image_size=cfg.image_size,
+            in_channels=3,
+            model_channels=cfg.num_channels,
+            hint_channels=cfg.in_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=True,
+            transformer_depth=1,
+            context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning
+            legacy=False,
+        )
+    elif cfg.arch == 'ControlledUnetModel':
+        return ControlledUnetModel(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
-            composite_w_type=cfg.w_type
-            # model_channels=cfg.num_channels,
-            # out_channels=cfg.out_channels,
-            # num_res_blocks=cfg.num_res_blocks,
-            # attention_resolutions=tuple(attention_ds),
-            # dropout=cfg.dropout,
-            # channel_mult=channel_mult,
-            # use_checkpoint=cfg.use_checkpoint,
-            # num_heads=cfg.num_heads,
-            # num_head_channels=cfg.num_head_channels,
-            # num_heads_upsample=cfg.num_heads_upsample,
-            # use_scale_shift_norm=cfg.use_scale_shift_norm,
-            # resblock_updown=cfg.resblock_updown,
-            # use_new_attention_order=cfg.use_new_attention_order,
-            # condition_dim=cfg.condition_dim,
-            # conditioning=True,
-            # pool=cfg.pool
-        ),
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=True,
+            transformer_depth=1,
+            context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning
+        )
 
     else: raise NotImplementedError(f"Unknown model architecture: {cfg.arch}")
 

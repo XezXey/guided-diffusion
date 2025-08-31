@@ -311,7 +311,7 @@ class DECADataset(Dataset):
 
         # Raw Images in dataset
         query_img_name = list(self.local_images.keys())[idx]
-        print(query_img_name)
+        # print(query_img_name)
         # if self.force_jpg_key:
         #     assert '.png' in query_img_name
         #     query_img_name = query_img_name.replace('.png', '.jpg')
