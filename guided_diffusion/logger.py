@@ -14,6 +14,7 @@ import tempfile
 import warnings
 from collections import defaultdict
 from contextlib import contextmanager
+from colorlog import ColoredFormatter
 
 DEBUG = 10
 INFO = 20

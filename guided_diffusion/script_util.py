@@ -5,11 +5,12 @@ from . import gaussian_diffusion as gd
 from guided_diffusion.respace import SpacedDiffusion, space_timesteps
 from guided_diffusion.models.unet import EncoderUNetModelNoTime, UNetModelCondition, UNetModel
 from guided_diffusion.models.unet_no_dpm_notime import UNetModelCondition_No_DPM_Notime
-from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart import UNetModel_SpatialCondition_Hadamart, EncoderUNet_SpatialCondition, EncoderUNet_WithPrep_SpatialCondition
-from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_both import UNetModel_SpatialCondition_Hadamart_Both, EncoderUNet_SpatialCondition, EncoderUNet_WithPrep_SpatialCondition
+from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart import UNetModel_SpatialCondition_Hadamart, EncoderUNet_SpatialCondition
+from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_both import UNetModel_SpatialCondition_Hadamart_Both, EncoderUNet_SpatialCondition
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_no_dpm import UNetModel_SpatialCondition_Hadamart_No_DPM
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_no_dpm_notime import UNetModel_SpatialCondition_Hadamart_No_DPM_NoTime
 from guided_diffusion.models.controlnet.controlnet import ControlNet, ControlledUnetModel, ControlNetWrapper
+from guided_diffusion.models.controlnet_mod.controlnet_spatial_w_dpp_nonspa.controlnet_mod import ControlledUnetModel_DPPNonSpa, ControlNetWrapper
 
 NUM_CLASSES = 1000
 
@@ -268,6 +269,24 @@ def create_model(cfg, all_cfg=None):
             use_spatial_transformer=True,
             transformer_depth=1,
             context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning
+        )
+    elif cfg.arch == 'ControlledUnetModel_DPPNonSpa':
+        return ControlledUnetModel_DPPNonSpa(
+            image_size=cfg.image_size,
+            in_channels=cfg.in_channels,
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            use_spatial_transformer=False,
+            use_scale_shift_norm=True,
+            num_heads=cfg.num_heads,
+            num_head_channels=cfg.num_head_channels,
+            num_heads_upsample=cfg.num_heads_upsample,
+            condition_dim=cfg.condition_dim,
+            condition_proj_dim=cfg.condition_proj_dim,
+            # context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning, not used in spatial transformer
         )
 
     else: raise NotImplementedError(f"Unknown model architecture: {cfg.arch}")

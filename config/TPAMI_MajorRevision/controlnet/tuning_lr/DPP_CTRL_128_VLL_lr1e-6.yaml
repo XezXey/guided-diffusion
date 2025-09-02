@@ -10,7 +10,7 @@ img_model:
   out_channels: 3
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
-  # attention_resolutions: "4,2,1"
+  attention_resolutions: "4,2,1"
 
 img_cond_model:
   apply: False 
@@ -27,7 +27,7 @@ img_cond_model:
   prep_image: [Null, Null, Null]
   noise_dpm_cond_img: [Null, Null, Null]
   canny_thres: [Null, Null, Null]
-  # attention_resolutions: "4,2,1"
+  attention_resolutions: "4,2,1"
 
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb']
@@ -44,7 +44,7 @@ train:
   sampling_interval: 100000
   save_interval: 50000
   use_prep_data: False
-  lr: 1e-4
+  lr: 1e-6
 
 dataset:
   deca_dir: "/data/mint/DPM_Dataset/ffhq_256_with_anno/params/"
@@ -55,4 +55,4 @@ dataset:
 
 train_misc:
   exp_name: "ControlNet"
-  cfg_name: "DPP_CTRL_128_VLL_lr1e-4"
+  cfg_name: "DPP_CTRL_128_VLL_lr1e-6"

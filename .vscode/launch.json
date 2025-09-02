@@ -13,6 +13,32 @@
         //                            __/ | __/ |                                                __/ |
         //                           |___/ |___/                                                |___/ 
         {
+            "name": "Python: train_CTRL_spa+DPP_nonspa",
+            "type": "debugpy",
+            "request": "launch",
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1",
+                "WANDB_MODE": "offline"
+            },
+            "program": "./train_scripts/image_train_controlnet.py",
+            "args": [
+                "--train.log_dir",
+                "/data/mint/model_logs/TPAMI_MajorRevision/ControlNet",
+                "--train.batch_size",
+                "3",
+                "--train.n_gpus",
+                "1",
+                "--cfg",
+                "./config/TPAMI_MajorRevision/controlnet/CTRL_spa+DPP_nonspa.yaml",
+                "--train.sampling_interval",
+                "50000",
+                "--train.debug_mode", "True",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "/home/mint/Dev/DiFaReli/difareli-faster/",
+            "justMyCode": true
+        }
+        {
             "name": "Python: train_controlnet",
             "type": "debugpy",
             "request": "launch",

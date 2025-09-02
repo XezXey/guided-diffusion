@@ -4,7 +4,8 @@ Train a diffusion model on images.
 
 import os
 import pytorch_lightning as pl
-from guided_diffusion import logger
+# from guided_diffusion import logger
+from guided_diffusion import mint_logger
 from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 from config.base_config import parse_args
 from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
@@ -20,9 +21,10 @@ import socket
 def main():
     cfg = parse_args()
     seed_all(47)    # Seeding the model - Independent training
-
-    logger.configure(dir=cfg.train.log_dir)
-    logger.log("[#] Creating model and diffusion...")
+    logger = mint_logger.createLogger()
+    # logger.configure(dir=cfg.train.log_dir)
+    # logger.log("[#] Creating model and diffusion...")
+    logger.info("[#] Creating model and diffusion...")
 
     img_model, diffusion = create_img_and_diffusion(cfg)
     print(img_model)
@@ -47,7 +49,11 @@ def main():
             
     img_model = {k: v for k, v in img_model.items() if v is not None}
     schedule_sampler = create_named_schedule_sampler(cfg.diffusion.schedule_sampler, diffusion)
-    logger.log("[#] Creating data loader...")
+    logger.info("[#] Creating data loader...")
+    if cfg.train.debug_mode:
+        logger.warning("[#] Debug mode is on, using valid set for training.")
+    else:
+        logger.warning("[#] Debug mode is off, using train set for training.")
     train_loader, _, _ = load_data_img_deca(
         data_dir=cfg.dataset.data_dir,
         deca_dir=cfg.dataset.deca_dir,
@@ -59,12 +65,13 @@ def main():
         in_image_UNet=cfg.img_model.in_image,
         params_selector=cfg.param_model.params_selector,
         rmv_params=cfg.param_model.rmv_params,
-        # set_='valid', # For fast debgugging
+        set_='valid' if cfg.train.debug_mode else 'train', # For fast debgugging
         force_jpg_key=False,
         cfg=cfg,
     )
 
-    logger.log("[#] Training...")
+    # logger.info("[#] Training...")
+    logger.info("[#] Training...")
     try:
         username = getpass.getuser()
         hostname = socket.gethostname()
@@ -72,7 +79,7 @@ def main():
         username = "mint"
         hostname = "vll"
     
-    print(f"Initialize \"{cfg.train.logger_mode}\" logger : {cfg.train.logger_dir}")
+    logger.warning(f"Initialize \"{cfg.train.logger_mode}\" logger : {cfg.train.logger_dir}")
     os.makedirs(cfg.train.logger_dir, exist_ok=True)
     if cfg.train.logger_mode == 'wandb':
         t_logger = WandbLogger(project='Relighting-DPM', save_dir=cfg.train.logger_dir, tags=[cfg.train_misc.exp_name], name=cfg.train_misc.cfg_name, notes=f"{username}@{hostname}")
