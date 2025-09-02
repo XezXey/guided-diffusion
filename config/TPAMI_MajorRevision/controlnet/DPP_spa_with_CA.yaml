@@ -1,18 +1,17 @@
 img_model:
   name: "ImgCond"
-  arch: "UNetCond_SpatialCondition_Hadamart"
+  arch: "DPP_Spatial_with_CA"
   image_size: 128
   in_image: ['raw']
-  num_heads: 8
   num_res_blocks: 2
   in_channels: 3
   num_channels: 256
   out_channels: 3
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
-  use_spatial_transformer: True
-
-
+  num_heads: 8
+  use_scale_shift_norm: False
+  # use_spatial_transformer: True
 
 img_cond_model:
   apply: False 

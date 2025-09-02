@@ -12,6 +12,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from ....trainer_util import convert_module_to_f16, convert_module_to_f32
+from .attention import SpatialTransformer
+from .util import exists
 from .nn import (
     Hadamart,
     HadamartLayer,
@@ -195,8 +197,6 @@ class ResBlock(TimestepBlock):
         use_checkpoint=False,
         up=False,
         down=False,
-        condition_dim=0,
-        condition_proj_dim=0
     ):
         super().__init__()
         self.channels = channels
@@ -206,7 +206,6 @@ class ResBlock(TimestepBlock):
         self.use_conv = use_conv
         self.use_checkpoint = use_checkpoint
         self.use_scale_shift_norm = use_scale_shift_norm
-        self.condition_dim = condition_dim
 
         self.in_layers = nn.Sequential(
             normalization(channels),
@@ -1294,6 +1293,16 @@ class DPP_Spatial_with_CA(nn.Module):
         out_channels,
         num_res_blocks,
         attention_resolutions,
+        # Cross-Attention
+        context_dim=None,
+        use_spatial_transformer=True,
+        transformer_depth=1,
+        legacy=True,
+        disable_self_attentions=None,
+        num_attention_blocks=None,
+        disable_middle_self_attn=False,
+        use_linear_in_transformer=False,
+        # Cross-Attention
         dropout=0,
         channel_mult=(1, 2, 4, 8),
         conv_resample=True,
@@ -1307,15 +1316,28 @@ class DPP_Spatial_with_CA(nn.Module):
         resblock_updown=False,
         use_new_attention_order=False,
         conditioning=False,
-        condition_dim=0,
-        condition_proj_dim=0,
         all_cfg=None,
         return_dict=True,
     ):
         super().__init__()
+        
+        if use_spatial_transformer:
+            assert context_dim is not None, 'Fool!! You forgot to include the dimension of your cross-attention conditioning...'
+
+        if context_dim is not None:
+            assert use_spatial_transformer, 'Fool!! You forgot to use the spatial transformer for your cross-attention conditioning...'
+            from omegaconf.listconfig import ListConfig
+            if type(context_dim) == ListConfig:
+                context_dim = list(context_dim)
 
         if num_heads_upsample == -1:
             num_heads_upsample = num_heads
+
+        if num_heads == -1:
+            assert num_head_channels != -1, 'Either num_heads or num_head_channels has to be set'
+
+        if num_head_channels == -1:
+            assert num_heads != -1, 'Either num_heads or num_head_channels has to be set'
 
         self.image_size = image_size
         self.in_channels = in_channels
@@ -1328,12 +1350,12 @@ class DPP_Spatial_with_CA(nn.Module):
         self.conv_resample = conv_resample
         self.use_checkpoint = use_checkpoint
         self.dtype = th.float16 if use_fp16 else th.float32
+        self.use_spatial_transformer = use_spatial_transformer
+        self.transformer_depth = transformer_depth
         self.num_heads = num_heads
         self.num_head_channels = num_head_channels
         self.num_heads_upsample = num_heads_upsample
         self.conditioning = conditioning
-        self.condition_dim = condition_dim
-        self.condition_proj_dim = condition_proj_dim
         self.all_cfg = all_cfg
         self.return_dict = return_dict
 
@@ -1344,8 +1366,8 @@ class DPP_Spatial_with_CA(nn.Module):
             linear(time_embed_dim, time_embed_dim),
         )
 
-        resblock_module = ResBlock if not self.conditioning else ResBlockCondition
-        time_embed_seq_module = TimestepEmbedSequential if not self.conditioning else TimestepEmbedSequentialCond 
+        resblock_module = ResBlock
+        time_embed_seq_module = TimestepEmbedSequential
 
         ch = input_ch = int(channel_mult[0] * model_channels)
         self.input_blocks = nn.ModuleList(
@@ -1368,21 +1390,38 @@ class DPP_Spatial_with_CA(nn.Module):
                         dims=dims,
                         use_checkpoint=use_checkpoint,
                         use_scale_shift_norm=use_scale_shift_norm,
-                        condition_dim=condition_dim,
-                        condition_proj_dim=condition_proj_dim
                     )
                 ]
                 ch = int(mult * model_channels)
                 if ds in attention_resolutions:
-                    layers.append(
-                        AttentionBlock(
-                            ch,
-                            use_checkpoint=use_checkpoint,
-                            num_heads=num_heads,
-                            num_head_channels=num_head_channels,
-                            use_new_attention_order=use_new_attention_order,
+                    if num_head_channels == -1:
+                        dim_head = ch // num_heads
+                    else:
+                        num_heads = ch // num_head_channels
+                        dim_head = num_head_channels
+                    if legacy:
+                        # num_heads = 1
+                        dim_head = ch // num_heads if use_spatial_transformer else num_head_channels
+                    if exists(disable_self_attentions):
+                        disabled_sa = disable_self_attentions[level]
+                    else:
+                        disabled_sa = False
+
+                    if not exists(num_attention_blocks) or nr < num_attention_blocks[level]:
+                        layers.append(
+                            AttentionBlock(
+                                ch,
+                                use_checkpoint=use_checkpoint,
+                                num_heads=num_heads,
+                                num_head_channels=dim_head,
+                                use_new_attention_order=use_new_attention_order,
+                            ) if not use_spatial_transformer else SpatialTransformer(
+                                ch, num_heads, dim_head, depth=transformer_depth, context_dim=context_dim,
+                                disable_self_attn=disabled_sa, use_linear=use_linear_in_transformer,
+                                use_checkpoint=use_checkpoint
+                            )
                         )
-                    )
+                
                 self.input_blocks.append(time_embed_seq_module(*layers))
                 self._feature_size += ch
                 input_block_chans.append(ch)
@@ -1403,8 +1442,6 @@ class DPP_Spatial_with_CA(nn.Module):
                                 use_checkpoint=use_checkpoint,
                                 use_scale_shift_norm=use_scale_shift_norm,
                                 down=True,
-                                condition_dim=condition_dim,
-                                condition_proj_dim=condition_proj_dim
                             )
                         )
                     )
@@ -1426,6 +1463,15 @@ class DPP_Spatial_with_CA(nn.Module):
         
         input_block_reso.append(input_block_reso[-1])
         input_block_reso.append(input_block_reso[-1])
+        
+        if num_head_channels == -1:
+            dim_head = ch // num_heads
+        else:
+            num_heads = ch // num_head_channels
+            dim_head = num_head_channels
+        if legacy:
+            # num_heads = 1
+            dim_head = ch // num_heads if use_spatial_transformer else num_head_channels
         self.middle_block = time_embed_seq_module(
             HadamartLayer(cfg=all_cfg, channels=ch, image_size=input_block_reso[reso_idx]),
             resblock_module(
@@ -1435,15 +1481,17 @@ class DPP_Spatial_with_CA(nn.Module):
                 dims=dims,
                 use_checkpoint=use_checkpoint,
                 use_scale_shift_norm=use_scale_shift_norm,
-                condition_dim=condition_dim,
-                condition_proj_dim=condition_proj_dim
             ),
             AttentionBlock(
                 ch,
                 use_checkpoint=use_checkpoint,
                 num_heads=num_heads,
-                num_head_channels=num_head_channels,
+                num_head_channels=dim_head,
                 use_new_attention_order=use_new_attention_order,
+            ) if not use_spatial_transformer else SpatialTransformer(  # always uses a self-attn
+                ch, num_heads, dim_head, depth=transformer_depth, context_dim=context_dim,
+                disable_self_attn=disable_middle_self_attn, use_linear=use_linear_in_transformer,
+                use_checkpoint=use_checkpoint
             ),
             resblock_module(
                 ch,
@@ -1452,8 +1500,6 @@ class DPP_Spatial_with_CA(nn.Module):
                 dims=dims,
                 use_checkpoint=use_checkpoint,
                 use_scale_shift_norm=use_scale_shift_norm,
-                condition_dim=condition_dim,
-                condition_proj_dim=condition_proj_dim
             ),
             HadamartLayer(cfg=all_cfg, channels=ch, image_size=input_block_reso[reso_idx+1]),
         )
@@ -1479,21 +1525,37 @@ class DPP_Spatial_with_CA(nn.Module):
                         dims=dims,
                         use_checkpoint=use_checkpoint,
                         use_scale_shift_norm=use_scale_shift_norm,
-                        condition_dim=condition_dim,
-                        condition_proj_dim=condition_proj_dim
                     )
                 ]
                 ch = int(model_channels * mult)
                 if ds in attention_resolutions:
-                    layers.append(
-                        AttentionBlock(
-                            ch,
-                            use_checkpoint=use_checkpoint,
-                            num_heads=num_heads_upsample,
-                            num_head_channels=num_head_channels,
-                            use_new_attention_order=use_new_attention_order,
+                    if num_head_channels == -1:
+                        dim_head = ch // num_heads
+                    else:
+                        num_heads = ch // num_head_channels
+                        dim_head = num_head_channels
+                    if legacy:
+                        #num_heads = 1
+                        dim_head = ch // num_heads if use_spatial_transformer else num_head_channels
+                    if exists(disable_self_attentions):
+                        disabled_sa = disable_self_attentions[level]
+                    else:
+                        disabled_sa = False
+
+                    if not exists(num_attention_blocks) or i < num_attention_blocks[level]:
+                        layers.append(
+                            AttentionBlock(
+                                ch,
+                                use_checkpoint=use_checkpoint,
+                                num_heads=num_heads_upsample,
+                                num_head_channels=dim_head,
+                                use_new_attention_order=use_new_attention_order,
+                            ) if not use_spatial_transformer else SpatialTransformer(
+                                ch, num_heads, dim_head, depth=transformer_depth, context_dim=context_dim,
+                                disable_self_attn=disabled_sa, use_linear=use_linear_in_transformer,
+                                use_checkpoint=use_checkpoint
+                            )
                         )
-                    )
                 if level and i == num_res_blocks:
                     out_ch = ch
                     layers.append(
@@ -1506,8 +1568,6 @@ class DPP_Spatial_with_CA(nn.Module):
                             use_checkpoint=use_checkpoint,
                             use_scale_shift_norm=use_scale_shift_norm,
                             up=True,
-                            condition_dim=condition_dim,
-                            condition_proj_dim=condition_proj_dim
                         )
                         if resblock_updown
                         else Upsample(ch, conv_resample, dims=dims, out_channels=out_ch)
