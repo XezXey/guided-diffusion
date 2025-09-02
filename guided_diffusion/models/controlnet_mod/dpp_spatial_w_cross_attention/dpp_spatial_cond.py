@@ -249,7 +249,7 @@ class ResBlock(TimestepBlock):
         else:
             self.skip_connection = conv_nd(dims, channels, self.out_channels, 1)
 
-    def forward(self, x, emb, cond=None):
+    def forward(self, x, emb):
         """
         Apply the block to a Tensor, conditioned on a timestep embedding.
         :param x: an [N x C x ...] Tensor of features.
@@ -1665,7 +1665,7 @@ class DPP_Spatial_with_CA(nn.Module):
             return {'output':self.out(h)}
         else: return self.out(h)
         
-class EncoderUNet_SpatialCondition(nn.Module):
+class EncoderSpatial_with_CA(nn.Module):
     """
     The half UNet model with attention.
     For usage, see UNet.
@@ -1679,8 +1679,16 @@ class EncoderUNet_SpatialCondition(nn.Module):
         out_channels,
         num_res_blocks,
         attention_resolutions,
-        conditioning,
-        condition_dim,
+        # Cross-Attention
+        context_dim=None,
+        use_spatial_transformer=True,
+        transformer_depth=1,
+        legacy=True,
+        disable_self_attentions=None,
+        num_attention_blocks=None,
+        disable_middle_self_attn=False,
+        use_linear_in_transformer=False,
+        # Cross-Attention
         dropout=0,
         channel_mult=(1, 2, 4, 8),
         conv_resample=True,
@@ -1693,12 +1701,25 @@ class EncoderUNet_SpatialCondition(nn.Module):
         use_scale_shift_norm=False,
         resblock_updown=False,
         use_new_attention_order=False,
-        pool="adaptive",
     ):
         super().__init__()
+        if use_spatial_transformer:
+            assert context_dim is not None, 'Fool!! You forgot to include the dimension of your cross-attention conditioning...'
+
+        if context_dim is not None:
+            assert use_spatial_transformer, 'Fool!! You forgot to use the spatial transformer for your cross-attention conditioning...'
+            from omegaconf.listconfig import ListConfig
+            if type(context_dim) == ListConfig:
+                context_dim = list(context_dim)
 
         if num_heads_upsample == -1:
             num_heads_upsample = num_heads
+
+        if num_heads == -1:
+            assert num_head_channels != -1, 'Either num_heads or num_head_channels has to be set'
+
+        if num_head_channels == -1:
+            assert num_heads != -1, 'Either num_heads or num_head_channels has to be set'
 
         self.image_size = image_size
         self.in_channels = in_channels
@@ -1714,8 +1735,6 @@ class EncoderUNet_SpatialCondition(nn.Module):
         self.num_heads = num_heads
         self.num_head_channels = num_head_channels
         self.num_heads_upsample = num_heads_upsample
-        self.conditioning = conditioning
-        self.condition_dim = condition_dim
 
         time_embed_dim = model_channels * 4
 
@@ -1727,7 +1746,7 @@ class EncoderUNet_SpatialCondition(nn.Module):
         input_block_chans = [ch]
         ds = 1
         for level, mult in enumerate(channel_mult):
-            for _ in range(num_res_blocks):
+            for nr in range(num_res_blocks):
                 layers = [
                     ResBlockNoTime(
                         ch,
@@ -1741,15 +1760,33 @@ class EncoderUNet_SpatialCondition(nn.Module):
                 ]
                 ch = int(mult * model_channels)
                 if ds in attention_resolutions:
-                    layers.append(
-                        AttentionBlock(
-                            ch,
-                            use_checkpoint=use_checkpoint,
-                            num_heads=num_heads,
-                            num_head_channels=num_head_channels,
-                            use_new_attention_order=use_new_attention_order,
+                    if num_head_channels == -1:
+                        dim_head = ch // num_heads
+                    else:
+                        num_heads = ch // num_head_channels
+                        dim_head = num_head_channels
+                    if legacy:
+                        # num_heads = 1
+                        dim_head = ch // num_heads if use_spatial_transformer else num_head_channels
+                    if exists(disable_self_attentions):
+                        disabled_sa = disable_self_attentions[level]
+                    else:
+                        disabled_sa = False
+
+                    if not exists(num_attention_blocks) or nr < num_attention_blocks[level]:
+                        layers.append(
+                            AttentionBlock(
+                                ch,
+                                use_checkpoint=use_checkpoint,
+                                num_heads=num_heads,
+                                num_head_channels=dim_head,
+                                use_new_attention_order=use_new_attention_order,
+                            ) if not use_spatial_transformer else SpatialTransformer(
+                                ch, num_heads, dim_head, depth=transformer_depth, context_dim=context_dim,
+                                disable_self_attn=disabled_sa, use_linear=use_linear_in_transformer,
+                                use_checkpoint=use_checkpoint
+                            )
                         )
-                    )
                 self.input_blocks.append(TimestepEmbedSequential(*layers))
                 self._feature_size += ch
                 input_block_chans.append(ch)
@@ -1791,8 +1828,12 @@ class EncoderUNet_SpatialCondition(nn.Module):
                 ch,
                 use_checkpoint=use_checkpoint,
                 num_heads=num_heads,
-                num_head_channels=num_head_channels,
+                num_head_channels=dim_head,
                 use_new_attention_order=use_new_attention_order,
+            ) if not use_spatial_transformer else SpatialTransformer(  # always uses a self-attn
+                ch, num_heads, dim_head, depth=transformer_depth, context_dim=context_dim,
+                disable_self_attn=disable_middle_self_attn, use_linear=use_linear_in_transformer,
+                use_checkpoint=use_checkpoint
             ),
             ResBlockNoTime(
                 ch,
@@ -1803,91 +1844,8 @@ class EncoderUNet_SpatialCondition(nn.Module):
                 use_scale_shift_norm=use_scale_shift_norm,
             ),
         )
-
-        # print("ENCODER")
-        # for i in range(len(self.input_blocks)):
-        #     print(i, self.input_blocks[i])
-        # exit()
-        # print(self.middle_block)
         self._feature_size += ch
-
-        """
-        self.pool = pool
-        if pool == "adaptive":
-            self.out = nn.Sequential(
-                normalization(ch),
-                nn.SiLU(),
-                nn.AdaptiveAvgPool2d((1, 1)),
-                zero_module(conv_nd(dims, ch, out_channels, 1)),
-                nn.Flatten(),
-            )
-        elif pool == "adaptivenonzero":
-            self.out = nn.Sequential(
-                normalization(ch),
-                nn.SiLU(),
-                nn.AdaptiveAvgPool2d((1, 1)),
-                conv_nd(dims, ch, out_channels, 1),
-                nn.Flatten(),
-            )
-        elif pool == "adaptivenonzero_norm1":
-            self.out = nn.Sequential(
-                normalization(ch),
-                nn.SiLU(),
-                nn.AdaptiveAvgPool2d((1, 1)),
-                conv_nd(dims, ch, out_channels, 1),
-                nn.Flatten(),
-                Norm(ord=1),
-            )
-        elif pool == "attention":
-            assert num_head_channels != -1
-            self.out = nn.Sequential(
-                normalization(ch),
-                nn.SiLU(),
-                AttentionPool2d(
-                    (image_size // ds), ch, num_head_channels, out_channels
-                ),
-            )
-        elif pool == "spatial":
-            self.out = nn.Sequential(
-                nn.Linear(self._feature_size, 2048),
-                nn.ReLU(),
-                nn.Linear(2048, self.out_channels),
-            )
-        elif pool == "spatial_tanh":
-            self.out = nn.Sequential(
-                nn.Linear(self._feature_size, 2048),
-                nn.ReLU(),
-                nn.Linear(2048, self.out_channels),
-                nn.Tanh()
-            )
-        elif pool == "spatial_relu":
-            self.out = nn.Sequential(
-                nn.Linear(self._feature_size, 2048),
-                nn.ReLU(),
-                nn.Linear(2048, self.out_channels),
-                nn.ReLU()
-            )
-        elif pool == "spatial_mlp":
-            self.out = nn.Sequential(
-                nn.Linear(self._feature_size, 2048),
-                nn.ReLU(),
-                nn.Linear(2048, 1024),
-                nn.ReLU(),
-                nn.Linear(1024, 512),
-                nn.ReLU(),
-                nn.Linear(512, self.out_channels),
-            )
-        elif pool == "spatial_v2":
-            self.out = nn.Sequential(
-                nn.Linear(self._feature_size, 2048),
-                normalization(2048),
-                nn.SiLU(),
-                nn.Linear(2048, self.out_channels),
-            )
-        else:
-            raise NotImplementedError(f"Unexpected {pool} pooling")
-        """
-
+        
     def convert_to_fp16(self):
         """
         Convert the torso of the model to float16.
@@ -1902,7 +1860,7 @@ class EncoderUNet_SpatialCondition(nn.Module):
         self.input_blocks.apply(convert_module_to_f32)
         self.middle_block.apply(convert_module_to_f32)
 
-    def forward(self, x, emb=None):
+    def forward(self, x, emb=None, **kwargs):
         """
         Apply the model to an input batch.
         :param x: an [N x C x ...] Tensor of inputs.
@@ -1910,10 +1868,35 @@ class EncoderUNet_SpatialCondition(nn.Module):
         :return: an [N x K] Tensor of outputs.
         """
         results = []
-        h = x.type(self.dtype)
+        hint = kwargs['kwargs']['cond_img'].type_as(x)
+        h = hint
+        context = kwargs['kwargs']['cond_params']
+        # h = x.type(self.dtype)
         for _, module in enumerate(self.input_blocks):
-            h = module(h, emb)
+            h = module(h, emb, kwargs)
             results.append(h)
-        h = self.middle_block(h, emb)
+        h = self.middle_block(h, emb, kwargs)
         results.append(h)
         return results
+
+
+class DPPSpatialWrapper(nn.Module):
+    def __init__(self, encoder: EncoderSpatial_with_CA, unet: DPP_Spatial_with_CA):
+        super().__init__()
+        # self.encoder = encoder 
+        if isinstance(encoder, tuple) and len(encoder) == 1:
+            print("[#] ControlNet is a tuple with one element. Extracting the element.")
+            encoder = encoder[0]
+        if isinstance(unet, tuple) and len(unet) == 1:
+            print("[#] UNet is a tuple with one element. Extracting the element.")
+            unet = unet[0]
+        self.encoder = encoder 
+        self.unet = unet
+        
+    # def forward(self, x, hint, timesteps=None, context=None, only_mid_control=False, **kwargs):
+    def forward(self, x, timesteps, only_mid_control=False, **kwargs):
+        # control = self.encoder(x, timesteps, kwargs=kwargs)
+        control = self.encoder(x, timesteps, kwargs=kwargs)
+        out = self.unet(x, timesteps, control=control, only_mid_control=only_mid_control, kwargs=kwargs)
+        return out
+

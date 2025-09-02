@@ -7,15 +7,14 @@ img_model:
   in_channels: 3
   num_channels: 256
   out_channels: 3
-  conditioning: True  # Conditioning with DECA
-  condition_proj_dim: 512
+  hadamart_prep: "Tanh"
   num_heads: 8
   use_scale_shift_norm: False
   # use_spatial_transformer: True
 
 img_cond_model:
   apply: False 
-  arch: "EncoderUNet_SpatialCondition"
+  arch: "EncoderSpatial_with_CA"
   in_image: ['deca_masked_face_images_woclip', 'shadow_diff_with_weight_simplified', 'face_structure']
   in_channels: 5
   image_size: 128

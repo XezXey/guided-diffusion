@@ -257,13 +257,13 @@ class TrainLoop(LightningModule):
         if model_dict is None:
             model_dict = self.model_dict
             
+        tmp = []
+        for p in self.cfg.param_model.params_selector:
+            tmp.append(cond[p])
+        cond['cond_params'] = th.cat(tmp, dim=-1)
         if self.cfg.img_cond_model.apply:
             dat = cond['cond_img']
-            if self.cfg.img_cond_model.arch == 'ControlNet':
-                img_cond = model_dict[self.cfg.img_cond_model.name](
-                    
-                )
-            elif self.cfg.img_cond_model.arch == 'EncoderUNet_SpatialCondition':
+            if self.cfg.img_cond_model.arch == 'EncoderUNet_SpatialCondition':
                 img_cond = model_dict[self.cfg.img_cond_model.name](
                     x=dat.float(), 
                     emb=None,
@@ -273,11 +273,6 @@ class TrainLoop(LightningModule):
             # Override the condition and re-create cond_params
             if self.cfg.img_cond_model.override_cond != "":
                 cond[self.cfg.img_cond_model.override_cond] = img_cond
-                if self.cfg.img_cond_model.override_cond in ['shape', 'pose', 'exp', 'cam', 'light', 'faceemb', 'img_latent']:
-                    tmp = []
-                    for p in self.cfg.param_model.params_selector:
-                        tmp.append(cond[p])
-                    cond['cond_params'] = th.cat(tmp, dim=-1)
             else: raise NotImplementedError
         return cond
 

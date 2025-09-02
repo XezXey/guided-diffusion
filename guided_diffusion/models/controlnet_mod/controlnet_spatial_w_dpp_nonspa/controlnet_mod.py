@@ -18,7 +18,7 @@ from .openaimodel_mod import UNetModel, TimestepEmbedSequential, ResBlock, Downs
 
 class ControlledUnetModel_DPPNonSpa(UNetModel):
     def forward(self, x, timesteps=None, context=None, control=None, only_mid_control=False, **kwargs):
-        context = kwargs['cond_params'].type_as(x)  # B x C; C = 671
+        context = kwargs['kwargs']['cond_params'].type_as(x)  # B x C; C = 671
         hs = []
         # with torch.no_grad():
         t_emb = timestep_embedding(timesteps, self.model_channels, repeat_only=False)
@@ -42,7 +42,7 @@ class ControlledUnetModel_DPPNonSpa(UNetModel):
         h = h.type(x.dtype)
         return {'output':self.out(h)}
 
-class ControlNet(nn.Module):
+class ControlNet_DPPNonSpa(nn.Module):
     def __init__(
             self,
             image_size,
@@ -51,6 +51,8 @@ class ControlNet(nn.Module):
             hint_channels,
             num_res_blocks,
             attention_resolutions,
+            condition_dim,
+            condition_proj_dim,
             dropout=0,
             channel_mult=(1, 2, 4, 8),
             conv_resample=True,
@@ -173,6 +175,8 @@ class ControlNet(nn.Module):
                         ch,
                         time_embed_dim,
                         dropout,
+                        condition_dim=condition_dim,
+                        condition_proj_dim=condition_proj_dim,
                         out_channels=mult * model_channels,
                         dims=dims,
                         use_checkpoint=use_checkpoint,
@@ -220,6 +224,8 @@ class ControlNet(nn.Module):
                             ch,
                             time_embed_dim,
                             dropout,
+                            condition_dim=condition_dim,
+                            condition_proj_dim=condition_proj_dim,
                             out_channels=out_ch,
                             dims=dims,
                             use_checkpoint=use_checkpoint,
@@ -251,6 +257,8 @@ class ControlNet(nn.Module):
                 ch,
                 time_embed_dim,
                 dropout,
+                condition_dim=condition_dim,
+                condition_proj_dim=condition_proj_dim,
                 dims=dims,
                 use_checkpoint=use_checkpoint,
                 use_scale_shift_norm=use_scale_shift_norm,
@@ -270,6 +278,8 @@ class ControlNet(nn.Module):
                 ch,
                 time_embed_dim,
                 dropout,
+                condition_dim=condition_dim,
+                condition_proj_dim=condition_proj_dim,
                 dims=dims,
                 use_checkpoint=use_checkpoint,
                 use_scale_shift_norm=use_scale_shift_norm,
@@ -308,8 +318,8 @@ class ControlNet(nn.Module):
 
         return outs
 
-class ControlNetWrapper(nn.Module):
-    def __init__(self, controlnet: ControlNet, unet: ControlledUnetModel_DPPNonSpa):
+class ControlNetWrapperMod(nn.Module):
+    def __init__(self, controlnet: ControlNet_DPPNonSpa, unet: ControlledUnetModel_DPPNonSpa):
         super().__init__()
         self.controlnet = controlnet
         self.unet = unet

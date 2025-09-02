@@ -1,6 +1,4 @@
 import argparse
-
-
 from . import gaussian_diffusion as gd
 from guided_diffusion.respace import SpacedDiffusion, space_timesteps
 from guided_diffusion.models.unet import EncoderUNetModelNoTime, UNetModelCondition, UNetModel
@@ -10,8 +8,8 @@ from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_b
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_no_dpm import UNetModel_SpatialCondition_Hadamart_No_DPM
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_no_dpm_notime import UNetModel_SpatialCondition_Hadamart_No_DPM_NoTime
 from guided_diffusion.models.controlnet.controlnet import ControlNet, ControlledUnetModel, ControlNetWrapper
-from guided_diffusion.models.controlnet_mod.controlnet_spatial_w_dpp_nonspa.controlnet_mod import ControlledUnetModel_DPPNonSpa, ControlNetWrapper
-from guided_diffusion.models.controlnet_mod.dpp_spatial_w_cross_attention.dpp_spatial_cond import DPP_Spatial_with_CA
+from guided_diffusion.models.controlnet_mod.controlnet_spatial_w_dpp_nonspa.controlnet_mod import ControlledUnetModel_DPPNonSpa, ControlNet_DPPNonSpa, ControlNetWrapperMod
+from guided_diffusion.models.controlnet_mod.dpp_spatial_w_cross_attention.dpp_spatial_cond import DPP_Spatial_with_CA, EncoderSpatial_with_CA, DPPSpatialWrapper
 
 NUM_CLASSES = 1000
 
@@ -20,6 +18,16 @@ def create_img_and_diffusion(cfg):
         controlled_unet = create_model(cfg.img_model, all_cfg=cfg)
         controlnet = create_model(cfg.img_cond_model, all_cfg=cfg)
         img_model = ControlNetWrapper(controlnet=controlnet, unet=controlled_unet)
+        img_cond_model = None
+    elif cfg.img_model.arch in ['ControlNet_DPPNonSpa', 'ControlledUnetModel_DPPNonSpa']:
+        controlled_unet = create_model(cfg.img_model, all_cfg=cfg)
+        controlnet = create_model(cfg.img_cond_model, all_cfg=cfg)
+        img_model = ControlNetWrapperMod(controlnet=controlnet, unet=controlled_unet)
+        img_cond_model = None
+    elif cfg.img_model.arch in ['DPP_Spatial_with_CA', 'EncoderSpatial_with_CA']:
+        unet = create_model(cfg.img_model, all_cfg=cfg)
+        encoder = create_model(cfg.img_cond_model, all_cfg=cfg)
+        img_model = DPPSpatialWrapper(encoder=encoder, unet=unet)
         img_cond_model = None
     else:
         img_model = create_model(cfg.img_model, all_cfg=cfg)
@@ -267,6 +275,24 @@ def create_model(cfg, all_cfg=None):
             condition_proj_dim=cfg.condition_proj_dim,
             # context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning, not used in spatial transformer
         )
+    elif cfg.arch == 'ControlNet_DPPNonSpa':
+        return ControlNet_DPPNonSpa(
+            image_size=cfg.image_size,
+            in_channels=3,
+            model_channels=cfg.num_channels,
+            hint_channels=cfg.in_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=False,
+            use_scale_shift_norm=True,
+            transformer_depth=1,
+            legacy=False,
+            condition_dim=sum(all_cfg.param_model.n_params),
+            condition_proj_dim=cfg.condition_proj_dim,
+            context_dim=None,    
+        )
     elif cfg.arch == 'DPP_Spatial_with_CA':
         return DPP_Spatial_with_CA(
             image_size=cfg.image_size,
@@ -291,6 +317,29 @@ def create_model(cfg, all_cfg=None):
             use_new_attention_order=cfg.use_new_attention_order,
             conditioning=cfg.conditioning,
             all_cfg=all_cfg,
+        ),
+    elif cfg.arch == 'EncoderSpatial_with_CA':
+        return EncoderSpatial_with_CA(
+            image_size=cfg.image_size,
+            in_channels=cfg.in_channels,
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=cfg.num_res_blocks,
+            attention_resolutions=tuple(attention_ds),
+            dropout=cfg.dropout,
+            channel_mult=channel_mult,
+            use_checkpoint=cfg.use_checkpoint,
+            # Cross-attention
+            num_heads=cfg.num_heads,
+            use_spatial_transformer=True,
+            transformer_depth=1,
+            context_dim=cfg.condition_dim,    # Non-spatial conditioning
+            # Cross-attention
+            num_head_channels=cfg.num_head_channels,
+            num_heads_upsample=cfg.num_heads_upsample,
+            use_scale_shift_norm=cfg.use_scale_shift_norm,
+            resblock_updown=cfg.resblock_updown,
+            use_new_attention_order=cfg.use_new_attention_order,
         ),
 
     else: raise NotImplementedError(f"Unknown model architecture: {cfg.arch}")
