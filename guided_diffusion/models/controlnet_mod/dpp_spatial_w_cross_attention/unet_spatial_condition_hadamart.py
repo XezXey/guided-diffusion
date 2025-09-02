@@ -1256,7 +1256,7 @@ class ResBlockNoTime(nn.Module):
         h = self.out_layers(h)
         return self.skip_connection(x) + h
  
-class UNetModel_SpatialCondition_Hadamart(nn.Module):
+class DPP_Spatial_with_CA(nn.Module):
     """
     The full UNet model with attention and timestep embedding.
     :param in_channels: channels in the input Tensor.
@@ -1541,65 +1541,6 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
         self.middle_block.apply(convert_module_to_f32)
         self.output_blocks.apply(convert_module_to_f32)
         
-    # def forward(self, x, timesteps, y=None, **kwargs):
-    #     """
-    #     Apply the model to an input batch.
-    #     :param x: an [N x C x ...] Tensor of inputs.
-    #     :param timesteps: a 1-D batch of timesteps.
-    #     :param y: an [N] Tensor of labels, if class-conditional.
-    #     :return: an [N x C x ...] Tensor of outputs.
-    #     """
-    #     apply_cond_layer = self.cond_layer_selector.get_apply_cond_selector()
-    #     spatial_latent = copy.deepcopy(kwargs["spatial_latent"])
-    #     assert len(kwargs['spatial_latent']) == len(apply_cond_layer)
-    #     hs = []
-    #     emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
-    #     # First layer - input_blocks
-    #     h = x.type(self.dtype)
-    #     h = self.input_blocks[0](h, emb, condition=kwargs)
-    #     hs.append(h)
-    #     # The rest layer - input_blocks
-    #     for i, module in enumerate(self.input_blocks[1:]):
-    #         # The hadamart conditioning
-    #         hadamart_layer, rest_layer = module[0], module[1:]
-    #         h = hadamart_layer(x=h, y=kwargs['spatial_latent'][0], apply_=apply_cond_layer[0])
-    #         kwargs['spatial_latent'].pop(0)
-    #         apply_cond_layer.pop(0)
-    #         # The rest layer
-    #         h = rest_layer(h, emb, condition=kwargs)
-    #         hs.append(h)
-        
-    #     # Pre - middle blocks
-    #     hadamart_pre_mb, middle_block, hadamart_post_mb = self.middle_block[0], self.middle_block[1:-1], self.middle_block[-1]
-    #     assert len(kwargs['spatial_latent']) == 2
-    #     assert len(apply_cond_layer) == 2
-    #     h = hadamart_pre_mb(x=h, y=kwargs['spatial_latent'][0], apply_=apply_cond_layer[0])
-    #     kwargs['spatial_latent'].pop(0)
-    #     apply_cond_layer.pop(0)
-        
-    #     # Middle blocks
-    #     h = middle_block(h, emb, condition=kwargs)
-
-    #     # Post - middle blocks
-    #     assert len(kwargs['spatial_latent']) == 1
-    #     assert len(apply_cond_layer) == 1
-    #     h = hadamart_post_mb(x=h, y=kwargs['spatial_latent'][0], apply_=apply_cond_layer[0])
-    #     kwargs['spatial_latent'].pop(0)
-    #     apply_cond_layer.pop(0)
-        
-    #     # Output blocks
-    #     for i, module in enumerate(self.output_blocks):
-    #         h = th.cat([h, hs.pop()], dim=1)
-    #         h = module(h, emb, condition=kwargs)
-    #     h = h.type(x.dtype)
-
-    #     assert len(kwargs['spatial_latent']) == 0
-    #     assert len(apply_cond_layer) == 0
-    #     if self.return_dict:
-    #         return {'output':self.out(h)}
-    #     else: return self.out(h)
-        
-        
     def forward(self, x, timesteps, y=None, **kwargs):
         """
         Apply the model to an input batch.
@@ -1664,7 +1605,6 @@ class UNetModel_SpatialCondition_Hadamart(nn.Module):
             return {'output':self.out(h)}
         else: return self.out(h)
         
-
 class EncoderUNet_SpatialCondition(nn.Module):
     """
     The half UNet model with attention.
@@ -1917,136 +1857,3 @@ class EncoderUNet_SpatialCondition(nn.Module):
         h = self.middle_block(h, emb)
         results.append(h)
         return results
-
-class EncoderUNet_WithPrep_SpatialCondition(nn.Module):
-    def __init__(
-        self,
-        image_size,
-        in_channels,
-        # model_channels,
-        # out_channels,
-        # num_res_blocks,
-        # attention_resolutions,
-        # conditioning,
-        # condition_dim,
-        # dropout=0,
-        channel_mult=(1, 2, 4, 8),
-        # conv_resample=True,
-        # dims=2,
-        # use_checkpoint=False,
-        # use_fp16=False,
-        # num_heads=1,
-        # num_head_channels=-1,
-        # num_heads_upsample=-1,
-        # use_scale_shift_norm=False,
-        # resblock_updown=False,
-        # use_new_attention_order=False,
-        # pool="adaptive",
-        composite_w_type = "global",
-    ):
-        super().__init__()
-        #NOTE: Adding new layer to combined
-        self.composite_w_type = composite_w_type
-        if self.composite_w_type == "global":
-            print("[#] Using global composite_w")
-            self.composite_w = th.nn.parameter.Parameter(th.zeros((1)))  # For example, a scalar weight
-        elif self.composite_w_type == "local":
-            print("[#] Using local composite_w")
-            self.composite_w = th.nn.parameter.Parameter(th.zeros((in_channels, image_size, image_size)))  # For example, the Hadamart weight of image size
-        else: raise NotImplementedError(f"Unexpected {self.composite_w_type} composite_w_type")
-        
-        #NOTE: Adding sigmoid layer to make sure the composite_w is in [0, 1]
-        self.sigmoid = th.nn.Sigmoid()
-
-    def forward(self, x1, x2, emb=None):
-        """
-        Apply the model to an input batch.
-        :param x: an [N x C x ...] Tensor of inputs.
-        :param timesteps: a 1-D batch of timesteps.
-        :return: an [N x K] Tensor of outputs.
-        """
-        
-        # First doing the composite layer: w * image1 + (1-w) * image2
-        # Normally, x would contains the concatenate of [image1, image2, ...]
-        # print(self.composite_w)
-        w = self.sigmoid(self.composite_w)
-        # print(w.shape, x1.shape, x2.shape, self.composite_w)
-        out = w * x1 + (1 - w) * x2
-        return out
-        
-    
-   
-# class EncoderUNet_WithPrep_SpatialCondition(EncoderUNet_SpatialCondition):
-#     def __init__(
-#         self,
-#         image_size,
-#         in_channels,
-#         model_channels,
-#         out_channels,
-#         num_res_blocks,
-#         attention_resolutions,
-#         conditioning,
-#         condition_dim,
-#         dropout=0,
-#         channel_mult=(1, 2, 4, 8),
-#         conv_resample=True,
-#         dims=2,
-#         use_checkpoint=False,
-#         use_fp16=False,
-#         num_heads=1,
-#         num_head_channels=-1,
-#         num_heads_upsample=-1,
-#         use_scale_shift_norm=False,
-#         resblock_updown=False,
-#         use_new_attention_order=False,
-#         pool="adaptive",
-#     ):
-#         super().__init__(
-#             image_size=image_size,
-#             in_channels=in_channels,
-#             model_channels=model_channels,
-#             out_channels=out_channels,
-#             num_res_blocks=num_res_blocks,
-#             attention_resolutions=attention_resolutions,
-#             conditioning=conditioning,
-#             condition_dim=condition_dim,
-#             dropout=dropout,
-#             channel_mult=channel_mult,
-#             conv_resample=conv_resample,
-#             dims=dims,
-#             use_checkpoint=use_checkpoint,
-#             use_fp16=use_fp16,
-#             num_heads=num_heads,
-#             num_head_channels=num_head_channels,
-#             num_heads_upsample=num_heads_upsample,
-#             use_scale_shift_norm=use_scale_shift_norm,
-#             resblock_updown=resblock_updown,
-#             use_new_attention_order=use_new_attention_order,
-#             pool=pool,
-#         )
-        
-#         # Adding new layer to combined
-#         self.composite_w = th.nn.Parameter(th.ones((in_channels, image_size, image_size)))  # For example, a vector of size 10
-
-#     def forward(self, x, emb=None):
-#         """
-#         Apply the model to an input batch.
-#         :param x: an [N x C x ...] Tensor of inputs.
-#         :param timesteps: a 1-D batch of timesteps.
-#         :return: an [N x K] Tensor of outputs.
-#         """
-        
-#         # First doing the composite layer: w * image1 + (1-w) * image2
-#         # Normally, x would contains the concatenate of [image1, image2, ...]
-#         x =
-        
-#         results = []
-#         h = x.type(self.dtype)
-#         for _, module in enumerate(self.input_blocks):
-#             h = module(h, emb)
-#             results.append(h)
-#         h = self.middle_block(h, emb)
-#         results.append(h)
-#         return results
-        
-    

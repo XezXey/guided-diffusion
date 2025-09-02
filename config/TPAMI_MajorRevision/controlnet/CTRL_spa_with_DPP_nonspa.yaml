@@ -3,14 +3,12 @@ img_model:
   arch: "ControlledUnetModel_DPPNonSpa"
   image_size: 128
   in_image: ['raw']
-  num_heads: 8
   num_res_blocks: 2
   in_channels: 3
   num_channels: 256
   out_channels: 3
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
-  attention_resolutions: "4,2,1"
 
 img_cond_model:
   apply: False 
@@ -18,7 +16,6 @@ img_cond_model:
   in_image: ['deca_masked_face_images_woclip', 'shadow_diff_with_weight_simplified', 'face_structure']
   in_channels: 5
   image_size: 128
-  num_heads: 8
   num_res_blocks: 2
   num_channels: 256
   out_channels: 128
@@ -27,7 +24,6 @@ img_cond_model:
   prep_image: [Null, Null, Null]
   noise_dpm_cond_img: [Null, Null, Null]
   canny_thres: [Null, Null, Null]
-  attention_resolutions: "4,2,1"
 
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb']
@@ -55,4 +51,4 @@ dataset:
 
 train_misc:
   exp_name: "ControlNet"
-  cfg_name: "CTRL_spa+DPP_nonspa"
+  cfg_name: "CTRL_spa_with_DPP_nonspa"

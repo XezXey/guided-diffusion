@@ -54,6 +54,7 @@ def main():
         logger.warning("[#] Debug mode is on, using valid set for training.")
     else:
         logger.warning("[#] Debug mode is off, using train set for training.")
+        
     train_loader, _, _ = load_data_img_deca(
         data_dir=cfg.dataset.data_dir,
         deca_dir=cfg.dataset.deca_dir,
@@ -72,6 +73,7 @@ def main():
 
     # logger.info("[#] Training...")
     logger.info("[#] Training...")
+    logger.info(f"[#] Save ckpt to: {cfg.train.save_ckpt_dir}")
     try:
         username = getpass.getuser()
         hostname = socket.gethostname()

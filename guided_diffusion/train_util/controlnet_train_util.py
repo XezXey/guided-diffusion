@@ -101,6 +101,10 @@ class TrainLoop(LightningModule):
             if isinstance(self.cfg.train.ema_rate, float)
             else [float(x) for x in self.cfg.train.ema_rate.split(",")]
         )
+        if self.cfg.train.save_ckpt_dir is None:
+            raise ValueError("cfg.train.save_ckpt_dir is None")
+        
+        self.save_ckpt_dir = self.cfg.train.save_ckpt_dir
         self.log_interval = self.cfg.train.log_interval
         self.save_interval = self.cfg.train.save_interval
         self.sampling_interval = self.cfg.train.sampling_interval
@@ -563,7 +567,7 @@ class TrainLoop(LightningModule):
                 filename = f"{name}_model{save_step:06d}.pt"
             else:
                 filename = f"{name}_ema_{rate}_{save_step:06d}.pt"
-            with bf.BlobFile(bf.join(get_blob_logdir(), filename), "wb") as f:
+            with bf.BlobFile(bf.join(self.save_ckpt_dir, filename), "wb") as f:
                 th.save(state_dict, f)
 
         for name in self.model_dict.keys():
@@ -572,7 +576,7 @@ class TrainLoop(LightningModule):
                 save_checkpoint(rate, params, self.model_trainer_dict[name], name=name)
 
         with bf.BlobFile(
-            bf.join(get_blob_logdir(), f"opt{save_step:06d}.pt"),
+            bf.join(self.save_ckpt_dir, f"opt{save_step:06d}.pt"),
             "wb",
         ) as f:
             th.save(self.opt.state_dict(), f)
