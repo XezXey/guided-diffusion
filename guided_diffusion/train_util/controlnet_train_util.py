@@ -103,7 +103,8 @@ class TrainLoop(LightningModule):
         )
         if self.cfg.train.save_ckpt_dir is None:
             raise ValueError("cfg.train.save_ckpt_dir is None")
-        
+        os.makedirs(self.cfg.train.save_ckpt_dir, exist_ok=True)
+
         self.save_ckpt_dir = self.cfg.train.save_ckpt_dir
         self.log_interval = self.cfg.train.log_interval
         self.save_interval = self.cfg.train.save_interval
