@@ -1975,7 +1975,7 @@ class EncoderSpatial_with_CA(nn.Module):
         results = []
         hint = kwargs['kwargs']['cond_img'].type_as(x)
         h = hint
-        context = kwargs['kwargs']['cond_params']
+        # context = kwargs['kwargs']['cond_params']
         # h = x.type(self.dtype)
         for _, module in enumerate(self.input_blocks):
             h = module(h, emb, kwargs)
