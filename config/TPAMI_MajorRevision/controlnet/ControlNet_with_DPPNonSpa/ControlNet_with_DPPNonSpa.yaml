@@ -47,6 +47,7 @@ train:
   save_interval: 50000
   use_prep_data: False
   lr: 1e-5
+  logger_dir: /data2/mint/wandb_logs/
 
 dataset:
   root_path: '/data2/mint/DPM_Dataset/'
