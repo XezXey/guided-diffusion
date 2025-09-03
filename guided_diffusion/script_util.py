@@ -336,13 +336,13 @@ def create_model(cfg, all_cfg=None):
             use_checkpoint=cfg.use_checkpoint,
             # Cross-attention
             num_heads=cfg.num_heads,
-            use_spatial_transformer=True,
+            use_spatial_transformer=True,   # Using spatial transformer for cross-attention
             transformer_depth=1,
             context_dim=cfg.condition_dim,    # Non-spatial conditioning
+            use_scale_shift_norm=True,  # Set this to True, but this affect only time-cond, not the face condition (We push this to Cross-Attention)
             # Cross-attention
             num_head_channels=cfg.num_head_channels,
             num_heads_upsample=cfg.num_heads_upsample,
-            use_scale_shift_norm=cfg.use_scale_shift_norm,
             resblock_updown=cfg.resblock_updown,
             use_new_attention_order=cfg.use_new_attention_order,
             conditioning=cfg.conditioning,
@@ -361,13 +361,13 @@ def create_model(cfg, all_cfg=None):
             use_checkpoint=cfg.use_checkpoint,
             # Cross-attention
             num_heads=cfg.num_heads,
-            use_spatial_transformer=False,
+            use_spatial_transformer=False, # Since DiFaReli++ has no context to condition the encoder, we set this to false for condition nothing
+            use_scale_shift_norm=False,  # No scale_shift_norm as similar to DiFaReli++ (ResBlockNoTime, also no cond to be accurate)
             transformer_depth=1,
             context_dim=None,    # Non-spatial conditioning
             # Cross-attention
             num_head_channels=cfg.num_head_channels,
             num_heads_upsample=cfg.num_heads_upsample,
-            use_scale_shift_norm=cfg.use_scale_shift_norm,
             resblock_updown=cfg.resblock_updown,
             use_new_attention_order=cfg.use_new_attention_order,
         ),
