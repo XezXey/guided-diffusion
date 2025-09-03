@@ -3,14 +3,13 @@ img_model:
   arch: "DPP_Spatial_with_CA"
   image_size: 128
   in_image: ['raw']
-  num_res_blocks: 2
   in_channels: 3
-  num_channels: 256
   out_channels: 3
   hadamart_prep: "Tanh"
+  use_scale_shift_norm: True
+  # For Cross-Attention
   num_heads: 8
-  use_scale_shift_norm: False
-  # use_spatial_transformer: True
+  # For Cross-Attention
 
 img_cond_model:
   apply: False 
@@ -18,9 +17,6 @@ img_cond_model:
   in_image: ['deca_masked_face_images_woclip', 'shadow_diff_with_weight_simplified', 'face_structure']
   in_channels: 5
   image_size: 128
-  num_heads: 8
-  num_res_blocks: 2
-  num_channels: 256
   out_channels: 128
   condition_dim: 256
   override_cond: "spatial_latent"

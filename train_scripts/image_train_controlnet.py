@@ -26,8 +26,8 @@ def main():
     # logger.log("[#] Creating model and diffusion...")
     logger.info("[#] Creating model and diffusion...")
 
-    img_model, diffusion = create_img_and_diffusion(cfg)
-    print(img_model)
+    img_model, diffusion = create_img_and_diffusion(cfg, logger)
+    # print(img_model)
     # Filtered out the None model
     for k, v in img_model.items():
         if v is None:

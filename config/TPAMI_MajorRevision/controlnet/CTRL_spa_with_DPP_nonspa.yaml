@@ -9,6 +9,10 @@ img_model:
   out_channels: 3
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
+  # Cross-attention
+  num_heads: 8
+  attention_resolutions: "4,2,1"
+  # Cross-attention
 
 img_cond_model:
   apply: False 
@@ -23,6 +27,7 @@ img_cond_model:
   prep_image: [Null, Null, Null]
   noise_dpm_cond_img: [Null, Null, Null]
   canny_thres: [Null, Null, Null]
+  attention_resolutions: "4,2,1"
 
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb']

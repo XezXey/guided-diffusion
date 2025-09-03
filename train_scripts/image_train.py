@@ -24,7 +24,7 @@ def main():
     logger = mint_logger.createLogger()
     logger.info("[#] Creating model and diffusion...")
 
-    img_model, diffusion = create_img_and_diffusion(cfg)
+    img_model, diffusion = create_img_and_diffusion(cfg, logger=logger)
     print(img_model)
     # Filtered out the None model
     for k, v in img_model.items():

@@ -977,7 +977,6 @@ class GaussianDiffusion:
             else:
                 output = model(x_t.float(), self._scale_timesteps(t).long(), **model_kwargs)
             model_output = output['output']
-            print(th.mean(model_output))
             target = {
                 ModelMeanType.PREVIOUS_X: self.q_posterior_mean_variance(
                     x_start=x_start, x_t=x_t, t=t

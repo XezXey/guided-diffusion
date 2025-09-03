@@ -10,30 +10,61 @@ from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_n
 from guided_diffusion.models.controlnet.controlnet import ControlNet, ControlledUnetModel, ControlNetWrapper
 from guided_diffusion.models.controlnet_mod.controlnet_spatial_w_dpp_nonspa.controlnet_mod import ControlledUnetModel_DPPNonSpa, ControlNet_DPPNonSpa, ControlNetWrapperMod
 from guided_diffusion.models.controlnet_mod.dpp_spatial_w_cross_attention.dpp_spatial_cond import DPP_Spatial_with_CA, EncoderSpatial_with_CA, DPPSpatialWrapper
+import torch as th
 
 NUM_CLASSES = 1000
+def count_trainable_params(model: th.nn.Module):
+    n = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return n
 
-def create_img_and_diffusion(cfg):
+def create_img_and_diffusion(cfg, logger):
     if cfg.img_model.arch in ['ControlNet', 'ControlledUnetModel']:
         controlled_unet = create_model(cfg.img_model, all_cfg=cfg)
         controlnet = create_model(cfg.img_cond_model, all_cfg=cfg)
         img_model = ControlNetWrapper(controlnet=controlnet, unet=controlled_unet)
         img_cond_model = None
+        n_ctrl = count_trainable_params(img_model.controlnet)
+        n_unet = count_trainable_params(img_model.unet)
+        logger.warning(f"[#] Model size ({cfg.img_model.arch}): ")
+        logger.info(f"1. ControlNet: {n_ctrl/1e6}M")
+        logger.info(f"2. UNet: {n_unet/1e6}M")
+        logger.warning(f"=> Total params: {(n_ctrl+n_unet)/1e6}M")
     elif cfg.img_model.arch in ['ControlNet_DPPNonSpa', 'ControlledUnetModel_DPPNonSpa']:
         controlled_unet = create_model(cfg.img_model, all_cfg=cfg)
         controlnet = create_model(cfg.img_cond_model, all_cfg=cfg)
         img_model = ControlNetWrapperMod(controlnet=controlnet, unet=controlled_unet)
         img_cond_model = None
+        n_ctrl = count_trainable_params(img_model.controlnet)
+        n_unet = count_trainable_params(img_model.unet)
+        logger.warning(f"[#] Model size ({cfg.img_model.arch}): ")
+        logger.info(f"1. ControlNet: {n_ctrl/1e6}M")
+        logger.info(f"2. UNet: {n_unet/1e6}M")
+        logger.warning(f"=> Total params: {(n_ctrl+n_unet)/1e6}M")
     elif cfg.img_model.arch in ['DPP_Spatial_with_CA', 'EncoderSpatial_with_CA']:
         unet = create_model(cfg.img_model, all_cfg=cfg)
         encoder = create_model(cfg.img_cond_model, all_cfg=cfg)
         img_model = DPPSpatialWrapper(encoder=encoder, unet=unet)
         img_cond_model = None
+        n_enc = count_trainable_params(img_model.encoder)
+        n_unet = count_trainable_params(img_model.unet)
+        logger.warning(f"[#] Model size ({cfg.img_model.arch}): ")
+        logger.info(f"1. ControlNet: {n_enc/1e6}M")
+        logger.info(f"2. UNet: {n_unet/1e6}M")
+        logger.warning(f"=> Total params: {(n_enc+n_unet)/1e6}M")
     else:
         img_model = create_model(cfg.img_model, all_cfg=cfg)
+        n_unet = count_trainable_params(img_model[0])
         if cfg.img_cond_model.apply:
             img_cond_model = create_model(cfg.img_cond_model, all_cfg=cfg)
-        else: img_cond_model = None
+            n_enc = count_trainable_params(img_cond_model[0])
+        else: 
+            img_cond_model = None
+            n_enc = 0
+            
+        logger.warning(f"[#] Model size ({cfg.img_cond_model.arch} & {cfg.img_model.arch}): ")
+        logger.info(f"1. Encoder : {n_enc/1e6}M")
+        logger.info(f"2. UNet: {n_unet/1e6}M")
+        logger.warning(f"=> Total params: {(n_enc+n_unet)/1e6}M")
     
     diffusion = create_gaussian_diffusion(cfg.diffusion)
     
@@ -286,7 +317,7 @@ def create_model(cfg, all_cfg=None):
             channel_mult=channel_mult,
             num_heads=8,
             use_spatial_transformer=False,
-            use_scale_shift_norm=True,
+            use_scale_shift_norm=False,
             transformer_depth=1,
             legacy=False,
             condition_dim=sum(all_cfg.param_model.n_params),

@@ -104,7 +104,6 @@ class TimestepEmbedSequentialCond(nn.Sequential, TimestepBlockCond):
     def forward(self, x, emb, condition):
         for layer in self:
             if isinstance(layer, TimestepBlockCond) or isinstance(layer, SpatialTransformer):
-                # print(layer)
                 x = layer(x, emb, condition)
             else:
                 x = layer(x)
