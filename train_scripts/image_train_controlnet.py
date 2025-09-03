@@ -74,6 +74,8 @@ def main():
     # logger.info("[#] Training...")
     logger.info("[#] Training...")
     logger.info(f"[#] Save ckpt to: {cfg.train.save_ckpt_dir}")
+    logger.info(f"[#] Load checkpoint from: {cfg.train.resume_checkpoint}")
+    
     try:
         username = getpass.getuser()
         hostname = socket.gethostname()
