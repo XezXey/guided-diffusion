@@ -433,7 +433,7 @@ def shadow_diff_final_postproc(cond, misc):
 
     return cond, misc
 
-def build_condition_image(cond, misc):
+def build_condition_image(cond, misc, force_render=False):
     src_idx = misc['src_idx']
     dst_idx = misc['dst_idx']
     n_step = misc['n_step']
@@ -484,7 +484,6 @@ def build_condition_image(cond, misc):
             mask = params_utils.load_flame_mask()
         else: mask=None
         
-        #TODO: Render DECA in minibatch
         # sub_step = mani_utils.ext_sub_step(n_step, batch_size)
         sub_step = mani_utils.ext_sub_step(n_step, render_batch_size)
         all_render = []
@@ -720,7 +719,6 @@ def build_condition_image(cond, misc):
 
     
     return cond, clip_ren
-
 
 def build_condition_image_for_vids(cond, misc):
     batch_size = misc['batch_size']

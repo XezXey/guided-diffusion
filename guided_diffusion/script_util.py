@@ -10,6 +10,7 @@ from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_n
 from guided_diffusion.models.controlnet.controlnet import ControlNet, ControlledUnetModel, ControlNetWrapper
 from guided_diffusion.models.controlnet_mod.controlnet_spatial_w_dpp_nonspa.controlnet_mod import ControlledUnetModel_DPPNonSpa, ControlNet_DPPNonSpa, ControlNetWrapperMod
 from guided_diffusion.models.controlnet_mod.dpp_spatial_w_cross_attention.dpp_spatial_cond import DPP_Spatial_with_CA, EncoderSpatial_with_CA, DPPSpatialWrapper
+from guided_diffusion.mint_logger import createLogger
 import torch as th
 
 NUM_CLASSES = 1000
@@ -17,7 +18,10 @@ def count_trainable_params(model: th.nn.Module):
     n = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return n
 
-def create_img_and_diffusion(cfg, logger):
+def create_img_and_diffusion(cfg, logger=None):
+    if logger is None:
+        logger = createLogger()
+        
     if cfg.img_model.arch in ['ControlNet', 'ControlledUnetModel']:
         controlled_unet = create_model(cfg.img_model, all_cfg=cfg)
         controlnet = create_model(cfg.img_cond_model, all_cfg=cfg)

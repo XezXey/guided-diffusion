@@ -81,6 +81,7 @@ def dict_slice(in_d, keys, n):
             continue
         else:
             if th.is_tensor(in_d[key]):
+                print(type(key), type(in_d[key]), type(n))
                 in_d[key] = in_d[key][0:n]#.detach()
             elif isinstance(in_d[key], list):
                 for i in range(len(in_d[key])):
