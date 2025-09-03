@@ -135,6 +135,7 @@ def load_data_img_deca(
         img_ext=img_ext
     )
     print("[#] Parameters Conditioning")
+    print("Set : ", set_)
     print("Params keys order : ", img_dataset.precomp_params_key)
     print("Remove keys : ", cfg.param_model.rmv_params)
     print("Input Image : ", cfg.img_model.in_image)

@@ -271,7 +271,7 @@ class BasicTransformerBlock(nn.Module):
     def _forward(self, x, context=None):
         if context is not None:
             if len(context.shape) == 2:
-                context = context[:, None, :]
+                context = context[:, None, :].type_as(x)
         x = self.attn1(self.norm1(x), context=context if self.disable_self_attn else None) + x
         x = self.attn2(self.norm2(x), context=context) + x
         x = self.ff(self.norm3(x)) + x
@@ -321,8 +321,10 @@ class SpatialTransformer(nn.Module):
             self.proj_out = zero_module(nn.Linear(in_channels, inner_dim))
         self.use_linear = use_linear
 
-    def forward(self, x, context=None):
+    def forward(self, x, emb, condition):
         # note: if no context is given, cross-attention defaults to self-attention
+        # emb is time-embedding
+        context = condition['cond_params']  # Non-spatial condition
         if not isinstance(context, list):
             context = [context]
         b, c, h, w = x.shape

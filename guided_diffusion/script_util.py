@@ -331,9 +331,9 @@ def create_model(cfg, all_cfg=None):
             use_checkpoint=cfg.use_checkpoint,
             # Cross-attention
             num_heads=cfg.num_heads,
-            use_spatial_transformer=True,
+            use_spatial_transformer=False,
             transformer_depth=1,
-            context_dim=cfg.condition_dim,    # Non-spatial conditioning
+            context_dim=None,    # Non-spatial conditioning
             # Cross-attention
             num_head_channels=cfg.num_head_channels,
             num_heads_upsample=cfg.num_heads_upsample,
