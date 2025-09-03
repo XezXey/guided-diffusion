@@ -49,6 +49,7 @@ train:
   lr: 1e-5
 
 dataset:
+  root_path: '/data2/mint/DPM_Dataset/'
   deca_dir: "/data2/mint/DPM_Dataset/ffhq_256_with_anno/params/"
   data_dir: "/data2/mint/DPM_Dataset/ffhq_256_with_anno/ffhq_256/"
   face_segment_dir: "/data2/mint/DPM_Dataset/ffhq_256_with_anno/face_segment_with_pupil/"
