@@ -254,10 +254,14 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     '''
     # Rendering
     cond = copy.deepcopy(model_kwargs)
-    cond, n_step = make_condition(cond=cond, 
+    
+    cond, misc_rvk = make_condition(cond=cond, 
                         src_idx=src_idx, dst_idx=dst_idx, 
                         n_step=n_step, itp_func=itp_func
                     )
+    if n_step != misc_rvk['n_step']:
+        print(f"[#] In Relighting fn: {n_step} => {misc_rvk['n_step']}")
+        n_step = misc_rvk['n_step']
 
     # print(cond.keys())
     # exit()
@@ -277,7 +281,11 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     print("[#] Apply Mean-matching...")
     
     # Default
-    reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev, store_mean=True)
+    cond_rev_inp = {}
+    for k in ['dpm_cond_img', 'cond_img', 'cond_params', 'use_cond_xt_fn', 'spatial_latent']:
+        if k in cond_rev:
+            cond_rev_inp[k] = cond_rev[k]
+    reverse_ddim_sample = pl_sampling.reverse_proc(x=dat[0:1, ...], model_kwargs=cond_rev_inp, store_mean=True)
     noise_map = reverse_ddim_sample['final_output']['sample']
     rev_mean = reverse_ddim_sample['intermediate']
     
@@ -285,7 +293,7 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
     #NOTE: rev_mean WILL BE MODIFIED; This is for computing the ratio of inversion (brightness correction).
     sample_ddim = pl_sampling.forward_proc(
         noise=noise_map,
-        model_kwargs=cond_rev,
+        model_kwargs=cond_rev_inp,
         store_intermediate=False,
         rev_mean=rev_mean)
     
@@ -312,9 +320,13 @@ def relight(dat, model_kwargs, itp_func, n_step=3, src_idx=0, dst_idx=1):
         if cfg.img_cond_model.apply:
             cond_relit = pl_sampling.forward_cond_network(model_kwargs=cond_relit)
         
+        cond_relit_inp = {}
+        for k in ['dpm_cond_img', 'cond_img', 'cond_params', 'use_cond_xt_fn', 'spatial_latent']:
+            if k in cond_relit.keys():
+                cond_relit_inp[k] = cond_relit[k]
         relight_out = pl_sampling.forward_proc(
             noise=th.repeat_interleave(noise_map, repeats=end-start, dim=0),
-            model_kwargs=cond_relit,
+            model_kwargs=cond_relit_inp,
             store_intermediate=False,
             add_mean=mean_match_ratio)
         
@@ -469,10 +481,7 @@ if __name__ == '__main__':
     else: raise ValueError
 
     cfg.dataset.deca_dir = f'{cfg.dataset.root_path}/{cfg.dataset.training_data}/params/'
-    # cfg.dataset.face_segment_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/face_segment/"
     cfg.dataset.deca_rendered_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/rendered_images/"
-    cfg.dataset.laplacian_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/laplacian/"
-    cfg.dataset.sobel_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/sobel/"
     cfg.dataset.shadow_mask_dir = f"{cfg.dataset.root_path}/{cfg.dataset.training_data}/shadow_masks/"
     cfg.dataset.shadow_diff_dir = f"{cfg.dataset.shadow_diff_dir}/" if args.shadow_diff_dir is None else f"{args.shadow_diff_dir}/"
 

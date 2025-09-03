@@ -12,16 +12,16 @@
                 "host": "localhost",
                 "port": 5678
             },
-            "justMyCode": false,
+            "justMyCode": true,
             "pathMappings": [
                 // {
                 //     "localRoot": "/ist-nas/users/supasorn/conda_envs",
                 //     "remoteRoot": "/conda_envs"
                 // },
-                {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "."
-                }
+                // {
+                //     "localRoot": "${workspaceFolder}",
+                //     "remoteRoot": "."
+                // }
             ]
         },
         //   _____       _                                       _______        _       _             

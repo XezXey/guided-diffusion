@@ -790,7 +790,6 @@ def build_condition_image(cond, misc, force_render=False):
         else: mask=None
         
         #NOTE: Render DECA in minibatch
-        # sub_step = mani_utils.ext_sub_step(n_step, batch_size)
         print("[#] Total steps : ", n_step)
         sub_step = mani_utils.ext_sub_step(n_step, render_batch_size)
         load_deca_time = time.time() - start_t
