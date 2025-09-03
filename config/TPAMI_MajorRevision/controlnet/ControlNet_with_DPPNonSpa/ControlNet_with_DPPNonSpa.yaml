@@ -57,4 +57,4 @@ dataset:
 
 train_misc:
   exp_name: "ControlNet"
-  cfg_name: "CTRL_spa_with_DPP_nonspa"
+  cfg_name: "ControlNet_with_DPPNonSpa"

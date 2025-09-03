@@ -297,14 +297,13 @@ def create_model(cfg, all_cfg=None):
             num_res_blocks=2,
             attention_resolutions=tuple(attention_ds),
             channel_mult=channel_mult,
-            use_spatial_transformer=False,
-            use_scale_shift_norm=True,
+            use_spatial_transformer=False,  # Using Non-spatial and self-attention
+            use_scale_shift_norm=True,  # Since ControlNet need T_emb & context as input, so we replace with non-spatial similar to DiFaReli++
             num_heads=cfg.num_heads,
             num_head_channels=cfg.num_head_channels,
             num_heads_upsample=cfg.num_heads_upsample,
             condition_dim=cfg.condition_dim,
             condition_proj_dim=cfg.condition_proj_dim,
-            # context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning, not used in spatial transformer
         )
     elif cfg.arch == 'ControlNet_DPPNonSpa':
         return ControlNet_DPPNonSpa(
@@ -316,8 +315,8 @@ def create_model(cfg, all_cfg=None):
             attention_resolutions=tuple(attention_ds),
             channel_mult=channel_mult,
             num_heads=cfg.num_heads,
-            use_spatial_transformer=False,
-            use_scale_shift_norm=True,
+            use_spatial_transformer=False,  # Using Non-spatial and self-attention
+            use_scale_shift_norm=True,  # Since ControlNet need T_emb & context as input, so we replace with non-spatial similar to DiFaReli++
             transformer_depth=1,
             legacy=False,
             condition_dim=sum(all_cfg.param_model.n_params),

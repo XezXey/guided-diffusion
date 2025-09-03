@@ -50,4 +50,4 @@ dataset:
 
 train_misc:
   exp_name: "ControlNet"
-  cfg_name: "DPP_spa_with_CA"
+  cfg_name: "DPP_Spatial_with_CA"
