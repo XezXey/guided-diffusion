@@ -242,7 +242,7 @@ class TrainLoop(LightningModule):
     def log_rank_zero(self, batch):
         if self.step % self.log_interval == 0:
             self.log_step()
-        if (self.step % self.sampling_interval == 0) or (self.resume_step!=0 and self.step==1) :
+        if (self.step % self.sampling_interval == 0) or (self.resume_step!=0 and self.step==9999) :
             self.log_sampling(batch, sampling_model='ema')
             self.log_sampling(batch, sampling_model='model')
     
