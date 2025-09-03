@@ -475,8 +475,7 @@ class TrainLoop(LightningModule):
         
 
         # Any Encoder/Conditioned Network need to apply before a main UNet.
-        if self.cfg.img_cond_model.apply:
-            self.forward_cond_network(cond=cond, model_dict=sampling_model_dict)
+        cond = self.forward_cond_network(cond=cond, model_dict=sampling_model_dict)
         
         # print(cond['cond_img'].shape)
         # for i in range(cond['cond_img'].shape[0]):
