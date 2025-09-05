@@ -20,64 +20,88 @@ def get_shcoeff(image, Lmax=100):
     output_coeff = np.concatenate(output_coeff,axis=0)
     return output_coeff
 
-def unfold_sh_coeff(flatted_coeff, max_sh_level=2):
+def unfold_sh_coeff_vec(flatted_coeff: np.ndarray, max_sh_level: int = 2) -> np.ndarray:
     """
-    flatten spherical harmonics coefficient from 3x9 (e.g., level=2) to 3 x 2 x 3 x C matrix (when C = max_sh_level+1)
-    #  array format [0_0, 1_-1, 1_0, 1_1, 2_-2, 2_-1, 2_0, 2_1, 2_2]
-    
-    Output: 
-    sh_coeff[i, 1, D, D] is [-m, 0)
-    sh_coeff[i, 0, D, D] is [0, +m]
-    e.g., 
-    1) unfolded[0][0] is channel = 0 and +m side
-        working on sh[0] (same channel)
-    [
-        [sh[0], 0, 0,],
-        [sh[2], sh[3], 0],
-        [sh[6], sh[7], sh[8]]
-    ]
-    
-    2) unfolded[0][1] is channel = 0 and -m side
-        working on sh[0] (same channel)
-    [
-        [0, 0, 0,],
-        [0, sh[1], 0],
-        [0, sh[4], sh[5]]
-    ]
+    Vectorized unfolding of flattened SH coefficients.
 
-    """
-    sh_coeff = np.zeros((3, 2, max_sh_level+1, max_sh_level+1))
-    for c in range(3):  # Iterate each channel
-        coeff = 0   # Each coeff
-        for j in range(max_sh_level+1): # Iterate each level    [0 to max_sh_level]
-            # if j == 1: continue
-            for k in range(j, 0, -1):   # From [-(max_sh_level) to -1]; inclusive
-                sh_coeff[c, 1, j, k] = flatted_coeff[c, coeff]
-                coeff +=1
-            for k in range(0, j+1, 1):  # From [0 to max_sh_level]; inclusive
-                sh_coeff[c, 0, j, k] = flatted_coeff[c, coeff]
-                coeff += 1
-    return sh_coeff
+    Input:
+      flatted_coeff: array of shape (C, (L+1)^2), flattened per channel in this order:
+                     [0_0, 1_-1, 1_0, 1_1, 2_-2, 2_-1, 2_0, 2_1, 2_2, ..., L_-L, ..., L_L]
+                     where L = max_sh_level.
+      max_sh_level : maximum SH degree L.
 
-def flatten_sh_coeff(sh_coeff, max_sh_level=2):
+    Output:
+      sh_coeff: array of shape (C, 2, L+1, L+1)
+        - sh_coeff[:, 1, j, k] holds the negative-m side for degree j at index k=1..j
+        - sh_coeff[:, 0, j, k] holds the non-negative-m side for degree j at index k=0..j
     """
-    flatten spherical harmonics coefficient to 3xC matrix
+    C = flatted_coeff.shape[0]
+    D = max_sh_level + 1
+    needed = D * D
+    if flatted_coeff.shape[1] < needed:
+        raise ValueError(f"Need at least {(D*D)} coeffs per channel for L={max_sh_level}, got {flatted_coeff.shape[1]}.")
+
+    out = np.zeros((C, 2, D, D), dtype=flatted_coeff.dtype)
+
+    # For each degree j, the block in the flat vector is indices [j^2 : (j+1)^2]
+    # First j entries are m = -j..-1   (length j)
+    # Next  j+1 entries are m = 0..j   (length j+1)
+    for j in range(D):
+        start = j * j
+        mid   = start + j
+        end   = (j + 1) * (j + 1)
+
+        # negative m → side=1, positions k=j..1 (reverse order in the target)
+        if j > 0:
+            # flip so that (m=-j .. -1) maps to k=(j .. 1)
+            out[:, 1, j, 1:j+1] = np.flip(flatted_coeff[:, start:mid], axis=1)
+
+        # non-negative m → side=0, positions k=0..j
+        out[:, 0, j, 0:j+1] = flatted_coeff[:, mid:end]
+
+    return out
+
+def flatten_sh_coeff_vec(sh_coeff: np.ndarray, max_sh_level: int = 2) -> np.ndarray:
     """
-    flatted_coeff = np.zeros((3, (max_sh_level+1) ** 2))
-    # we will put into array in the format of 
-    # [0_0, 1_-1, 1_0, 1_1, 2_-2, 2_-1, 2_0, 2_1, 2_2]
-    # where first number is the order and the second number is the position in order
-    for i in range(3):
-        c = 0
-        for j in range(max_sh_level+1):
-            # if j == 1: continue
-            for k in range(j, 0, -1):
-                flatted_coeff[i, c] = sh_coeff[i, 1, j, k]
-                c +=1
-            for k in range(j+1):
-                flatted_coeff[i, c] = sh_coeff[i, 0, j, k]
-                c += 1
-    return flatted_coeff
+    Vectorized flattening of SH coefficients.
+
+    Input:
+      sh_coeff: array of shape (C, 2, L+1, L+1)
+                - [:, 1, j, 1..j] holds m = -j..-1  (stored at k = 1..j; higher |m| at larger k)
+                - [:, 0, j, 0..j] holds m =  0.. j  (stored at k = 0..j)
+      max_sh_level = L
+
+    Output:
+      flatted_coeff: array of shape (C, (L+1)^2), ordered by degree then m:
+                     [0_0, 1_-1, 1_0, 1_1, 2_-2, 2_-1, 2_0, 2_1, 2_2, ..., L_-L, ..., L_L]
+    """
+    if sh_coeff.ndim != 4:
+        raise ValueError(f"sh_coeff must have shape (C, 2, L+1, L+1); got {sh_coeff.shape}")
+    C, two, D, D2 = sh_coeff.shape
+    if two != 2 or D != max_sh_level + 1 or D2 != max_sh_level + 1:
+        raise ValueError(f"Expected (C, 2, {max_sh_level+1}, {max_sh_level+1}); got {sh_coeff.shape}")
+
+    L = max_sh_level
+    out = np.zeros((C, (L + 1) ** 2), dtype=sh_coeff.dtype)
+
+    # Degree-j block occupies indices [j^2 : (j+1)^2)
+    for j in range(L + 1):
+        start = j * j
+        mid   = start + j         # end of negative-m block
+        end   = (j + 1) * (j + 1)
+
+        # Negative m: need order (-j, ..., -1).
+        # Stored at k = 1..j; reading ascending gives (-1, ..., -j),
+        # so we reverse it to match the flat order (-j..-1).
+        if j > 0:
+            neg = sh_coeff[:, 1, j, 1:j+1][:, ::-1]  # shape (C, j)
+            out[:, start:mid] = neg
+
+        # Non-negative m: order (0..j) already matches flat order
+        nonneg = sh_coeff[:, 0, j, 0:j+1]            # shape (C, j+1)
+        out[:, mid:end] = nonneg
+
+    return out
 
 def compute_background(sh, lmax=2, image_width=512):
     # Generate random spherical harmonic coefficients
@@ -113,6 +137,7 @@ def sample_from_sh(shcoeff, lmax, theta, phi):
     for ch in (range(3)):
         coeffs = pyshtools.SHCoeffs.from_array(shcoeff[ch], lmax=lmax, normalization='4pi', csphase=1)
         image = coeffs.expand(grid="GLQ", lat=theta, lon=phi, lmax_calc=lmax, degrees=False)
+        # image = coeffs.expand(grid="DH2", lat=theta, lon=phi, lmax_calc=lmax, degrees=False)
         output.append(image[...,None])
     output = np.concatenate(output, axis=-1)
     return output
