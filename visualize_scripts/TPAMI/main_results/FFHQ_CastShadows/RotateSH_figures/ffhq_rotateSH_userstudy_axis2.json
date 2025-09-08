@@ -1,79 +1,79 @@
 {
-    "hou21_rotate_axis=2" : {
-        "step" :"ema_300000",
-        "alias" : "Hou et al. (CVPR 2021)",
-        "misc" : "one-shot",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"60",
-        "img_dir" : "/data/mint/TPAMI_evaluations/ShadowM/user_study/rotateSH/axis=2"
+    "hou21_rotate_axis=2": {
+        "step": "ema_300000",
+        "alias": "Hou et al. (CVPR 2021)",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/TPAMI_evaluations/ShadowM/user_study/rotateSH/axis=2"
     },
-    "hou22_rotate_axis=2" : {
-        "step" :"ema_300000",
-        "alias" : "Hou et al. (CVPR 2022)",
-        "misc" : "one-shot",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"60",
-        "img_dir" : "/data/mint/TPAMI_evaluations/GeoConFR/user_study/rotateSH/axis=2"
+    "hou22_rotate_axis=2": {
+        "step": "ema_300000",
+        "alias": "Hou et al. (CVPR 2022)",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/TPAMI_evaluations/GeoConFR/user_study/rotateSH/axis=2"
     },
-    "iclight_rotate_512x512_map_centered_axis2" : {
-        "step" :"ema_300000",
-        "alias" : "IC-Light (512x512) - map centered",
-        "misc" : "one-shot",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"60",
-        "img_dir" : "/data/mint/TPAMI_evaluations/Relighting_SOTA/iclight/ffhq/user_study/ffhq_user_study/axis=2/map_centered/proc512x512/"
+    "iclight_rotate_512x512_map_centered_axis2": {
+        "step": "ema_300000",
+        "alias": "IC-Light (512x512) - map centered",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/TPAMI_evaluations/Relighting_SOTA/iclight/ffhq/user_study/ffhq_user_study/axis=2/map_centered/proc512x512/"
     },
-    "iclight_rotate_512x512_mapclean_axis2" : {
-        "step" :"ema_300000",
-        "alias" : "IC-Light (512x512) - map clean",
-        "misc" : "one-shot",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"60",
-        "img_dir" : "/data/mint/TPAMI_evaluations/Relighting_SOTA/iclight/ffhq/user_study/ffhq_user_study/axis=2/map_clean/proc512x512/"
+    "iclight_rotate_512x512_mapclean_axis2": {
+        "step": "ema_300000",
+        "alias": "IC-Light (512x512) - map clean",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/TPAMI_evaluations/Relighting_SOTA/iclight/ffhq/user_study/ffhq_user_study/axis=2/map_clean/proc512x512/"
     },
-    "ours_difareli++_oneshot_rotate" : {
-        "step" :"ema_300000",
-        "alias" : "DiFaReli++ one shot - rotate",
-        "misc" : "one-shot",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"60",
-        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2/ema_300000/valid/render_face/reverse_sampling/"
+    "ours_difareli++_oneshot_rotate": {
+        "step": "ema_300000",
+        "alias": "DiFaReli++ one shot - rotate",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2/ema_300000/valid/render_face/reverse_sampling/"
     },
-    "ours_difareli++_oneshot_rotate_rot2_tomax" : {
-        "step" :"ema_300000",
-        "alias" : "DiFaReli++ one shot - rotate",
-        "misc" : "one-shot",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"60",
-        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_tomax/ema_300000/valid/render_face/reverse_sampling/"
+    "ours_difareli++_oneshot_rotate_rot2_tomax": {
+        "step": "ema_300000",
+        "alias": "DiFaReli++ one shot - rotate",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_tomax/ema_300000/valid/render_face/reverse_sampling/"
     },
-    "ours_difareli_rotate_rot2" : {
-        "step" :"ema_085000",
-        "alias" : "DiFaReli - rotate2",
-        "misc" : "one-shot",
-        "itp":"render_face",
-        "itp_method":"Lerp",
-        "diff_step":"1000",
-        "time_respace":"",
-        "n_frame":"60",
-        "img_dir" : "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_rot2_TR/ema_085000/valid/render_face/reverse_sampling/"
+    "ours_difareli_rotate_rot2": {
+        "step": "ema_085000",
+        "alias": "DiFaReli - rotate2",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_rot2_TR/ema_085000/valid/render_face/reverse_sampling/"
     }
 }

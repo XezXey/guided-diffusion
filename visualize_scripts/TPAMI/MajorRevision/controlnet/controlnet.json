@@ -11,6 +11,18 @@
         "n_frames": "30",
         "res_dir": "/data/mint/sampling/TPAMI_MajorRevision/ControlNet/log=DPP_CTRL_128_VLL_lr1e-4_cfg=DPP_CTRL_128_VLL_lr1e-4.yaml_rot2_maxC/model_050000/valid/render_face/reverse_sampling/"
     },
+    "controlnet_ema100000_lr1e-4": {
+        "step": "ema_100000",
+        "alias": "ControlNet_128_lr1e-4",
+        "n_frames": "30",
+        "res_dir": "/data/mint/sampling/TPAMI_MajorRevision/ControlNet/log=DPP_CTRL_128_VLL_lr1e-4_cfg=DPP_CTRL_128_VLL_lr1e-4.yaml_rot2_maxC/ema_100000/valid/render_face/reverse_sampling/"
+    },
+    "controlnet_model100000_lr1e-4": {
+        "step": "model_100000",
+        "alias": "ControlNet_128_lr1e-4",
+        "n_frames": "30",
+        "res_dir": "/data/mint/sampling/TPAMI_MajorRevision/ControlNet/log=DPP_CTRL_128_VLL_lr1e-4_cfg=DPP_CTRL_128_VLL_lr1e-4.yaml_rot2_maxC/model_100000/valid/render_face/reverse_sampling/"
+    },
     "controlnet_ema050000": {
         "step": "ema_050000",
         "alias": "ControlNet_128_lr1e-5",
