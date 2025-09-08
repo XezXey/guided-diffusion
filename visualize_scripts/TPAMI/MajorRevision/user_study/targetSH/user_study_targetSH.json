@@ -35,6 +35,15 @@
         "old_img_dir": "/data/mint/sampling/TPAMI/sota/TR/TREval_May/output_final/",
         "img_dir": "/data/mint/TPAMI_MajorRevision/sampling_backup_from_v10_8OCT2025/sampling/TPAMI/sota/TR/TREval_May/output_final/"
     },
+    "DiffusionRig": {
+        "step": "ema_300000",
+        "alias": "DiffusionRig",
+        "misc": "atos",
+        "itp_method": "scale",
+        "diff_step": "sh=1.0",
+        "n_frame": "20",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/DiffusionRig/user_study/target_sh/"
+    },
     "IC-Light": {
         "step": "ema_300000",
         "alias": "IC-Light",

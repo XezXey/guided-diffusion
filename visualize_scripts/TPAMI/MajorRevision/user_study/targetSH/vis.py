@@ -126,16 +126,15 @@ def create_app():
             # Model 
             for m_idx, metadat in candidates.items():
                 # Model's metadata
-                ckpt = metadat['step']
-                alias = metadat['alias']
-                misc = metadat['misc']
-                itp = metadat['itp']
-                itp_method = metadat['itp_method']
-                diff_step = metadat['diff_step']
-                time_respace = metadat['time_respace']
-                img_dir = metadat['img_dir']
-
-                n_frame_tmp = metadat['n_frame'] if n_frame is None else n_frame
+                ckpt = metadat.get('step', None)
+                alias = metadat.get('alias', None)
+                misc = metadat.get('misc', None)
+                itp = metadat.get('itp', None)
+                itp_method = metadat.get('itp_method', None)
+                diff_step = metadat.get('diff_step', None)
+                time_respace = metadat.get('time_respace', None)
+                img_dir = metadat.get('img_dir', None)
+                n_frame = metadat.get('n_frame', None)
                 
                 path = f"{img_dir}/src={src}/dst={dst}/"
             
@@ -154,21 +153,21 @@ def create_app():
                     if misc == "sota":
                         frames = glob.glob(f"{path}/shadm_*.png")
                     else:
-                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/shadm_*.png")
+                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/shadm_*.png")
                 elif show_img == "True":
                     if misc == "sota":
                         frames = glob.glob(f"{path}/res_frame*.png")
                     else:
-                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/res_frame*.png")
+                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_frame*.png")
                         print(frames, path)
                 else:
                     frames = []
 
-                if os.path.exists(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/out_rt.mp4") and show_vid == "True":
+                if os.path.exists(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/out_rt.mp4") and show_vid == "True":
                     out += f"""
                         <td>  
                         <video controls autoplay muted loop>
-                            <source src=/files/{path}/{itp_method}_{diff_step}/n_frames={n_frame_tmp}/out_rt.mp4 type="video/mp4">
+                            <source src=/files/{path}/{itp_method}_{diff_step}/n_frames={n_frame}/out_rt.mp4 type="video/mp4">
                         </video>
                         </td>
                     """

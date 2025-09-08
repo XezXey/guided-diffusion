@@ -23,6 +23,14 @@
         "old_img_dir": "/data/mint/TPAMI_evaluations/GeoConFR/user_study/rotateSH/axis=2",
         "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/GeoConFR/user_study/rotateSH/axis=2/"
     },
+    "diffusionrig_rotate_axis=2": {
+        "alias": "DiffusionRig (CVPR 2023)",
+        "misc": "sota",
+        "n_frame": "60",
+        "itp_method": "scale",
+        "diff_step": "sh=1.0",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/DiffusionRig/user_study/rotate_sh_axis=2/"
+    },
     "iclight_rotate_512x512_map_centered_axis2": {
         "step": "ema_300000",
         "alias": "IC-Light (512x512) - map centered",

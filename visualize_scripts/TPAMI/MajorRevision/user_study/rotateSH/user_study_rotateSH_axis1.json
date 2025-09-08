@@ -47,6 +47,14 @@
         "old_img_dir": "/data/mint/TPAMI_evaluations/Relighting_SOTA/iclight/ffhq/user_study/ffhq_user_study/axis=1/map_clean/proc512x512/",
         "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/iclight/ffhq/user_study/ffhq_user_study/axis=1/map_clean/proc512x512/"
     },
+    "diffusionrig_rotate_axis=1": {
+        "alias": "DiffusionRig (CVPR 2023)",
+        "misc": "sota",
+        "n_frame": "60",
+        "itp_method": "scale",
+        "diff_step": "sh=1.0",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/DiffusionRig/user_study/rotate_sh_axis=1/"
+    },
     "ours_difareli++_oneshot_rotate_rot1": {
         "step": "ema_300000",
         "alias": "DiFaReli++ one shot - rotate srcC",
