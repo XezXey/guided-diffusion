@@ -172,6 +172,7 @@ def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step
     alpha = alpha_images[0].cpu().numpy()
 
     face = {'normal_map':normal, 'albedo':albedo, 'alpha_map':alpha}
+    print("[#] Using Lmax = {}".format(Lmax))
     print(normal.shape, albedo.shape, alpha.shape)
     
     hdr_image = skimage.io.imread(hdr_file)

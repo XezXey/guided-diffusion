@@ -106,6 +106,7 @@ parser.add_argument('--use_no_aliasing', action='store_true', default=False)
 # HDR
 parser.add_argument('--hdr', type=str, required=True)
 parser.add_argument('--use_shading_grey', action='store_true', default=False)
+parser.add_argument('--Lmax', type=int, default=2)
 
 
 args = parser.parse_args()
@@ -164,6 +165,7 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
             'cfg':cfg,
             'batch_size':args.batch_size,
             'render_batch_size':args.render_batch_size,
+            'Lmax': args.Lmax
             }  
     
     if itp_func is not None:

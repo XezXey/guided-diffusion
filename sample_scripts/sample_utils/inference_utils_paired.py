@@ -340,6 +340,7 @@ def build_condition_image_hdr(cond, misc, force_render=False):
     itp_func = misc['itp_func']
     deca_obj = misc['deca_obj']
     clip_ren = None
+    Lmax = misc['Lmax']
     
     def prep_render(cond, cond_img_name):
         #Note: Preprocessing to separate the shading ref or shadow mask into src-dst
@@ -508,13 +509,13 @@ def build_condition_image_hdr(cond, misc, force_render=False):
         
         rotate_axis = 'azimuth' if args.rotate_sh_axis == 2 else ('roll' if args.rotate_sh_axis == 1 else 'elevation')
         print(f"[#] Render shading reference with HDR on {rotate_axis} axis.")
-        Lmax = 2
         hdr_frames, shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff = hdr_utils.render_with_hdr(hdr_file=args.hdr, 
                                                                                              normal_images=orig_visdict['normal_images'], 
                                                                                              alpha_images=orig_visdict['alpha_images'],
                                                                                              albedo_images=orig_visdict['albedo_images'],
                                                                                              n_step=n_step-1, 
-                                                                                             rotate_axis=rotate_axis)
+                                                                                             rotate_axis=rotate_axis, 
+                                                                                             Lmax=Lmax,)
         if args.use_shading_grey:
             print("[#] Using grey-scale shading...")
             shading_grey = th.tensor(shading_grey).to(deca_rendered.device)
