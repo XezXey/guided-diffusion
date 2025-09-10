@@ -897,3 +897,4 @@ experiment_scripts/TPAMI/Teaser/frames_orig
 visualize_scripts/TPAMI/main_results/FFHQ_CastShadows/For_Sel/gen_website_vid/out
 experiment_scripts/TPAMI/Teaser/frames_fancy2
 experiment_scripts/TPAMI/supplement_video/rotate_comparison/vids_tmp
+visualize_scripts/TPAMI/MajorRevision/figure/gen_figure/rotateSH/rotateSH_figure/axis=2/*

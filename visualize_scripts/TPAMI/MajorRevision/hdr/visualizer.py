@@ -37,7 +37,7 @@ def get_file_from_conv(path_conv, img_path, hdr, src, dst, n_frames=-1):
         path = f"{img_path}/{hdr}/src={src}/dst={dst}/Lerp_1000/n_frames={n_frames}/"
         frames = sorted(glob.glob(f"{path}/res_frame*.png"))
         frames = sort_by_frame(frames)[1:][::-1]
-        vid = f"{path}/out_rt.mp4"
+        vid = f"{path}/out_rt_no1.mp4"
         return frames, vid
         
         # # Show results

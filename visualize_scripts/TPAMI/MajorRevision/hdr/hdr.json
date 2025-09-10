@@ -1,19 +1,19 @@
 {
-    "neural_gaffer_azimuth" : {
-        "alias" : "NeuralGaffer_Azimuth",
-        "res_dir" : "/data/mint/TPAMI_MajorRevision/New_Baselines_Sampling/Neural_Gaffer/ffhq_pp_azimuth/",
+    "neural_gaffer_azimuth": {
+        "alias": "NeuralGaffer_Azimuth",
+        "res_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/Neural_Gaffer/ffhq_pp_azimuth/",
         "path_conv": "neural_gaffer"
     },
-    "difareli++_azimuth_color" : {
-        "alias" : "DiFaReli++_Azimuth",
+    "difareli++_azimuth_color": {
+        "alias": "DiFaReli++_Azimuth",
         "n_frames": 60,
-        "res_dir" : "/data/mint/TPAMI_MajorRevision/Ours/ffhq_hdr/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_0.7C_sColor_rAxis2/ema_300000/valid/render_face_hdr/",
+        "res_dir": "/data/mint/TPAMI_MajorRevision/Ours/ffhq_hdr/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_0.7C_sColor_rAxis2/ema_300000/valid/render_face_hdr/",
         "path_conv": "ours_hdr"
     },
-    "difareli++_azimuth_grey" : {
-        "alias" : "DiFaReli++_Azimuth",
+    "difareli++_azimuth_grey": {
+        "alias": "DiFaReli++_Azimuth",
         "n_frames": 60,
-        "res_dir" : "/data/mint/TPAMI_MajorRevision/Ours/ffhq_hdr/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_0.7C_sGrey_rAxis2/ema_300000/valid/render_face_hdr/",
+        "res_dir": "/data/mint/TPAMI_MajorRevision/Ours/ffhq_hdr/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_0.7C_sGrey_rAxis2/ema_300000/valid/render_face_hdr/",
         "path_conv": "ours_hdr"
     }
 }
