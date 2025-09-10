@@ -527,8 +527,12 @@ def build_condition_image_hdr(cond, misc, force_render=False):
             shading = shading.permute(0, 3, 1, 2)
             deca_rendered = th.cat([deca_rendered[0:1], shading], dim=0)
         
-        print("[#] Done.")
-        sh_light = th.tensor(all_sh.transpose(0, 2, 1)).to(cond['light'].device)
+        print("[#] Done: get sh shape: ", all_sh.shape)  # [n_step-1 x (Lmax+1)^2 x 3]
+        sh_light = th.tensor(all_sh.transpose(0, 2, 1)).to(cond['light'].device)    # [n_step-1 x 3 x 9] => [n_step - 1 x 9 x 3]
+        if args.Lmax > 2:
+            print(f"[#] Since using Lmax={args.Lmax}, reduce SH to Lmax=2...")
+            sh_light = sh_light[:, :9, :]
+            print(f"[#] Reduced SH shape: {sh_light.shape}")
         sh_light = sh_light.reshape(n_step-1, 27)
         src_light = cond['light'][0:1].clone()
         cond['light'] = th.cat([src_light, sh_light], dim=0)

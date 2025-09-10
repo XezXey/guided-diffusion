@@ -525,10 +525,10 @@ def render_shadow_mask_with_smooth_hdr(sh_light, cam, verts, deca, rt_dict, use_
             ray[2] *= -1
             pass
         if axis_1:
+            ray[1] *= -1
             ray[2] *= -1    # This for jst temporarly fix the axis 1 which the shading is bright in the middle, but the light direction is back of the head
             pass
         if hdr:
-            ray[1] *= -1
             ray[2] *= -1    # This for jst temporarly fix the axis 1 which the shading is bright in the middle, but the light direction is back of the head
         ray[2] *= 0.5
 
