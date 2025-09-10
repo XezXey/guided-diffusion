@@ -1,0 +1,124 @@
+{
+    "hou21_rotate_axis=2": {
+        "step": "ema_300000",
+        "alias": "Hou et al. (CVPR 2021)",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "old_img_dir": "/data/mint/TPAMI_evaluations/ShadowM/rotateSH_figure/axis=2/",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/ShadowM/rotateSH_figure/axis=2/"
+    },
+    "hou22_rotate_axis=2": {
+        "step": "ema_300000",
+        "alias": "Hou et al. (CVPR 2022)",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "old_img_dir": "/data/mint/TPAMI_evaluations/GeoConFR/rotateSH_figure/axis=2/",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/GeoConFR/rotateSH_figure/axis=2/"
+    },
+    "iclight_rotate_512x512_map_centered_axis2": {
+        "step": "ema_300000",
+        "alias": "IC-Light (512x512) - map centered",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "old_img_dir": "/data/mint/TPAMI_evaluations/Relighting_SOTA/iclight/ffhq/ffhq_selected_rotateSH/ffhq_selected_rotateSH/axis=2/map_centered/proc512x512/",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/iclight/ffhq/ffhq_selected_rotateSH/ffhq_selected_rotateSH/axis=2/map_centered/proc512x512/"
+    },
+    "diffusionrig_rotate_axis=2": {
+        "alias": "DiffusionRig (CVPR 2023)",
+        "misc": "atos",
+        "n_frame": "60",
+        "itp_method": "scale",
+        "diff_step": "sh=1.0",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/DiffusionRig/figures/rotate_sh_axis=2/"
+    },
+    "relipa_rotate_axis=2": {
+        "alias": "Relipa (CVPR 2025)",
+        "misc": "relipa",
+        "n_frame": "60",
+        "itp_method": "scale",
+        "diff_step": "sh=1.0",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/Relipa/figures/rotate_sh_axis=2/"
+    },
+    "ours_difareli++_oneshot_rotate_0c": {
+        "step": "ema_300000",
+        "alias": "DiFaReli++ one shot - rotate (0c)",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "old_img_dir": "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_0c/ema_300000/valid/render_face/reverse_sampling/",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/sampling_backup_from_v10_8OCT2025/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_0c/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_oneshot_rotate_srcC": {
+        "step": "ema_300000",
+        "alias": "DiFaReli++ one shot - rotate (srcC)",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "old_img_dir": "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2/ema_300000/valid/render_face/reverse_sampling/",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/sampling_backup_from_v10_8OCT2025/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_oneshot_rotate_rot2_tomax": {
+        "step": "ema_300000",
+        "alias": "DiFaReli++ one shot - rotate maxC",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "old_img_dir": "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_tomax/ema_300000/valid/render_face/reverse_sampling/",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/sampling_backup_from_v10_8OCT2025/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_tomax/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_256_difareli++_rotate": {
+        "step": "ema_085000",
+        "alias": "DiFaReli++ - rotate",
+        "misc": "ours",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "old_img_dir": "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_inv_with_sd_ds256_pt1_rot2_TR/ema_085000/valid/render_face/reverse_sampling/",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/sampling_backup_from_v10_8OCT2025/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_inv_with_sd_ds256_pt1_rot2_TR/ema_085000/valid/render_face/reverse_sampling/"
+    },
+    "ours_256_difareli++_rotate_rot2_tomax": {
+        "step": "ema_085000",
+        "alias": "DiFaReli++ - rotate maxC",
+        "misc": "ours",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=DiFaReli_FsBg_Sdiff_SS_256_V100_cfg=DiFaReli_FsBg_Sdiff_SS_256_V100_inference.yaml_inv_with_sd_ds256_pt1_rot2_TR_tomax/ema_085000/valid/render_face/reverse_sampling/"
+    },
+    "ours_256_difareli_rotate_rot2": {
+        "step": "ema_085000",
+        "alias": "DiFaReli",
+        "misc": "ours",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/sampling_backup_from_v10_8OCT2025/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_rot2_TR_1000t/ema_085000/valid/render_face/reverse_sampling/"
+    }
+}

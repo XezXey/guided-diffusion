@@ -139,40 +139,51 @@ def create_app():
                 path = f"{img_dir}/src={src}/dst={dst}/"
             
                 out += "<tr>"
-                alias_str = alias.split('_')
                 out += f"<td> {alias} <br> {ckpt} </td> "
                 
-                if args.res == 128:
-                    out += f"<td> <img src=/files/{data_path}/{src.replace('jpg', 'png')}> </td>"
-                else:
-                    out += f"<td> <img src=/files/{data_path}/{src}> </td>"
+                out += f"<td> <img src=/files/{data_path}/{src}> </td>"
                 
                 ###################################################
                 # Show results
-                if show_shadm == "True":
-                    if misc == "sota":
-                        frames = glob.glob(f"{path}/shadm_*.png")
-                    else:
-                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/shadm_*.png")
-                elif show_img == "True":
-                    if misc == "sota":
-                        frames = glob.glob(f"{path}/res_frame*.png")
-                    else:
-                        frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_frame*.png")
-                        print(frames, path)
-                else:
-                    frames = []
-
-                if os.path.exists(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/out_rt.mp4") and show_vid == "True":
-                    out += f"""
-                        <td>  
-                        <video controls autoplay muted loop>
-                            <source src=/files/{path}/{itp_method}_{diff_step}/n_frames={n_frame}/out_rt.mp4 type="video/mp4">
-                        </video>
-                        </td>
-                    """
+                if misc == 'relipa':
+                    frames = glob.glob(f"{path}/{itp_method}_{diff_step}/gs=4.5_ds=25/n_frames={n_frame}/256/res_frame*.png")
                 else: 
-                    out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
+                    if show_shadm == "True":
+                        if misc == "sota":
+                            frames = glob.glob(f"{path}/shadm_*.png")
+                        else:
+                            frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/shadm_*.png")
+                    elif show_img == "True":
+                        if misc == "sota":
+                            frames = glob.glob(f"{path}/res_frame*.png")
+                        else:
+                            frames = glob.glob(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_frame*.png")
+                            print(frames, path)
+                    else:
+                        frames = []
+
+                if misc == 'relipa':
+                    if os.path.exists(f"{path}/{itp_method}_{diff_step}/gs=4.5_ds=25/n_frames={n_frame}/256/out_rt.mp4") and show_vid == "True":
+                        out += f"""
+                            <td>  
+                            <video controls autoplay muted loop>
+                                <source src=/files/{path}/{itp_method}_{diff_step}/gs=4.5_ds=25/n_frames={n_frame}/256/out_rt.mp4 type="video/mp4">
+                            </video>
+                            </td>
+                        """
+                    else: 
+                        out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
+                else:
+                    if os.path.exists(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/out_rt.mp4") and show_vid == "True":
+                        out += f"""
+                            <td>  
+                            <video controls autoplay muted loop>
+                                <source src=/files/{path}/{itp_method}_{diff_step}/n_frames={n_frame}/out_rt.mp4 type="video/mp4">
+                            </video>
+                            </td>
+                        """
+                    else: 
+                        out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
                 out += f"<td>"
                 if len(frames) > 1:
                     if ds > 0 and len(frames) > 2:

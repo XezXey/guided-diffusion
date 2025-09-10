@@ -42,7 +42,7 @@
         "itp_method": "scale",
         "diff_step": "sh=1.0",
         "n_frame": "20",
-        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/DiffusionRig/user_study/target_sh/"
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/DiffusionRig/figures/target_sh/"
     },
     "IC-Light": {
         "step": "ema_300000",
@@ -54,7 +54,7 @@
         "time_respace": "",
         "n_frame": "2",
         "old_img_dir": "/data/mint/TPAMI_evaluations/iclight/ffhq/user_study/ffhq_user_study_targetSH/map_clean/proc512x512/",
-        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/iclight/ffhq/user_study/ffhq_user_study_targetSH/map_clean/proc512x512/"
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/iclight/ffhq/ffhq_targetSH_TPAMI/map_centered/proc512x512/"
     },
     "Relipa": {
         "step": "ema_300000",
@@ -63,7 +63,7 @@
         "itp_method": "scale",
         "diff_step": "sh=1.0",
         "n_frame": "20",
-        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/Relipa/user_study/target_sh/"
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/Relipa/figures/target_sh/"
     },
     "ours_difareli++_oneshot_dstC": {
         "step": "ema_300000",

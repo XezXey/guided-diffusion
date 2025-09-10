@@ -55,6 +55,17 @@
         "old_img_dir": "/data/mint/TPAMI_evaluations/Relighting_SOTA/iclight/ffhq/user_study/ffhq_user_study/axis=2/map_clean/proc512x512/",
         "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/iclight/ffhq/user_study/ffhq_user_study/axis=2/map_clean/proc512x512/"
     },
+    "relipa_axis2": {
+        "step": "ema_300000",
+        "alias": "Relipa",
+        "misc": "relipa",
+        "itp_method": "scale",
+        "diff_step": "sh=1.0",
+        "itp": "render_face",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/Relipa/user_study/rotate_sh_axis=2/"
+    },
     "ours_difareli++_oneshot_rotate_rot2": {
         "step": "ema_300000",
         "alias": "DiFaReli++ one shot - rotate srcC",
