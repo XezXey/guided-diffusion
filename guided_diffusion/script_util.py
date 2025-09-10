@@ -57,10 +57,16 @@ def create_img_and_diffusion(cfg, logger=None):
         logger.warning(f"=> Total params: {(n_enc+n_unet)/1e6}M")
     else:
         img_model = create_model(cfg.img_model, all_cfg=cfg)
-        n_unet = count_trainable_params(img_model[0])
+        if isinstance(img_model, tuple):
+            n_unet = count_trainable_params(img_model[0])
+        else:
+            n_unet = count_trainable_params(img_model)
         if cfg.img_cond_model.apply:
             img_cond_model = create_model(cfg.img_cond_model, all_cfg=cfg)
-            n_enc = count_trainable_params(img_cond_model[0])
+            if isinstance(img_cond_model, tuple):
+                n_enc = count_trainable_params(img_cond_model[0])
+            else:
+                n_enc = count_trainable_params(img_cond_model)
         else: 
             img_cond_model = None
             n_enc = 0
