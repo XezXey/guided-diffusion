@@ -1,0 +1,26 @@
+{
+    "ours_model100000": {
+        "step": "model_100000",
+        "alias": "DPP_128",
+        "n_frames": "60",
+        "res_dir": "/data/mint/sampling/TPAMI_MajorRevision/ControlNet/log=DPP_128_VLL_cfg=DPP_128_VLL.yaml_rot2_maxC/ema_100000/valid/render_face/reverse_sampling/"
+    },
+    "controlnet_ema100000_ch64": {
+        "step": "ema_100000",
+        "alias": "ControlNet_128_ch64",
+        "n_frames": "60",
+        "res_dir": "/data/mint/sampling/TPAMI_MajorRevision/ControlNet/log=DPP_CTRL_128_ch64_cfg=DPP_CTRL_128_VLL_ch64.yaml_rot2_maxC/ema_100000/valid/render_face/reverse_sampling/"
+    },
+    "controlnet_ema100000_ch128": {
+        "step": "ema_100000",
+        "alias": "ControlNet_128_ch128",
+        "n_frames": "60",
+        "res_dir": "/data/mint/sampling/TPAMI_MajorRevision/ControlNet/log=DPP_CTRL_128_VLL_ch128_cfg=DPP_CTRL_128_VLL_ch128.yaml_rot2_maxC/ema_100000/valid/render_face/reverse_sampling/"
+    },
+    "controlnet_ema100000_ch160": {
+        "step": "ema_100000",
+        "alias": "ControlNet_128_ch160",
+        "n_frames": "60",
+        "res_dir": "/data/mint/sampling/TPAMI_MajorRevision/ControlNet/log=DPP_CTRL_128_ch160_cfg=DPP_CTRL_128_VLL_ch160.yaml_rot2_maxC/ema_100000/valid/render_face/reverse_sampling/"
+    }
+}

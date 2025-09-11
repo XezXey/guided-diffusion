@@ -4,22 +4,10 @@
         "res_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/Neural_Gaffer/ffhq_pp_azimuth/",
         "path_conv": "neural_gaffer"
     },
-    "difareli++_azimuth_color_0.7C": {
-        "alias": "DiFaReli++_Azimuth",
-        "n_frames": 60,
-        "res_dir": "/data/mint/TPAMI_MajorRevision/Ours/ffhq_hdr/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_0.7C_sColor_rAxis2/ema_300000/valid/render_face_hdr/",
-        "path_conv": "ours_hdr"
-    },
     "difareli++_azimuth_color_1.0C": {
         "alias": "DiFaReli++_Azimuth",
         "n_frames": 60,
         "res_dir": "/data/mint/TPAMI_MajorRevision/Ours/ffhq_hdr/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_1.0C_sColor_rAxis2/ema_300000/valid/render_face_hdr/",
-        "path_conv": "ours_hdr"
-    },
-    "difareli++_azimuth_grey_0.7C": {
-        "alias": "DiFaReli++_Azimuth",
-        "n_frames": 60,
-        "res_dir": "/data/mint/TPAMI_MajorRevision/Ours/ffhq_hdr/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_0.7C_sGrey_rAxis2/ema_300000/valid/render_face_hdr/",
         "path_conv": "ours_hdr"
     },
     "difareli++_azimuth_grey_1.0C": {
@@ -32,12 +20,6 @@
         "alias": "DiFaReli++_Azimuth",
         "n_frames": 60,
         "res_dir": "/data/mint/TPAMI_MajorRevision/Ours/ffhq_hdr_inverse_topbot/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot1_maxC_Lmax10/ema_300000/valid/render_face_hdr/",
-        "path_conv": "ours_hdr"
-    },
-    "difareli++_roll_color_1.0C_Lmax10": {
-        "alias": "DiFaReli++_Azimuth",
-        "n_frames": 60,
-        "res_dir": "/data/mint/TPAMI_MajorRevision/Ours/ffhq_hdr_inverse_topbot/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_maxC_Lmax10/ema_300000/valid/render_face_hdr/",
         "path_conv": "ours_hdr"
     },
     "difareli++_azimuth_color_SD10_1.0C_Lmax10": {

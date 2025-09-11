@@ -25,6 +25,7 @@ parser.add_argument('--use_shading_grey', action='store_true', default=False)
 parser.add_argument('--hdr_dir', nargs='+', type=str, required=True, help='hdr file directory')
 parser.add_argument('--c_list', nargs='+', default=['1.0'])
 parser.add_argument('--rotate_sh_axis', nargs='+', type=int, default=[2], help='rotate sh axis')
+parser.add_argument('--Lmax', type=int, default=2, help='sh order')
 args = parser.parse_args()
 
 '''
@@ -73,13 +74,13 @@ for ckpt in args.ckpt_step:
                                 --shadow_diff_dir /data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/ \
                                 --scale_depth {scale_depth} --pt_round 1 --postproc_shadow_mask_smooth --save_vid --render_batch_size 60 \
                                 --rotate_sh --rotate_sh_axis {rotate_sh_axis} --inverse_with_shadow_diff --rasterize_type {args.rasterize_type}\
-                                --hdr {hdr} \
+                                --hdr {hdr} --Lmax {args.Lmax} \
                                 """
                                 )
                             if args.force_render: cmd += ' --force_render'
                             if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
                             if postfix != '': cmd += f" --postfix SD{scale_depth}_{postfix}_{'sColor' if args.use_shading_grey == '' else 'sGrey'}_rAxis{rotate_sh_axis}"
-                            else: cmd += f" --postfix SD{scale_depth}_{c}C_{'sColor' if not args.use_shading_grey else 'sGrey'}_rAxis{rotate_sh_axis}"
+                            else: cmd += f" --postfix SD{scale_depth}_{c}C_{'sColor' if not args.use_shading_grey else 'sGrey'}_Lmax{args.Lmax}_rAxis{rotate_sh_axis}"
                             if args.use_shading_grey: cmd += f' --use_shading_grey'
                             if c == '1.0': cmd += f' --relight_with_strongest_c'
                             else: cmd += f' --relight_with_given_c {c}'

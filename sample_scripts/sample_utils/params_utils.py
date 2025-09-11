@@ -531,6 +531,7 @@ def render_shadow_mask_with_smooth_hdr(sh_light, cam, verts, deca, rt_dict, use_
         if hdr:
             ray[2] *= -1    # This for jst temporarly fix the axis 1 which the shading is bright in the middle, but the light direction is back of the head
         ray[2] *= 0.5
+        # ray[2] *= 
 
         orth = th.cross(ray, th.tensor([0, 0, 1.0], dtype=th.double).to(device))
         orth2 = th.cross(ray, orth)

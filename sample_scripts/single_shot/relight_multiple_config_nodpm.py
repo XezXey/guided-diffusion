@@ -1,6 +1,11 @@
 import numpy as np
 import argparse
-import os
+import os, sys
+sys.path.append('/home/mint/Dev/DiFaReli/difareli-faster')
+# /home/mint/Dev/DiFaReli/difareli-faster/guided_diffusion/mint_logger.py
+from guided_diffusion.mint_logger import createLogger
+logger = createLogger()
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_dir', type=str, required=True, help='model name')
@@ -20,7 +25,13 @@ parser.add_argument('--sample_pair_json', nargs='+', type=str, required=True, he
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--sdiff_dir', nargs='+', type=str, required=True, help='Shadow difference directory')
 parser.add_argument('--rasterize_type', type=str, default='standard', help='rasterize type')
-parser.add_argument('--scale_depth', nargs='+', type=int, default=[100, 256])
+parser.add_argument('--scale_depth', nargs='+', type=int, default=[256])
+parser.add_argument('--rotate_sh', action='store_true', default=False)
+parser.add_argument('--rotate_sh_axis', type=int, default=2, help='axis to rotate sh, 0:x, 1:y, 2:z')
+parser.add_argument('--relight_with_dst_c', action='store_true', default=False)
+parser.add_argument('--relight_with_src_c', action='store_true', default=False)
+parser.add_argument('--relight_with_given_c', action='store_true', default=False)
+parser.add_argument('--c', nargs='+', type=float, default=[0.7])
 args = parser.parse_args()
 
 '''
@@ -36,39 +47,67 @@ python relight_paired_nodpm.py --ckpt_selector ema --dataset mp_valid2_data2
 --eval_dir /data2/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_single_shot/ 
 --rasterize_type pytorch3d --postproc_shadow_mask_smooth --relight_with_dst_c --pt_round 1 --scale_depth 256
 
+python ./relight_paired_nodpm.py --ckpt_selector ema --dataset ffhq --set valid --step 300000 --out_dir /data/mint/sampling/TPAMI_MajorRevision/FixPlastic --cfg_name paired+difareli+cs+nodpm+trainset_256.yaml --log_dir paired+difareli+cs+nodpm+trainset_256 --seed 47 --sample_pair_json /home/mint/Dev/DiFaReli/difareli-faster/experiment_scripts/TPAMI/sample_json/TPAMI_MajorRevision/rotateSH_axis2.json  --sample_pair_mode pair --itp render_face --itp_step 60 --batch_size 1 --gpu_id 0 --lerp --idx 0 2500 --shadow_diff_dir /data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/ --postproc_shadow_mask_smooth --save_vid --render_batch_size 60 --postfix rot2_0.1 --rotate_sh --rotate_sh_axis 2 --inverse_with_shadow_diff --rasterize_type pytorch3d --relight_with_given_c 0.1
+
 '''
 
 postfix = args.postfix
 if postfix != '':
     postfix = '_' + postfix
+    
+assert args.relight_with_dst_c + args.relight_with_src_c + args.relight_with_given_c <= 1, "[#] Only one of --relight_with_dst_c, --relight_with_src_c, --relight_with_given_c can be set."
 
 for ckpt in args.ckpt_step:
     for dataset in args.dataset:
         for sample_pair_json in args.sample_pair_json:
             for sdiff_dir in args.sdiff_dir:
                 for scale_depth in args.scale_depth:
-                    print("#"*100)
-                    print(f'[#] Running checkpoint {ckpt}...')
-                    print(f'[#] Dataset: {dataset}')
-                    print(f'[#] Sample pair json: {sample_pair_json}')
-                    print(f'[#] Shadow difference directory: {sdiff_dir}')
-                    print(f'[#] Scale depth: {scale_depth}')
-                    print("#"*100)
-                    cmd = (
-                        f"""
-                        python relight_paired_nodpm.py --ckpt_selector {args.ckpt_type} --dataset {dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
-                        --cfg_name {args.cfg_name} --log_dir {args.model_dir} \
-                        --seed 47 \
-                        --sample_pair_json {sample_pair_json} --sample_pair_mode pair \
-                        --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
-                        --eval_dir {args.eval_dir} \
-                        --postproc_shadow_mask_smooth --up_rate_for_AA 1 --shadow_diff_dir {sdiff_dir}  \
-                        --relight_with_dst_c --pt_round 1 --scale_depth {scale_depth} --rasterize_type {args.rasterize_type}\
-                        """
-                        )
-                    if args.force_render: cmd += ' --force_render'
-                    if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
-                    if postfix != '': cmd += f' --postfix SD{scale_depth}_{postfix}'
-                    print(cmd)
-                    os.system(cmd)
-                    print("#"*100)
+                    for cval in args.c:
+                        logger.warning("#"*100)
+                        logger.info(f'[#] Running checkpoint {ckpt}...')
+                        logger.info(f'[#] Dataset: {dataset}')
+                        logger.info(f'[#] Sample pair json: {sample_pair_json}')
+                        logger.info(f'[#] Shadow difference directory: {sdiff_dir}')
+                        logger.info(f'[#] Scale depth: {scale_depth}')
+                        logger.info(f'[#] c value: {cval}')
+                        logger.info(f'[#] Rotate SH: {args.rotate_sh}, axis: {args.rotate_sh_axis}')
+                        
+                        cmd = (
+                            f"""
+                            python relight_paired_nodpm.py --ckpt_selector {args.ckpt_type} --dataset {dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
+                            --cfg_name {args.cfg_name} --log_dir {args.model_dir} \
+                            --seed 47 --render_batch_size {args.itp_step} --save_vid\
+                            --sample_pair_json {sample_pair_json} --sample_pair_mode pair \
+                            --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
+                            --postproc_shadow_mask_smooth --inverse_with_shadow_diff --shadow_diff_dir {sdiff_dir}  \
+                            --pt_round 1 --scale_depth {scale_depth} --rasterize_type {args.rasterize_type}\
+                            """
+                            )
+                        if args.force_render: cmd += ' --force_render'
+                        if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
+                        
+                        if args.relight_with_given_c:
+                            logger.info(f'[#] Relighting with given c: {cval}')
+                            cmd += f' --relight_with_given_c {cval}'
+                            pf = f'{cval}C'
+                        elif args.relight_with_dst_c:
+                            logger.info(f'[#] Relighting with dst c.')
+                            cmd += f' --relight_with_dst_c'
+                            pf = f'dstC'
+                        elif args.relight_with_src_c:
+                            logger.info(f'[#] Relighting with src c.')
+                            pf = f'srcC'
+                            # No additional argument needed, default is src c
+                        else: raise ValueError('[#] One of --relight_with_dst_c, --relight_with_src_c, --relight_with_given_c must be set.')
+                        
+                        if args.rotate_sh:
+                            logger.info(f'[#] Rotating SH, axis: {args.rotate_sh_axis}')
+                            cmd += f' --rotate_sh --rotate_sh_axis {args.rotate_sh_axis}'
+                            pf = f'rot{args.rotate_sh_axis}_{pf}'
+                        
+                        if postfix != '': cmd += f' --postfix SD{scale_depth}_{postfix}_{pf}'
+                        else: cmd += f' --postfix SD{scale_depth}_{pf}'
+                        
+                        logger.info(f"cmd: {cmd}")
+                        os.system(cmd)
+                        logger.warning("#"*100)
