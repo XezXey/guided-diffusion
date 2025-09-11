@@ -68,6 +68,7 @@ parser.add_argument('--fixed_render', action='store_true', default=False)
 parser.add_argument('--fixed_shadow', action='store_true', default=False)
 parser.add_argument('--use_sh_to_ld_region', action='store_true', default=False)
 parser.add_argument('--rt_regionG_scale', type=float, default=0.03)
+parser.add_argument('--adjust_contrast', nargs=2, type=float, default=None)
 # Experiment - Shadow weight
 parser.add_argument('--shadow_diff_inc_c', action='store_true', default=False)
 parser.add_argument('--shadow_diff_dec_c', action='store_true', default=False)
@@ -75,7 +76,6 @@ parser.add_argument('--shadow_diff_blurmap', action='store_true', default=False)
 parser.add_argument('--blurmap_reshadow_const_c', type=float, default=None)
 parser.add_argument('--blurmap_reshadow_dec_c_with_given_c', type=float, default=None)
 parser.add_argument('--blurmap_reshadow_inc_c_with_given_c', type=float, default=None)
-
 parser.add_argument('--blurmap_source', action='store_true', default=False)
 parser.add_argument('--blurmap_each', action='store_true', default=False)
 parser.add_argument('--shadow_diff_fidx_frac', type=float, default=0.0)    # set to 0.0 for using first frame

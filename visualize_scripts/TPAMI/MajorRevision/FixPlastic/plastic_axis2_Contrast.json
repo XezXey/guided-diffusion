@@ -119,5 +119,71 @@
         "time_respace": "",
         "n_frame": "60",
         "img_dir": "/data/mint/sampling/TPAMI_MajorRevision/FixPlastic/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_rot2_1.0C/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_Con5-2.5_rot2_1.0C": {
+        "step": "ema_300000",
+        "alias": "C = 1 down5 up2.5",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/sampling/TPAMI_MajorRevision/FixPlastic/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_Con5-2.5_rot2_1.0C/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_Con3-3_rot2_1.0C": {
+        "step": "ema_300000",
+        "alias": "C = 1 down3 up3",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/sampling/TPAMI_MajorRevision/FixPlastic/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_Con3-3_rot2_1.0C/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_Con2-2_rot2_1.0C": {
+        "step": "ema_300000",
+        "alias": "C = 1 down2 up2",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/sampling/TPAMI_MajorRevision/FixPlastic/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_Con2-2_rot2_1.0C/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_Con2-2_rot2_0.7C": {
+        "step": "ema_300000",
+        "alias": "C = 0.7 down2 up2",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/sampling/TPAMI_MajorRevision/FixPlastic/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_Con2-2_rot2_0.7C/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_Con1.5-3_rot2_0.7C": {
+        "step": "ema_300000",
+        "alias": "C = 0.7 down1.5 up3",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/sampling/TPAMI_MajorRevision/FixPlastic/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_Con1.5-3_rot2_0.7C/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_Con1-2_rot2_0.7C": {
+        "step": "ema_300000",
+        "alias": "C = 0.7 down1 up2",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/sampling/TPAMI_MajorRevision/FixPlastic/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD256_Con1-2_rot2_0.7C/ema_300000/valid/render_face/reverse_sampling/"
     }
 }

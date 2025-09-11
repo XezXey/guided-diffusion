@@ -665,7 +665,7 @@ def build_condition_image(cond, misc, force_render=False):
     deca_obj = misc['deca_obj']
     clip_ren = None
     
-    def prep_render(cond, cond_img_name):
+    def prep_render(cond, cond_img_name, adjust_contrast=None, alpha_images=None):
         #Note: Preprocessing to separate the shading ref or shadow mask into src-dst
         rendered_tmp = []
         for j in range(n_step):
@@ -684,11 +684,42 @@ def build_condition_image(cond, misc, force_render=False):
                 r_tmp = np.transpose(r_tmp, (2, 0, 1))
                 r_tmp = (r_tmp / 127.5) - 1
                 clip_ren = True
+            
             rendered_tmp.append(r_tmp)
         rendered_tmp = np.stack(rendered_tmp, axis=0)
         cond[cond_img_name] = th.tensor(rendered_tmp).cuda()
         cond[f'src_{cond_img_name}'] = th.tensor(rendered_tmp[[0]]).cuda()
         cond[f'dst_{cond_img_name}'] = th.tensor(rendered_tmp[1:]).cuda()
+        
+        if adjust_contrast is not None:
+            print(f"[#] Adjusting the contrast of rendered images with: down={adjust_contrast[0]}, up={adjust_contrast[1]}.")
+            assert alpha_images is not None, "[#] Need alpha images to adjust the contrast of rendered images."
+            print(f"[#] Alpha images shape: {th.cat(alpha_images).shape}, rendered_tmp shape: {rendered_tmp.shape}")
+            alpha_images = th.cat(alpha_images).cpu().numpy() > 0.5  # [B, 1, H, W]
+            alpha_images = np.repeat(alpha_images, 3, axis=1)  # [B, 3, H, W]
+            new_rendered_tmp = []
+            for i in range(rendered_tmp.shape[0]):
+                r_tmp = rendered_tmp[i]
+                a_tmp = alpha_images[i]
+                median = np.median(r_tmp[a_tmp], axis=0, keepdims=True)
+                
+                up = adjust_contrast[1]
+                down = adjust_contrast[0]
+                above = r_tmp > median
+                below = ~above
+                above = above & a_tmp
+                below = below & a_tmp
+                new_r_tmp = r_tmp.copy()
+                new_r_tmp[above] = (r_tmp[above] - median) * up + median
+                new_r_tmp[below] = (r_tmp[below] - median) * down + median
+                new_r_tmp = np.clip(new_r_tmp, 0, 1)
+                new_rendered_tmp.append(new_r_tmp)
+            new_rendered_tmp = np.stack(new_rendered_tmp, axis=0)
+            new_rendered_tmp = th.tensor(new_rendered_tmp).cuda()
+            # from vis_utils import plot_image
+            # plot_image(new_rendered_tmp, [3], "0to1", "new_r.png")
+            cond[f'dst_{cond_img_name}'] = new_rendered_tmp[1:]
+            
         return cond, clip_ren
     
     def prep_shadow(cond, cond_img_name):
@@ -799,6 +830,7 @@ def build_condition_image(cond, misc, force_render=False):
         sub_step = mani_utils.ext_sub_step(n_step, render_batch_size)
         load_deca_time = time.time() - start_t
         all_render = []
+        all_alpha_images = []
         render_time = []
         all_shadow_mask = []
         all_shadow_kk = []
@@ -822,6 +854,12 @@ def build_condition_image(cond, misc, force_render=False):
                                                                 mask=mask,
                                                                 deca_obj=deca_obj,
                                                                 repeat=True)
+            # print(orig_visdict.keys())
+            # print(orig_visdict['alpha_images'].shape)
+            # from vis_utils import plot_image
+            # plot_image(orig_visdict['alpha_images'], [1], "0to1", "test_alpha.png")
+            # exit()
+            deca_alpha_images = orig_visdict['alpha_images']  # [B, 1, H, W]
             sub_render_deca_t = time.time() - start_sub_render_deca_t
             print("[#] Rendering with the shadow mask from face + scalp of render face...")
             if i == 0:
@@ -852,6 +890,7 @@ def build_condition_image(cond, misc, force_render=False):
             if i == len(sub_step)-2:
                 del deca_obj_face_scalp
             all_render.append(deca_rendered)
+            all_alpha_images.append(deca_alpha_images)
             render_time.append(time.time() - start_t)
             pure_render_deca_time.append(sub_render_deca_t)
             pure_render_shadow_time.append(sub_render_shadow_t)
@@ -902,8 +941,6 @@ def build_condition_image(cond, misc, force_render=False):
             shadow_kk = th.cat(all_shadow_kk, dim=0)
         
         
-        
-        
     print("Conditoning with image : ", condition_img)
     for i, cond_img_name in enumerate(condition_img):
         if ('faceseg' in cond_img_name) or ('face_structure' in cond_img_name):
@@ -913,9 +950,8 @@ def build_condition_image(cond, misc, force_render=False):
             else:
                 bg_tmp = np.stack(bg_tmp, axis=0)
             cond[f"src_{cond_img_name}"] = th.tensor(bg_tmp)
-            
         elif ('deca' in cond_img_name):
-            cond, clip_ren = prep_render(cond, cond_img_name)
+            cond, clip_ren = prep_render(cond, cond_img_name, adjust_contrast=args.adjust_contrast, alpha_images=all_alpha_images)
         elif ('shadow_diff' in cond_img_name):
             cond = prep_shadow(cond, cond_img_name)
     

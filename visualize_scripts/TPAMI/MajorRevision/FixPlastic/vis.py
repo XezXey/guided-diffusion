@@ -167,11 +167,11 @@ def create_app():
                     else: 
                         out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
                 else:
-                    if os.path.exists(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/out_rt_no1.mp4") and show_vid == "True":
+                    if os.path.exists(f"{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_rt.mp4") and show_vid == "True":
                         out += f"""
                             <td>  
                             <video controls autoplay muted loop>
-                                <source src=/files/{path}/{itp_method}_{diff_step}/n_frames={n_frame}/out_rt_no1.mp4 type="video/mp4">
+                                <source src=/files/{path}/{itp_method}_{diff_step}/n_frames={n_frame}/res_rt.mp4 type="video/mp4">
                             </video>
                             </td>
                         """
