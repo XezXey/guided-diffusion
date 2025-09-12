@@ -49,4 +49,4 @@ dataset:
 
 train_misc:
   exp_name: "ControlNet"
-  cfg_name: "DPP_128_VLL_Dhariwal_attn"
+  cfg_name: "DPP_128_VLL_default_attn"
