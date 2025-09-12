@@ -121,8 +121,6 @@ import copy
 import time
 import torchvision
 import pytorch_lightning as pl
-# sys.path.insert(0, '../')
-# sys.path.insert(0, '/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/')
 sys.path.append('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/')
 sys.path.append('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/')
 from guided_diffusion.script_util import (
@@ -138,7 +136,6 @@ from guided_diffusion.dataloader.img_deca_datasets import load_data_img_deca
 
 # Sample utils
 # sys.path.insert(0, '../')
-# sys.path.insert(0, '/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/')
 sys.path.append('/home2/mint/Dev/DiFaReli/difareli-faster/sample_scripts/')
 sys.path.append('/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/')
 from sample_utils import (
@@ -345,7 +342,8 @@ if __name__ == '__main__':
     # Load Ckpt
     if args.cfg_name is None:
         args.cfg_name = args.log_dir + '.yaml'
-    ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
+    # ckpt_loader = ckpt_utils.CkptLoader(log_dir=args.log_dir, cfg_name=args.cfg_name)
+    ckpt_loader = ckpt_utils.SimpleCkptLoader(model_path=args.log_dir, cfg_path=args.cfg_name)
     cfg = ckpt_loader.cfg
 
     if cfg.param_model.shadow_val.norm:
@@ -581,7 +579,9 @@ if __name__ == '__main__':
         runtime_dict['relit_time'].append(time_dict['relit_time'])
         
         #NOTE: Save result
-        out_dir_relit = f"{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
+        log_dir = args.log_dir.split('/')[-1] if args.log_dir[-1] != '/' else args.log_dir.split('/')[-2]
+        cfg_name = args.cfg_name.split('/')[-1]
+        out_dir_relit = f"{args.out_dir}/log={log_dir}_cfg={cfg_name}{args.postfix}/{args.ckpt_selector}_{args.step}/{args.set}/{itp_str}/reverse_sampling/"
         os.makedirs(out_dir_relit, exist_ok=True)
         save_res_dir = f"{out_dir_relit}/src={src_id}/dst={dst_id}/{itp_fn_str}_{args.diffusion_steps}/n_frames={n_step}/"
         os.makedirs(save_res_dir, exist_ok=True)
@@ -597,7 +597,8 @@ if __name__ == '__main__':
         if args.eval_dir is not None:
             # if args.dataset in ['mp_valid', 'mp_test']
             # eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/{args.dataset}/"
-            eval_dir = f"{args.eval_dir}/{args.ckpt_selector}_{args.step}/out/"
+            model_name = args.log_dir.split('/')[-1] if args.log_dir[-1] != '/' else args.log_dir.split('/')[-2]
+            eval_dir = f"{args.eval_dir}/{model_name}_{args.postfix}/{args.ckpt_selector}_{args.step}/out/"
             os.makedirs(eval_dir, exist_ok=True)
             torchvision.utils.save_image(tensor=f_relit[-1], fp=f"{eval_dir}/input={src_id}#pred={dst_id}.png")
             

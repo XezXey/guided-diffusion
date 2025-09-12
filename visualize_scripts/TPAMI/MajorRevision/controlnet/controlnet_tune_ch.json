@@ -1,6 +1,12 @@
 {
+    "ours_model050000": {
+        "step": "ema_050000",
+        "alias": "DPP_128",
+        "n_frames": "60",
+        "res_dir": "/data/mint/sampling/TPAMI_MajorRevision/ControlNet/log=DPP_128_VLL_cfg=DPP_128_VLL.yaml_rot2_0.7C/ema_050000/valid/render_face/reverse_sampling/"
+    },
     "ours_model100000": {
-        "step": "model_100000",
+        "step": "ema_100000",
         "alias": "DPP_128",
         "n_frames": "60",
         "res_dir": "/data/mint/sampling/TPAMI_MajorRevision/ControlNet/log=DPP_128_VLL_cfg=DPP_128_VLL.yaml_rot2_maxC/ema_100000/valid/render_face/reverse_sampling/"

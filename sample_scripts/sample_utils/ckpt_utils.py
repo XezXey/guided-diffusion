@@ -28,8 +28,6 @@ class CkptLoader():
             if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0:
                self.device = 'cuda' 
             else : self.device = 'cpu'
-            
-                
 
     # Config file
     def get_cfg(self):
@@ -110,3 +108,52 @@ class CkptLoader():
             if r:
                 filtered_m.append(list(r.groups())[0])
         print("[#] Available ckpt : ", sorted(filtered_m))
+
+class SimpleCkptLoader():
+    def __init__(self, model_path, cfg_path, device=None) -> None:
+        self.model_path = model_path
+        self.cfg_path = cfg_path
+        self.cfg = self.get_cfg(cfg_path=self.cfg_path)
+        self.name = self.cfg.img_model.name
+        if device is not None:
+            self.device = device
+        else:
+            if th.cuda.is_available() and th._C._cuda_getDeviceCount() > 0:
+               self.device = 'cuda' 
+            else : self.device = 'cpu'
+
+    # Config file
+    def get_cfg(self, cfg_path):
+        cfg = parse_args(ipynb={'mode':True, 'cfg':cfg_path})
+        return cfg
+
+    def load_model(self, ckpt_selector, step):
+        if ckpt_selector == "ema":
+            ckpt = f"ema_0.9999_{step}"
+        elif ckpt_selector == "model":
+            ckpt = f"model{step}"
+        else: raise NotImplementedError
+        
+        model_dict, diffusion = create_img_and_diffusion(self.cfg)
+        # Filtered out the None model
+        model_dict = {k: v for k, v in model_dict.items() if v is not None}
+        for k, v in model_dict.items():
+            if v is None:
+                print(f"[#] Model {k} is None")
+            elif type(v) == tuple:
+                assert len(v) == 1
+                model_dict[k] = v[0]
+            else:
+                model_dict[k] = v
+                
+        for m_name in model_dict.keys():
+            model_path = f"{self.model_path}/{m_name}_{ckpt}.pt"
+            print(f"[#] Loading...{model_path}")
+
+            model_dict[m_name].load_state_dict(
+                th.load(model_path, map_location="cpu")
+            )
+            model_dict[m_name].to(self.device)
+            model_dict[m_name].eval()
+
+        return model_dict, diffusion
