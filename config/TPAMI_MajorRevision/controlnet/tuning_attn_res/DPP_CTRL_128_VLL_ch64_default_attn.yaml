@@ -57,4 +57,4 @@ dataset:
 
 train_misc:
   exp_name: "ControlNet"
-  cfg_name: "DPP_CTRL_128_VLL_ch64"
+  cfg_name: "DPP_CTRL_128_VLL_ch64_default_attn"
