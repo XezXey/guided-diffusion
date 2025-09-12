@@ -1,4 +1,5 @@
 import argparse
+from venv import logger
 from . import gaussian_diffusion as gd
 from guided_diffusion.respace import SpacedDiffusion, space_timesteps
 from guided_diffusion.models.unet import EncoderUNetModelNoTime, UNetModelCondition, UNetModel
@@ -83,14 +84,19 @@ def create_img_and_diffusion(cfg, logger=None):
 def create_model(cfg, all_cfg=None):
     if cfg.channel_mult == "":
         if cfg.image_size == 512:
+            print("[#] Using channel_mult (0.5, 1, 1, 2, 2, 4, 4) for image size 512")
             channel_mult = (0.5, 1, 1, 2, 2, 4, 4)
         elif cfg.image_size == 256:
+            print("[#] Using channel_mult (1, 1, 2, 2, 4, 4) for image size 256")
             channel_mult = (1, 1, 2, 2, 4, 4)
         elif cfg.image_size == 128:
+            print("[#] Using channel_mult (1, 1, 2, 3, 4) for image size 128")
             channel_mult = (1, 1, 2, 3, 4)
         elif cfg.image_size == 64:
+            print("[#] Using channel_mult (1, 2, 3, 4) for image size 64")
             channel_mult = (1, 2, 3, 4)
         elif cfg.image_size == 32:
+            print("[#] Using channel_mult (1, 2, 2, 2) for image size 32")
             channel_mult = (1, 2, 4)
         else:
             raise ValueError(f"unsupported image size: {cfg.image_size}")
