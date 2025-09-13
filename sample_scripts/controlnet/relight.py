@@ -724,8 +724,8 @@ if __name__ == '__main__':
         counter_sj += 1
             
             
-    with open(f'{args.out_dir}/log={args.log_dir}_cfg={args.cfg_name}{args.postfix}/runtime.json', 'w') as fj:
-        runtime_dict['name'] = f"log={args.log_dir}_cfg={args.cfg_name}{args.postfix}"
+    with open(f'{args.out_dir}/log={log_dir}_cfg={cfg_name}{args.postfix}/runtime.json', 'w') as fj:
+        runtime_dict['name'] = f"log={log_dir}_cfg={cfg_name}{args.postfix}"
         runtime_dict['mean_rev_time'] = np.mean(runtime_dict['rev_time'])
         runtime_dict['mean_relit_time'] = np.mean(runtime_dict['relit_time'])
         runtime_dict['std_rev_time'] = np.std(runtime_dict['rev_time'])
