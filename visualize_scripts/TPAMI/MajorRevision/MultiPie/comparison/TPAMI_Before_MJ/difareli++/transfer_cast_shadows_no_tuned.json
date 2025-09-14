@@ -1,0 +1,68 @@
+{
+    "unipc_multistep_10_2_None" : {
+        "step" :"ema_085000",
+        "alias" : "UniPC - 10 steps",
+        "misc" : "solver",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_with_solver/ema_085000/mp_test2/SD100.0/unipc_multistep_10_2_None_SD100.0/out_transf_eval/"
+    },
+    "unipc_multistep_25_2_None" : {
+        "step" :"ema_085000",
+        "alias" : "UniPC - 25 steps",
+        "misc" : "solver",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_with_solver/ema_085000/mp_test2/SD100.0/unipc_multistep_25_2_None_SD100.0/out_transf_eval/"
+    },
+    "dpmsolver_multistep_10_2_None" : {
+        "step" :"ema_085000",
+        "alias" : "DPMSolver - 10 steps",
+        "misc" : "solver",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_with_solver/ema_085000/mp_test2/SD100.0/dpmsolver_multistep_10_2_None_SD100.0/out_transf_eval/"
+    },
+    "dpmsolver_multistep_25_2_None" : {
+        "step" :"ema_085000",
+        "alias" : "DPMSolver - 25 steps",
+        "misc" : "solver",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_with_solver/ema_085000/mp_test2/SD100.0/dpmsolver_multistep_25_2_None_SD100.0/out_transf_eval/"
+    },
+    "dpmsolver++_multistep_10_2_None" : {
+        "step" :"ema_085000",
+        "alias" : "DPMSolver++ - 10 steps",
+        "misc" : "solver",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_with_solver/ema_085000/mp_test2/SD100.0/dpmsolver++_multistep_10_2_None_SD100.0/out_transf_eval/"
+    },
+    "dpmsolver++_multistep_25_2_None" : {
+        "step" :"ema_085000",
+        "alias" : "DPMSolver++ - 25 steps",
+        "misc" : "solver",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_with_solver/ema_085000/mp_test2/SD100.0/dpmsolver++_multistep_25_2_None_SD100.0/out_transf_eval/"
+    },
+    "ours_difareli_oneshot" : {
+        "step" :"ema_200000",
+        "alias" : "DiFaReli - 250 steps",
+        "misc" : "solver",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/main_result/ema_200000/mp_test2/paired+difareli+nobg+nodpm+trainset_256.yaml/out_transf_eval/"
+    },
+    "ours_256_Masked_Face_woclip+BgNoHead+shadow_256" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_256_Masked_Face_woclip+BgNoHead+shadow_256_testset2/ema_085000/testset2/"
+    },
+    "ours_256_DiFaReli++_single_shot_SD100.0" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ single shot SD100.0",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_single_shot_eval/ema_300000/mp_test2_data2/SD100.0/out_transf_eval/"
+    },
+    "ours_256_DiFaReli++_single_shot_SD256.0" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ single shot SD256.0",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_single_shot_eval/ema_300000/mp_test2_data2/SD256.0/out_transf_eval/"
+    },
+    "ours_256_DiFaReli_FsBg_Sdiff_SS_256_V100_256_shtold_dstC_ts1000" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ (SS - 256) sh to ld dstC 1000 SD100.0",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_evaluations/MP/pred/Ours/ours_difareli++_256/ts_1000/DiFaReli_FsBg_Sdiff_SS_256_V100_shtold_dstC/mp_test2/ema_085000/out_transf_eval/"
+    }
+}

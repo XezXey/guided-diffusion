@@ -18,6 +18,7 @@ with open(path, 'r') as f:
     data = json.load(f)['pair']
  
 for p in tqdm.tqdm(glob.glob(args.pred_path + '/*')):   
+    print(p)
     if os.path.isdir(p + '/out') and args.dup_out_eval:
         print("[#] Duplicating out to out_eval...")    
         os.system(f'cp -r {p}/out {p}/out_eval')

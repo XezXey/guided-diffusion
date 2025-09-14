@@ -1,0 +1,18 @@
+{
+    "ours_256_DiFaReli++_single_shot_SD256.0" : {
+        "step":"ema_085000", 
+        "alias":"DiFaReli++ single shot SD256.0",
+        "misc" : "ours",
+        "img_dir" : "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ours_difareli++_single_shot_eval/ema_300000/mp_test_data2/SD256.0/out"
+    },
+    "diffusion_rig" : {
+        "alias":"DiffusionRig",
+        "misc" : "sota",
+        "img_dir" : "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/DiffusionRig/mp_test/out/"
+    },
+    "relipa" : {
+        "alias":"Relipa",
+        "misc" : "sota",
+        "img_dir" : "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Relipa/mp_test/out/256/"
+    }
+}
