@@ -10,7 +10,6 @@ img_model:
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
   # Cross-attention
-  num_heads: 2
   attention_resolutions: "16,8"
   # Cross-attention
 
@@ -20,7 +19,6 @@ img_cond_model:
   in_image: ['deca_masked_face_images_woclip', 'shadow_diff_with_weight_simplified', 'face_structure']
   in_channels: 5
   image_size: 128
-  num_heads: 2
   num_res_blocks: 2
   num_channels: 128
   out_channels: 128
@@ -57,4 +55,4 @@ dataset:
 
 train_misc:
   exp_name: "ControlNet"
-  cfg_name: "DPP_CTRL_128_VLL_ch128_attn16-8_head2"
+  cfg_name: "DPP_CTRL_128_VLL_ch128_attn16-8_head4"
