@@ -4,6 +4,17 @@ import numpy as np
 import json
 import sys
 
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--sample_pair_json', required=True)
+parser.add_argument('--comparison_json', required=True)
+parser.add_argument('--data_path', default='/data/mint/DPM_Dataset/MultiPIE/MultiPIE_testset/mp_aligned/')
+parser.add_argument('--set_', default='valid')
+parser.add_argument('--port', required=True)
+parser.add_argument('--host', default='0.0.0.0')
+args = parser.parse_args()
+
 def sort_by_frame(path_list):
     frame_anno = []
     for p in path_list:
@@ -41,7 +52,7 @@ def create_app():
         with open(args.sample_pair_json, 'r') as f:
             sample_pairs = json.load(f)['pair']
             
-        data_path = "/data/mint/DPM_Dataset/MultiPIE/MultiPIE_testset/mp_aligned/valid/"
+        data_path = f'{args.data_path}/{args.set_}/'
         for p_id, src_dst in sample_pairs.items():
             src = src_dst['src']
             dst = src_dst['dst']
@@ -65,15 +76,6 @@ def create_app():
     return app
 
 if __name__ == "__main__":
-    import argparse
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--sample_pair_json', required=True)
-    parser.add_argument('--comparison_json', required=True)
-    parser.add_argument('--set_', default='valid')
-    parser.add_argument('--port', required=True)
-    parser.add_argument('--host', default='0.0.0.0')
-    args = parser.parse_args()
     
     # f"/data/mint/DPM_Dataset/MultiPIE_testset/mp_aligned/{args.set_}/"
     app = create_app()

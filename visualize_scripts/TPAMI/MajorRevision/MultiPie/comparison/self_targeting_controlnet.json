@@ -1,0 +1,42 @@
+{
+    "DPP_128_50k": {
+        "alias": "DiFaReli++",
+        "misc": "ours",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/DPP_128_VLL__SD256_250T_dstC/ema_100000/out/"
+    },
+    "DPP_128_100k": {
+        "alias": "DiFaReli++",
+        "misc": "ours",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/DPP_128_VLL__SD256_250T_dstC/ema_100000/out/"
+    },
+    "DPP_128_150k": {
+        "alias": "DiFaReli++",
+        "misc": "ours",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/DPP_128_VLL__SD256_250T_dstC/ema_150000/out/"
+    },
+    "DPP_CTRL_128_attn16-8_100k": {
+        "alias": "ControlNet attn16-8",
+        "misc": "ours",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/DPP_CTRL_128_VLL_ch128_attn16-8__SD256_250T_dstC/ema_100000/out/"
+    },
+    "DPP_CTRL_128_attn16-8_50k": {
+        "alias": "ControlNet attn16-8",
+        "misc": "ours",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/DPP_CTRL_128_VLL_ch128_attn16-8__SD256_250T_dstC/ema_050000/out/"
+    },
+    "DPP_CTRL_128_default_attn_100k": {
+        "alias": "ControlNet default attn",
+        "misc": "ours",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/DPP_CTRL_128_VLL_ch128_default_attn__SD256_250T_dstC/ema_100000/out/"
+    },
+    "DPP_CTRL_128_default_attn_50k": {
+        "alias": "ControlNet default attn",
+        "misc": "ours",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/DPP_CTRL_128_VLL_ch128_default_attn__SD256_250T_dstC/ema_050000/out/"
+    },
+    "DPP_CTRL_160": {
+        "alias": "ControlNet ch160",
+        "misc": "ours",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/DPP_CTRL_128_ch160__SD256_250T_dstC/ema_100000/out/"
+    }
+}
