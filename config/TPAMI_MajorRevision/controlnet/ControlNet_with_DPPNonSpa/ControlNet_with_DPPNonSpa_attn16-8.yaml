@@ -5,13 +5,12 @@ img_model:
   in_image: ['raw']
   num_res_blocks: 2
   in_channels: 3
-  num_channels: 256
   out_channels: 3
   conditioning: True  # Conditioning with DECA
   condition_proj_dim: 512
   # Cross-attention
   num_heads: 8
-  attention_resolutions: "4,2,1"
+  attention_resolutions: "16,8"
   # Cross-attention
 
 img_cond_model:
@@ -22,14 +21,13 @@ img_cond_model:
   image_size: 128
   num_heads: 8
   num_res_blocks: 2
-  num_channels: 256
   out_channels: 128
   use_scale_shift_norm: True
   override_cond: "spatial_latent"
   prep_image: [Null, Null, Null]
   noise_dpm_cond_img: [Null, Null, Null]
   canny_thres: [Null, Null, Null]
-  attention_resolutions: "4,2,1"
+  attention_resolutions: "16,8"
 
 param_model:
   params_selector: ['shape', 'pose', 'exp', 'cam', 'faceemb']
@@ -59,4 +57,4 @@ dataset:
 
 train_misc:
   exp_name: "ControlNet"
-  cfg_name: "ControlNet_with_DPPNonSpa"
+  cfg_name: "ControlNet_with_DPPNonSpa_attn16-8"
