@@ -42,9 +42,12 @@ def create_img_and_diffusion(cfg, logger=None):
         n_ctrl = count_trainable_params(img_model.controlnet)
         n_unet = count_trainable_params(img_model.unet)
         logger.warning(f"[#] Model size ({cfg.img_model.arch}): ")
+        logger.info(controlnet)
+        logger.info(controlled_unet)
         logger.info(f"1. ControlNet: {n_ctrl/1e6}M")
         logger.info(f"2. UNet: {n_unet/1e6}M")
         logger.warning(f"=> Total params: {(n_ctrl+n_unet)/1e6}M")
+        exit()
     elif cfg.img_model.arch in ['DPP_Spatial_with_CA', 'EncoderSpatial_with_CA']:
         unet = create_model(cfg.img_model, all_cfg=cfg)
         encoder = create_model(cfg.img_cond_model, all_cfg=cfg)
