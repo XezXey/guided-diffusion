@@ -55,12 +55,28 @@
         "diff_step": "sh=1.0",
         "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/DiffusionRig/figures/rotate_sh_axis=1/"
     },
+    "diffusionrig_rotate_axis=1_0.7sh": {
+        "alias": "DiffusionRig (CVPR 2023)",
+        "misc": "atos",
+        "n_frame": "60",
+        "itp_method": "scale",
+        "diff_step": "sh=0.7",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/DiffusionRig/figures/rotate_sh_axis=1/"
+    },
     "relipa_rotate_axis=1": {
         "alias": "Relipa (CVPR 2025)",
         "misc": "relipa",
         "n_frame": "60",
         "itp_method": "scale",
         "diff_step": "sh=1.0",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/Relipa/figures/rotate_sh_axis=1/"
+    },
+    "relipa_rotate_axis=1_0.6sh": {
+        "alias": "Relipa (CVPR 2025)",
+        "misc": "relipa",
+        "n_frame": "60",
+        "itp_method": "scale",
+        "diff_step": "sh=0.6",
         "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/Relipa/figures/rotate_sh_axis=1/"
     },
     "ours_difareli++_oneshot_rotate_rot1": {
@@ -119,6 +135,17 @@
         "time_respace": "",
         "n_frame": "60",
         "img_dir": "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_maxC_rot1_0.7sh/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli++_oneshot_rotate_rot1_0.6C_rot1_0.7sh": {
+        "step": "ema_300000",
+        "alias": "DiFaReli++ one shot - rotate 0.7sh maxC",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "60",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/sampling_backup_from_v10_8OCT2025/sampling/TPAMI/main_result/ffhq/user_study/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_0.6C_rot1_0.7sh/ema_300000/valid/render_face/reverse_sampling/"
     },
     "ours_difareli++_oneshot_rotate_rot1_tomax_0.8sh": {
         "step": "ema_300000",
