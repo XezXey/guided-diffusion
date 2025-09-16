@@ -53,6 +53,9 @@ def create_img_and_diffusion(cfg, logger=None):
         n_enc = count_trainable_params(img_model.encoder)
         n_unet = count_trainable_params(img_model.unet)
         logger.warning(f"[#] Model size ({cfg.img_model.arch}): ")
+        logger.info(encoder)
+        logger.info(unet)
+        # exit()
         logger.info(f"1. ControlNet: {n_enc/1e6}M")
         logger.info(f"2. UNet: {n_unet/1e6}M")
         logger.warning(f"=> Total params: {(n_enc+n_unet)/1e6}M")
@@ -73,6 +76,9 @@ def create_img_and_diffusion(cfg, logger=None):
             n_enc = 0
             
         logger.warning(f"[#] Model size ({cfg.img_cond_model.arch} & {cfg.img_model.arch}): ")
+        logger.info(img_cond_model)
+        logger.info(img_model)
+        # exit()
         logger.info(f"1. Encoder : {n_enc/1e6}M")
         logger.info(f"2. UNet: {n_unet/1e6}M")
         logger.warning(f"=> Total params: {(n_enc+n_unet)/1e6}M")
@@ -379,7 +385,7 @@ def create_model(cfg, all_cfg=None):
             use_checkpoint=cfg.use_checkpoint,
             # Cross-attention
             num_heads=cfg.num_heads,
-            use_spatial_transformer=False, # Since DiFaReli++ has no context to condition the encoder, we set this to false for condition nothing
+            use_spatial_transformer=False, # Since DiFaReli++ has no context to condition the encoder, we set this to false for condition nothing = use self-attention only
             use_scale_shift_norm=False,  # No scale_shift_norm as similar to DiFaReli++ (ResBlockNoTime, also no cond to be accurate)
             transformer_depth=1,
             context_dim=None,    # Non-spatial conditioning
