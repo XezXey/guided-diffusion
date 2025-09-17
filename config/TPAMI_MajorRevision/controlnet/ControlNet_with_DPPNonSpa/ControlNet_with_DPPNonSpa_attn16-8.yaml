@@ -46,7 +46,7 @@ train:
   sampling_interval: 100000
   save_interval: 50000
   use_prep_data: False
-  lr: 1e-5
+  lr: 1e-4
   logger_dir: /data/mint/wandb_logs/
 
 dataset:
