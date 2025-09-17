@@ -16,7 +16,7 @@ from torchvision.utils import make_grid
 from .attention import SpatialTransformer
 from .openaimodel import UNetModel, TimestepEmbedSequential, ResBlock, Downsample, AttentionBlock
 
-class ControlledUnetModel(UNetModel):
+class ControlledUnetModelNoXt(UNetModel):
     def forward(self, x, timesteps=None, context=None, control=None, only_mid_control=False, **kwargs):
         context = kwargs['kwargs']['cond_params'].type_as(x)
         if context is not None:
@@ -45,7 +45,7 @@ class ControlledUnetModel(UNetModel):
         h = h.type(x.dtype)
         return {'output':self.out(h)}
 
-class ControlNet(nn.Module):
+class ControlNetNoXt(nn.Module):
     def __init__(
             self,
             image_size,
@@ -307,7 +307,7 @@ class ControlNet(nn.Module):
 
         return outs
 
-class ControlNetWrapper(nn.Module):
+class ControlNetWrapperNoXt(nn.Module):
     def __init__(self, controlnet: ControlNet, unet: ControlledUnetModel):
         super().__init__()
         self.controlnet = controlnet

@@ -9,6 +9,7 @@ from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_b
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_no_dpm import UNetModel_SpatialCondition_Hadamart_No_DPM
 from guided_diffusion.models.spatial_cond_arch.unet_spatial_condition_hadamart_no_dpm_notime import UNetModel_SpatialCondition_Hadamart_No_DPM_NoTime
 from guided_diffusion.models.controlnet.controlnet import ControlNet, ControlledUnetModel, ControlNetWrapper
+from guided_diffusion.models.controlnet_no_xt.controlnet_no_xt import ControlNetNoXt, ControlledUnetModelNoXt, ControlNetWrapperNoXt
 from guided_diffusion.models.controlnet_mod.controlnet_spatial_w_dpp_nonspa.controlnet_mod import ControlledUnetModel_DPPNonSpa, ControlNet_DPPNonSpa, ControlNetWrapperMod
 from guided_diffusion.models.controlnet_mod.dpp_spatial_w_cross_attention.dpp_spatial_cond import DPP_Spatial_with_CA, EncoderSpatial_with_CA, DPPSpatialWrapper
 from guided_diffusion.mint_logger import createLogger
@@ -27,6 +28,18 @@ def create_img_and_diffusion(cfg, logger=None):
         controlled_unet = create_model(cfg.img_model, all_cfg=cfg)
         controlnet = create_model(cfg.img_cond_model, all_cfg=cfg)
         img_model = ControlNetWrapper(controlnet=controlnet, unet=controlled_unet)
+        img_cond_model = None
+        n_ctrl = count_trainable_params(img_model.controlnet)
+        n_unet = count_trainable_params(img_model.unet)
+        logger.warning(f"[#] Model size ({cfg.img_model.arch}): ")
+        logger.info(f"1. ControlNet: {n_ctrl/1e6}M")
+        logger.info(f"2. UNet: {n_unet/1e6}M")
+        logger.warning(f"=> Total params: {(n_ctrl+n_unet)/1e6}M")
+        
+    elif cfg.img_model.arch in ['ControlNet_no_xt', 'ControlledUnetModel_no_xt']:
+        controlled_unet_no_xt = create_model(cfg.img_model, all_cfg=cfg)
+        controlnet_no_xt = create_model(cfg.img_cond_model, all_cfg=cfg)
+        img_model = ControlNetWrapperNoXt(controlnet=controlnet, unet=controlled_unet)
         img_cond_model = None
         n_ctrl = count_trainable_params(img_model.controlnet)
         n_unet = count_trainable_params(img_model.unet)
@@ -303,6 +316,35 @@ def create_model(cfg, all_cfg=None):
         )
     elif cfg.arch == 'ControlledUnetModel':
         return ControlledUnetModel(
+            image_size=cfg.image_size,
+            in_channels=cfg.in_channels,
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=True,
+            transformer_depth=1,
+            context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning
+        )
+    elif cfg.arch == 'ControlNetNoXt':
+        return ControlNetNoXt(
+            image_size=cfg.image_size,
+            in_channels=3,
+            model_channels=cfg.num_channels,
+            hint_channels=cfg.in_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=True,
+            transformer_depth=1,
+            context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning
+            legacy=False,
+        )
+    elif cfg.arch == 'ControlledUnetModelNoXt':
+        return ControlledUnetModelNoXt(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
             model_channels=cfg.num_channels,
