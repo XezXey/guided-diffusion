@@ -137,9 +137,9 @@ class ControlNetNoXt(nn.Module):
 
         self.input_blocks = nn.ModuleList(
             [
-                # TimestepEmbedSequential(
-                #     conv_nd(dims, in_channels, model_channels, 3, padding=1)
-                # )
+                TimestepEmbedSequential(
+                    conv_nd(dims, in_channels, model_channels, 3, padding=1)
+                )
             ]
         )
         self.zero_convs = nn.ModuleList([self.make_zero_conv(model_channels)])
