@@ -39,7 +39,7 @@ def create_img_and_diffusion(cfg, logger=None):
     elif cfg.img_model.arch in ['ControlNet_no_xt', 'ControlledUnetModel_no_xt']:
         controlled_unet_no_xt = create_model(cfg.img_model, all_cfg=cfg)
         controlnet_no_xt = create_model(cfg.img_cond_model, all_cfg=cfg)
-        img_model = ControlNetWrapperNoXt(controlnet=controlnet, unet=controlled_unet)
+        img_model = ControlNetWrapperNoXt(controlnet=controlnet_no_xt, unet=controlled_unet_no_xt)
         img_cond_model = None
         n_ctrl = count_trainable_params(img_model.controlnet)
         n_unet = count_trainable_params(img_model.unet)
