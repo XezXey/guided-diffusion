@@ -294,7 +294,7 @@ class ControlNetNoXt(nn.Module):
 
         # control signal from zero conv
         guided_hint = self.input_hint_block(hint, emb, context)
-        print(guided_hint.shape)
+        # print(guided_hint.shape)
 
         outs = []
 
