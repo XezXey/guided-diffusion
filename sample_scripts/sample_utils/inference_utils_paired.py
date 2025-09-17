@@ -507,7 +507,14 @@ def build_condition_image_hdr(cond, misc, force_render=False):
                                                             )
         sub_render_deca_t = time.time() - start_sub_render_deca_t
         
-        rotate_axis = 'azimuth' if args.rotate_sh_axis == 2 else ('roll' if args.rotate_sh_axis == 1 else 'elevation')
+        # rotate_axis = 'azimuth' if args.rotate_sh_axis == 2 else ('roll' if args.rotate_sh_axis == 1 else 'elevation')
+        if args.rotate_sh_axis == 1:
+            rotate_axis = 'azimuth'
+        elif args.rotate_sh_axis == 2:
+            rotate_axis = 'roll'
+        else: raise NotImplementedError("[#] Only rotate_sh_axis=1 (roll) and 2 (azimuth) is available for HDR rendering...")
+        
+        print(args.rotate_sh_axis, rotate_axis, type(args.rotate_sh_axis), type(rotate_axis), args.rotate_sh)
         print(f"[#] Render shading reference with HDR on {rotate_axis} axis.")
         hdr_frames, shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff = hdr_utils.render_with_hdr(hdr_file=args.hdr, 
                                                                                              normal_images=orig_visdict['normal_images'], 
@@ -550,10 +557,9 @@ def build_condition_image_hdr(cond, misc, force_render=False):
                 flame_face_scalp = params_utils.load_flame_mask(['face', 'scalp', 'left_eyeball', 'right_eyeball'])
                 deca_obj_face_scalp = params_utils.init_deca(mask=flame_face_scalp, rasterize_type=args.rasterize_type) # Init DECA with mask only once
                 load_deca_for_shadow_time = time.time() - load_deca_for_shadow_time
-            if args.rotate_sh_axis == 0 and (args.rotate_sh or args.rotate_sh_dst):
-                print("[#] Fixing the axis 0 by negate ray[0]...")
-            elif args.rotate_sh_axis == 1 and (args.rotate_sh or args.rotate_sh_dst):
-                print("[#] Fixing the axis 1 by negate ray[1]...")
+                
+            if int(args.rotate_sh_axis) == 1 and (args.rotate_sh or args.rotate_sh_dst):
+                print("[#] HDR - Fixing the axis 1 by negate ray[1]...")
             
             # Render for each lighting
             start_sub_render_shadow_t = time.time()
@@ -563,8 +569,7 @@ def build_condition_image_hdr(cond, misc, force_render=False):
                                             verts=orig_visdict['trans_verts_orig'], # [B=2, 5023, 3]; 
                                             use_sh_to_ld_region=args.use_sh_to_ld_region,
                                             deca={'face_scalp':deca_obj_face_scalp}, 
-                                            axis_0=args.rotate_sh_axis==0 and (args.rotate_sh or args.rotate_sh_dst),
-                                            axis_1=args.rotate_sh_axis==1 and (args.rotate_sh or args.rotate_sh_dst),
+                                            axis_1=int(args.rotate_sh_axis)==1 and (args.rotate_sh or args.rotate_sh_dst),
                                             hdr=True,
                                             device='cpu',   # Prevent OOM
                                             up_rate=args.up_rate_for_AA,

@@ -10,9 +10,31 @@ import glob, os, sys
 import cv2
 from collections import defaultdict
 import torchvision
+import multiprocessing as mp
 from sh_utils import get_shcoeff, unfold_sh_coeff, flatten_sh_coeff, apply_integrate_conv, apply_integrate_conv_anyLmax, sample_from_sh, genSurfaceNormals, cartesian_to_spherical, from_x_left_to_z_up
 from tonemapper import TonemapHDR
 tonemapper = TonemapHDR()
+
+# # --------- GLOBALS CACHED IN WORKERS ----------
+# _HDR = None
+# _ROTATE_AXIS = None
+# _FACE = None
+# _LMAX = None
+# _STEP = None  # degrees per index (360 / n_step)
+
+# def _init_shared(hdr_image, rotate_axis, face, Lmax, n_step):
+#     """Called once per worker; cache big/constant data to avoid per-task copies."""
+#     global _HDR, _ROTATE_AXIS, _FACE, _LMAX, _STEP
+#     _HDR = hdr_image
+#     _ROTATE_AXIS = rotate_axis
+#     _FACE = face
+#     _LMAX = Lmax
+#     _STEP = 360.0 / float(n_step)
+
+# def _worker(i):
+#     """Compute degrees from index i and call your existing generate_frame."""
+#     degrees = int(round(i * _STEP))
+#     return generate_frame(_HDR, degrees, _ROTATE_AXIS, _FACE, _LMAX)
 
 def render(hdr_image, face, Lmax):
     hdr_tm, _, _ = tonemapper(hdr_image)
@@ -53,9 +75,12 @@ def render(hdr_image, face, Lmax):
 
     return ((normal_map_org + 1) * 0.5), ((normal_map + 1) * 0.5), shading, mask, coeff, sh, unfolded
 
-def generate_frame(hdr_image, i, axis, face, Lmax):
+# def generate_frame(hdr_image, i, axis, face, Lmax):
+def generate_frame(hdr_file, i, axis, face, Lmax):
     # hdr_image_roll = np.roll(hdr_image.copy(), shift=-i, axis=1)
     # print(axis)
+    hdr_image = skimage.io.imread(hdr_file)
+    hdr_image = skimage.img_as_float(hdr_image)
     rot_deg = i*np.pi/180
     dcm = rotation_matrix(azimuth=rot_deg if axis == 'azimuth' else 0,
                         elevation=rot_deg if axis == 'elevation' else 0,
@@ -142,7 +167,31 @@ def run_parallel(hdr_image, n_step, rotate_axis, face, Lmax):
     shift_values = np.linspace(0, 360, n_step).astype(int)
     ctx = mp.get_context("spawn")
     with ctx.Pool(mp.cpu_count(), initializer=_init_shared, initargs=(hdr_image,)) as pool:
-        return pool.starmap(_worker, [(i, rotate_axis, face, Lmax) for i in shift_values], chunksize=4)
+        return pool.starmap(_worker, [(i, rotate_axis, face, Lmax) for i in shift_values], chunksize=1)
+
+# def run_parallel_new(hdr_image, n_step, rotate_axis, face, Lmax):
+#     """
+#     Same signature as your original. Uses starmap-like behavior but only
+#     sends tiny ints to workers; hdr/constants are cached via initializer.
+#     """
+#     # Prefer 'fork' (Linux/macOS) for faster startup; fall back gracefully.
+#     try:
+#         mp.set_start_method("fork", force=False)
+#         ctx = mp.get_context("fork")
+#     except RuntimeError:
+#         ctx = mp.get_context()  # likely 'spawn' on Windows; still fine
+
+#     nprocs = ctx.cpu_count()
+#     # Heuristic: larger chunks reduce scheduler overhead for ~5s tasks
+#     chunksize = max(1, n_step // (nprocs * 4))
+
+#     with ctx.Pool(
+#         processes=nprocs,
+#         initializer=_init_shared,
+#         initargs=(hdr_image, rotate_axis, face, Lmax, n_step),
+#     ) as pool:
+#         # We only pass (i,) because everything else is cached in globals.
+#         return pool.starmap(_worker, [(i,) for i in range(n_step)], chunksize=chunksize)    
 
 def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step, Lmax=2, rotate_axis='azimuth'):
     """
@@ -175,14 +224,16 @@ def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step
     print("[#] Using Lmax = {}".format(Lmax))
     print(normal.shape, albedo.shape, alpha.shape)
     
-    hdr_image = skimage.io.imread(hdr_file)
-    hdr_image = skimage.img_as_float(hdr_image)
+    print("[#] Using HDR file: {}".format(hdr_file))
+    # hdr_image = skimage.io.imread(hdr_file)
+    # hdr_image = skimage.img_as_float(hdr_image)
     
     start_t = time.time()
-    out = run_parallel(hdr_image, n_step, rotate_axis, face, Lmax)
+    # out = run_parallel_new(hdr_image, n_step, rotate_axis, face, Lmax)
+    out = run_parallel(hdr_file, n_step, rotate_axis, face, Lmax)
     # out = []
-    # for i in tqdm.tqdm(np.linspace(0, 360, n_step).astype(int)):
-    #     out.append(generate_frame(hdr_image, i, rotate_axis, face, Lmax))
+    # for i in tqdm.tqdm(np.linspace(0, 360, n_step).astype(int), leave=False):
+    #     out.append(generate_frame(hdr_file, i, rotate_axis, face, Lmax))
     end_t = time.time()
     print("[#] HDR Rendered (n_step={}) in {:.2f} seconds.".format(n_step, end_t - start_t))
     out_pp = postproc(out)
@@ -190,6 +241,3 @@ def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step
     frames = (frames.clip(0, 1) * 255).astype(np.uint8)
 
     return frames, shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff
-
-    
-

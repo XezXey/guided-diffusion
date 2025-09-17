@@ -243,8 +243,8 @@ def load_data_img_deca(
 
 def image_path_list_to_dict(path_list, force_jpg_key=False):
     img_paths_dict = {}
-    print("[#] Image path list to dict: ", path_list[0:5])
-    print(f"Force jpg key : {force_jpg_key}")
+    # print("[#] Image path list to dict: ", path_list[0:5])
+    # print(f"Force jpg key : {force_jpg_key}")
     for path in path_list:
         img_name = path.split('/')[-1]
         if 'anno_' in img_name:
