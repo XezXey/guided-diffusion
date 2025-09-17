@@ -328,7 +328,7 @@ def create_model(cfg, all_cfg=None):
             transformer_depth=1,
             context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning
         )
-    elif cfg.arch == 'ControlNetNoXt':
+    elif cfg.arch == 'ControlNet_no_xt':
         return ControlNetNoXt(
             image_size=cfg.image_size,
             in_channels=3,
@@ -343,7 +343,7 @@ def create_model(cfg, all_cfg=None):
             context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning
             legacy=False,
         )
-    elif cfg.arch == 'ControlledUnetModelNoXt':
+    elif cfg.arch == 'ControlledUnetModel_no_xt':
         return ControlledUnetModelNoXt(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
