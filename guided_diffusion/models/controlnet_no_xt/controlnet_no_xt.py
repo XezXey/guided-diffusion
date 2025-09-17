@@ -308,7 +308,7 @@ class ControlNetNoXt(nn.Module):
         return outs
 
 class ControlNetWrapperNoXt(nn.Module):
-    def __init__(self, controlnet: ControlNet, unet: ControlledUnetModel):
+    def __init__(self, controlnet: ControlNetNoXt, unet: ControlledUnetModelNoXt):
         super().__init__()
         self.controlnet = controlnet
         self.unet = unet
