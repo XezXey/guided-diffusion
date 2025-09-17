@@ -137,9 +137,9 @@ class ControlNet(nn.Module):
 
         self.input_blocks = nn.ModuleList(
             [
-                TimestepEmbedSequential(
-                    conv_nd(dims, in_channels, model_channels, 3, padding=1)
-                )
+                # TimestepEmbedSequential(
+                #     conv_nd(dims, in_channels, model_channels, 3, padding=1)
+                # )
             ]
         )
         self.zero_convs = nn.ModuleList([self.make_zero_conv(model_channels)])
@@ -296,14 +296,10 @@ class ControlNet(nn.Module):
 
         outs = []
 
-        h = x.type(self.dtype)
+        # h = x.type(self.dtype)
+        h = guided_hint.type(self.dtype)    # use the guided hint as input
         for module, zero_conv in zip(self.input_blocks, self.zero_convs):
-            if guided_hint is not None:
-                h = module(h, emb, context)
-                h += guided_hint
-                guided_hint = None
-            else:
-                h = module(h, emb, context)
+            h = module(h, emb, context)
             outs.append(zero_conv(h, emb, context))
 
         h = self.middle_block(h, emb, context)

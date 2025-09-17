@@ -44,9 +44,19 @@
         "misc": "ours",
         "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/DPP_CTRL_128_ch160__SD256_250T_dstC/ema_100000/out/"
     },
+    "DPP_CTRL_160_attn16-8_50k": {
+        "alias": "ControlNet ch160",
+        "misc": "ours",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/DPP_CTRL_128_VLL_ch160_attn16-8__SD256_250T_dstC/ema_050000/out/"
+    },
     "DPP_With_CA_50k": {
         "alias": "DPP_With_CA",
         "misc": "ours",
-        "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/DPP_Spatial_with_CA__SD256_250T_dstC/ema_050000/out/"
+        "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/DPP_Spatial_with_CA_attn16-8__SD256_250T_dstC/ema_050000/out/"
+    },
+    "CTRL_With_DPPNonSpa_attn16-8_50k": {
+        "alias": "CTRL_With_DPPNonSpa_attn16-8_50k",
+        "misc": "ours",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/ControlNet_with_DPPNonSpa_attn16-8__SD256_250T_dstC/ema_050000/out/"
     }
 }
