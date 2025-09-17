@@ -138,7 +138,8 @@ class ControlNetNoXt(nn.Module):
         self.input_blocks = nn.ModuleList(
             [
                 TimestepEmbedSequential(
-                    conv_nd(dims, in_channels, model_channels, 3, padding=1)
+                    # conv_nd(dims, in_channels, model_channels, 3, padding=1)
+                    conv_nd(dims, model_channels, model_channels, 3, padding=1)
                 )
             ]
         )
@@ -293,6 +294,7 @@ class ControlNetNoXt(nn.Module):
 
         # control signal from zero conv
         guided_hint = self.input_hint_block(hint, emb, context)
+        print(guided_hint.shape)
 
         outs = []
 
