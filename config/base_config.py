@@ -202,6 +202,7 @@ cfg.img_cond_model.thres_img = [None]
 cfg.img_cond_model.canny_thres = [None]
 cfg.img_cond_model.noise_dpm_cond_img = [None]
 cfg.img_cond_model.prep = [None]
+cfg.img_cond_model.use_time_cond = False    # No time conditioning by default on Encoder (Modulator), Affect only 'ControlNet_no_nonspa' arch 
 # Composer
 cfg.img_composer_model = CN()
 cfg.img_composer_model.image_size = 128

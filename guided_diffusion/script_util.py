@@ -12,6 +12,8 @@ from guided_diffusion.models.controlnet.controlnet import ControlNet, Controlled
 from guided_diffusion.models.controlnet_no_xt.controlnet_no_xt import ControlNetNoXt, ControlledUnetModelNoXt, ControlNetWrapperNoXt
 from guided_diffusion.models.controlnet_mod.controlnet_spatial_w_dpp_nonspa.controlnet_mod import ControlledUnetModel_DPPNonSpa, ControlNet_DPPNonSpa, ControlNetWrapperMod
 from guided_diffusion.models.controlnet_mod.dpp_spatial_w_cross_attention.dpp_spatial_cond import DPP_Spatial_with_CA, EncoderSpatial_with_CA, DPPSpatialWrapper
+from guided_diffusion.models.controlnet_no_nonspa.controlnet_no_nonspa import ControlNet_no_nonspa
+from guided_diffusion.models.controlnet_no_xt_no_nonspa.controlnet_no_xt_no_nonspa import ControlledUnetModel_no_xt_no_nonspa, ControlNet_no_xt_no_nonspa, ControlNetWrapper_no_xt_no_nonspa
 from guided_diffusion.mint_logger import createLogger
 import torch as th
 
@@ -32,8 +34,24 @@ def create_img_and_diffusion(cfg, logger=None):
         n_ctrl = count_trainable_params(img_model.controlnet)
         n_unet = count_trainable_params(img_model.unet)
         logger.warning(f"[#] Model size ({cfg.img_model.arch}): ")
-        logger.info(f"1. ControlNet: {n_ctrl/1e6}M")
-        logger.info(f"2. UNet: {n_unet/1e6}M")
+        logger.info(controlled_unet)
+        logger.info(controlnet)
+        logger.info(f"1. ControlNet ({cfg.img_cond_model.arch}): {n_ctrl/1e6}M")
+        logger.info(f"2. UNet ({cfg.img_model.arch}): {n_unet/1e6}M")
+        logger.warning(f"=> Total params: {(n_ctrl+n_unet)/1e6}M")
+        
+    elif cfg.img_model.arch in ['ControlNet_no_xt_no_nonspa', 'ControlledUnetModel_no_xt_no_nonspa']:
+        controlled_unet_no_xt_no_nonspa = create_model(cfg.img_model, all_cfg=cfg)
+        controlnet_no_xt_no_nonspa = create_model(cfg.img_cond_model, all_cfg=cfg)
+        img_model = ControlNetWrapper_no_xt_no_nonspa(controlnet=controlnet_no_xt_no_nonspa, unet=controlled_unet_no_xt_no_nonspa)
+        img_cond_model = None
+        n_ctrl = count_trainable_params(img_model.controlnet)
+        n_unet = count_trainable_params(img_model.unet)
+        logger.warning(f"[#] Model size ({cfg.img_model.arch}): ")
+        logger.info(controlled_unet_no_xt_no_nonspa)
+        logger.info(controlnet_no_xt_no_nonspa)
+        logger.info(f"1. ControlNet ({cfg.img_cond_model.arch}): {n_ctrl/1e6}M")
+        logger.info(f"2. UNet ({cfg.img_model.arch}): {n_unet/1e6}M")
         logger.warning(f"=> Total params: {(n_ctrl+n_unet)/1e6}M")
         
     elif cfg.img_model.arch in ['ControlNet_no_xt', 'ControlledUnetModel_no_xt']:
@@ -345,6 +363,50 @@ def create_model(cfg, all_cfg=None):
         )
     elif cfg.arch == 'ControlledUnetModel_no_xt':
         return ControlledUnetModelNoXt(
+            image_size=cfg.image_size,
+            in_channels=cfg.in_channels,
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=True,
+            transformer_depth=1,
+            context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning
+        )
+    elif cfg.arch == 'ControlNet_no_nonspa':
+        return ControlNet_no_nonspa(
+            image_size=cfg.image_size,
+            in_channels=3,
+            model_channels=cfg.num_channels,
+            hint_channels=cfg.in_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=False,
+            transformer_depth=1,
+            context_dim=None,    # Non-spatial conditioning
+            legacy=False,
+        )
+    elif cfg.arch == 'ControlNet_no_xt_no_nonspa':
+        return ControlNet_no_xt_no_nonspa(
+            image_size=cfg.image_size,
+            in_channels=3,
+            model_channels=cfg.num_channels,
+            hint_channels=cfg.in_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=False,
+            transformer_depth=1,
+            context_dim=None,    # Non-spatial conditioning
+            legacy=False,
+        )
+    elif cfg.arch == 'ControlledUnetModel_no_xt_no_nonspa':
+        return ControlledUnetModel_no_xt_no_nonspa(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
             model_channels=cfg.num_channels,
