@@ -31,13 +31,15 @@ def get_file_from_conv(path_conv, img_path, hdr, src, dst, n_frames=-1):
         print(path)
         frames = sorted(glob.glob(f"{path}/pred_*.png"))[1:]
         # vid = f"{path}/{src.split('.')[0]}_{hdr}_pred_rt.mp4"
-        vid = f"{img_path}/{src.split('.')[0]}_{hdr}_out_rt.mp4"
+        # vid = f"{img_path}/{src.split('.')[0]}_{hdr}_out_rt.mp4"
+        vid = f"{img_path}/{src.split('.')[0]}_{hdr}_out.mp4"
         return frames, vid
     elif path_conv == "ours_hdr":
         path = f"{img_path}/{hdr}/src={src}/dst={dst}/Lerp_1000/n_frames={n_frames}/"
         frames = sorted(glob.glob(f"{path}/res_frame*.png"))
         frames = sort_by_frame(frames)[1:][::-1]
-        vid = f"{path}/out_rt_no1.mp4"
+        # vid = f"{path}/out_rt_no1.mp4"
+        vid = f"{path}/out_no1.mp4"
         return frames, vid
         
         # # Show results
@@ -57,6 +59,9 @@ def create_app():
         return send_from_directory('/', path)
     
     @app.route("/")
+    def root():
+        # Create 5 links with [push the query string]
+    
     def root():
         out = """<style>
                 th, tr, td{
