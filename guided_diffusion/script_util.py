@@ -14,6 +14,7 @@ from guided_diffusion.models.controlnet_mod.controlnet_spatial_w_dpp_nonspa.cont
 from guided_diffusion.models.controlnet_mod.dpp_spatial_w_cross_attention.dpp_spatial_cond import DPP_Spatial_with_CA, EncoderSpatial_with_CA, DPPSpatialWrapper
 from guided_diffusion.models.controlnet_no_nonspa.controlnet_no_nonspa import ControlNet_no_nonspa
 from guided_diffusion.models.controlnet_no_xt_no_nonspa.controlnet_no_xt_no_nonspa import ControlledUnetModel_no_xt_no_nonspa, ControlNet_no_xt_no_nonspa, ControlNetWrapper_no_xt_no_nonspa
+from guided_diffusion.models.controlnet_no_decoder.controlnet_no_decoder import ControlledUnetModel_no_decoder, ControlNet_no_decoder, ControlNetWrapper_no_decoder
 from guided_diffusion.mint_logger import createLogger
 import torch as th
 
@@ -36,6 +37,20 @@ def create_img_and_diffusion(cfg, logger=None):
         logger.warning(f"[#] Model size ({cfg.img_model.arch}): ")
         logger.info(controlled_unet)
         logger.info(controlnet)
+        logger.info(f"1. ControlNet ({cfg.img_cond_model.arch}): {n_ctrl/1e6}M")
+        logger.info(f"2. UNet ({cfg.img_model.arch}): {n_unet/1e6}M")
+        logger.warning(f"=> Total params: {(n_ctrl+n_unet)/1e6}M")
+        
+    elif cfg.img_model.arch in ['ControlNet_no_decoder', 'ControlledUnetModel_no_decoder']:
+        controlled_unet_no_decoder = create_model(cfg.img_model, all_cfg=cfg)
+        controlnet_no_decoder = create_model(cfg.img_cond_model, all_cfg=cfg)
+        img_model = ControlNetWrapper_no_decoder(controlnet=controlnet_no_decoder, unet=controlled_unet_no_decoder)
+        img_cond_model = None
+        n_ctrl = count_trainable_params(img_model.controlnet)
+        n_unet = count_trainable_params(img_model.unet)
+        logger.warning(f"[#] Model size ({cfg.img_model.arch}): ")
+        logger.info(controlled_unet_no_decoder)
+        logger.info(controlnet_no_decoder)
         logger.info(f"1. ControlNet ({cfg.img_cond_model.arch}): {n_ctrl/1e6}M")
         logger.info(f"2. UNet ({cfg.img_model.arch}): {n_unet/1e6}M")
         logger.warning(f"=> Total params: {(n_ctrl+n_unet)/1e6}M")
@@ -334,6 +349,35 @@ def create_model(cfg, all_cfg=None):
         )
     elif cfg.arch == 'ControlledUnetModel':
         return ControlledUnetModel(
+            image_size=cfg.image_size,
+            in_channels=cfg.in_channels,
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=True,
+            transformer_depth=1,
+            context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning
+        )
+    elif cfg.arch == 'ControlNet_no_decoder':
+        return ControlNet_no_decoder(
+            image_size=cfg.image_size,
+            in_channels=3,
+            model_channels=cfg.num_channels,
+            hint_channels=cfg.in_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=True,
+            transformer_depth=1,
+            context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning
+            legacy=False,
+        )
+    elif cfg.arch == 'ControlledUnetModel_no_decoder':
+        return ControlledUnetModel_no_decoder(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
             model_channels=cfg.num_channels,
