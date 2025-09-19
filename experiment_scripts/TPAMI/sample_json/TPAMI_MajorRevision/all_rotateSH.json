@@ -2,7 +2,8 @@
     "pair": {
         "pair1": {
             "src": "60684.jpg",
-            "dst": "60000.jpg"
+            "dst": "60000.jpg",
+            "hdr_frame": [33, 26, 17, 6]
         },
         "pair2": {
             "src": "66744.jpg",

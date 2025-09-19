@@ -1,7 +1,7 @@
 {
     "neural_gaffer_azimuth": {
         "alias": "NeuralGaffer_Azimuth",
-        "res_dir": " /data/mint/TPAMI_MajorRevision/Relighting_SOTA/Neural_Gaffer_results/rotate_sh_axis=1_azimuth/",
+        "res_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/Neural_Gaffer_results/rotate_sh_axis=1_azimuth/",
         "path_conv": "neural_gaffer"
     },
     "difareli++_axis1_color_SD25_0.5C_Lmax10": {
