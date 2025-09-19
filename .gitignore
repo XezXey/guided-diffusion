@@ -1091,6 +1091,5 @@ visualize_scripts/TPAMI/MajorRevision/figure/gen_figure/rotateSH/rotateSH_figure
 visualize_scripts/TPAMI/MajorRevision/figure/gen_figure/rotateSH/rotateSH_figure/axis=1/8_65169.jpg_pair824_complete.png
 visualize_scripts/TPAMI/MajorRevision/figure/gen_figure/rotateSH/rotateSH_figure/axis=1/8_65169.jpg_pair824_cond.png
 visualize_scripts/TPAMI/MajorRevision/figure/gen_figure/rotateSH/rotateSH_figure/axis=1/8_65169.jpg_pair824.png
-experiment_scripts/TPAMI/user_study_get_score/targetSH_MJ/Batch_5346627_batch_results.csv
-experiment_scripts/TPAMI/user_study_get_score/before_MJ/Batch_5195441_batch_results.csv
-experiment_scripts/TPAMI/user_study_get_score/before_MJ/Batch_5281795_batch_results.csv
+experiment_scripts/TPAMI/user_study_get_score/targetSH_MJ/
+experiment_scripts/TPAMI/user_study_get_score/before_MJ/
