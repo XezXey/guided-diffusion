@@ -12,6 +12,14 @@ if __name__ == "__main__":
     logger.warning(f"[#] Moving data to {args.target_path}.")
     logger.warning(f"[#] Reading JSON file from {args.json_file}.")
     
+    if '@' in args.target_path:
+      is_dir = False
+    else:
+      is_dir = True
+    # else:
+      # logger.error("[#] --target_path need to be either directory or ssh machine")
+      # exit()
+
     with open(args.json_file, "r") as f:
         data = json.load(f)
     
@@ -23,8 +31,14 @@ if __name__ == "__main__":
         if not os.path.exists(src_dir):
             logger.error(f"[!] Path {src_dir} does not exist. Skipping.")
             continue
-        dst_dir = f"{args.target_path}:{src_dir}"
-        cmd = ["rsync", "-azh", "--mkpath", "--info=progress2", "--stats", src_dir, dst_dir]
+          
+        dst_dir = f"{args.target_path}:{src_dir}" if not is_dir else f"{args.target_path}/{src_dir}"
+        if is_dir and not os.path.exists(args.target_path):
+          os.makedirs(dst_dir, exist_ok=True)
+          cmd = ["rsync", "-azh", "--info=progress2", "--stats", src_dir, dst_dir]
+        else:
+          cmd = ["rsync", "-azh", "--mkpath", "--info=progress2", "--stats", src_dir, dst_dir]
+          
         logger.info(f"[#] From: {src_dir}")
         logger.info(f"[#] To: {dst_dir}")
         logger.info(f"[#] Command: {' '.join(cmd)}")
