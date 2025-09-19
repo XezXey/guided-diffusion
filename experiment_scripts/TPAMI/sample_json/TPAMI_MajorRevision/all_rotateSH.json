@@ -3,11 +3,30 @@
         "pair1": {
             "src": "60684.jpg",
             "dst": "60000.jpg",
-            "hdr_frame": [33, 26, 17, 6]
+            "hdr=125_hdrmaps_com_free_2K": [
+                26,
+                17,
+                6
+            ],
+            "hdr=064_hdrmaps_com_free_2K": [
+                20,
+                11,
+                59
+            ]
         },
         "pair2": {
             "src": "66744.jpg",
-            "dst": "60000.jpg"
+            "dst": "60000.jpg",
+            "hdr=125_hdrmaps_com_free_2K": [
+                26,
+                17,
+                6
+            ],
+            "hdr=064_hdrmaps_com_free_2K": [
+                20,
+                11,
+                59
+            ]
         },
         "pair3": {
             "src": "65233.jpg",

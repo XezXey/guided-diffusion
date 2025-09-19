@@ -12,6 +12,7 @@ parser.add_argument('--set_', default='valid')
 parser.add_argument('--res', default=256)
 parser.add_argument('--port', required=True)
 parser.add_argument('--host', default='0.0.0.0')
+parser.add_argument('--is_axis2', action='store_true', default=False)
 args = parser.parse_args()
 
 def sort_by_frame(path_list):
@@ -62,7 +63,10 @@ def create_app():
     def root():
         out = "<h2> Choose an envmap </h2>"
         # Create 5 links with [push the query string]
-        envmap = glob.glob("/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/single_shot/neural_gaffer_environment_map_sample/*")
+        if args.is_axis2:
+            envmap = glob.glob("/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/single_shot/neural_gaffer_environment_map_sample/*")
+        else:
+            envmap = glob.glob("/home/mint/Dev/DiFaReli/TPAMI_baseline_MajorRevision/Neural_Gaffer/demo/rotate_environment_map_sample/*")
         # Link for each envmap
         for e in envmap:
             e_name = e.split('/')[-1]
