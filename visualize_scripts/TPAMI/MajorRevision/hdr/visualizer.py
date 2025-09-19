@@ -60,9 +60,18 @@ def create_app():
     
     @app.route("/")
     def root():
+        out = "<h2> Choose an envmap </h2>"
         # Create 5 links with [push the query string]
-    
-    def root():
+        envmap = glob.glob("/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/single_shot/neural_gaffer_environment_map_sample/*")
+        # Link for each envmap
+        for e in envmap:
+            e_name = e.split('/')[-1]
+            e_name = e_name.split('.')[0]
+            out += f"<a href=/vis?hdr={e_name}> {e_name} </a> <br>"
+        return out
+ 
+    @app.route("/vis")   
+    def env():
         out = """<style>
                 th, tr, td{
                     border:1px solid black;margin-left:auto;margin-right:auto;text-align: center;
@@ -149,7 +158,6 @@ def create_app():
                 path_conv = metadat['path_conv']
                 
                 frames, vid_path = get_file_from_conv(path_conv=path_conv, img_path=img_path, hdr=hdr, src=src, dst=dst, n_frames=n_frames)
-                print(frames)
 
                 out += "<tr>"
                 alias_str = alias.split('_')
@@ -158,17 +166,32 @@ def create_app():
                 out += f"<td> <img width=\"{args.res}\" height=\"{args.res}\" src=/files/{data_path}/{src}> </td>"
                 
                 ###################################################
-
-                if os.path.exists(f"{vid_path}") and show_vid == "True":
-                    out += f"""
-                        <td>  
-                        <video controls autoplay muted loop>
-                            <source src=/files/{vid_path} type="video/mp4">
-                        </video>
-                        </td>
-                    """
-                else: 
-                    out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
+                if path_conv == "ours_hdr":
+                    if os.path.exists(f"{vid_path}") and show_vid == "True":
+                        out += f"""
+                            <td>  
+                            <video controls autoplay muted loop>
+                                <source src=/files/{vid_path} type="video/mp4">
+                            </video>
+                            <video controls autoplay muted loop>
+                                <source src=/files/{os.path.dirname(vid_path)}/out_{hdr}_1_Lmax2.mp4 type="video/mp4">
+                            </video>
+                            </td>
+                        """
+                    else: 
+                        out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
+                else:
+                    if os.path.exists(f"{vid_path}") and show_vid == "True":
+                        out += f"""
+                            <td>  
+                            <video controls autoplay muted loop>
+                                <source src=/files/{vid_path} type="video/mp4">
+                            </video>
+                            </td>
+                        """
+                    else: 
+                        out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
+                    
                 out += f"<td>"
                 if len(frames) > 1:
                     if ds > 0:

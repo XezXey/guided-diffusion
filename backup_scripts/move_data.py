@@ -25,7 +25,14 @@ if __name__ == "__main__":
     
     for k, v in data.items():
         method = k
-        src_dir = v["img_dir"]
+        if "img_dir" in v.keys():
+          src_dir = v["img_dir"]
+        elif "res_dir" in v.keys():
+          src_dir = v["res_dir"]
+        else:
+          logger.error("[#] img_dir or res_dir key need to be exist.")
+          exit()
+
         logger.info("#" * 100)
         logger.info(f"[#] Processing: {k}.")
         if not os.path.exists(src_dir):
