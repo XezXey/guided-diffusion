@@ -63,7 +63,7 @@ def create_app():
     def root():
         out = "<h2> Choose an envmap </h2>"
         # Create 5 links with [push the query string]
-        if args.is_axis2:
+        if not args.is_axis2:
             envmap = glob.glob("/home/mint/Dev/DiFaReli/difareli-faster/sample_scripts/single_shot/neural_gaffer_environment_map_sample/*")
         else:
             envmap = glob.glob("/home/mint/Dev/DiFaReli/TPAMI_baseline_MajorRevision/Neural_Gaffer/demo/rotate_environment_map_sample/*")
@@ -177,11 +177,11 @@ def create_app():
                             <video controls autoplay muted loop>
                                 <source src=/files/{vid_path} type="video/mp4">
                             </video>
-                            <video controls autoplay muted loop>
-                                <source src=/files/{os.path.dirname(vid_path)}/out_{hdr}_1_Lmax2.mp4 type="video/mp4">
-                            </video>
-                            </td>
                         """
+                            # <video controls autoplay muted loop>
+                            #     <source src=/files/{os.path.dirname(vid_path)}/out_{hdr}_1_Lmax2.mp4 type="video/mp4">
+                            # </video>
+                            # </td>
                     else: 
                         out += "<td> <p style=\"color:red\">Video not found!</p> </td>"
                 else:
@@ -211,7 +211,8 @@ def create_app():
                     for idx, f in enumerate(frames):
                         if idx not in tmp_ds: continue
                             
-                        out += f"<img width=\"{args.res}\" height=\"{args.res}\" src=/files/" + f + ">"
+                        if show_img == "True":
+                            out += f"<img width=\"{args.res}\" height=\"{args.res}\" src=/files/" + f + ">"
                 else:
                     out += "<p style=\"color:red\">Images not found!</p>"
                 out += "</td>"
