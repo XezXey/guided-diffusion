@@ -3,18 +3,24 @@ import os, glob, json, time
 from datetime import datetime
 from pathlib import Path
 from collections import defaultdict
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--rotate_axis', type=int, required=True, help='rotate sh axis')
+parser.add_argument('--sample_json', type=str, nargs='+', required=True, help='sample json file')
+parser.add_argument('--hdr_list', type=str, nargs='+', required=True, help='hdr list to check')
+parser.add_argument('--c_list', type=float, nargs='+', default=[1.0, 0.9, 0.8, 0.7, 0.6, 0.5], help='c list to check')
+parser.add_argument('--sd_list', type=int, nargs='+', default=[75, 50, 25], help='shadow diff list to check')
+parser.add_argument('--out_html', type=str, default='progress.html', help='output html file')
+args = parser.parse_args()
 
 # ==== CONFIG ====
 INTERVAL_SEC = 60                     # scan interval
-OUT_HTML = "progress.html"            # output dashboard
+OUT_HTML = args.out_html               # output dashboard
 BAR_LEN = 30
-C_LIST = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
-SD_LIST = [75, 50, 25]
-HDR_LIST = ['064_hdrmaps_com_free_2K', '125_hdrmaps_com_free_2K', '117_hdrmaps_com_free_2K']
-SAMPLE_JSONS = [
-    "/home/mint/Dev/DiFaReli/difareli-faster/experiment_scripts/TPAMI/sample_json/TPAMI_MajorRevision/aj_ake_samples.json",
-    "/home/mint/Dev/DiFaReli/difareli-faster/experiment_scripts/TPAMI/sample_json/TPAMI_MajorRevision/all_rotateSH.json",
-]
+C_LIST = args.c_list
+SD_LIST = args.sd_list
+HDR_LIST = [os.path.basename(hdr).split('.')[0] for hdr in args.hdr_list]
+SAMPLE_JSONS = args.sample_json
 # ==============
 
 def progress_bar(n, total, length=BAR_LEN):
@@ -38,7 +44,7 @@ def count_status(samples, hdr_map, c, sd):
         path = (
             f"/data/mint/TPAMI_MajorRevision/Ours/ffhq_hdr_finale/"
             f"log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml"
-            f"_SD{sd}_{c}C_sColor_Lmax10_rAxis1/ema_300000/valid/render_face_hdr/"
+            f"_SD{sd}_{c}C_sColor_Lmax10_rAxis{args.rotate_axis}/ema_300000/valid/render_face_hdr/"
             f"{hdr_map}/src={src}/dst={dst}/Lerp_1000/n_frames=60/"
         )
         if os.path.isdir(path) and len(glob.glob(f"{path}/res_frame*.png")) == 60:
@@ -79,7 +85,7 @@ def render_html(all_rows, changed_keys, prev_values, interval):
 <meta charset="utf-8">
 <meta http-equiv="refresh" content="{interval}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Relighting Progress</title>
+<title>Relighting Progress on rotate axis = {args.rotate_axis} </title>
 <style>
   :root {{
     --bg: #0b0f14;
@@ -113,7 +119,7 @@ def render_html(all_rows, changed_keys, prev_values, interval):
 </head>
 <body>
 <div class="wrap">
-  <h1>Relighting Progress</h1>
+  <h1>Relighting Progress on rotate axis = {args.rotate_axis} </h1>
   <div class="sub">Auto-refresh every {interval}s. Red rows changed since last scan. When highlighted, the “Done” and “Latest File” cells show <span class="mono">prev → curr</span>.</div>
 """
     body = []

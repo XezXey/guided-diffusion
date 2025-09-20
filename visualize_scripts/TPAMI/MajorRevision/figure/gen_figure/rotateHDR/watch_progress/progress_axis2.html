@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="60">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relighting Progress on rotate axis = 2 </title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --card: #111827;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --changed-bg: #2b0f0f;
+    --changed-text: #f87171;
+    --bar-bg: #374151;
+    --bar-fill: #34d399;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  }
+  body { background: var(--bg); color: var(--text); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Ubuntu, Cantarell, Helvetica Neue, Arial; margin: 0; padding: 24px; }
+  .wrap { max-width: 1280px; margin: 0 auto; }
+  h1 { margin: 0 0 8px 0; font-weight: 700; }
+  .sub { color: var(--muted); margin-bottom: 16px; }
+  .card { background: var(--card); border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 8px 10px; text-align: left; font-size: 14px; }
+  th { color: var(--muted); font-weight: 600; border-bottom: 1px solid #1f2937; }
+  tr + tr td { border-top: 1px dashed #1f2937; }
+  .mono { font-family: var(--mono); }
+  .pct { white-space: nowrap; }
+  .bar { position: relative; height: 10px; border-radius: 999px; background: var(--bar-bg); overflow: hidden; min-width: 220px; }
+  .bar > span { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bar-fill); }
+  tr.updated td { background: var(--changed-bg); color: var(--changed-text); transition: background 0.5s ease, color 0.5s ease; animation: pulse 1.2s ease-in-out 0s 1; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(248,113,113,0.7); } 100% { box-shadow: 0 0 0 14px rgba(248,113,113,0); } }
+  .footer { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .small { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Relighting Progress on rotate axis = 2 </h1>
+  <div class="sub">Auto-refresh every 60s. Red rows changed since last scan. When highlighted, the “Done” and “Latest File” cells show <span class="mono">prev → curr</span>.</div>
+<div class="card"><div class="small">JSON: <span class="mono">all_rotateSH.json</span></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>HDR</th>
+      <th>c</th>
+      <th>sd</th>
+      <th>Progress</th>
+      <th class="pct">Done</th>
+      <th class="pct">Percent</th>
+      <th>Latest File</th>
+      <th>Scanned</th>
+    </tr>
+  </thead>
+  <tbody>
+
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">1.0</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">1.0</td><td class="mono">75</td><td><div class="bar"><span style="width:77.272727%"></span></div></td><td class="mono pct">17/22</td><td class="mono pct">77.3%</td><td class="mono">2025-09-20 16:18:31</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">0.9</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">0.9</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">0.8</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">0.8</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">0.7</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">0.7</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">1.0</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">1.0</td><td class="mono">75</td><td><div class="bar"><span style="width:100.000000%"></span></div></td><td class="mono pct">22/22</td><td class="mono pct">100.0%</td><td class="mono">2025-09-20 00:50:54</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">0.9</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">0.9</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">0.8</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">0.8</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">0.7</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">0.7</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">1.0</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">1.0</td><td class="mono">75</td><td><div class="bar"><span style="width:9.090909%"></span></div></td><td class="mono pct">2/22</td><td class="mono pct">9.1%</td><td class="mono">2025-09-19 23:44:26</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">0.9</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">0.9</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">0.8</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">0.8</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">0.7</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">0.7</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/22</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+</tbody></table></div>
+<div class="card"><div class="small">JSON: <span class="mono">aj_ake_samples.json</span></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>HDR</th>
+      <th>c</th>
+      <th>sd</th>
+      <th>Progress</th>
+      <th class="pct">Done</th>
+      <th class="pct">Percent</th>
+      <th>Latest File</th>
+      <th>Scanned</th>
+    </tr>
+  </thead>
+  <tbody>
+
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">1.0</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">1.0</td><td class="mono">75</td><td><div class="bar"><span style="width:1.538462%"></span></div></td><td class="mono pct">2/130</td><td class="mono pct">1.5%</td><td class="mono">2025-09-20 16:01:43</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">0.9</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">0.9</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">0.8</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">0.8</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">0.7</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_064_hdrmaps_com_free_2K</td><td class="mono">0.7</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">1.0</td><td class="mono">50</td><td><div class="bar"><span style="width:10.769231%"></span></div></td><td class="mono pct">14/130</td><td class="mono pct">10.8%</td><td class="mono">2025-09-20 21:31:49</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">1.0</td><td class="mono">75</td><td><div class="bar"><span style="width:1.538462%"></span></div></td><td class="mono pct">2/130</td><td class="mono pct">1.5%</td><td class="mono">2025-09-20 00:21:38</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">0.9</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">0.9</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">0.8</td><td class="mono">50</td><td><div class="bar"><span style="width:13.076923%"></span></div></td><td class="mono pct">17/130</td><td class="mono pct">13.1%</td><td class="mono">2025-09-20 21:43:26</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">0.8</td><td class="mono">75</td><td><div class="bar"><span style="width:25.384615%"></span></div></td><td class="mono pct">33/130</td><td class="mono pct">25.4%</td><td class="mono">2025-09-20 23:12:45</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">0.7</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_117_hdrmaps_com_free_2K</td><td class="mono">0.7</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">1.0</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">1.0</td><td class="mono">75</td><td><div class="bar"><span style="width:0.769231%"></span></div></td><td class="mono pct">1/130</td><td class="mono pct">0.8%</td><td class="mono">2025-09-19 23:44:26</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">0.9</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">0.9</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">0.8</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">0.8</td><td class="mono">75</td><td><div class="bar"><span style="width:26.153846%"></span></div></td><td class="mono pct">34/130</td><td class="mono pct">26.2%</td><td class="mono">2025-09-20 23:15:08</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">0.7</td><td class="mono">50</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+<tr class=""><td class="mono">rotated_125_hdrmaps_com_free_2K</td><td class="mono">0.7</td><td class="mono">75</td><td><div class="bar"><span style="width:0.000000%"></span></div></td><td class="mono pct">0/130</td><td class="mono pct">0.0%</td><td class="mono">—</td><td class="mono">2025-09-20 23:28:37</td></tr>
+</tbody></table></div>
+  <div class="footer">Generated at 2025-09-20 23:28:37</div>
+</div>
+</body>
+</html>
