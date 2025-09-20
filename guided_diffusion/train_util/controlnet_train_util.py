@@ -75,6 +75,7 @@ class TrainLoop(LightningModule):
             accelerator=cfg.train.accelerator,
             profiler='simple',
             strategy=DDPStrategy(find_unused_parameters=self.cfg.train.find_unused_parameters),
+            # strategy=DDPStrategy(find_unused_parameters=True),
             detect_anomaly=True,
             )
         self.automatic_optimization = False # Manual optimization flow
