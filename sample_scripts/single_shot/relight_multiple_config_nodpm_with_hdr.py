@@ -46,6 +46,10 @@ python ./relight_paired_nodpm_with_hdr.py --ckpt_selector ema --dataset ffhq --s
 postfix = args.postfix
 if postfix != '':
     postfix = '_' + postfix
+if args.dataset == 'ffhq_data2':
+    shadow_diff_dir = "/data2/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/"
+else:
+    shadow_diff_dir = "/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/"
     
 for ckpt in args.ckpt_step:
     for dataset in args.dataset:
@@ -71,7 +75,7 @@ for ckpt in args.ckpt_step:
                                 --seed 47 \
                                 --sample_pair_json {sample_pair_json} --sample_pair_mode pair \
                                 --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
-                                --shadow_diff_dir /data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/ \
+                                --shadow_diff_dir {shadow_diff_dir} \
                                 --scale_depth {scale_depth} --pt_round 1 --postproc_shadow_mask_smooth --save_vid --render_batch_size 60 \
                                 --rotate_sh --rotate_sh_axis {rotate_sh_axis} --inverse_with_shadow_diff --rasterize_type {args.rasterize_type}\
                                 --hdr {hdr} --Lmax {args.Lmax} \
