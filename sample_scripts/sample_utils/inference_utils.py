@@ -196,7 +196,7 @@ def prepare_cond_sampling(cond, cfg, use_render_itp=False, device='cuda'):
     else:
         cond['dpm_cond_img'] = None
         
-    if cfg.img_cond_model.apply or (cfg.img_model.arch in ['ControlledUnetModel', 'ControlledUnetModel_no_decoder', 'ControlledUnetModel_no_xt', 'ControlledUnetModel_no_xt_no_nonspa', 'ControlledUnetModel_no_nonspa', 'ControlledUnetModel_DPPNonSpa', 'DPP_Spatial_with_CA']):
+    if cfg.img_cond_model.apply or (cfg.img_model.arch in ['ControlledUnetModel', 'ControlledUnetModel_nothing', 'ControlledUnetModel_nothing_no_decoder', 'ControlledUnetModel_no_decoder', 'ControlledUnetModel_no_xt', 'ControlledUnetModel_no_xt_no_nonspa', 'ControlledUnetModel_no_nonspa', 'ControlledUnetModel_DPPNonSpa', 'DPP_Spatial_with_CA']):
         cond_img = []
         for k in cfg.img_cond_model.in_image:
             print(k)

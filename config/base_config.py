@@ -61,6 +61,10 @@ cfg.param_model.model_channels = 2048
 cfg.param_model.out_channels = sum(cfg.param_model.n_params)
 cfg.param_model.use_checkpoint = ""
 
+# ControlNet
+cfg.control_net = CN()
+cfg.control_net.control_mode = 'add'  # 'add' or 'multiply'
+
 # ---------------------------------------------------------------------------- #
 # Options for Image model (e.g. raw image, uv_displacement_normal, depth, etc.) 
 # ---------------------------------------------------------------------------- #

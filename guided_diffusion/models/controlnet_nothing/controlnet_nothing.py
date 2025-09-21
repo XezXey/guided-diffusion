@@ -17,7 +17,7 @@ from .attention import SpatialTransformer
 from .openaimodel import UNetModel, TimestepEmbedSequential, ResBlock, ResBlockNoTime, Downsample, AttentionBlock
 
 class ControlledUnetModel_nothing(UNetModel):
-    def forward(self, x, timesteps=None, context=None, control=None, only_mid_control=False, **kwargs):
+    def forward(self, x, timesteps=None, context=None, control=None, only_mid_control=False, control_mode='add', **kwargs):
         context = kwargs['kwargs']['cond_params'].type_as(x)
         if context is not None:
             if len(context.shape) == 2:
@@ -33,13 +33,22 @@ class ControlledUnetModel_nothing(UNetModel):
         h = self.middle_block(h, emb, context)
 
         if control is not None:
-            h += control.pop()
+            if control_mode == 'add':
+                h += control.pop()
+            elif control_mode == 'multiply':
+                h *= control.pop()
+            else: raise NotImplementedError(f'[#] Control mode {control_mode} is not implemented yet in ControlNet_nothing')
 
         for i, module in enumerate(self.output_blocks):
             if only_mid_control or control is None:
                 h = torch.cat([h, hs.pop()], dim=1)
             else:
-                h = torch.cat([h, hs.pop() + control.pop()], dim=1)
+                if control_mode == 'add':
+                    h = torch.cat([h, hs.pop() + control.pop()], dim=1)
+                elif control_mode == 'multiply':
+                    h = torch.cat([h, hs.pop() * control.pop()], dim=1)
+                else: raise NotImplementedError(f'[#] Control mode {control_mode} is not implemented yet in ControlNet_nothing')
+                
             h = module(h, emb, context)
 
         h = h.type(x.dtype)
@@ -296,14 +305,15 @@ class ControlNet_nothing(nn.Module):
         return outs
 
 class ControlNetWrapper_nothing(nn.Module):
-    def __init__(self, controlnet: ControlNet_nothing, unet: ControlledUnetModel_nothing):
+    def __init__(self, controlnet: ControlNet_nothing, unet: ControlledUnetModel_nothing, control_mode='add'):
         super().__init__()
         self.controlnet = controlnet
         self.unet = unet
+        self.control_mode = control_mode
 
     # def forward(self, x, hint, timesteps=None, context=None, only_mid_control=False, **kwargs):
     def forward(self, x, timesteps, only_mid_control=False, **kwargs):
         control = self.controlnet(x, timesteps, kwargs=kwargs)
-        out = self.unet(x, timesteps, control=control, only_mid_control=only_mid_control, kwargs=kwargs)
+        out = self.unet(x, timesteps, control=control, only_mid_control=only_mid_control, control_mode=self.control_mode, kwargs=kwargs)
         return out
 
