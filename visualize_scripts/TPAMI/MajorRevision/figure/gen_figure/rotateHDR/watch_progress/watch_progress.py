@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--rotate_axis', type=int, required=True, help='rotate sh axis')
 parser.add_argument('--sample_json', type=str, nargs='+', required=True, help='sample json file')
 parser.add_argument('--hdr_list', type=str, nargs='+', required=True, help='hdr list to check')
-parser.add_argument('--c_list', type=float, nargs='+', default=[1.0, 0.9, 0.8, 0.7, 0.6, 0.5], help='c list to check')
+parser.add_argument('--c_list', type=str, nargs='+', default=['1.0', '0.9', '0.8', '0.7', '0.6', '0.5'], help='c list to check')
 parser.add_argument('--sd_list', type=int, nargs='+', default=[75, 50, 25], help='shadow diff list to check')
 parser.add_argument('--out_html', type=str, default='progress.html', help='output html file')
 args = parser.parse_args()
@@ -130,7 +130,8 @@ def render_html(all_rows, changed_keys, prev_values, interval):
     now_str = datetime.now().isoformat(sep=" ", timespec="seconds")
 
     for json_name, rows in groups.items():
-        rows = sorted(rows, key=lambda x: (x["hdr"], -x["c"], x["sd"]))
+        # rows = sorted(rows, key=lambda x: (x["hdr"], -x["c"], x["sd"]))
+        rows = sorted(rows, key=lambda x: (x["hdr"], x["c"], x["sd"]))
         body.append(f'<div class="card"><div class="small">JSON: <span class="mono">{json_name}</span></div>')
         body.append("""
 <table>
