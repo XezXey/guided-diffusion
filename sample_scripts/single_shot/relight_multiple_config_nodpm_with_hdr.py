@@ -1,6 +1,8 @@
 import numpy as np
 import argparse
 import os
+from guided_diffusion.mint_logger import createLogger
+logger = createLogger()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_dir', type=str, required=True, help='model name')
@@ -23,6 +25,9 @@ parser.add_argument('--rasterize_type', type=str, default='pytorch3d', help='ras
 parser.add_argument('--scale_depth', nargs='+', type=int, default=[100, 256])
 parser.add_argument('--use_shading_grey', action='store_true', default=False)
 parser.add_argument('--hdr_dir', nargs='+', type=str, required=True, help='hdr file directory')
+parser.add_argument('--relight_with_dst_c', action='store_true', default=False)
+parser.add_argument('--relight_with_src_c', action='store_true', default=False)
+parser.add_argument('--relight_with_given_c', action='store_true', default=False)
 parser.add_argument('--c_list', nargs='+', default=['1.0'])
 parser.add_argument('--rotate_sh_axis', nargs='+', type=int, default=[2], help='rotate sh axis')
 parser.add_argument('--Lmax', type=int, default=2, help='sh order')
@@ -47,6 +52,8 @@ postfix = args.postfix
 if postfix != '':
     postfix = '_' + postfix
     
+assert args.relight_with_dst_c + args.relight_with_src_c + args.relight_with_given_c <= 1, "[#] Only one of --relight_with_dst_c, --relight_with_src_c, --relight_with_given_c can be set."
+
 for ckpt in args.ckpt_step:
     for dataset in args.dataset:
         if dataset == 'ffhq_data2':
@@ -59,16 +66,14 @@ for ckpt in args.ckpt_step:
                 for scale_depth in args.scale_depth:
                     for rotate_sh_axis in args.rotate_sh_axis:
                         for c in args.c_list:
-                            print("#"*100)
-                            print(f'[#] Running checkpoint {ckpt}...')
-                            print(f'[#] Dataset: {dataset}')
-                            print(f'[#] Sample pair json: {sample_pair_json}')
-                            print(f'[#] HDR file: {hdr}')
-                            print(f'[#] Scale depth: {scale_depth}')
-                            print(f"[#] Use shading: {'sColor' if not args.use_shading_grey else 'sGrey'}")
-                            print(f"[#] Rotate sh: {rotate_sh_axis}")
-                            print(f"[#] Relight with given C: {c}")
-                            print("#"*100)
+                            logger.warning("#"*100)
+                            logger.info(f'[#] Running checkpoint {ckpt}...')
+                            logger.info(f'[#] Dataset: {dataset}')
+                            logger.info(f'[#] Sample pair json: {sample_pair_json}')
+                            logger.info(f'[#] HDR file: {hdr}')
+                            logger.info(f'[#] Scale depth: {scale_depth}')
+                            logger.info(f"[#] Use shading: {'sColor' if not args.use_shading_grey else 'sGrey'}")
+                            logger.info(f"[#] Rotate sh: {rotate_sh_axis}")
                             cmd = (
                                 f"""
                                 python relight_paired_nodpm_with_hdr.py --ckpt_selector {args.ckpt_type} --dataset {dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
@@ -84,11 +89,23 @@ for ckpt in args.ckpt_step:
                                 )
                             if args.force_render: cmd += ' --force_render'
                             if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
+                            
+                            if args.relight_with_given_c:
+                                logger.info(f'[#] Relighting with given c: {c}')
+                                cmd += f' --relight_with_given_c {c}'
+                                pf = f'{c}C'
+                            elif args.relight_with_dst_c:
+                                logger.info(f'[#] Relighting with dst c.')
+                                cmd += f' --relight_with_dst_c'
+                                c = 'dst'
+                            elif args.relight_with_src_c:
+                                logger.info(f'[#] Relighting with src c.')
+                                c = 'src'
+                            logger.warning("#"*100)
+                            
                             if postfix != '': cmd += f" --postfix SD{scale_depth}_{postfix}_{'sColor' if args.use_shading_grey == '' else 'sGrey'}_rAxis{rotate_sh_axis}"
                             else: cmd += f" --postfix SD{scale_depth}_{c}C_{'sColor' if not args.use_shading_grey else 'sGrey'}_Lmax{args.Lmax}_rAxis{rotate_sh_axis}"
                             if args.use_shading_grey: cmd += f' --use_shading_grey'
-                            if c == '1.0': cmd += f' --relight_with_strongest_c'
-                            else: cmd += f' --relight_with_given_c {c}'
                             print(cmd)
                             os.system(cmd)
                             print("#"*100)
