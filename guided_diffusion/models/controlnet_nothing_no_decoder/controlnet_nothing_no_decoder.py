@@ -50,7 +50,6 @@ class ControlledUnetModel_nothing_no_decoder(UNetModel):
         if control is not None:
             if control_mode == 'add':
                 h += control.pop()
-                h += control.pop()
             elif control_mode == 'multiply':
                 h *= control.pop()
             else: raise NotImplementedError(f'[#] Control mode {control_mode} is not implemented yet in ControlNet_nothing_no_decoder - after middle_block')
