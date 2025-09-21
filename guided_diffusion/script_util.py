@@ -106,7 +106,7 @@ def create_img_and_diffusion(cfg, logger=None):
     elif cfg.img_model.arch in ['ControlNet_nothing_no_decoder', 'ControlledUnetModel_nothing_no_decoder']:
         controlled_unet_nothing_no_decoder = create_model(cfg.img_model, all_cfg=cfg)
         controlnet_nothing_no_decoder = create_model(cfg.img_cond_model, all_cfg=cfg)
-        img_model = ControlNetWrapper_nothing_no_decoder(controlnet=controlnet_nothing_no_decoder, unet=controlled_unet_nothing_no_decoder)
+        img_model = ControlNetWrapper_nothing_no_decoder(controlnet=controlnet_nothing_no_decoder, unet=controlled_unet_nothing_no_decoder, control_mode=cfg.control_net.control_mode)
         img_cond_model = None
         n_ctrl = count_trainable_params(img_model.controlnet)
         n_unet = count_trainable_params(img_model.unet)
@@ -116,6 +116,7 @@ def create_img_and_diffusion(cfg, logger=None):
         logger.info(f"1. ControlNet ({cfg.img_cond_model.arch}): {n_ctrl/1e6}M")
         logger.info(f"2. UNet ({cfg.img_model.arch}): {n_unet/1e6}M")
         logger.warning(f"=> Total params: {(n_ctrl+n_unet)/1e6}M")
+        logger.warning(f"[#] Control mode: {cfg.control_net.control_mode}")
         
     elif cfg.img_model.arch in ['ControlNet_no_xt', 'ControlledUnetModel_no_xt']:
         controlled_unet_no_xt = create_model(cfg.img_model, all_cfg=cfg)

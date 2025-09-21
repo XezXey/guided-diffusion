@@ -17,7 +17,7 @@ from .attention import SpatialTransformer
 from .openaimodel import UNetModel, TimestepEmbedSequential, ResBlock, ResBlockNoTime, Downsample, AttentionBlock
 
 class ControlledUnetModel_nothing_no_decoder(UNetModel):
-    def forward(self, x, timesteps=None, context=None, control=None, only_mid_control=False, **kwargs):
+    def forward(self, x, timesteps=None, context=None, control=None, only_mid_control=False, control_mode='add', **kwargs):
         context = kwargs['kwargs']['cond_params'].type_as(x)
         if context is not None:
             if len(context.shape) == 2:
@@ -33,12 +33,27 @@ class ControlledUnetModel_nothing_no_decoder(UNetModel):
         hs.append(h)
         
         for module in self.input_blocks[1:]:
-            h = module(h + control.pop(), emb, context)
+            if control_mode == 'add':
+                h = module(h + control.pop(), emb, context)
+                # h = module(h + control.pop(), emb, context)
+            elif control_mode == 'multiply':
+                h = module(h * control.pop(), emb, context)
+            else: raise NotImplementedError(f'[#] Control mode {control_mode} is not implemented yet in ControlNet_nothing_no_decoder - input_blocks')
+                
             hs.append(h)
-        h = self.middle_block(h + control.pop(), emb, context)
+        if control_mode == 'add':
+            h = self.middle_block(h + control.pop(), emb, context)
+        elif control_mode == 'multiply':
+            h = self.middle_block(h * control.pop(), emb, context)
+        else: raise NotImplementedError(f'[#] Control mode {control_mode} is not implemented yet in ControlNet_nothing_no_decoder - middle_block')
 
         if control is not None:
-            h += control.pop()
+            if control_mode == 'add':
+                h += control.pop()
+                h += control.pop()
+            elif control_mode == 'multiply':
+                h *= control.pop()
+            else: raise NotImplementedError(f'[#] Control mode {control_mode} is not implemented yet in ControlNet_nothing_no_decoder - after middle_block')
 
         assert len(control) == 0, f"[#] Control has {len(control)} layers left, but should be 0"
         
@@ -304,10 +319,11 @@ class ControlNet_nothing_no_decoder(nn.Module):
         return outs
 
 class ControlNetWrapper_nothing_no_decoder(nn.Module):
-    def __init__(self, controlnet: ControlNet_nothing_no_decoder, unet: ControlledUnetModel_nothing_no_decoder):
+    def __init__(self, controlnet: ControlNet_nothing_no_decoder, unet: ControlledUnetModel_nothing_no_decoder, control_mode='add'):
         super().__init__()
         self.controlnet = controlnet
         self.unet = unet
+        self.control_mode = control_mode
 
     def forward(self, x, timesteps, only_mid_control=False, **kwargs):
         control = self.controlnet(x, timesteps, kwargs=kwargs)
