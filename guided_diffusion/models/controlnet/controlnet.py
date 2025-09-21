@@ -44,7 +44,6 @@ class ControlledUnetModel(UNetModel):
                 h = torch.cat([h, hs.pop()], dim=1)
             else:
                 if control_mode == 'add':
-                    # h = torch.cat([h, hs.pop() + control.pop()], dim=1)
                     h = torch.cat([h, hs.pop() + control.pop()], dim=1)
                 elif control_mode == 'multiply':
                     h = torch.cat([h, hs.pop() * control.pop()], dim=1)
