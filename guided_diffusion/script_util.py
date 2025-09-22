@@ -20,6 +20,7 @@ from guided_diffusion.models.controlnet_no_decoder.controlnet_no_decoder import 
 from guided_diffusion.models.controlnet_no_hint_block.controlnet_no_hint_block import ControlledUnetModel_no_hint_block, ControlNet_no_hint_block, ControlNetWrapper_no_hint_block
 from guided_diffusion.models.controlnet_nothing.controlnet_nothing import ControlNet_nothing, ControlledUnetModel_nothing, ControlNetWrapper_nothing
 from guided_diffusion.models.controlnet_nothing_no_decoder.controlnet_nothing_no_decoder import ControlNet_nothing_no_decoder, ControlledUnetModel_nothing_no_decoder, ControlNetWrapper_nothing_no_decoder
+from guided_diffusion.models.controlnet_nothing_no_decoder_no_zeroconv.controlnet_nothing_no_decoder_no_zeroconv import ControlNet_nothing_no_decoder_no_zeroconv, ControlledUnetModel_nothing_no_decoder_no_zeroconv, ControlNetWrapper_nothing_no_decoder_no_zeroconv
 from guided_diffusion.mint_logger import createLogger
 import torch as th
 
@@ -116,6 +117,22 @@ def create_img_and_diffusion(cfg, logger=None):
         logger.warning(f"[#] Model size ({cfg.img_model.arch}): ")
         logger.info(controlled_unet_nothing_no_decoder)
         logger.info(controlnet_nothing_no_decoder)
+        logger.info(f"1. ControlNet ({cfg.img_cond_model.arch}): {n_ctrl/1e6}M")
+        logger.info(f"2. UNet ({cfg.img_model.arch}): {n_unet/1e6}M")
+        logger.warning(f"=> Total params: {(n_ctrl+n_unet)/1e6}M")
+        logger.warning(f"[#] Control mode: {cfg.control_net.control_mode}")
+        logger.warning(f"[#] Control mode (in ControlNetWrapper): {img_model.control_mode}")
+        
+    elif cfg.img_model.arch in ['ControlNet_nothing_no_decoder_no_zeroconv', 'ControlledUnetModel_nothing_no_decoder_no_zeroconv']:
+        controlled_unet_nothing_no_decoder_no_zeroconv = create_model(cfg.img_model, all_cfg=cfg)
+        controlnet_nothing_no_decoder_no_zeroconv = create_model(cfg.img_cond_model, all_cfg=cfg)
+        img_model = ControlNetWrapper_nothing_no_decoder_no_zeroconv(controlnet=controlnet_nothing_no_decoder_no_zeroconv, unet=controlled_unet_nothing_no_decoder_no_zeroconv, control_mode=cfg.control_net.control_mode)
+        img_cond_model = None
+        n_ctrl = count_trainable_params(img_model.controlnet)
+        n_unet = count_trainable_params(img_model.unet)
+        logger.warning(f"[#] Model size ({cfg.img_model.arch}): ")
+        logger.info(controlled_unet_nothing_no_decoder_no_zeroconv)
+        logger.info(controlnet_nothing_no_decoder_no_zeroconv)
         logger.info(f"1. ControlNet ({cfg.img_cond_model.arch}): {n_ctrl/1e6}M")
         logger.info(f"2. UNet ({cfg.img_model.arch}): {n_unet/1e6}M")
         logger.warning(f"=> Total params: {(n_ctrl+n_unet)/1e6}M")
@@ -562,6 +579,35 @@ def create_model(cfg, all_cfg=None):
         )
     elif cfg.arch == 'ControlledUnetModel_nothing_no_decoder':
         return ControlledUnetModel_nothing_no_decoder(
+            image_size=cfg.image_size,
+            in_channels=cfg.in_channels,
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=False,
+            transformer_depth=1,
+            context_dim=None,    # Non-spatial conditioning
+        )
+    elif cfg.arch == 'ControlNet_nothing_no_decoder_no_zeroconv':
+        return ControlNet_nothing_no_decoder_no_zeroconv(
+            image_size=cfg.image_size,
+            in_channels=3,
+            model_channels=cfg.num_channels,
+            hint_channels=cfg.in_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=False,
+            transformer_depth=1,
+            context_dim=None,    # Non-spatial conditioning
+            legacy=False,
+        )
+    elif cfg.arch == 'ControlledUnetModel_nothing_no_decoder_no_zeroconv':
+        return ControlledUnetModel_nothing_no_decoder_no_zeroconv(
             image_size=cfg.image_size,
             in_channels=cfg.in_channels,
             model_channels=cfg.num_channels,
