@@ -4,6 +4,12 @@
         "res_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/Neural_Gaffer_results/rotate_sh_axis=2_roll/",
         "path_conv": "neural_gaffer"
     },
+    "difareli++_axis2_color_SD75_0.8C_Lmax10": {
+        "alias": "DiFaReli++_axis=2",
+        "n_frames": 60,
+        "res_dir": "/data/mint/TPAMI_MajorRevision/Ours/ffhq_hdr_finale/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_SD75_0.8C_sColor_Lmax10_rAxis2/ema_300000/valid/render_face_hdr/",
+        "path_conv": "ours_hdr"
+    },
     "difareli++_axis2_color_SD75_1.0C_Lmax10": {
         "alias": "DiFaReli++_axis=2",
         "n_frames": 60,

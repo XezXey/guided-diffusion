@@ -43,6 +43,12 @@ def create_app():
                 }
                 </style>"""
         f = open(args.comparison_json, 'r')
+        
+        # Query strings
+        show_idx = request.args.get('show_idx', default=None, type=str)
+        if show_idx is not None:
+            show_idx = show_idx.split(',')
+            print(f"Show idx: {show_idx}")
         cmp_dict = json.load(f)
         model = list(cmp_dict.keys())
         
@@ -54,17 +60,20 @@ def create_app():
             
         data_path = f'{args.data_path}/{args.set_}/'
         for p_id, src_dst in sample_pairs.items():
+            if show_idx is not None:
+                if not (p_id.replace('pair', '') in show_idx):
+                    continue
             src = src_dst['src']
             dst = src_dst['dst']
             out += "<tr>"
-            # out += f"<th style=\"font-size:10px;white-space: nowrap;\"> {p_id}: {src} => {dst} <br> <br> <br> <br> <br> <img style=\"width:128px;\" src=/files/{data_path}/{src.replace('jpg', 'png')} title=\"{src}\"><img style=\"width:128px;\" src=/files/{data_path}/{dst.replace('jpg', 'png')} title=\"{dst}\"> </th>"
             out += f"<th style=\"font-size:10px;white-space: nowrap;\"> {p_id}: {src} => {dst} <br> <br> <br> <br> <br> <img src=/files/{data_path}/{src.replace('jpg', 'png')} title=\"{src}\"><img src=/files/{data_path}/{dst.replace('jpg', 'png')} title=\"{dst}\"> </th>"
         
             # SOTA
             img_name = f"input={src}" + "%23" + f"pred={dst}.png"
             for m_id, m in enumerate(model):
                 img_path = f"{cmp_dict[m]['img_dir']}/{img_name}"
-                out += f"<td>"
+
+                out += f"<td>{cmp_dict[m]['alias']}<br><br><br>"
                 out += f"<img src=/files/{img_path} title=\"{cmp_dict[m]['alias']}\">"
                 out += "</td>"
 

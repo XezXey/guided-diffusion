@@ -1,0 +1,8 @@
+{
+    "ours_ema050000": {
+        "step": "ema_050000",
+        "alias": "ControlNet_128_lr1e-5",
+        "n_frames": "30",
+        "res_dir": "/data/mint/sampling/TPAMI_MajorRevision/ControlNet/log=DPP_128_VLL_cfg=DPP_128_VLL.yaml_rot2_maxC/ema_050000/valid/render_face/reverse_sampling/"
+    }
+}
