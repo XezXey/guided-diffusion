@@ -58,5 +58,10 @@
         "alias": "ControlNet No hint block",
         "misc": "ours",
         "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/DPP_CTRL_no_hint_block_128_VLL_ch128_attn16-8__SD256_250T_dstC/ema_025000/out/"
+    },
+    "CTRL_With_DPPNonSpa_attn16-8_50k": {
+        "alias": "ControlNet's Spatial + DiFareli++'s non-spatial",
+        "misc": "ours",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/MultiPIE_Evaluations/Ours/ControlNet/mp_validset2/ControlNet_with_DPPNonSpa_attn16-8__SD256_250T_dstC/ema_050000/out/"
     }
 }

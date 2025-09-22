@@ -76,6 +76,8 @@ def create_img_and_diffusion(cfg, logger=None):
         logger.info(f"1. ControlNet ({cfg.img_cond_model.arch}): {n_ctrl/1e6}M")
         logger.info(f"2. UNet ({cfg.img_model.arch}): {n_unet/1e6}M")
         logger.warning(f"=> Total params: {(n_ctrl+n_unet)/1e6}M")
+        logger.warning(f"[#] Control mode: {cfg.control_net.control_mode}")
+        logger.warning(f"[#] Control mode (in ControlNetWrapper): {img_model.control_mode}")
         
     elif cfg.img_model.arch in ['ControlNet_no_xt_no_nonspa', 'ControlledUnetModel_no_xt_no_nonspa']:
         controlled_unet_no_xt_no_nonspa = create_model(cfg.img_model, all_cfg=cfg)
