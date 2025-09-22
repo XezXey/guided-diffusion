@@ -66,7 +66,7 @@ def create_img_and_diffusion(cfg, logger=None):
     elif cfg.img_model.arch in ['ControlNet_no_hint_block', 'ControlledUnetModel_no_hint_block']:
         controlled_unet_no_hint_block = create_model(cfg.img_model, all_cfg=cfg)
         controlnet_no_hint_block = create_model(cfg.img_cond_model, all_cfg=cfg)
-        img_model = ControlNetWrapper_no_hint_block(controlnet=controlnet_no_hint_block, unet=controlled_unet_no_hint_block)
+        img_model = ControlNetWrapper_no_hint_block(controlnet=controlnet_no_hint_block, unet=controlled_unet_no_hint_block, control_mode=cfg.control_net.control_mode)
         img_cond_model = None
         n_ctrl = count_trainable_params(img_model.controlnet)
         n_unet = count_trainable_params(img_model.unet)
