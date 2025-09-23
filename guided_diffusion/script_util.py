@@ -537,6 +537,35 @@ def create_model(cfg, all_cfg=None):
             use_spatial_transformer=True,
             transformer_depth=1,
             context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning
+        ),
+    elif cfg.arch == 'ControlNet_no_xt_no_hint_block':
+        return ControlNet_no_xt_no_hint_block(
+            image_size=cfg.image_size,
+            in_channels=3,
+            model_channels=cfg.num_channels,
+            hint_channels=cfg.in_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=True,
+            transformer_depth=1,
+            context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning
+            legacy=False,
+        )
+    elif cfg.arch == 'ControlledUnetModel_no_xt_no_hint_block':
+        return ControlledUnetModel_no_xt_no_hint_block(
+            image_size=cfg.image_size,
+            in_channels=cfg.in_channels,
+            model_channels=cfg.num_channels,
+            out_channels=cfg.out_channels,
+            num_res_blocks=2,
+            attention_resolutions=tuple(attention_ds),
+            channel_mult=channel_mult,
+            num_heads=8,
+            use_spatial_transformer=True,
+            transformer_depth=1,
+            context_dim=sum(all_cfg.param_model.n_params),    # Non-spatial conditioning
         )
     elif cfg.arch == 'ControlNet_no_nonspa':
         return ControlNet_no_nonspa(
