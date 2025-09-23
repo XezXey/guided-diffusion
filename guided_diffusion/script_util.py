@@ -81,6 +81,22 @@ def create_img_and_diffusion(cfg, logger=None):
         logger.warning(f"[#] Control mode: {cfg.control_net.control_mode}")
         logger.warning(f"[#] Control mode (in ControlNetWrapper): {img_model.control_mode}")
         
+    elif cfg.img_model.arch in ['ControlNet_no_xt_no_hint_block', 'ControlledUnetModel_no_xt_no_hint_block']:
+        controlled_unet_no_xt_no_hint_block = create_model(cfg.img_model, all_cfg=cfg)
+        controlnet_no_xt_no_hint_block = create_model(cfg.img_cond_model, all_cfg=cfg)
+        img_model = ControlNetWrapper_no_xt_no_hint_block(controlnet=controlnet_no_xt_no_hint_block, unet=controlled_unet_no_xt_no_hint_block, control_mode=cfg.control_net.control_mode)
+        img_cond_model = None
+        n_ctrl = count_trainable_params(img_model.controlnet)
+        n_unet = count_trainable_params(img_model.unet)
+        logger.warning(f"[#] Model size ({cfg.img_model.arch}): ")
+        logger.info(controlled_unet_no_xt_no_hint_block)
+        logger.info(controlnet_no_xt_no_hint_block)
+        logger.info(f"1. ControlNet ({cfg.img_cond_model.arch}): {n_ctrl/1e6}M")
+        logger.info(f"2. UNet ({cfg.img_model.arch}): {n_unet/1e6}M")
+        logger.warning(f"=> Total params: {(n_ctrl+n_unet)/1e6}M")
+        logger.warning(f"[#] Control mode: {cfg.control_net.control_mode}")
+        logger.warning(f"[#] Control mode (in ControlNetWrapper): {img_model.control_mode}")
+        
     elif cfg.img_model.arch in ['ControlNet_no_xt_no_nonspa', 'ControlledUnetModel_no_xt_no_nonspa']:
         controlled_unet_no_xt_no_nonspa = create_model(cfg.img_model, all_cfg=cfg)
         controlnet_no_xt_no_nonspa = create_model(cfg.img_cond_model, all_cfg=cfg)
