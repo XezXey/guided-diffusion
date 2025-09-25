@@ -66,6 +66,10 @@ else:
 
 for ckpt in args.ckpt_step:
     for dataset in args.dataset:
+        if dataset == 'ffhq_data2':
+            shadow_diff_dir = "/data2/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/"
+        else:
+            shadow_diff_dir = "/data/mint/DPM_Dataset/ffhq_256_with_anno/shadow_diff_SS_with_c_simplified/"
         for sample_pair_json in args.sample_pair_json:
             for sdiff_dir in args.sdiff_dir:
                 for scale_depth in args.scale_depth:
