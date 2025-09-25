@@ -1095,3 +1095,4 @@ experiment_scripts/TPAMI/user_study_get_score/targetSH_MJ/
 experiment_scripts/TPAMI/user_study_get_score/before_MJ/
 visualize_scripts/TPAMI/MajorRevision/figure/gen_figure/rotateHDR/rotate_hdr_axis=1_figure
 visualize_scripts/TPAMI/MajorRevision/figure/gen_figure/rotateHDR/rotate_hdr_axis=2_figure
+visualize_scripts/TPAMI/MajorRevision/figure/gen_figure/targetSH_multipie/mp_targetSH_figures

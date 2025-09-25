@@ -1,0 +1,34 @@
+{
+    "pair": {
+        "pair3": {
+            "src": "062_03_01_051_19.png",
+            "dst": "062_03_01_051_08.png",
+            "gt": "062_03_01_051_08.png",
+            "path": "/data/mint/MultiPIE/Multi-Pie/data//session03/multiview//062/01/05_1/"
+        },
+        "pair6": {
+            "src": "345_04_01_051_19.png",
+            "dst": "345_04_01_051_05.png",
+            "gt": "345_04_01_051_05.png",
+            "path": "/data/mint/MultiPIE/Multi-Pie/data//session04/multiview//345/01/05_1/"
+        },
+        "pair21": {
+            "src": "079_02_01_051_00.png",
+            "dst": "079_02_01_051_18.png",
+            "gt": "079_02_01_051_18.png",
+            "path": "/data/mint/MultiPIE/Multi-Pie/data//session02/multiview//079/01/05_1/"
+        },
+        "pair36": {
+            "src": "092_01_01_051_10.png",
+            "dst": "092_01_01_051_19.png",
+            "gt": "092_01_01_051_19.png",
+            "path": "/data/mint/MultiPIE/Multi-Pie/data//session01/multiview//092/01/05_1/"
+        },
+        "pair74": {
+            "src": "011_01_01_051_12.png",
+            "dst": "011_01_01_051_07.png",
+            "gt": "011_01_01_051_07.png",
+            "path": "/data/mint/MultiPIE/Multi-Pie/data//session01/multiview//011/01/05_1/"
+        }
+    }
+}
