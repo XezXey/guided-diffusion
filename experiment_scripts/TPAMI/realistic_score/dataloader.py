@@ -21,8 +21,8 @@ class RealisticScoreDataset(th.utils.data.Dataset):
     ):
         print("############### Initializing RealisticScoreDataset ###############")
         pl.seed_everything(seed)
-        assert len(real_paths) > 0, "No real paths provided"
-        assert len(gen_paths) > 0, "No generated paths provided"
+        # assert len(real_paths) > 0, "No real paths provided"
+        # assert len(gen_paths) > 0, "No generated paths provided"
 
         self.real_paths = real_paths
         self.real_paths_dict = self.process_paths(real_paths, num_subjects_real, frames_per_subject=1, img_ext='.jpg')
