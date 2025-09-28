@@ -26,8 +26,8 @@ class CLS(nn.Module):
         if not torch.is_tensor(y):
             y = torch.tensor(y, dtype=torch.float32)
 
-        X = X.to(self.device)
-        y = y.view(-1, 1).to(self.device)
+        X = X.to(self.device).type(torch.float32)
+        y = y.view(-1, 1).to(self.device).type(torch.float32)
 
         optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 

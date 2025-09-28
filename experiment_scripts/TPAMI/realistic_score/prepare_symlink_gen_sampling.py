@@ -8,13 +8,14 @@ logger = createLogger()
 
 # out_path = "/data/mint/DPM_Dataset/TPAMI_MajorRevision/Realsitric_Score/real_images/"
 out_path = "/data/mint/DPM_Dataset/TPAMI_MajorRevision/Realsitric_Score/gen_images/"
-path = "/data/mint/sampling/TPAMI/main_result/ffhq/for_sel/"
+# path = "/data/mint/TPAMI_MajorRevision/sampling_backup_from_v10_8OCT2025/sampling/TPAMI/main_result/ffhq/user_study/"   # Rot1
+path = "/data/mint/TPAMI_MajorRevision/sampling_backup_from_v10_8OCT2025/sampling/TPAMI/main_result/ffhq/TR_pairs/rotate/"  # Rot2
 
 mapping = {
-    # "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot1_maxC": "rot1_1.0C_1.0sh",
-    # "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot1_srcC": "rot1_srcC_1.0sh",
-    "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_maxC": "rot2_1.0C_1.0sh",
-    # "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_srcC": "rot2_srcC_1.0sh",
+    # Testset
+    # "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_0.6C_rot1_0.7sh": "rot1_0.6C_0.7sh",
+    "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2": "rot2_srcC_1.0sh",
+    "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_tomax": "rot2_1.0C_1.0sh",
 }
 
 def do_symlink(src, dst):
@@ -34,8 +35,9 @@ for p in os.listdir(path):
     logger.info(f"[#] Total subject: {len(subject)}")
     all_images_path = []
     for s in tqdm.tqdm(subject):
-        assert os.listdir(f'{full_p}/{s}/') == ['dst=60000.jpg']
-        img_path = glob.glob(f'{full_p}/{s}/dst=60000.jpg/Lerp_1000/n_frames=60/res_frame*.png')
+        # assert os.listdir(f'{full_p}/{s}/') == ['dst=60000.jpg']
+        dst_dir = os.listdir(f'{full_p}/{s}/')[0]
+        img_path = glob.glob(f'{full_p}/{s}/{dst_dir}/Lerp_1000/n_frames=60/res_frame*.png')
         all_images_path.extend(img_path)
     logger.info(f"[#] Total images: {len(all_images_path)}")
     

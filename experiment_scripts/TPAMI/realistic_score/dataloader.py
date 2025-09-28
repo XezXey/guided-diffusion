@@ -90,8 +90,9 @@ class RealisticScoreDataset(th.utils.data.Dataset):
             'latent': th.from_numpy(latent).float(),
             'latent_mean': th.from_numpy(latent_mean).float(),
             'latent_std': th.from_numpy(latent_std).float(),
+            'latent_norm': th.from_numpy((latent - latent_mean) / latent_std).float(),
             'image_name': image_name,
-            'label': 1 if fn in self.real_all_paths else 0,  # 1 for real, 0 for generated
+            'label': 1.0 if fn in self.real_all_paths else 0.0,  # 1 for real, 0 for generated
         }
         
         
