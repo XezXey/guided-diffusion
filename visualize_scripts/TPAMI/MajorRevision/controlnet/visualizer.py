@@ -1,5 +1,6 @@
 from flask import Flask, request, send_file, send_from_directory
 import glob, os
+import re
 import numpy as np
 import json
 import sys
@@ -75,6 +76,7 @@ def create_app():
         show_itmd = request.args.get('show_itmd', "True")
         show_recon = request.args.get('show_recon', "True")
         show_relit = request.args.get('show_relit', "True")
+        c_val = request.args.get('c_val', None)
         n_frame = request.args.get('n_frame', None)
         s = request.args.get('s', 0)
         e = request.args.get('e', 100)
@@ -119,6 +121,10 @@ def create_app():
                 n_frames = metadat['n_frames']
 
                 path = f"{img_path}/src={src}/dst={dst}/Lerp_1000/n_frames={n_frames}"
+                if c_val is not None:
+                    query = f"_{c_val}C"
+                    path = re.sub(r'(_\d+\.\d+C)', query, path)
+                    # print("Updated Path:", new_path)
             
                 out += "<tr>"
                 alias_str = alias.split('_')

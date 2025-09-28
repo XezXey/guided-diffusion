@@ -1,0 +1,37 @@
+{
+    "DPP_CTRL_128_VLL_ch128_attn16-8_multiply__SD256_250T_dstC": {
+        "alias": "ControlNet (Default) - Multiply",
+        "misc": "ours",
+        "step": "ema_050000",
+        "n_frames": "60",
+        "res_dir": "/data/mint/TPAMI_MajorRevision/Ours/ControlNet/log=DPP_CTRL_128_VLL_ch128_attn16-8_cfg=DPP_CTRL_128_VLL_ch128_attn16-8.yaml_SD256_250T_rot2_0.7C/ema_050000/valid/render_face/reverse_sampling/"
+    },
+    "CTRL_With_DPPNonSpa_attn16-8_50k": {
+        "alias": "ControlNet's Spatial + DiFareli++'s non-spatial",
+        "misc": "ours",
+        "step": "ema_050000",
+        "n_frames": "60",
+        "res_dir": "/data/mint/TPAMI_MajorRevision/Ours/ControlNet/log=ControlNet_with_DPPNonSpa_attn16-8_cfg=ControlNet_with_DPPNonSpa_attn16-8.yaml_SD256_250T_rot2_0.7C/ema_050000/valid/render_face/reverse_sampling/"
+    },
+    "DPP_CTRL_no_hint_block_128_VLL_ch128_attn16-8__SD256_250T_dstC_50k": {
+        "alias": "ControlNet No hint block (50k - resume)",
+        "misc": "ours",
+        "step": "ema_050000",
+        "n_frames": "60",
+        "res_dir": "/data/mint/TPAMI_MajorRevision/Ours/ControlNet/log=DPP_CTRL_no_hint_block_128_VLL_ch128_attn16-8_resume_cfg=DPP_CTRL_no_hint_block_128_VLL_ch128_attn16-8.yaml_SD256_250T_rot2_0.7C/ema_050000/valid/render_face/reverse_sampling/"
+    },
+    "DPP_Spatial_with_CA_attn16-8__SD256_250T_dstC": {
+        "alias": "DiFareli++'s spatial + Cross-Attention",
+        "misc": "ours",
+        "step": "ema_050000",
+        "n_frames": "60",
+        "res_dir": "/data/mint/TPAMI_MajorRevision/Ours/ControlNet/log=DPP_Spatial_with_CA_attn16-8_cfg=DPP_Spatial_with_CA_attn16-8.yaml_SD256_250T_rot2_0.7C/ema_050000/valid/render_face/reverse_sampling/"
+    },
+    "DPP_128_50k": {
+        "alias": "DiFaReli++",
+        "misc": "ours",
+        "step": "ema_050000",
+        "n_frames": "60",
+        "res_dir": "/data/mint/TPAMI_MajorRevision/Ours/ControlNet/log=DPP_128_VLL_cfg=DPP_128_VLL.yaml_SD256_250T_rot2_0.7C/ema_050000/valid/render_face/reverse_sampling/"
+    }
+}

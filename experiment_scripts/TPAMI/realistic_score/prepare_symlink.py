@@ -11,10 +11,10 @@ out_path = "/data/mint/DPM_Dataset/TPAMI_MajorRevision/Realsitric_Score/gen_imag
 path = "/data/mint/sampling/TPAMI/main_result/ffhq/for_sel/"
 
 mapping = {
-    "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot1_maxC": "rot1_1.0C_1.0sh",
-    "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot1_srcC": "rot1_srcC_1.0sh",
+    # "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot1_maxC": "rot1_1.0C_1.0sh",
+    # "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot1_srcC": "rot1_srcC_1.0sh",
     "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_maxC": "rot2_1.0C_1.0sh",
-    "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_srcC": "rot2_srcC_1.0sh",
+    # "log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_rot2_srcC": "rot2_srcC_1.0sh",
 }
 
 def do_symlink(src, dst):
@@ -39,12 +39,15 @@ for p in os.listdir(path):
         all_images_path.extend(img_path)
     logger.info(f"[#] Total images: {len(all_images_path)}")
     
+    fid = np.linspace(1, 60, 20, dtype=int)
     # with multiprocessing.Pool(processes=16) as pool:
     src_list = []
     dst_list = []
     for img_path in tqdm.tqdm(all_images_path):
         img_name = os.path.basename(os.path.dirname(os.path.dirname(img_path)))
         frame_id = os.path.basename(img_path).split('.')[0].replace('res_frame', '')
+        if int(frame_id) not in fid:
+            continue
         subject_id = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(img_path)))))
         assert subject_id.startswith('src=')
         subject_id = subject_id.replace('src=', '').replace('.jpg', '')
@@ -59,9 +62,3 @@ for p in os.listdir(path):
     with multiprocessing.Pool(processes=16) as pool:
         pool.starmap(do_symlink, zip(src_list, dst_list))
     
-
-    
-    
-    
-    
-# # out_name = f'{img_name}_{rot_axis}_{c_sh_value}_frame{i:03d}.png'
