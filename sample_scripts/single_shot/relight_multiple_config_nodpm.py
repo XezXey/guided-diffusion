@@ -16,6 +16,7 @@ parser.add_argument('--out_dir', type=str, required=True, help='checkpoint name'
 parser.add_argument('--batch_size', type=int, required=True, help='batch size')
 parser.add_argument('--itp', type=str, required=True, default='render_face', help='interpolation step')
 parser.add_argument('--itp_step', type=int, required=True, help='interpolation step')
+parser.add_argument('--render_batch_size', type=int, default=1, help='render batch size')
 parser.add_argument('--gpu_id', type=int, required=True, help='gpu id')
 parser.add_argument('--sample_idx', nargs='+', type=int, default=[0, 999999], help='sample index to run (start, end)')
 parser.add_argument('--force_render', action='store_true', default=False)
@@ -91,7 +92,7 @@ for ckpt in args.ckpt_step:
                                     f"""
                                     python relight_paired_nodpm.py --ckpt_selector {args.ckpt_type} --dataset {dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
                                     --cfg_name {args.cfg_name} --log_dir {args.model_dir} \
-                                    --seed 47 --render_batch_size {args.itp_step} --save_vid\
+                                    --seed 47 --render_batch_size {args.render_batch_size} --save_vid\
                                     --sample_pair_json {sample_pair_json} --sample_pair_mode pair \
                                     --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
                                     --postproc_shadow_mask_smooth --inverse_with_shadow_diff --shadow_diff_dir {sdiff_dir}  \
