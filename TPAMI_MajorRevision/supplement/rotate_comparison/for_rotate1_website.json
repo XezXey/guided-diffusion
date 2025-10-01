@@ -1,0 +1,77 @@
+{
+    "hou21_rotate_axis=1": {
+        "step": "ema_300000",
+        "alias": "Hou et al. (CVPR 2021)",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "400",
+        "old_img_dir": "/data/mint/TPAMI_evaluations/ShadowM/user_study/rotateSH/axis=1",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/ShadowM/website/axis=1/"
+    },
+    "hou22_rotate_axis=1": {
+        "step": "ema_300000",
+        "alias": "Hou et al. (CVPR 2022)",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "400",
+        "old_img_dir": "/data/mint/TPAMI_evaluations/GeoConFR/user_study/rotateSH/axis=1",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/GeoConFR/website/axis=1/"
+    },
+    "iclight_rotate_512x512_map_centered_axis1": {
+        "step": "ema_300000",
+        "alias": "IC-Light (512x512) - map centered",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "400",
+        "old_img_dir": "/data/mint/TPAMI_evaluations/Relighting_SOTA/iclight/ffhq/user_study/ffhq_user_study/axis=1/map_centered/proc512x512/",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/iclight/ffhq_website/ffhq_website/map_centered/proc512x512/"
+    },
+    "diffusionrig_rotate_axis=1_0.7sh": {
+        "alias": "DiffusionRig (CVPR 2023)",
+        "misc": "atos",
+        "n_frame": "400",
+        "itp_method": "scale",
+        "diff_step": "sh=0.7",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/DiffusionRig/figures/rotate_sh_axis=1/"
+    },
+    "relipa_rotate_axis=1_0.6sh": {
+        "alias": "Relipa (CVPR 2025)",
+        "misc": "relipa",
+        "n_frame": "400",
+        "itp_method": "scale",
+        "diff_step": "sh=0.6",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/Relipa/figures/rotate_sh_axis=1/"
+    },
+    "ours_difareli++_oneshot_rotate_rot1_0.6C_rot1_0.7sh": {
+        "step": "ema_300000",
+        "alias": "DiFaReli++ one shot - rotate 0.7sh maxC",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "400",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/sampling_backup_from_v10_8OCT2025/sampling/TPAMI/main_result/ffhq/user_study/log=paired+difareli+cs+nodpm+trainset_256_cfg=paired+difareli+cs+nodpm+trainset_256.yaml_0.6C_rot1_0.7sh/ema_300000/valid/render_face/reverse_sampling/"
+    },
+    "ours_difareli_rotate_rot1_0.7sh_250t": {
+        "step": "ema_085000",
+        "alias": "DiFaReli - rotate 0.7sh",
+        "misc": "one-shot",
+        "itp": "render_face",
+        "itp_method": "Lerp",
+        "diff_step": "1000",
+        "time_respace": "",
+        "n_frame": "400",
+        "old_img_dir": "/data/mint/sampling/TPAMI/main_result/ffhq/user_study/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_rot1_0.7sh_250t/ema_085000/valid/render_face/reverse_sampling/",
+        "img_dir": "/data/mint/TPAMI_MajorRevision/Relighting_SOTA/DiFaReli_and_DiFaReli++/Rotate/Axis=1/log=Masked_Face_woclip+BgNoHead+shadow_256_cfg=Masked_Face_woclip+BgNoHead+shadow_256.yaml_0.7sh_for_website/ema_085000/valid/render_face/reverse_sampling"
+    }
+}
