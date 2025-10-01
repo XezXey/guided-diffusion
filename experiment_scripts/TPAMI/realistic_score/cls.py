@@ -29,7 +29,7 @@ class CLS(nn.Module):
         X = X.to(self.device).type(torch.float32)
         y = y.view(-1, 1).to(self.device).type(torch.float32)
 
-        optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+        optimizer = optim.Adam(self.parameters(), lr=self.lr)#, weight_decay=self.weight_decay)
 
         for epoch in tqdm.tqdm(range(self.n_epochs)):
             optimizer.zero_grad()
