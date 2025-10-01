@@ -31,6 +31,8 @@ parser.add_argument('--relight_with_given_c', action='store_true', default=False
 parser.add_argument('--c_list', nargs='+', default=['1.0'])
 parser.add_argument('--rotate_sh_axis', nargs='+', type=int, default=[2], help='rotate sh axis')
 parser.add_argument('--Lmax', type=int, default=2, help='sh order')
+parser.add_argument('--tonemap_percentile', nargs='+', default=[50.0], help='Tonemap percentile for HDR rendering')
+parser.add_argument('--tonemap_max_mapping', nargs='+', default=[0.5], help='Tonemap max mapping for HDR rendering')
 args = parser.parse_args()
 
 '''
@@ -65,47 +67,51 @@ for ckpt in args.ckpt_step:
             for hdr in args.hdr_dir:
                 for scale_depth in args.scale_depth:
                     for rotate_sh_axis in args.rotate_sh_axis:
-                        for c in args.c_list:
-                            logger.warning("#"*100)
-                            logger.info(f'[#] Running checkpoint {ckpt}...')
-                            logger.info(f'[#] Dataset: {dataset}')
-                            logger.info(f'[#] Sample pair json: {sample_pair_json}')
-                            logger.info(f'[#] HDR file: {hdr}')
-                            logger.info(f'[#] Scale depth: {scale_depth}')
-                            logger.info(f"[#] Use shading: {'sColor' if not args.use_shading_grey else 'sGrey'}")
-                            logger.info(f"[#] Rotate sh: {rotate_sh_axis}")
-                            cmd = (
-                                f"""
-                                python relight_paired_nodpm_with_hdr.py --ckpt_selector {args.ckpt_type} --dataset {dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
-                                --cfg_name {args.cfg_name} --log_dir {args.model_dir} \
-                                --seed 47 \
-                                --sample_pair_json {sample_pair_json} --sample_pair_mode pair \
-                                --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
-                                --shadow_diff_dir {shadow_diff_dir} \
-                                --scale_depth {scale_depth} --pt_round 1 --postproc_shadow_mask_smooth --save_vid --render_batch_size 60 \
-                                --rotate_sh --rotate_sh_axis {rotate_sh_axis} --inverse_with_shadow_diff --rasterize_type {args.rasterize_type}\
-                                --hdr {hdr} --Lmax {args.Lmax} \
-                                """
-                                )
-                            if args.force_render: cmd += ' --force_render'
-                            if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
-                            
-                            if args.relight_with_given_c:
-                                logger.info(f'[#] Relighting with given c: {c}')
-                                cmd += f' --relight_with_given_c {c}'
-                                pf = f'{c}C'
-                            elif args.relight_with_dst_c:
-                                logger.info(f'[#] Relighting with dst c.')
-                                cmd += f' --relight_with_dst_c'
-                                c = 'dst'
-                            elif args.relight_with_src_c:
-                                logger.info(f'[#] Relighting with src c.')
-                                c = 'src'
-                            logger.warning("#"*100)
-                            
-                            if postfix != '': cmd += f" --postfix SD{scale_depth}_{postfix}_{'sColor' if args.use_shading_grey == '' else 'sGrey'}_rAxis{rotate_sh_axis}"
-                            else: cmd += f" --postfix SD{scale_depth}_{c}C_{'sColor' if not args.use_shading_grey else 'sGrey'}_Lmax{args.Lmax}_rAxis{rotate_sh_axis}"
-                            if args.use_shading_grey: cmd += f' --use_shading_grey'
-                            print(cmd)
-                            os.system(cmd)
-                            print("#"*100)
+                        for tonemap_percentile in args.tonemap_percentile:
+                            for tonemap_max_mapping in args.tonemap_max_mapping:
+                                for c in args.c_list:
+                                    logger.warning("#"*100)
+                                    logger.info(f'[#] Running checkpoint {ckpt}...')
+                                    logger.info(f'[#] Dataset: {dataset}')
+                                    logger.info(f'[#] Sample pair json: {sample_pair_json}')
+                                    logger.info(f'[#] HDR file: {hdr}')
+                                    logger.info(f'[#] Scale depth: {scale_depth}')
+                                    logger.info(f"[#] Use shading: {'sColor' if not args.use_shading_grey else 'sGrey'}")
+                                    logger.info(f"[#] Rotate sh: {rotate_sh_axis}")
+                                    logger.info(f'[#] Tonemap percentile: {tonemap_percentile}')
+                                    logger.info(f'[#] Tonemap max mapping: {tonemap_max_mapping}') 
+                                    cmd = (
+                                        f"""
+                                        python relight_paired_nodpm_with_hdr.py --ckpt_selector {args.ckpt_type} --dataset {dataset} --set valid --step {ckpt} --out_dir {args.out_dir} \
+                                        --cfg_name {args.cfg_name} --log_dir {args.model_dir} \
+                                        --seed 47 \
+                                        --sample_pair_json {sample_pair_json} --sample_pair_mode pair \
+                                        --itp {args.itp} --itp_step {args.itp_step} --batch_size {args.batch_size} --gpu_id {args.gpu_id} --lerp --idx {args.sample_idx[0]} {args.sample_idx[1]} \
+                                        --shadow_diff_dir {shadow_diff_dir} \
+                                        --scale_depth {scale_depth} --pt_round 1 --postproc_shadow_mask_smooth --save_vid --render_batch_size 60 \
+                                        --rotate_sh --rotate_sh_axis {rotate_sh_axis} --inverse_with_shadow_diff --rasterize_type {args.rasterize_type}\
+                                        --hdr {hdr} --Lmax {args.Lmax} --tonemap_percentile {tonemap_percentile} --tonemap_max_mapping {tonemap_max_mapping} \
+                                        """
+                                        )
+                                    if args.force_render: cmd += ' --force_render'
+                                    if args.eval_dir is not None: cmd += f' --eval_dir {args.eval_dir}'
+                                    
+                                    if args.relight_with_given_c:
+                                        logger.info(f'[#] Relighting with given c: {c}')
+                                        cmd += f' --relight_with_given_c {c}'
+                                        pf = f'{c}C'
+                                    elif args.relight_with_dst_c:
+                                        logger.info(f'[#] Relighting with dst c.')
+                                        cmd += f' --relight_with_dst_c'
+                                        c = 'dst'
+                                    elif args.relight_with_src_c:
+                                        logger.info(f'[#] Relighting with src c.')
+                                        c = 'src'
+                                    logger.warning("#"*100)
+                                    
+                                    if postfix != '': cmd += f" --postfix SD{scale_depth}_{postfix}_{'sColor' if args.use_shading_grey == '' else 'sGrey'}_rAxis{rotate_sh_axis}"
+                                    else: cmd += f" --postfix SD{scale_depth}_{c}C_{'sColor' if not args.use_shading_grey else 'sGrey'}_Lmax{args.Lmax}_tmperc{tonemap_percentile}_tmmax{tonemap_max_mapping}_rAxis{rotate_sh_axis}"
+                                    if args.use_shading_grey: cmd += f' --use_shading_grey'
+                                    print(cmd)
+                                    os.system(cmd)
+                                    print("#"*100)

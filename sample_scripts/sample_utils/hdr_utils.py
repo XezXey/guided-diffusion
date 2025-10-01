@@ -13,7 +13,6 @@ import torchvision
 import multiprocessing as mp
 from sh_utils import get_shcoeff, unfold_sh_coeff, flatten_sh_coeff, apply_integrate_conv, apply_integrate_conv_anyLmax, sample_from_sh, genSurfaceNormals, cartesian_to_spherical, from_x_left_to_z_up
 from tonemapper import TonemapHDR
-tonemapper = TonemapHDR()
 
 # # --------- GLOBALS CACHED IN WORKERS ----------
 # _HDR = None
@@ -36,7 +35,8 @@ tonemapper = TonemapHDR()
 #     degrees = int(round(i * _STEP))
 #     return generate_frame(_HDR, degrees, _ROTATE_AXIS, _FACE, _LMAX)
 
-def render(hdr_image, face, Lmax):
+def render(hdr_image, face, Lmax, tonemap_percentile=50, tonemap_max_mapping=0.5):
+    tonemapper = TonemapHDR(percentile=tonemap_percentile, max_mapping=tonemap_max_mapping)
     hdr_tm, _, _ = tonemapper(hdr_image)
 
     coeff = get_shcoeff(hdr_image, Lmax=Lmax)   # 3, 2, Lmax+1, Lmax+1
@@ -76,7 +76,7 @@ def render(hdr_image, face, Lmax):
     return ((normal_map_org + 1) * 0.5), ((normal_map + 1) * 0.5), shading, mask, coeff, sh, unfolded
 
 # def generate_frame(hdr_image, i, axis, face, Lmax):
-def generate_frame(hdr_file, i, axis, face, Lmax):
+def generate_frame(hdr_file, i, axis, face, Lmax, tonemap_percentile=50, tonemap_max_mapping=0.5):
     # hdr_image_roll = np.roll(hdr_image.copy(), shift=-i, axis=1)
     # print(axis)
     hdr_image = skimage.io.imread(hdr_file)
@@ -88,11 +88,12 @@ def generate_frame(hdr_file, i, axis, face, Lmax):
     e = EnvironmentMap(hdr_image, 'latlong')
     e_rot = e.copy().rotate(dcm)
     hdr_image_rot = e_rot.data    # np.array of shape [H, W, 3], min: 0, max: 1
-    normal_map_org, normal_map, shading, mask, coeff_sh, sh, unfolded_sh = render(hdr_image_rot, face, Lmax)
+    normal_map_org, normal_map, shading, mask, coeff_sh, sh, unfolded_sh = render(hdr_image_rot, face, Lmax, tonemap_percentile=tonemap_percentile, tonemap_max_mapping=tonemap_max_mapping)
 
     return hdr_image, hdr_image_rot, normal_map_org, normal_map, shading, mask, coeff_sh, sh, unfolded_sh
 
-def postproc(frames):
+def postproc(frames, tonemap_percentile=50, tonemap_max_mapping=0.5):
+    tonemapper = TonemapHDR(percentile=tonemap_percentile, max_mapping=tonemap_max_mapping)
     hdr_image = []
     hdr_image_rot = []
     normal_map_org = []
@@ -159,15 +160,15 @@ def _init_shared(hdr_image):
     global _HDR
     _HDR = hdr_image
 
-def _worker(i, rotate_axis, face, Lmax):
-    return generate_frame(_HDR, i, rotate_axis, face, Lmax)
+def _worker(i, rotate_axis, face, Lmax, tonemap_percentile=50, tonemap_max_mapping=0.5):
+    return generate_frame(_HDR, i, rotate_axis, face, Lmax, tonemap_percentile, tonemap_max_mapping)
 
-def run_parallel(hdr_image, n_step, rotate_axis, face, Lmax):
+def run_parallel(hdr_image, n_step, rotate_axis, face, Lmax, tonemap_percentile=50, tonemap_max_mapping=0.5):
     import multiprocessing as mp
     shift_values = np.linspace(0, 360, n_step).astype(int)
     ctx = mp.get_context("spawn")
     with ctx.Pool(mp.cpu_count(), initializer=_init_shared, initargs=(hdr_image,)) as pool:
-        return pool.starmap(_worker, [(i, rotate_axis, face, Lmax) for i in shift_values], chunksize=1)
+        return pool.starmap(_worker, [(i, rotate_axis, face, Lmax, tonemap_percentile, tonemap_max_mapping) for i in shift_values], chunksize=1)
 
 # def run_parallel_new(hdr_image, n_step, rotate_axis, face, Lmax):
 #     """
@@ -193,7 +194,7 @@ def run_parallel(hdr_image, n_step, rotate_axis, face, Lmax):
 #         # We only pass (i,) because everything else is cached in globals.
 #         return pool.starmap(_worker, [(i,) for i in range(n_step)], chunksize=chunksize)    
 
-def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step, Lmax=2, rotate_axis='azimuth'):
+def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step, Lmax=2, tonemap_percentile=50, tonemap_max_mapping=0.5, rotate_axis='azimuth'):
     """
     Render with hdr map
     hdr_file: str, path to hdr file
@@ -230,13 +231,13 @@ def render_with_hdr(hdr_file, normal_images, albedo_images, alpha_images, n_step
     
     start_t = time.time()
     # out = run_parallel_new(hdr_image, n_step, rotate_axis, face, Lmax)
-    out = run_parallel(hdr_file, n_step, rotate_axis, face, Lmax)
+    out = run_parallel(hdr_file, n_step, rotate_axis, face, Lmax, tonemap_percentile, tonemap_max_mapping)
     # out = []
     # for i in tqdm.tqdm(np.linspace(0, 360, n_step).astype(int), leave=False):
     #     out.append(generate_frame(hdr_file, i, rotate_axis, face, Lmax))
     end_t = time.time()
     print("[#] HDR Rendered (n_step={}) in {:.2f} seconds.".format(n_step, end_t - start_t))
-    out_pp = postproc(out)
+    out_pp = postproc(out, tonemap_percentile, tonemap_max_mapping)
     frames, hdr_image, hdr_image_rot, normal_map_org, normal_map, shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff = out_pp
     frames = (frames.clip(0, 1) * 255).astype(np.uint8)
 

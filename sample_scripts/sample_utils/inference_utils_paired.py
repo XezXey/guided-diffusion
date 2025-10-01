@@ -341,6 +341,8 @@ def build_condition_image_hdr(cond, misc, force_render=False):
     deca_obj = misc['deca_obj']
     clip_ren = None
     Lmax = misc['Lmax']
+    tonemap_percentile = misc['tonemap_percentile']
+    tonemap_max_mapping = misc['tonemap_max_mapping']
     
     def prep_render(cond, cond_img_name):
         #Note: Preprocessing to separate the shading ref or shadow mask into src-dst
@@ -516,13 +518,20 @@ def build_condition_image_hdr(cond, misc, force_render=False):
         
         print(args.rotate_sh_axis, rotate_axis, type(args.rotate_sh_axis), type(rotate_axis), args.rotate_sh)
         print(f"[#] Render shading reference with HDR on {rotate_axis} axis.")
+        print("[#] HDR file: ", hdr_file)
+        print("[#] Lmax: ", Lmax)
+        print("[#] Tonemap percentile: ", tonemap_percentile)
+        print("[#] Tonemap max mapping: ", tonemap_max_mapping)
         hdr_frames, shading, shading_grey, coeff_sh, all_sh, unfold_sh_coeff = hdr_utils.render_with_hdr(hdr_file=args.hdr, 
                                                                                              normal_images=orig_visdict['normal_images'], 
                                                                                              alpha_images=orig_visdict['alpha_images'],
                                                                                              albedo_images=orig_visdict['albedo_images'],
                                                                                              n_step=n_step-1, 
                                                                                              rotate_axis=rotate_axis, 
-                                                                                             Lmax=Lmax,)
+                                                                                             Lmax=Lmax,
+                                                                                             tonemap_percentile=tonemap_percentile,
+                                                                                             tonemap_max_mapping=tonemap_max_mapping,
+                                                                                            )
         if args.use_shading_grey:
             print("[#] Using grey-scale shading...")
             shading_grey = th.tensor(shading_grey).to(deca_rendered.device)

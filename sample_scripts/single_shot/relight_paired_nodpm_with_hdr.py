@@ -107,6 +107,8 @@ parser.add_argument('--use_no_aliasing', action='store_true', default=False)
 parser.add_argument('--hdr', type=str, required=True)
 parser.add_argument('--use_shading_grey', action='store_true', default=False)
 parser.add_argument('--Lmax', type=int, default=2)
+parser.add_argument('--tonemap_percentile', type=float, default=50.0)
+parser.add_argument('--tonemap_max_mapping', type=float, default=0.5)
 
 
 args = parser.parse_args()
@@ -165,7 +167,9 @@ def make_condition(cond, src_idx, dst_idx, n_step=2, itp_func=None):
             'cfg':cfg,
             'batch_size':args.batch_size,
             'render_batch_size':args.render_batch_size,
-            'Lmax': args.Lmax
+            'Lmax': args.Lmax,
+            'tonemap_percentile': args.tonemap_percentile,
+            'tonemap_max_mapping': args.tonemap_max_mapping
             }  
     
     if itp_func is not None:
